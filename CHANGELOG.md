@@ -2,8 +2,14 @@
 
 # UNRELEASED
 
+* AADApplication
+  * Deprecated the Oauth2RequirePostResponse parameter as it was causing issues for the New function.
+    FIXES [#2276](https://github.com/microsoft/Microsoft365DSC/issues/2276)
 * AADEntitlementManagementAccessPackage
   * Initial Release.
+* EXOManagementRoleAssignment
+  * Added support for RoleGroup Role Assignees
+    Fixes [#2524](https://github.com/microsoft/Microsoft365DSC/issues/2524)
 * SCRetentionCompliancePolicy
   * Fixes the Location parameters to be a string array instead of an object array.
     FIXES [#2503](https://github.com/microsoft/Microsoft365DSC/issues/2503)

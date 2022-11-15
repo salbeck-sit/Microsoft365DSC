@@ -13,9 +13,11 @@ function Get-TargetResource
         [Microsoft.Management.Infrastructure.CimInstance[]]
         $AdditionalNotificationRecipients,
 
+        <#
         [Parameter()]
         [Microsoft.Management.Infrastructure.CimInstance]
         $CreatedBy,
+        #>
 
         [Parameter()]
         [System.String]
@@ -33,9 +35,11 @@ function Get-TargetResource
         [Microsoft.Management.Infrastructure.CimInstance[]]
         $FallbackReviewers,
 
+        <#
         [Parameter()]
         [Microsoft.Management.Infrastructure.CimInstance]
         $InstanceEnumerationScope,
+        #>
 
         [Parameter()]
         [Microsoft.Management.Infrastructure.CimInstance[]]
@@ -57,13 +61,14 @@ function Get-TargetResource
         [System.String]
         $Status,
 
+        <#
         [Parameter()]
         [Microsoft.Management.Infrastructure.CimInstance[]]
         $Instances,
+        #>
 
 
-
-        #endregion 
+        #endregion
 
         [Parameter(Mandatory = $true)]
         [System.String]
@@ -125,7 +130,7 @@ function Get-TargetResource
     try
     {
         $getValue = $null
-        
+
         #region resource generator code
         $getValue = Get-MgIdentityGovernanceAccessReviewDefinition -id $id -ErrorAction SilentlyContinue
 
@@ -143,7 +148,7 @@ function Get-TargetResource
             }
         }
         #endregion
-        
+
         if ($null -eq $getValue)
         {
             Write-Verbose -Message "Nothing with DisplayName {$DisplayName} was found"
@@ -152,38 +157,30 @@ function Get-TargetResource
 
         Write-Verbose -Message "Found something with id {$id}"
         $results = @{
-            
-            #region resource generator code
-            Id = $getValue.Id 
-            DescriptionForAdmins = $getValue.DescriptionForAdmins 
-            DescriptionForReviewers = $getValue.DescriptionForReviewers 
-            DisplayName = $getValue.DisplayName 
-            Status = $getValue.Status 
 
-            
+            #region resource generator code
+            Id = $getValue.Id
+            DescriptionForAdmins = $getValue.DescriptionForAdmins
+            DescriptionForReviewers = $getValue.DescriptionForReviewers
+            DisplayName = $getValue.DisplayName
+            Status = $getValue.Status
+
+
             Ensure                = 'Present'
             Credential            = $Credential
             ApplicationId         = $ApplicationId
             TenantId              = $TenantId
             ApplicationSecret     = $ApplicationSecret
             CertificateThumbprint = $CertificateThumbprint
-            Managedidentity       = $ManagedIdentity.IsPresent
+            ManagedIdentity       = $ManagedIdentity.IsPresent
         }
         if ($getValue.AdditionalNotificationRecipients)
         {
             $results.Add("AdditionalNotificationRecipients", (Get-M365DSCDRGComplexTypeToHashtable -ComplexObject $getValue.AdditionalNotificationRecipients))
         }
-        if ($getValue.CreatedBy)
-        {
-            $results.Add("CreatedBy", (Get-M365DSCDRGComplexTypeToHashtable -ComplexObject $getValue.CreatedBy))
-        }
         if ($getValue.FallbackReviewers)
         {
             $results.Add("FallbackReviewers", (Get-M365DSCDRGComplexTypeToHashtable -ComplexObject $getValue.FallbackReviewers))
-        }
-        if ($getValue.InstanceEnumerationScope)
-        {
-            $results.Add("InstanceEnumerationScope", (Get-M365DSCDRGComplexTypeToHashtable -ComplexObject $getValue.InstanceEnumerationScope))
         }
         if ($getValue.Reviewers)
         {
@@ -201,11 +198,6 @@ function Get-TargetResource
         {
             $results.Add("StageSettings", (Get-M365DSCDRGComplexTypeToHashtable -ComplexObject $getValue.StageSettings))
         }
-        if ($getValue.Instances)
-        {
-            $results.Add("Instances", (Get-M365DSCDRGComplexTypeToHashtable -ComplexObject $getValue.Instances))
-        }
-
 
         return [System.Collections.Hashtable] $results
     }
@@ -240,7 +232,7 @@ function Set-TargetResource
     [CmdletBinding()]
     param
     (
-        
+
         #region resource generator code
         [Parameter()]
         [System.String]
@@ -249,10 +241,6 @@ function Set-TargetResource
         [Parameter()]
         [Microsoft.Management.Infrastructure.CimInstance[]]
         $AdditionalNotificationRecipients,
-
-        [Parameter()]
-        [Microsoft.Management.Infrastructure.CimInstance]
-        $CreatedBy,
 
         [Parameter()]
         [System.String]
@@ -269,10 +257,6 @@ function Set-TargetResource
         [Parameter()]
         [Microsoft.Management.Infrastructure.CimInstance[]]
         $FallbackReviewers,
-
-        [Parameter()]
-        [Microsoft.Management.Infrastructure.CimInstance]
-        $InstanceEnumerationScope,
 
         [Parameter()]
         [Microsoft.Management.Infrastructure.CimInstance[]]
@@ -294,13 +278,8 @@ function Set-TargetResource
         [System.String]
         $Status,
 
-        [Parameter()]
-        [Microsoft.Management.Infrastructure.CimInstance[]]
-        $Instances,
 
-
-
-        #endregion 
+        #endregion
 
         [Parameter(Mandatory = $true)]
         [System.String]
@@ -407,20 +386,15 @@ function Set-TargetResource
             $CreateParameters.remove($key)
             $CreateParameters.add($keyName,$keyValue)
         }
-        $CreateParameters.add('@odata.type','#microsoft.graph.accessReviewScheduleDefinition')
+        #$CreateParameters.add('@odata.type','#microsoft.graph.accessReviewScheduleDefinition')
 
 
-        <#if ($AdditionalProperties)
-        {
-            $CreateParameters.add('AdditionalProperties', $AdditionalProperties)
-        }#>
 
-        
         #region resource generator code
         $policy=New-MgIdentityGovernanceAccessReviewDefinition -BodyParameter $CreateParameters
 
         #endregion
-        
+
     }
     elseif ($Ensure -eq 'Present' -and $currentInstance.Ensure -eq 'Present')
     {
@@ -462,35 +436,30 @@ function Set-TargetResource
             $UpdateParameters.remove($key)
             $UpdateParameters.add($keyName,$keyValue)
         }
-        $UpdateParameters.add('@odata.type','#microsoft.graph.accessReviewScheduleDefinition')
+        #$UpdateParameters.add('@odata.type','#microsoft.graph.accessReviewScheduleDefinition')
 
-        <#if ($AdditionalProperties)
-        {
-            $UpdateParameters.add('AdditionalProperties', $AdditionalProperties)
-        }#>
 
-        
         #region resource generator code
         Update-MgIdentityGovernanceAccessReviewDefinition -BodyParameter $UpdateParameters `
             -AccessReviewScheduleDefinitionId $currentInstance.Id
 
         #endregion
-        
+
     }
     elseif ($Ensure -eq 'Absent' -and $currentInstance.Ensure -eq 'Present')
     {
         Write-Verbose -Message "Removing {$DisplayName}"
 
-        
+
         #region resource generator code
         #endregion
-        
 
-        
+
+
         #region resource generator code
         Remove-MgIdentityGovernanceAccessReviewDefinition -AccessReviewScheduleDefinitionId $currentInstance.Id
         #endregion
-        
+
     }
 }
 
@@ -500,7 +469,7 @@ function Test-TargetResource
     [OutputType([System.Boolean])]
     param
     (
-        
+
         #region resource generator code
         [Parameter()]
         [System.String]
@@ -509,10 +478,6 @@ function Test-TargetResource
         [Parameter()]
         [Microsoft.Management.Infrastructure.CimInstance[]]
         $AdditionalNotificationRecipients,
-
-        [Parameter()]
-        [Microsoft.Management.Infrastructure.CimInstance]
-        $CreatedBy,
 
         [Parameter()]
         [System.String]
@@ -529,10 +494,6 @@ function Test-TargetResource
         [Parameter()]
         [Microsoft.Management.Infrastructure.CimInstance[]]
         $FallbackReviewers,
-
-        [Parameter()]
-        [Microsoft.Management.Infrastructure.CimInstance]
-        $InstanceEnumerationScope,
 
         [Parameter()]
         [Microsoft.Management.Infrastructure.CimInstance[]]
@@ -554,13 +515,9 @@ function Test-TargetResource
         [System.String]
         $Status,
 
-        [Parameter()]
-        [Microsoft.Management.Infrastructure.CimInstance[]]
-        $Instances,
 
 
-
-        #endregion 
+        #endregion
 
         [Parameter(Mandatory = $true)]
         [System.String]
@@ -721,7 +678,7 @@ function Export-TargetResource
 
     try
     {
-        
+
         #region resource generator code
         [array]$getValue = Get-MgIdentityGovernanceAccessReviewDefinition `
             -ErrorAction Stop | Where-Object `
@@ -731,11 +688,11 @@ function Export-TargetResource
 
         if (-not $getValue)
         {
-            [array]$getValue = Get-MgIdentityGovernanceAccessReviewDefinition 
+            [array]$getValue = Get-MgIdentityGovernanceAccessReviewDefinition
                 -ErrorAction Stop
         }
         #endregion
-        
+
 
         $i = 1
         $dscContent = ''
@@ -763,7 +720,7 @@ function Export-TargetResource
                 TenantId              = $TenantId
                 ApplicationSecret     = $ApplicationSecret
                 CertificateThumbprint = $CertificateThumbprint
-                Managedidentity       = $ManagedIdentity.IsPresent
+                ManagedIdentity       = $ManagedIdentity.IsPresent
             }
 
             $Results = Get-TargetResource @Params
@@ -782,18 +739,6 @@ function Export-TargetResource
                 $Results.Remove('AdditionalNotificationRecipients') | Out-Null
             }
         }
-        if ($Results.CreatedBy)
-        {
-            $complexTypeStringResult = Get-M365DSCDRGComplexTypeToString -ComplexObject $Results.CreatedBy -CIMInstanceName MicrosoftGraphuseridentity
-            if ($complexTypeStringResult)
-            {
-                $Results.CreatedBy = $complexTypeStringResult
-            }
-            else
-            {
-                $Results.Remove('CreatedBy') | Out-Null
-            }
-        }
         if ($Results.FallbackReviewers)
         {
             $complexTypeStringResult = Get-M365DSCDRGComplexTypeToString -ComplexObject $Results.FallbackReviewers -CIMInstanceName MicrosoftGraphaccessreviewreviewerscope
@@ -804,18 +749,6 @@ function Export-TargetResource
             else
             {
                 $Results.Remove('FallbackReviewers') | Out-Null
-            }
-        }
-        if ($Results.InstanceEnumerationScope)
-        {
-            $complexTypeStringResult = Get-M365DSCDRGComplexTypeToString -ComplexObject $Results.InstanceEnumerationScope -CIMInstanceName MicrosoftGraphaccessreviewscope
-            if ($complexTypeStringResult)
-            {
-                $Results.InstanceEnumerationScope = $complexTypeStringResult
-            }
-            else
-            {
-                $Results.Remove('InstanceEnumerationScope') | Out-Null
             }
         }
         if ($Results.Reviewers)
@@ -866,20 +799,8 @@ function Export-TargetResource
                 $Results.Remove('StageSettings') | Out-Null
             }
         }
-        if ($Results.Instances)
-        {
-            $complexTypeStringResult = Get-M365DSCDRGComplexTypeToString -ComplexObject $Results.Instances -CIMInstanceName MicrosoftGraphaccessreviewinstance
-            if ($complexTypeStringResult)
-            {
-                $Results.Instances = $complexTypeStringResult
-            }
-            else
-            {
-                $Results.Remove('Instances') | Out-Null
-            }
-        }
 
-            
+
 
             $currentDSCBlock = Get-M365DSCExportContentForResource -ResourceName $ResourceName `
                 -ConnectionMode $ConnectionMode `
@@ -969,7 +890,7 @@ function Export-TargetResource
             $currentDSCBlock = Convert-DSCStringParamToVariable -DSCBlock $currentDSCBlock -ParameterName "Instances" -isCIMArray:$isCIMArray
         }
 
-            
+
 
             $dscContent += $currentDSCBlock
             Save-M365DSCPartialExport -Content $currentDSCBlock `
@@ -1017,7 +938,7 @@ function Get-M365DSCAdditionalProperties
     )
 
     $additionalProperties = @(
-        
+
     )
     $results = @{'@odata.type' = '#microsoft.graph.accessReviewScheduleDefinition' }
     $cloneProperties = $Properties.clone()

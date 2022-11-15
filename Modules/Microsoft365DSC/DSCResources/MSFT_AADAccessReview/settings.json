@@ -7,26 +7,24 @@
                                     "read":  [
                                                  {
                                                      "name":  "AccessReview.Read.All"
-                                                 },
-                                                 {
-                                                     "name":  "AccessReview.ReadWrite.All"
                                                  }
                                              ],
                                     "update":  [
-
+                                                {
+                                                    "name":  "AccessReview.ReadWrite.All"
+                                                }
                                                ]
                                 },
                   "application":  {
                                       "read":  [
                                                    {
                                                        "name":  "AccessReview.Read.All"
-                                                   },
-                                                   {
-                                                       "name":  "AccessReview.ReadWrite.All"
                                                    }
                                                ],
                                       "update":  [
-
+                                                    {
+                                                        "name":  "AccessReview.ReadWrite.All"
+                                                    }
                                                  ]
                                   }
               }

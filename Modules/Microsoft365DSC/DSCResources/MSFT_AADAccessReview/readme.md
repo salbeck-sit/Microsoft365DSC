@@ -3,4 +3,4 @@
 
 ## Description
 
-This resource configures an A A D Access Review.
+This resource configures an Azure AD Access Review.

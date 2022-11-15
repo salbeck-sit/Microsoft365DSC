@@ -57,16 +57,6 @@ function Get-TargetResource
         [Microsoft.Management.Infrastructure.CimInstance[]]
         $StageSettings,
 
-        [Parameter()]
-        [System.String]
-        $Status,
-
-        <#
-        [Parameter()]
-        [Microsoft.Management.Infrastructure.CimInstance[]]
-        $Instances,
-        #>
-
 
         #endregion
 
@@ -163,7 +153,6 @@ function Get-TargetResource
             DescriptionForAdmins = $getValue.DescriptionForAdmins
             DescriptionForReviewers = $getValue.DescriptionForReviewers
             DisplayName = $getValue.DisplayName
-            Status = $getValue.Status
 
 
             Ensure                = 'Present'
@@ -273,10 +262,6 @@ function Set-TargetResource
         [Parameter()]
         [Microsoft.Management.Infrastructure.CimInstance[]]
         $StageSettings,
-
-        [Parameter()]
-        [System.String]
-        $Status,
 
 
         #endregion
@@ -510,10 +495,6 @@ function Test-TargetResource
         [Parameter()]
         [Microsoft.Management.Infrastructure.CimInstance[]]
         $StageSettings,
-
-        [Parameter()]
-        [System.String]
-        $Status,
 
 
 

@@ -13,10 +13,20 @@ class MSFT_MicrosoftGraphAccessReviewReviewerScope
     [Write, Description("Indicates the type of query. Types include MicrosoftGraph and ARM.")] String QueryType;
 };
 [ClassVersion("1.0.0")]
+class MSFT_MicrosoftGraphAccessReviewNestedScope
+{
+    [Write, Description("The query representing what will be reviewed in an access review.")] String Query;
+    [Write, Description("Indicates the type of query. Types include MicrosoftGraph and ARM.")] String QueryType;
+    [Write, Description("Indicates the scope. Must be #microsoft.graph.accessReviewScope")] String '@odata.type';
+};
+[ClassVersion("1.0.0")]
 class MSFT_MicrosoftGraphAccessReviewScope
 {
     [Write, Description("The query representing what will be reviewed in an access review.")] String Query;
     [Write, Description("Indicates the type of query. Types include MicrosoftGraph and ARM.")] String QueryType;
+    [Write, Description("Indicates the review scope. Specifying the OData type in the scope is highly recommended for all types but required for principalResourceMembershipsScope and accessReviewInactiveUserQueryScope. See https://learn.microsoft.com/en-us/graph/api/resources/accessreviewscope?view=graph-rest-1.0")] String '@odata.type';
+    [Write, Description("Defines the scopes of the principals whose access to resources are reviewed in the access review."), EmbeddedInstance("MSFT_MicrosoftGraphAccessReviewNestedScope")] String PrincipalScopes[];
+    [Write, Description("Defines the scopes of the resources for which access is reviewed."), EmbeddedInstance("MSFT_MicrosoftGraphAccessReviewNestedScope")] String ResourceScopes[];
 };
 [ClassVersion("1.0.0")]
 class MSFT_MicrosoftGraphAccessReviewScheduleSettings

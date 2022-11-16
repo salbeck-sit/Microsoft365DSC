@@ -287,7 +287,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                         } -ClientOnly)
                         StageSettings =@(
                             (New-CimInstance -ClassName MSFT_MicrosoftGraphAccessReviewStageSettings -Property @{
-                                stageId = "FakeStringValue"
+                                stageId = "1"
                                 recommendationsEnabled = $True
                                 durationInDays = 25
 

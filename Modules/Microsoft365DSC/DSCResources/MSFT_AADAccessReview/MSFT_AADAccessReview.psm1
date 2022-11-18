@@ -1027,7 +1027,7 @@ function Get-M365DSCDRGComplexTypeToHashtable
     }
     if($ComplexObject.getType().Fullname -like "*hashtable[[\]]")
     {
-        return ,[hashtable[]]$ComplexObject
+        return [hashtable[]]$ComplexObject
     }
 
 
@@ -1047,7 +1047,7 @@ function Get-M365DSCDRGComplexTypeToHashtable
         # PowerShell returns all non-captured stream output, not just the argument of the return statement.
         #An empty array is mangled into $null in the process.
         #However, an array can be preserved on return by prepending it with the array construction operator (,)
-        return ,[hashtable[]]$results
+        return [hashtable[]]$results
     }
 
     $results = @{}
@@ -1068,6 +1068,10 @@ function Get-M365DSCDRGComplexTypeToHashtable
             }
             else
             {
+                if ($keyName -eq '@odata.type')
+                {
+                    $keyName = 'odataType'
+                }
                 $results.Add($keyName, $ComplexObject.$($key.Name))
             }
         }

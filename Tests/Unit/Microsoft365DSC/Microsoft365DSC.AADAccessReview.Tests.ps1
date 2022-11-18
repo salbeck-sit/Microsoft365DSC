@@ -58,7 +58,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                         DescriptionForReviewers = "FakeStringValue"
                         DisplayName = "FakeStringValue"
                         FallbackReviewers =@(
-                            (New-CimInstance -ClassName MSFT_MicrosoftGraphAccessReviewrReviewerScope -Property @{
+                            (New-CimInstance -ClassName MSFT_MicrosoftGraphAccessReviewReviewerScope -Property @{
                                 query = "FakeStringValue"
                                 queryRoot = "FakeStringValue"
                                 queryType = "FakeStringValue"
@@ -67,7 +67,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                         )
                         Id = "FakeStringValue"
                         Reviewers =@(
-                            (New-CimInstance -ClassName MSFT_MicrosoftGraphAccessReviewrReviewerScope -Property @{
+                            (New-CimInstance -ClassName MSFT_MicrosoftGraphAccessReviewReviewerScope -Property @{
                                 query = "FakeStringValue"
                                 queryRoot = "FakeStringValue"
                                 queryType = "FakeStringValue"
@@ -121,7 +121,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                         DescriptionForReviewers = "FakeStringValue"
                         DisplayName = "FakeStringValue"
                         FallbackReviewers =@(
-                            (New-CimInstance -ClassName MSFT_MicrosoftGraphAccessReviewrReviewerScope -Property @{
+                            (New-CimInstance -ClassName MSFT_MicrosoftGraphAccessReviewReviewerScope -Property @{
                                 query = "FakeStringValue"
                                 queryRoot = "FakeStringValue"
                                 queryType = "FakeStringValue"
@@ -130,7 +130,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                         )
                         Id = "FakeStringValue"
                         Reviewers =@(
-                            (New-CimInstance -ClassName MSFT_MicrosoftGraphAccessReviewrReviewerScope -Property @{
+                            (New-CimInstance -ClassName MSFT_MicrosoftGraphAccessReviewReviewerScope -Property @{
                                 query = "FakeStringValue"
                                 queryRoot = "FakeStringValue"
                                 queryType = "FakeStringValue"
@@ -174,31 +174,28 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                         DescriptionForAdmins = "FakeStringValue"
                         DescriptionForReviewers = "FakeStringValue"
                         DisplayName = "FakeStringValue"
-                        FallbackReviewers =@(
-                            (New-CimInstance -ClassName MSFT_MicrosoftGraphAccessReviewrReviewerScope -Property @{
+                        FallbackReviewers =@{
                                 query = "FakeStringValue"
                                 queryRoot = "FakeStringValue"
                                 queryType = "FakeStringValue"
 
-                            } -ClientOnly)
+                            }
                         )
                         Id = "FakeStringValue"
-                        Reviewers =@(
-                            (New-CimInstance -ClassName MSFT_MicrosoftGraphAccessReviewrReviewerScope -Property @{
+                        Reviewers =@{
                                 query = "FakeStringValue"
                                 queryRoot = "FakeStringValue"
                                 queryType = "FakeStringValue"
 
-                            } -ClientOnly)
-                        )
-                        Scope =(New-CimInstance -ClassName MSFT_MicrosoftGraphAccessReviewScope -Property @{
+                            }
+                        Scope =@{
                             query = "FakeStringValue"
                             queryType = "FakeStringValue"
                             '@odata.type' = "#microsoft.graph.accessReviewQueryScope"
                             queryRoot = "FakeStringValue"
 
-                        } -ClientOnly)
-                        Settings =(New-CimInstance -ClassName MSFT_MicrosoftGraphAccessReviewScheduleSettings -Property @{
+                        }
+                        Settings = @{
                             instanceDurationInDays = 25
                             defaultDecisionEnabled = $True
                             justificationRequiredOnApproval = $True
@@ -209,14 +206,13 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                             decisionHistoriesForReviewersEnabled = $True
                             recommendationsEnabled = $True
 
-                        } -ClientOnly)
-                        StageSettings =@(
-                            (New-CimInstance -ClassName MSFT_MicrosoftGraphAccessReviewStageSettings -Property @{
+                        }
+                        StageSettings =@(@{
                                 stageId = "FakeStringValue"
                                 recommendationsEnabled = $True
                                 durationInDays = 25
 
-                            } -ClientOnly)
+                            }
                         )
                         Status = "FakeStringValue"
 
@@ -243,14 +239,13 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                         AdditionalNotificationRecipients =@(
                             (New-CimInstance -ClassName MSFT_MicrosoftGraphaccessreviewnotificationrecipientitem -Property @{
                                 notificationTemplateType = "FakeStringValue"
-
                             } -ClientOnly)
                         )
                         DescriptionForAdmins = "FakeStringValue"
                         DescriptionForReviewers = "FakeStringValue"
                         DisplayName = "FakeStringValue"
                         FallbackReviewers =@(
-                            (New-CimInstance -ClassName MSFT_MicrosoftGraphAccessReviewrReviewerScope -Property @{
+                            (New-CimInstance -ClassName MSFT_MicrosoftGraphAccessReviewReviewerScope -Property @{
                                 query = "FakeStringValue"
                                 queryRoot = "FakeStringValue"
                                 queryType = "FakeStringValue"
@@ -259,7 +254,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                         )
                         Id = "FakeStringValue"
                         Reviewers =@(
-                            (New-CimInstance -ClassName MSFT_MicrosoftGraphAccessReviewrReviewerScope -Property @{
+                            (New-CimInstance -ClassName MSFT_MicrosoftGraphAccessReviewReviewerScope -Property @{
                                 query = "FakeStringValue"
                                 queryRoot = "FakeStringValue"
                                 queryType = "FakeStringValue"
@@ -318,7 +313,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                         DescriptionForReviewers = "FakeStringValue"
                         DisplayName = "FakeStringValue"
                         FallbackReviewers =@(
-                            (New-CimInstance -ClassName MSFT_MicrosoftGraphAccessReviewrReviewerScope -Property @{
+                            (New-CimInstance -ClassName MSFT_MicrosoftGraphAccessReviewReviewerScope -Property @{
                                 query = "FakeStringValue"
                                 queryRoot = "FakeStringValue"
                                 queryType = "FakeStringValue"
@@ -327,7 +322,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                         )
                         Id = "FakeStringValue"
                         Reviewers =@(
-                            (New-CimInstance -ClassName MSFT_MicrosoftGraphAccessReviewrReviewerScope -Property @{
+                            (New-CimInstance -ClassName MSFT_MicrosoftGraphAccessReviewReviewerScope -Property @{
                                 query = "FakeStringValue"
                                 queryRoot = "FakeStringValue"
                                 queryType = "FakeStringValue"
@@ -386,7 +381,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                         DescriptionForReviewers = "FakeStringValue"
                         DisplayName = "FakeStringValue"
                         FallbackReviewers =@(
-                            (New-CimInstance -ClassName MSFT_MicrosoftGraphAccessReviewrReviewerScope -Property @{
+                            (New-CimInstance -ClassName MSFT_MicrosoftGraphAccessReviewReviewerScope -Property @{
                                 query = "FakeStringValue"
                                 queryRoot = "FakeStringValue"
                                 queryType = "FakeStringValue"
@@ -395,7 +390,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                         )
                         Id = "FakeStringValue"
                         Reviewers =@(
-                            (New-CimInstance -ClassName MSFT_MicrosoftGraphAccessReviewrReviewerScope -Property @{
+                            (New-CimInstance -ClassName MSFT_MicrosoftGraphAccessReviewReviewerScope -Property @{
                                 query = "FakeStringValue"
                                 queryRoot = "FakeStringValue"
                                 queryType = "FakeStringValue"
@@ -561,7 +556,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                         DescriptionForReviewers = "FakeStringValue"
                         DisplayName = "FakeStringValue"
                         FallbackReviewers =@(
-                            (New-CimInstance -ClassName MSFT_MicrosoftGraphAccessReviewrReviewerScope -Property @{
+                            (New-CimInstance -ClassName MSFT_MicrosoftGraphAccessReviewReviewerScope -Property @{
                                 query = "FakeStringValue"
                                 queryRoot = "FakeStringValue"
                                 queryType = "FakeStringValue"
@@ -584,7 +579,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                             } -ClientOnly)
                         )
                         Reviewers =@(
-                            (New-CimInstance -ClassName MSFT_MicrosoftGraphAccessReviewrReviewerScope -Property @{
+                            (New-CimInstance -ClassName MSFT_MicrosoftGraphAccessReviewReviewerScope -Property @{
                                 query = "FakeStringValue"
                                 queryRoot = "FakeStringValue"
                                 queryType = "FakeStringValue"

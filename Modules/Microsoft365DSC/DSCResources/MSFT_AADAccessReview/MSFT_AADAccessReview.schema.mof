@@ -10,23 +10,31 @@ class MSFT_MicrosoftGraphAccessReviewReviewerScope
 {
     [Write, Description("The query specifying who will be the reviewer.")] String Query;
     [Write, Description("In the scenario where reviewers need to be specified dynamically, this property is used to indicate the relative source of the query. This property is only required if a relative query, for example, ./manager, is specified. Possible value: decisions.")] String QueryRoot;
-    [Write, Description("Indicates the type of query. Types include MicrosoftGraph and ARM.")] String QueryType;
+    [Write, Description("Indicates the type of query. Must be MicrosoftGraph.")] String QueryType;
 };
 [ClassVersion("1.0.0")]
-class MSFT_MicrosoftGraphAccessReviewNestedScope
+class MSFT_MicrosoftGraphAccessReviewPrincipalScope
 {
-    [Write, Description("The query representing what will be reviewed in an access review.")] String Query;
-    [Write, Description("Indicates the type of query. Types include MicrosoftGraph and ARM.")] String QueryType;
-    [Write, Description("Indicates the scope. Must be #microsoft.graph.accessReviewScope")] String '@odata.type';
+    [Write, Description("The query representing principals that will be reviewed in an access review.")] String Query;
+    [Write, Description("Indicates the type of query. Must be MicrosoftGraph.")] String QueryType;
+    [Write, Description("Indicates the scope of the query. Must be #microsoft.graph.accessReviewScope")] String odataType;
+};
+[ClassVersion("1.0.0")]
+class MSFT_MicrosoftGraphAccessReviewResourceScope
+{
+    [Write, Description("The query representing resources that will be reviewed in an access review.")] String Query;
+    [Write, Description("Indicates the type of query. Must be MicrosoftGraph.")] String QueryType;
+    [Write, Description("Indicates the scope of the query. Must be #microsoft.graph.accessReviewScope")] String odataType;
 };
 [ClassVersion("1.0.0")]
 class MSFT_MicrosoftGraphAccessReviewScope
 {
     [Write, Description("The query representing what will be reviewed in an access review.")] String Query;
     [Write, Description("Indicates the type of query. Types include MicrosoftGraph and ARM.")] String QueryType;
-    [Write, Description("Indicates the review scope. Specifying the OData type in the scope is highly recommended for all types but required for principalResourceMembershipsScope and accessReviewInactiveUserQueryScope. See https://learn.microsoft.com/en-us/graph/api/resources/accessreviewscope?view=graph-rest-1.0")] String '@odata.type';
-    [Write, Description("Defines the scopes of the principals whose access to resources are reviewed in the access review."), EmbeddedInstance("MSFT_MicrosoftGraphAccessReviewNestedScope")] String PrincipalScopes[];
-    [Write, Description("Defines the scopes of the resources for which access is reviewed."), EmbeddedInstance("MSFT_MicrosoftGraphAccessReviewNestedScope")] String ResourceScopes[];
+    [Write, Description("Indicates the review scope. Specifying the OData type in the scope is highly recommended for all types but required for principalResourceMembershipsScope and accessReviewInactiveUserQueryScope. See https://learn.microsoft.com/en-us/graph/api/resources/accessreviewscope?view=graph-rest-1.0")] String odataType;
+    [Write, Description("Defines the scopes of the principals whose access to resources are reviewed in the access review."), EmbeddedInstance("MSFT_MicrosoftGraphAccessReviewPrincipalScope")] String PrincipalScopes[];
+    [Write, Description("Defines the scopes of the resources for which access is reviewed."), EmbeddedInstance("MSFT_MicrosoftGraphAccessReviewResourceScope")] String ResourceScopes[];
+    [Write, Description("Period of inactivity for accessReviewInactiveUserQueryScope. See odataType.")] String InactiveDuration;
 };
 [ClassVersion("1.0.0")]
 class MSFT_MicrosoftGraphAccessReviewScheduleSettings
@@ -39,15 +47,14 @@ class MSFT_MicrosoftGraphAccessReviewScheduleSettings
     [Write, Description("Duration of an access review instance in days. NOTE: If the stageSettings of the accessReviewScheduleDefinition object is defined, its durationInDays setting will be used instead of the value of this property.")] UInt32 InstanceDurationInDays;
     [Write, Description("Indicates whether reviewers are required to provide justification with their decision. Default value is false.")] Boolean JustificationRequiredOnApproval;
     [Write, Description("Indicates whether emails are enabled or disabled. Default value is false.")] Boolean MailNotificationsEnabled;
-    [Write, Description("Indicates whether decision recommendations are enabled or disabled.
-NOTE: If the stageSettings of the accessReviewScheduleDefinition object is defined, its recommendationsEnabled setting will be used instead of the value of this property.")] Boolean RecommendationsEnabled;
+    [Write, Description("Indicates whether decision recommendations are enabled or disabled. NOTE: If the stageSettings of the accessReviewScheduleDefinition object is defined, its recommendationsEnabled setting will be used instead of the value of this property.")] Boolean RecommendationsEnabled;
     [Write, Description("Detailed settings for recurrence using the standard Outlook recurrence object. Note: Only dayOfMonth, interval, and type (weekly, absoluteMonthly) properties are supported. Use the property startDate on recurrenceRange to determine the day the review starts."), EmbeddedInstance("MSFT_MicrosoftGraphPatternedRecurrence")] String Recurrence;
     [Write, Description("Indicates whether reminders are enabled or disabled. Default value is false.")] Boolean ReminderNotificationsEnabled;
 };
 [ClassVersion("1.0.0")]
 class MSFT_MicrosoftGraphAccessReviewApplyAction
 {
-    [Write, Description("Optional field. Describes the actions to take once a review is complete. There are two types that are currently supported: removeAccessApplyAction (default) and disableAndDeleteUserApplyAction. Field only needs to be specified in the case of disableAndDeleteUserApplyAction.")] String ApplyAction;
+    [Write, Description("Optional field. Describes the actions to take once a review is complete. There are two types that are currently supported: removeAccessApplyAction (default) and disableAndDeleteUserApplyAction. Field only needs to be specified in the case of disableAndDeleteUserApplyAction.")] String odataType;
 };
 [ClassVersion("1.0.0")]
 class MSFT_MicrosoftGraphPatternedRecurrence

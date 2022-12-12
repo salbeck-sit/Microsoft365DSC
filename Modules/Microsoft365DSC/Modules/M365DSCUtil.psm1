@@ -270,7 +270,7 @@ function New-EXOSafeAttachmentRule
     }
     catch
     {
-        Close-SessionsAndReturnError -ExceptionMessage $_.Exception
+       Write-M365DSCLogEvent -Message $_ -EventSource $($MyInvocation.MyCommand.Source) -TenantId $tenantid -Credential $Credential
     }
 }
 
@@ -298,7 +298,7 @@ function New-EXOSafeLinksRule
     }
     catch
     {
-        Close-SessionsAndReturnError -ExceptionMessage $_.Exception
+        Write-M365DSCLogEvent -Message $_ -EventSource $($MyInvocation.MyCommand.Source) -TenantId $tenantid -Credential $Credential
     }
 }
 
@@ -369,7 +369,7 @@ function Set-EXOSafeAttachmentRule
     }
     catch
     {
-        Close-SessionsAndReturnError -ExceptionMessage $_.Exception
+        Write-M365DSCLogEvent -Message $_ -EventSource $($MyInvocation.MyCommand.Source) -TenantId $tenantid -Credential $Credential
     }
 }
 
@@ -405,7 +405,7 @@ function Set-EXOSafeLinksRule
     }
     catch
     {
-        Close-SessionsAndReturnError -ExceptionMessage $_.Exception
+        Write-M365DSCLogEvent -Message $_ -EventSource $($MyInvocation.MyCommand.Source) -TenantId $tenantid -Credential $Credential
     }
 }
 
@@ -1135,24 +1135,6 @@ function Export-M365DSCConfiguration
     $data.Add('MaxProcesses', $null -ne $MaxProcesses)
     #endregion
 
-    $outdatedOrMissingAssemblies = Test-M365DSCDependenciesForNewVersions
-    if ($outdatedOrMissingAssemblies)
-    {
-        if (([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator))
-        {
-            foreach ($dependency in $outdatedOrMissingAssemblies)
-            {
-                Write-Host "Updating dependency {$($dependency.ModuleName)} to version {$($dependency.RequiredVersion)}..." -NoNewline
-                Install-Module $dependency.ModuleName -RequiredVersion $dependency.RequiredVersion -Force -Scope 'AllUsers' | Out-Null
-                Write-Host $Global:M365DSCEmojiGreenCheckmark
-            }
-        }
-        else
-        {
-            Write-Error 'Cannot update the dependencies for Microsoft365DSC. You need to run this command as a local administrator.'
-        }
-    }
-
     if ($null -eq $MaxProcesses)
     {
         $MaxProcesses = 16
@@ -1258,7 +1240,9 @@ function Confirm-M365DSCDependencies
     if (-not $Script:M365DSCDependenciesValidated)
     {
         Write-Verbose -Message 'Dependencies were not already validated.'
-        $result = Test-M365DSCDependenciesForNewVersions
+
+        $result = Update-M365DSCDependencies -ValidateOnly
+
         if ($result.Length -gt 0)
         {
             $ErrorMessage = "The following dependencies need updating:`r`n"
@@ -1266,7 +1250,8 @@ function Confirm-M365DSCDependencies
             {
                 $ErrorMessage += '    * ' + $invalidDependency.ModuleName + "`r`n"
             }
-            $ErrorMessage += 'Please run Update-M365DSCDependencies.'
+            $ErrorMessage += 'Please run Update-M365DSCDependencies as Administrator.'
+            $ErrorMessage += 'Please run Uninstall-M365DSCOutdatedDependencies.'
             $Script:M365DSCDependenciesValidated = $false
             Add-M365DSCEvent -Message $ErrorMessage -EntryType 'Error' `
                 -EventID 1 -Source $($MyInvocation.MyCommand.Source) `
@@ -1388,17 +1373,38 @@ function Get-M365DSCTenantDomain
         [Parameter(ParameterSetName = 'MID')]
         [Switch]
         $ManagedIdentity
-
     )
 
     if ([System.String]::IsNullOrEmpty($CertificatePath))
     {
         $ConnectionMode = New-M365DSCConnection -Workload 'MicrosoftGraph' `
             -InboundParameters $PSBoundParameters
-        $tenantDetails = Get-MgOrganization
-        $defaultDomain = $tenantDetails.VerifiedDomains | Where-Object -FilterScript { $_.IsInitial }
-        return $defaultDomain.Name
+
+        try
+        {
+            $tenantDetails = Get-MgOrganization -ErrorAction 'Stop'
+            $defaultDomain = $tenantDetails.VerifiedDomains | Where-Object -FilterScript { $_.IsInitial }
+
+            return $defaultDomain.Name
+        }
+        catch
+        {
+            if ($_.Exception.Message -eq 'Insufficient privileges to complete the operation.')
+            {
+                New-M365DSCLogEntry `
+                    -Message 'Error retrieving Organizational information: Missing Organization.Read.All permission. ' `
+                    -Exception $_ `
+                    -Source $($MyInvocation.MyCommand.Source) `
+                    -TenantId $TenantId `
+                    -Credential $Credential
+
+                return ''
+            }
+
+            throw $_
+        }
     }
+
     if ($TenantId.Contains('onmicrosoft'))
     {
         return $TenantId
@@ -1407,7 +1413,6 @@ function Get-M365DSCTenantDomain
     {
         throw 'TenantID must be in format contoso.onmicrosoft.com'
     }
-
 }
 
 <#
@@ -1573,7 +1578,7 @@ function New-M365DSCConnection
             }
             catch
             {
-                Write-Verbose $_
+                Write-Verbose -Message $_
             }
 
             Add-M365DSCTelemetryEvent -Data $data -Type 'Connection'
@@ -1596,7 +1601,7 @@ function New-M365DSCConnection
             }
             catch
             {
-                Write-Verbose $_
+                Write-Verbose -Message $_
             }
 
             Add-M365DSCTelemetryEvent -Data $data -Type 'Connection'
@@ -1625,7 +1630,7 @@ function New-M365DSCConnection
             }
             catch
             {
-                Write-Verbose $_
+                Write-Verbose -Message $_
             }
 
             Add-M365DSCTelemetryEvent -Data $data -Type 'Connection'
@@ -1648,7 +1653,7 @@ function New-M365DSCConnection
             }
             catch
             {
-                Write-Verbose $_
+                Write-Verbose -Message $_
             }
 
             Add-M365DSCTelemetryEvent -Data $data -Type 'Connection'
@@ -1740,7 +1745,7 @@ function New-M365DSCConnection
             }
             catch
             {
-                Write-Verbose $_
+                Write-Verbose -Message $_
             }
             Add-M365DSCTelemetryEvent -Data $data -Type 'Connection'
             return 'Credential'
@@ -2079,35 +2084,6 @@ function Get-SPOUserProfilePropertyInstance
 
 <#
 .Description
-This function converts the custom object array into a string
-
-.Functionality
-Internal
-#>
-function ConvertTo-SPOUserProfilePropertyInstanceString
-{
-    [CmdletBinding()]
-    [OutputType([System.String[]])]
-    param(
-        [Parameter(Mandatory = $true)]
-        [System.Object[]]
-        $Properties
-    )
-
-    $results = @()
-    foreach ($property in $Properties)
-    {
-        $content = "             MSFT_SPOUserProfilePropertyInstance`r`n            {`r`n"
-        $content += "                Key   = `"$($property.Key)`"`r`n"
-        $content += "                Value = `"$($property.Value)`"`r`n"
-        $content += "            }`r`n"
-        $results += $content
-    }
-    return $results
-}
-
-<#
-.Description
 This function downloads and installs the Dev branch of Microsoft365DSC on the local machine
 
 .Example
@@ -2175,7 +2151,7 @@ function Install-M365DSCDevBranch
         }
         catch
         {
-            Write-Verbose $_
+            Write-Verbose -Message $_
         }
     }
     Write-Host 'Done' -ForegroundColor Green
@@ -2497,44 +2473,61 @@ function Update-M365DSCDependencies
 {
     [CmdletBinding()]
     param(
-        [parameter()]
+        [Parameter()]
         [Switch]
-        $Force
+        $Force,
+
+        [Parameter()]
+        [Switch]
+        $ValidateOnly
     )
+
     $InformationPreference = 'Continue'
     $currentPath = Join-Path -Path $PSScriptRoot -ChildPath '..\' -Resolve
     $manifest = Import-PowerShellDataFile "$currentPath/Dependencies/Manifest.psd1"
     $dependencies = $manifest.Dependencies
     $i = 1
 
-    if (([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator))
-    {
-        foreach ($dependency in $dependencies)
-        {
-            Write-Progress -Activity 'Scanning Dependencies' -PercentComplete ($i / $dependencies.Count * 100)
-            try
-            {
-                if (-not $Force)
-                {
-                    $found = Get-Module $dependency.ModuleName -ListAvailable | Where-Object -FilterScript { $_.Version -eq $dependency.RequiredVersion }
-                }
+    $returnValue = @()
 
-                if (-not $found -or $Force)
+    foreach ($dependency in $dependencies)
+    {
+        Write-Progress -Activity 'Scanning Dependencies' -PercentComplete ($i / $dependencies.Count * 100)
+        try
+        {
+            if (-not $Force)
+            {
+                $found = Get-Module $dependency.ModuleName -ListAvailable | Where-Object -FilterScript { $_.Version -eq $dependency.RequiredVersion }
+            }
+
+            if ((-not $found -or $Force) -and -not $ValidateOnly)
+            {
+                if (([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator))
                 {
-                    Write-Information -Message "Installing $($dependency.ModuleName) version {$($dependency.RequiredVersion)}"
+                    Write-Information -MessageData "Installing $($dependency.ModuleName) version {$($dependency.RequiredVersion)}"
                     Install-Module $dependency.ModuleName -RequiredVersion $dependency.RequiredVersion -AllowClobber -Force -Scope 'AllUsers'
                 }
+                else
+                {
+                    Write-Error 'Cannot update the dependencies for Microsoft365DSC. You need to run this command as a local administrator.'
+                }
             }
-            catch
+
+            if (-not $found -and $validateOnly)
             {
-                Write-Host "Could not update {$($dependency.ModuleName)}"
+                $returnValue += $dependency
             }
-            $i++
         }
+        catch
+        {
+            Write-Host "Could not update {$($dependency.ModuleName)}"
+        }
+        $i++
     }
-    else
+
+    if ($ValidateOnly)
     {
-        Write-Error 'Cannot update the dependencies for Microsoft365DSC. You need to run this command as a local administrator.'
+        return $returnValue
     }
 }
 
@@ -2561,7 +2554,7 @@ function Uninstall-M365DSCOutdatedDependencies
     {
         try
         {
-            Write-Information -Message "Uninstalling $($module.Name) Version {$($module.Version)}"
+            Write-Information -MessageData "Uninstalling $($module.Name) Version {$($module.Version)}"
             if (Test-Path -Path $($module.Path))
             {
                 Remove-Item $($module.Path) -Force -Recurse
@@ -2589,7 +2582,7 @@ function Uninstall-M365DSCOutdatedDependencies
             {
                 try
                 {
-                    Write-Information -Message "Uninstalling $($foundModule.Name) Version {$($foundModule.Version)}"
+                    Write-Information -MessageData "Uninstalling $($foundModule.Name) Version {$($foundModule.Version)}"
                     if (Test-Path -Path $($foundModule.Path))
                     {
                         Remove-Item $($foundModule.ModuleBase) -Force -Recurse
@@ -2611,13 +2604,13 @@ function Uninstall-M365DSCOutdatedDependencies
     $authModule = $manifest.Dependencies | Where-Object { $_.ModuleName -eq 'Microsoft.Graph.Authentication' }
     try
     {
-        Write-Information -Message 'Checking Microsoft.Graph.Authentication'
+        Write-Information -MessageData 'Checking Microsoft.Graph.Authentication'
         $found = Get-Module $authModule.ModuleName -ListAvailable | Where-Object -FilterScript { $_.Version -ne $authModule.RequiredVersion }
         foreach ($foundModule in $found)
         {
             try
             {
-                Write-Information -Message "Uninstalling $($foundModule.Name) version {$($foundModule.Version)}"
+                Write-Information -MessageData "Uninstalling $($foundModule.Name) version {$($foundModule.Version)}"
                 if (Test-Path -Path $($foundModule.Path))
                 {
                     Remove-Item $($foundModule.ModuleBase) -Force -Recurse
@@ -3241,9 +3234,13 @@ function Get-M365DSCWorkloadsListFromResourceNames
             }
             'O3'
             {
-                if (-not $workloads.Contains('MicrosoftGraph'))
+                if (-not $workloads.Contains('MicrosoftGraph') -and $resource -eq 'O365Group')
                 {
                     $workloads += 'MicrosoftGraph'
+                }
+                elseif (-not $workloads.Contains('ExchangeOnline'))
+                {
+                    $workloads += 'ExchangeOnline'
                 }
             }
             'OD'
@@ -3688,6 +3685,64 @@ function Update-M365DSCModule
     Uninstall-M365DSCOutdatedDependencies
 }
 
+<#
+.Description
+This function writes messages and adds M365DSCEvents to Eventlog
+
+.Example
+Write-M365DSCLogEvent -Message $_ -EventSource $($MyInvocation.MyCommand.Source) -TenantId $tenantid -Credential $Credential
+
+.Functionality
+Public
+#>
+function Write-M365DSCLogEvent
+{
+    [CmdletBinding()]
+    param
+    (
+        [Parameter(Mandatory = $true)]
+        [System.String]
+        $Message,
+
+        [Parameter()]
+        [System.String]
+        $EventSource = "M365DSC",
+
+        [Parameter()]
+        [System.Uint32]
+        $EventID = 1,
+
+        [Parameter()]
+        [ValidateSet('Error', 'Information', 'FailureAudit', 'SuccessAudit', 'Warning')]
+        [System.String]
+        $EventEntryType = 'Error',
+
+        [Parameter()]
+        [System.String]
+        $TenantId,
+
+        [Parameter()]
+        [PSCredential]
+        $Credential
+    )
+    try {
+        Write-Verbose -Message $Message
+        $tenantIdValue = ''
+        if (-not [System.String]::IsNullOrEmpty($TenantId)) {
+            $tenantIdValue = $TenantId
+        }
+        elseif ($null -ne $Credential) {
+            $tenantIdValue = $Credential.UserName.Split('@')[1]
+        }
+        Add-M365DSCEvent -Message $Message -EntryType $EventEntryType -EventID $EventID -Source $EventSource -TenantId $tenantIdValue
+    }
+    catch {
+        Write-Verbose -Message $_
+    }
+    return $nullReturn
+}
+
+
 Export-ModuleMember -Function @(
     'Assert-M365DSCBlueprint',
     'Confirm-ImportedCmdletIsAvailable',
@@ -3727,5 +3782,6 @@ Export-ModuleMember -Function @(
     'Uninstall-M365DSCOutdatedDependencies',
     'Update-M365DSCDependencies',
     'Update-M365DSCExportAuthenticationResults',
-    'Update-M365DSCModule'
+    'Update-M365DSCModule',
+    'Write-M365DSCLogEvent'
 )

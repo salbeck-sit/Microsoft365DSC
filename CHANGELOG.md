@@ -2,6 +2,9 @@
 
 # UNRELEASED
 
+* AADEntitlementManagementAccessPackageCatalogResource
+  * Fixes an issue where if no access resource were defined, an error was thrown trying to save the partial content.
+    FIXES [#2654](https://github.com/microsoft/Microsoft365DSC/issues/2654)
 * AADGroup
   * Fixes an issue where licenses aren't properly assigned when no existing licenses exist.
     FIXES [#2597](https://github.com/microsoft/Microsoft365DSC/issues/2597)
@@ -21,6 +24,8 @@
 * SCRetentionComplianceRule
   * Fixed an Issue where properties weren't properly set at creation, causing drifts to be detected.
     FIXES [#2471](https://github.com/microsoft/Microsoft365DSC/issues/2471)
+* SCSensitivityLabel
+  * Adds the -IncludeDetailed LAbelActions switch when retrieving instances to get all advanced parameters from the Get-TargetResource function.
 * SPOTenantCdnEnabled
   * Fixed an issue where the export wasn't returning anything if the CDN was not enabled.
     FIXES [#2466](https://github.com/microsoft/Microsoft365DSC/issues/2466)

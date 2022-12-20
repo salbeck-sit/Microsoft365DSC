@@ -2,6 +2,9 @@
 
 # UNRELEASED
 
+* AADGroup
+  * Extraction no longer exports Distribution List or mail enabled security list since these are not supported by the Microsoft Graph API.
+    FIXES [#2587](https://github.com/microsoft/Microsoft365DSC/issues/2587)
 * EXOMailContact
   * Ensures all results are returned from the Export scenario. Currently limited at 1,000 results.
     FIXES [#2672](https://github.com/microsoft/Microsoft365DSC/issues/2672)
@@ -14,6 +17,8 @@
     FIXES [#2671](https://github.com/microsoft/Microsoft365DSC/issues/2671)
   * Updated Get-M365DSCCompiledPermissionList to output all permissions consistently.
     It can now also be used as input for Update-M365DscAzureAdApplication.
+  * Fixes issue where the wrong parameter is being passed to the Erro log function.
+    FIXES [#2682](https://github.com/microsoft/Microsoft365DSC/issues/2682)
 * DEPENDENCIES
   * Updated Microsoft.Graph.* to version 1.19.0;
 

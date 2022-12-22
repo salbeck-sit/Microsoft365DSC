@@ -14,18 +14,17 @@ Configuration Example
 
     node localhost
     {
-        TeamsShiftsPolicy 'Example'
+        TeamsIPPhonePolicy 'Example'
         {
-            AccessGracePeriodMinutes       = 15;
-            AccessType                     = "UnrestrictedAccess_TeamsApp";
+            AllowBetterTogether            = "Enabled";
+            AllowHomeScreen                = "EnabledUserOverride";
+            AllowHotDesking                = $True;
             Credential                     = $Credscredential;
-            EnableScheduleOwnerPermissions = $False;
-            EnableShiftPresence            = $False;
             Ensure                         = "Present";
+            HotDeskingIdleTimeoutInMinutes = 120;
             Identity                       = "Global";
-            ShiftNoticeFrequency           = "Never";
-            ShiftNoticeMessageCustom       = "";
-            ShiftNoticeMessageType         = "DefaultMessage";
+            SearchOnCommonAreaPhoneMode    = "Enabled";
+            SignInMode                     = "UserSignIn";
         }
     }
 }

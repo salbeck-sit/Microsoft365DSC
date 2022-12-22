@@ -14,8 +14,13 @@ Configuration Example
 
     node localhost
     {
-        <ResourceName> 'Example'
-        {<FakeValues>
+        TeamsFilesPolicy 'Example'
+        {
+            Credential            = $Credscredential;
+            Ensure                = "Present";
+            Identity              = "Global";
+            NativeFileEntryPoints = "Enabled";
+            SPChannelFilesTab     = "Enabled";
         }
     }
 }

@@ -1,5 +1,15 @@
 # Change log for Microsoft365DSC
 
+# UNRELEASED
+
+ * DRG
+  * Various fixes for Graph and Intune resources automation
+  * Migrated to new schema including description
+  * Added support to generate parameter descriptions automatically from schema
+    FIXES [#2720](https://github.com/microsoft/Microsoft365DSC/issues/2720)
+* MISC
+  * Updated website generation code to checkout correct commit
+
 # 1.22.1221.1
 
 * AADGroup

@@ -1,6 +1,6 @@
 # Change log for Microsoft365DSC
 
-# UNRELEASED
+# 1.23.104.1
 
 * EXODistributionGroup
   * Changed the logic retrieving the group Type in the Get-TargetResource.
@@ -21,6 +21,11 @@
 * SCRetentionCompliancePolicy
   * Forces changes to existing policies to be applied.
     FIXES [#2719](https://github.com/microsoft/Microsoft365DSC/issues/2719)
+  * Handles wait when the associated policy has pending changes.
+    FIXES [#2728](https://github.com/microsoft/Microsoft365DSC/issues/2728)
+* SCRetentionComplianceRule
+  * Handles wait when the associated policy has pending changes.
+    FIXES [#2728](https://github.com/microsoft/Microsoft365DSC/issues/2728)
 * TeamsEmergencyCallingPolicy
   * Fixes issue where CertificateThumbprint wasn't working because Credential was set to mandatory by the Test-TargetResource function.
     FIXES [#2710](https://github.com/microsoft/Microsoft365DSC/issues/2710)
@@ -48,6 +53,8 @@
   * Added support to generate parameter descriptions automatically from schema
     FIXES [#2720](https://github.com/microsoft/Microsoft365DSC/issues/2720)
 * MISC
+  * Fixes an issue where OrderedDictionary values weren't properly expanded in a delta report
+    FIXES [#2715](https://github.com/microsoft/Microsoft365DSC/issues/2715)
   * Updated website generation code to checkout correct commit
 
 # 1.22.1221.1

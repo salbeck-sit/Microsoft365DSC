@@ -5,8 +5,13 @@
 * IntuneDeviceEnrollmentConfigurationWindows10
   * Fix settings.json
     FIXES [#2930](https://github.com/microsoft/Microsoft365DSC/issues/2930)
+* O365OrgSettings
+  * Adds support for Cortana enabling.
 * TeamsOnlineVoiceUser
   * Fix issue where the cmdlet Get-CsOnlineVoiceUser is now deprecated.
+* DEPENDENCIES
+  * Updated Microsoft.Graph.* to version 1.22.0
+  * Updated ReverseDSC to version 2.0.0.14
 
 # 1.23.222.1
 

@@ -2,9 +2,14 @@
 
 # UNRELEASED
 
+* EXOManagementRoleAssignment
+  * Added delays before disconnecting from EXO to ensure new permissions are applied.
+    FIXES [#2523](https://github.com/microsoft/Microsoft365DSC/issues/2523)
 * MISC
   * Updated logic for drift detection to be case insensitive.
     FIXES [#2873](https://github.com/microsoft/Microsoft365DSC/issues/2873)
+* DEPENDENCIES
+  * Updated MicrosoftTeams to version 5.0.0
 
 # 1.23.301.1
 

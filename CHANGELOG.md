@@ -1,5 +1,14 @@
 # Change log for Microsoft365DSC
 
+# UNRELEASED
+* EXORoleAssignmentPolicy
+  * Fix issue with IsDefault parameter
+    FIXES [#2977](https://github.com/microsoft/Microsoft365DSC/issues/2977)
+# 1.23.315.2
+
+* EXORoleGroup
+  * Fixes an issue with the Export process where the name of the role wasn't properly set causing errors.
+
 # 1.23.315.1
 
 * AADConditionalAccessPolicy

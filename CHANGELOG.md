@@ -1,5 +1,15 @@
 # Change log for Microsoft365DSC
 
+# UNRELEASED
+
+* SCLabelPolicy
+  * If label policy is set to None don't get its label display name since it's not required
+    FIXES [#3104](https://github.com/microsoft/Microsoft365DSC/issues/3104)
+* MISC
+  * Reports will now exclude the authentication parameters (e.g., CertificateThumbprint, Credential, etc.).
+  * Changed the Encoding helper's logic to ensure titled quotes and apostrophes are correctly evaluated.
+    FIXES [#3165](https://github.com/microsoft/Microsoft365DSC/issues/3165)
+
 # 1.23.412.1
 
 * AADUser

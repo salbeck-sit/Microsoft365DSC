@@ -2,6 +2,12 @@
 
 # UNRELEASED
 
+* MISC
+  * Major performance improvements for the New-M365DSCDeltaReport cmdlet.
+    FIXES [#3016](https://github.com/microsoft/Microsoft365DSC/issues/3016)
+
+# 1.23.510.1
+
 * AADAuthenticationStrengthPolicy
   * Initial release
 * AADConditionalAccessPolicy
@@ -15,7 +21,10 @@
 * AADCrossTenantAccessPolicyConfigurationPartner
   * Initial release
     FIXES [#3253](https://github.com/microsoft/Microsoft365DSC/issues/3253)
- * IntuneSettingCatalogCustomPolicyWindows10
+* EXOQuarantinePolicy
+  * Support exporting global quarantine policy
+    FIXES [#3285](https://github.com/microsoft/Microsoft365DSC/issues/3285)
+* IntuneSettingCatalogCustomPolicyWindows10
   * Initial release
   FIXES [#2692](https://github.com/microsoft/Microsoft365DSC/issues/2692),
   FIXES [#2976](https://github.com/microsoft/Microsoft365DSC/issues/2976),
@@ -32,7 +41,7 @@
   * Fix group creation
 * DEPENDENCIES
   * Updated DSCParser to version 1.0.9.
-  * Updated Microsoft.PowerApps.Administration.PowerShell to version 2.0.162.
+  * Updated Microsoft.PowerApps.Administration.PowerShell to version 2.0.1623.
   * Updated MSCloudLoginAssistant to version 1.0.110.
 * MISC
   * Added a new Get-M365DSCConfigurationConflict cmdlet to help validate configurations and added

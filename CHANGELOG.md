@@ -2,9 +2,16 @@
 
 # UNRELEASED
 
+* AADEntitlementManagementAccessPackageAssignmentPolicy
+  * Fixes an issue where Reviewers and requestors weren't properly extracted.
+    FIXES [#3255](https://github.com/microsoft/Microsoft365DSC/issues/3255)
+* IntuneSettingCatalogCustomPolicyWindows10
+  * Add missing properties to schema
+    FIXES [#3300](https://github.com/microsoft/Microsoft365DSC/issues/3300)
 * MISC
   * Major performance improvements for the New-M365DSCDeltaReport cmdlet.
     FIXES [#3016](https://github.com/microsoft/Microsoft365DSC/issues/3016)
+  * M365DSCUtil: Fix typo in order to obfuscate cert thumbprint
 
 # 1.23.510.1
 

@@ -5,9 +5,21 @@
 * AADEntitlementManagementAccessPackageAssignmentPolicy
   * Fixes an issue where Reviewers and requestors weren't properly extracted.
     FIXES [#3255](https://github.com/microsoft/Microsoft365DSC/issues/3255)
+* IntuneDeviceEnrollmentPlatformRestriction
+  * Ensure that Windows Mobile platform cannot be unblocked
+    FIXES [#3303](https://github.com/microsoft/Microsoft365DSC/issues/3303)
 * IntuneSettingCatalogCustomPolicyWindows10
   * Add missing properties to schema
     FIXES [#3300](https://github.com/microsoft/Microsoft365DSC/issues/3300)
+* SPOUserProfileProperty
+  * Fixes and issue where the properties weren't properly set.
+    FIXES [#3226](https://github.com/microsoft/Microsoft365DSC/issues/3226)
+* TeamsAppPermissionPolicy
+  * Initial release
+* TeamsAppSetupPolicy
+  * Initial release.
+* DEPENDENCIES
+  * Updated MicrosoftTeams to version 5.2.0
 * MISC
   * Major performance improvements for the New-M365DSCDeltaReport cmdlet.
     FIXES [#3016](https://github.com/microsoft/Microsoft365DSC/issues/3016)

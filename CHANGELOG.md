@@ -2,6 +2,16 @@
 
 # UNRELEASED
 
+* AADUser
+  * Performance improvements.
+* O365OrgSettings
+  * Added support for the AdminCenterReportDisplayConcealedNames property.
+* DEPENDENCIES
+  * Updated MSCloudLoginAssistant to version 1.0.111
+  * Updated ReverseDSC to version 2.0.0.15
+
+# 1.23.517.1
+
 * AADEntitlementManagementAccessPackageAssignmentPolicy
   * Fixes an issue where Reviewers and requestors weren't properly extracted.
     FIXES [#3255](https://github.com/microsoft/Microsoft365DSC/issues/3255)
@@ -11,6 +21,9 @@
 * IntuneSettingCatalogCustomPolicyWindows10
   * Add missing properties to schema
     FIXES [#3300](https://github.com/microsoft/Microsoft365DSC/issues/3300)
+* SCAutoSensitivityLabelRule
+  * Fixes an issue with the HeaderMatchesPatterns property not working as expected.
+    FIXES [#3315](https://github.com/microsoft/Microsoft365DSC/issues/3315)
 * SPOUserProfileProperty
   * Fixes and issue where the properties weren't properly set.
     FIXES [#3226](https://github.com/microsoft/Microsoft365DSC/issues/3226)
@@ -23,6 +36,7 @@
     FIXES [#3285](https://github.com/microsoft/Microsoft365DSC/issues/3285)
 * DEPENDENCIES
   * Updated MicrosoftTeams to version 5.2.0
+  * Updated Microsoft.PowerApps.Administration.PowerShell to version 2.0.165
 * MISC
   * Major performance improvements for the New-M365DSCDeltaReport cmdlet.
     FIXES [#3016](https://github.com/microsoft/Microsoft365DSC/issues/3016)

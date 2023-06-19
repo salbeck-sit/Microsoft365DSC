@@ -1,5 +1,17 @@
 # Change log for Microsoft365DSC
 
+# UNRELEASED
+
+* EXORoleGroup
+  * Fixes an issue where the role group wasn't getting created when members were null.
+    FIXES [#3217](https://github.com/microsoft/Microsoft365DSC/issues/3217)
+* SCProtectionAlert
+  * Prevents extracting system rules.
+    FIXES [#3224](https://github.com/microsoft/Microsoft365DSC/issues/3224)
+* MISC
+  * Fixes the display of arrays as property values for Excel based reports from New-M365DSCReportFromConfiguration.
+    FIXES [#3173](https://github.com/microsoft/Microsoft365DSC/issues/3173)
+
 # 1.23.614.1
 
 * AADApplication

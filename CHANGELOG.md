@@ -1,6 +1,6 @@
 # Change log for Microsoft365DSC
 
-# UNRELEASED
+# 1.23.628.1
 
 * AADAdministrativeUnit
   * Improved export performance.
@@ -25,6 +25,10 @@
 * IntuneDeviceEnrollmentPlatformRestriction
   * Fixes an error where the WindowsMobileRestriction property was still being assessed dispite it being deprecated.
     FIXES [#3407](https://github.com/microsoft/Microsoft365DSC/issues/3407)
+* O365OrgSettings
+  * Added support for Forms, Dynamics Customer Voice, To Do and Apps & Services settings.
+* TeamsCallQueue
+  * Initial release.
 * Teams resources
   * Added required application permissions to support [Application Based Authentication](https://learn.microsoft.com/en-us/microsoftteams/teams-powershell-application-authentication)
 * MISC
@@ -33,6 +37,9 @@
     FIXES #3417
   * Update-M365DSCModule now forces a reload of the latest version of the Microsoft365DSC module.
     FIXES [#3326](https://github.com/microsoft/Microsoft365DSC/issues/3326)
+  * Update-M365DSCAyureADApplication
+    Added retry logic to catch the "Key credential end date is invalid" error when updating the application certificate.
+    FIXES [#3426](https://github.com/microsoft/Microsoft365DSC/issues/3426)
 * DEPENDENCIES
   * Updated ReverseDSC to version 2.0.0.16.
 

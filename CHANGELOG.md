@@ -1,6 +1,6 @@
 # Change log for Microsoft365DSC
 
-# UNRELEASED
+# 1.23.809.1
 
 * AADAuthorizationPolicy
   * Added support for the AllowedToCreateTenants &
@@ -22,7 +22,11 @@
   * Fixes an issue where SPN auth parameters weren't returned from the Get-TargetResource
     function.
     FIXES [#3500](https://github.com/microsoft/Microsoft365DSC/issues/3500)
-* TeasShiftPolicy
+* SPOTenantSettings
+  * Add support for new parameter HideSyncButtonOnTeamSite
+* TeamsGroupPolicyAssignment
+  * FIXES [#3559](https://github.com/microsoft/Microsoft365DSC/issues/3559)
+* TeamsShiftPolicy
   * Deprecated the EnableShiftPresence parameter.
 * TeamsTemplatesPolicy
   * Initial release.

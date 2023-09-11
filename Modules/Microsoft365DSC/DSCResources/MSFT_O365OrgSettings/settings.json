@@ -64,6 +64,9 @@
                     },
                     {
                         "name": "OrgSettings-DynamicsVoice.Read.All"
+                    },
+                    {
+                        "name": "Tasks.Read.All"
                     }
                 ],
                 "update": [
@@ -87,13 +90,12 @@
                     },
                     {
                         "name": "OrgSettings-DynamicsVoice.ReadWrite.All"
+                    },
+                    {
+                        "name": "Tasks.ReadWrite.All"
                     }
                 ]
             }
-        },
-        "exchange": {
-            "requiredroles": [],
-            "requiredrolegroups": []
         },
         "ProjectWorkManagement": {
             "delegated": {

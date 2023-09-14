@@ -1,13 +1,19 @@
 # Change log for Microsoft365DSC
 
-# UNRELEASED
+# 1.23.913.1
 
 * AADNamedLocationPolicy
   * Set default value for CountryLookupMethod and removed unwanted properties
     FIXES [#3656](https://github.com/microsoft/Microsoft365DSC/issues/3656)
+  * Added support for compliantNetworkNamedLocation.
+    FIXES [#3422](https://github.com/microsoft/Microsoft365DSC/issues/3422)
 * IntuneAppProtectionPolicyAndroid
   * Added support for 'RequireClass3Biometrics' parameter
   * Added support for 'RequirePinAfterBiometricChange' parameter
+* IntuneAntivirusPolicyWindows10SettingCatalog
+  * Added support for 'engineupdateschannel' parameter
+  * Added support for 'platformupdateschannel' parameter
+  * Added support for 'securityintelligenceupdateschannel' parameter
 * M365DSCRuleEvaluation
   * Initial Release.
 * O365OrgSettings
@@ -21,6 +27,8 @@
 * MISC
   * Improved error logging for methods installing or updating modules.
     FIXES [#3660](https://github.com/microsoft/Microsoft365DSC/issues/3660)
+  * Removed Id as a mandatory parameter for most AAD resources.
+    FIXES [#3344](https://github.com/microsoft/Microsoft365DSC/issues/3344)
   * Single quotes handling in Export for complex CIMInstances
     FIXES [#3479](https://github.com/microsoft/Microsoft365DSC/issues/3479)
 

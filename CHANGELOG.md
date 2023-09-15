@@ -1,5 +1,21 @@
 # Change log for Microsoft365DSC
 
+# UNRELEASED
+
+* O365OrgSettings
+  * Fixes and issue where a the wrong url was being used in some of the API
+    calls, resulting in null returns for some properties in the Get method.
+* DEPENDENCIES
+  * Updated MicrosoftTeams to version 5.6.0.
+    FIXES [#3671](https://github.com/microsoft/Microsoft365DSC/issues/3671)
+
+# 1.23.913.2
+
+* MISC
+  * Fixed a merge conflict in the Uninstall-M365DSCOutdatedDependencies
+    function.
+    FIXES [#3685](https://github.com/microsoft/Microsoft365DSC/issues/3685)
+
 # 1.23.913.1
 
 * AADNamedLocationPolicy

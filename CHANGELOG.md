@@ -5,8 +5,15 @@
 * AADRoleEligibilityScheduleRequest
   * Added support for groups assignment.
     FIXES [#3744](https://github.com/microsoft/Microsoft365DSC/issues/3744)
+* EXOCalendarProcessing
+  * Added support for retrieved groups as calendar delegates.
 * EXODistributionGroup
   * Fixes the export of group membership to use Identity.
+* TeamsUpdateManagementPolicy
+  * Add support for the new acceptable value for UseNewTeamsClient (NewTeamsAsDefault).
+* MISC
+  * M365DSCReport: Also define property dataType, if present, as being primary key on
+    CIM instances.
 * TeamsUpgradeConfiguration
   * Fixes an issue where the SfBMeetingJoinUx property wasn't properly updated.
 * DEPENDENCIES

@@ -1,5 +1,14 @@
 # Change log for Microsoft365DSC
 
+# UNRELEASED
+
+* AADConditionalAccessPolicy
+  * Adds support for Authentication Context.
+    FIXES [#3813](https://github.com/microsoft/Microsoft365DSC/issues/3813)
+* TeamsComplianceRecordingPolicy
+  * Fixes an issue where the Compliance Application ID wasn't properly retrieved.
+    FIXES [#3712](https://github.com/microsoft/Microsoft365DSC/issues/3712)
+
 # 1.23.1018.1
 
 * AADAuthenticationMethodPolicyAuthenticator

@@ -531,7 +531,7 @@ function Get-TargetResource
         {
             foreach ($appId in $Policy.Conditions.Applications.IncludeApplications)
             {
-                if ($null -ne ($appId -as [guid])) # is this a GUID ?
+                if ($appId -as [guid]) # is this a GUID ?
                 {
                     # if appId is a GUID then it MUST correspond to an existing AppId
                     $spn = Get-MgServicePrincipalByAppId -AppId $appId
@@ -567,7 +567,7 @@ function Get-TargetResource
         {
             foreach ($appId in $Policy.Conditions.Applications.ExcludeApplications)
             {
-                if ($null -ne ($appId -as [guid])) # is this a GUID ?
+                if ($appId -as [guid]) # is this a GUID ?
                 {
                     # if appId is a GUID then it MUST correspond to an existing AppId
                     $spn = Get-MgServicePrincipalByAppId -AppId $appId
@@ -1023,7 +1023,7 @@ function Set-TargetResource
                 }
                 else
                 {
-                    if ($null -ne ($appName -as [guid])) # is this a GUID ?
+                    if ($appName -as [guid]) # is this a GUID ?
                     {
                         # no attempt to verify if SPN exists
                         Write-verbose "Set-Targetresource: IncludeApplications: Using AppId '$appName' as-is"
@@ -1078,7 +1078,7 @@ function Set-TargetResource
                 }
                 else
                 {
-                    if ($null -ne ($appName -as [guid]))
+                    if ($appName -as [guid])
                     {
                         # no attempt to verify if SPN exists
                         Write-verbose "Set-Targetresource: ExcludeApplications: Using AppId '$appName' as-is"
@@ -1997,7 +1997,7 @@ function Test-TargetResource
         $formatApps = @()
         foreach ($app in $IncludeApplications)
         {
-            if ($null -ne ($app -as [guid])) # is this a GUID ?
+            if ($app -as [guid]) # is this a GUID ?
             {
                 $spn = Get-MgServicePrincipalByAppId -AppId $app
                 if ($spn) {
@@ -2062,7 +2062,7 @@ function Test-TargetResource
         $formatApps = @()
         foreach ($app in $ExcludeApplications)
         {
-            if ($null -ne ($app -as [guid])) # is this a GUID ?
+            if ($app -as [guid]) # is this a GUID ?
             {
                 $spn = Get-MgServicePrincipalByAppId -AppId $app
                 if ($spn) {

@@ -1,13 +1,21 @@
 # Change log for Microsoft365DSC
 
-# UNRELEASED
+# 1.23.1213.1
 
 * AADConditionalAccessPolicy
   * Allow applications to be specified by name if the name is unique
     IMPLEMENTS [#4011](https://github.com/microsoft/Microsoft365DSC/issues/4011)
-
+* IntuneAntivirusPolicyWindows10SettingCatalog
+  * Fix issue with Set-TargetResource when retrieving a policy from displayName
+    FIXES [#4003](https://github.com/microsoft/Microsoft365DSC/issues/4003)
+* IntuneEndpointDetectionAndResponsePolicyWindows10
+  * Fix issue with assignments
+    FIXES [#3904](https://github.com/microsoft/Microsoft365DSC/issues/3904)
+* IntuneWindowsUpdateForBusinessRingUpdateProfileWindows10
+  * Fix parameter name in assignment cmdlet
+    FIXES [#4007](https://github.com/microsoft/Microsoft365DSC/issues/4007)
 * DEPENDENCIES
-  * Updated Microsoft.Graph to version 2.11.0.
+  * Updated Microsoft.Graph to version 2.11.1.
   * Updated MSCloudLoginAssistant to version 1.1.3.
 
 # 1.23.1206.1

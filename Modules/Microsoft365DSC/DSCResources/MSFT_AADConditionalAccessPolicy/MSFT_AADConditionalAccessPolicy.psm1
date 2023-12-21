@@ -220,7 +220,7 @@ function Get-TargetResource
         $ManagedIdentity
     )
 
-    Write-Verbose 'Getting configuration of AzureAD Conditional Access Policy'
+    Write-Verbose -Message 'Getting configuration of AzureAD Conditional Access Policy'
     $ConnectionMode = New-M365DSCConnection -Workload 'MicrosoftGraph' `
         -InboundParameters $PSBoundParameters
 
@@ -238,14 +238,14 @@ function Get-TargetResource
 
     if ($PSBoundParameters.ContainsKey('Id'))
     {
-        Write-Verbose 'PolicyID was specified'
+        Write-Verbose -Message 'PolicyID was specified'
         try
         {
             $Policy = Get-MgBetaIdentityConditionalAccessPolicy -ConditionalAccessPolicyId $Id -ErrorAction Stop
         }
         catch
         {
-            Write-Verbose "Couldn't find existing policy by ID {$Id}"
+            Write-Verbose Message "Couldn't find existing policy by ID {$Id}"
             $Policy = Get-MgBetaIdentityConditionalAccessPolicy -Filter "DisplayName eq '$DisplayName'"
             if ($Policy.Length -gt 1)
             {
@@ -255,7 +255,7 @@ function Get-TargetResource
     }
     else
     {
-        Write-Verbose 'Id was NOT specified'
+        Write-Verbose -Message 'Id was NOT specified'
         ## Can retreive multiple CA Policies since displayname is not unique
         $Policy = Get-MgBetaIdentityConditionalAccessPolicy -Filter "DisplayName eq '$DisplayName'"
         if ($Policy.Length -gt 1)
@@ -266,17 +266,17 @@ function Get-TargetResource
 
     if ($null -eq $Policy)
     {
-        Write-Verbose "No existing Policy with name {$DisplayName} were found"
+        Write-Verbose -Message "No existing Policy with name {$DisplayName} were found"
         $currentValues = $PSBoundParameters
         $currentValues.Ensure = 'Absent'
         return $currentValues
     }
     else
     {
-        Write-Verbose 'Get-TargetResource: Found existing Conditional Access policy'
+        Write-Verbose -Message 'Get-TargetResource: Found existing Conditional Access policy'
         $PolicyDisplayName = $Policy.DisplayName
 
-        Write-Verbose 'Get-TargetResource: Process IncludeUsers'
+        Write-Verbose -Message 'Get-TargetResource: Process IncludeUsers'
         #translate IncludeUser GUIDs to UPN, except id value is GuestsOrExternalUsers, None or All
         $IncludeUsers = @()
         if ($Policy.Conditions.Users.IncludeUsers)
@@ -310,7 +310,7 @@ function Get-TargetResource
             }
         }
 
-        Write-Verbose 'Get-TargetResource: Process ExcludeUsers'
+        Write-Verbose -Message 'Get-TargetResource: Process ExcludeUsers'
         #translate ExcludeUser GUIDs to UPN, except id value is GuestsOrExternalUsers, None or All
         $ExcludeUsers = @()
         if ($Policy.Conditions.Users.ExcludeUsers)
@@ -344,7 +344,7 @@ function Get-TargetResource
             }
         }
 
-        Write-Verbose 'Get-TargetResource: Process IncludeGroups'
+        Write-Verbose -Message 'Get-TargetResource: Process IncludeGroups'
         #translate IncludeGroup GUIDs to DisplayName
         $IncludeGroups = @()
         if ($Policy.Conditions.Users.IncludeGroups)
@@ -371,7 +371,7 @@ function Get-TargetResource
             }
         }
 
-        Write-Verbose 'Get-TargetResource: Process ExcludeGroups'
+        Write-Verbose -Message 'Get-TargetResource: Process ExcludeGroups'
         #translate ExcludeGroup GUIDs to DisplayName
         $ExcludeGroups = @()
         if ($Policy.Conditions.Users.ExcludeGroups)
@@ -404,7 +404,7 @@ function Get-TargetResource
         #translate role template guids to role name
         if ($Policy.Conditions.Users.IncludeRoles -or $Policy.Conditions.Users.ExcludeRoles)
         {
-            Write-Verbose 'Get-TargetResource: Role condition defined, processing'
+            Write-Verbose -Message 'Get-TargetResource: Role condition defined, processing'
             #build role translation table
             $rolelookup = @{}
             foreach ($role in Get-MgBetaDirectoryRoleTemplate)
@@ -412,7 +412,7 @@ function Get-TargetResource
                 $rolelookup[$role.Id] = $role.DisplayName
             }
 
-            Write-Verbose 'Get-TargetResource: Processing IncludeRoles'
+            Write-Verbose -Message 'Get-TargetResource: Processing IncludeRoles'
             if ($Policy.Conditions.Users.IncludeRoles)
             {
                 foreach ($IncludeRoleGUID in $Policy.Conditions.Users.IncludeRoles)
@@ -432,7 +432,7 @@ function Get-TargetResource
                 }
             }
 
-            Write-Verbose 'Get-TargetResource: Processing ExcludeRoles'
+            Write-Verbose -Message 'Get-TargetResource: Processing ExcludeRoles'
             if ($Policy.Conditions.Users.ExcludeRoles)
             {
                 foreach ($ExcludeRoleGUID in $Policy.Conditions.Users.ExcludeRoles)
@@ -459,7 +459,7 @@ function Get-TargetResource
         #translate Location template guids to Location name
         if ($Policy.Conditions.Locations)
         {
-            Write-Verbose 'Get-TargetResource: Location condition defined, processing'
+            Write-Verbose -Message 'Get-TargetResource: Location condition defined, processing'
             #build Location translation table
             $Locationlookup = @{}
             foreach ($Location in Get-MgBetaIdentityConditionalAccessNamedLocation)
@@ -467,7 +467,7 @@ function Get-TargetResource
                 $Locationlookup[$Location.Id] = $Location.DisplayName
             }
 
-            Write-Verbose 'Get-TargetResource: Processing IncludeLocations'
+            Write-Verbose -Message 'Get-TargetResource: Processing IncludeLocations'
             if ($Policy.Conditions.Locations.IncludeLocations)
             {
                 foreach ($IncludeLocationGUID in $Policy.Conditions.Locations.IncludeLocations)
@@ -495,7 +495,7 @@ function Get-TargetResource
                 }
             }
 
-            Write-Verbose 'Get-TargetResource: Processing ExcludeLocations'
+            Write-Verbose -Message 'Get-TargetResource: Processing ExcludeLocations'
             if ($Policy.Conditions.Locations.ExcludeLocations)
             {
                 foreach ($ExcludeLocationGUID in $Policy.Conditions.Locations.ExcludeLocations)
@@ -525,7 +525,7 @@ function Get-TargetResource
         }
 
         # translate application displaynames to appplication ids
-        Write-verbose "Get-TargetResource: process IncludeApplications"
+        Write-verbose -Message "Get-TargetResource: process IncludeApplications"
         $IncludeApplications = @()
         if ($Policy.Conditions.Applications.IncludeApplications)
         {
@@ -535,7 +535,7 @@ function Get-TargetResource
                 {
                     # if appId is a GUID then it MUST correspond to an existing AppId
                     $spn = Get-MgServicePrincipalByAppId -AppId $appId
-                    Write-verbose "Get-TargetResource: IncludeApplications: AppId GUID $appid refers to SPN $($spn.DisplayName)"
+                    Write-verbose -Message "Get-TargetResource: IncludeApplications: AppId GUID $appid refers to SPN $($spn.DisplayName)"
                     # check if displayname is unique
                     $spnUnique = Get-MgServicePrincipal -Filter "DisplayName eq '$($spn.DisplayName)'"
                     if ($spnUnique.Count -gt 1)
@@ -554,14 +554,14 @@ function Get-TargetResource
                 }
                 else
                 {
-                    Write-verbose "Get-TargetResource: IncludeApplications: AppId $appid is a logical app name"
+                    Write-verbose -Message "Get-TargetResource: IncludeApplications: AppId $appid is a logical app name"
                     # if appId is *not* a GUID, add it untranslated (ie 'All', 'Office365', 'MicrosoftAdminPortals'), see https://learn.microsoft.com/en-us/entra/identity/conditional-access/concept-conditional-access-cloud-apps
                     $IncludeApplications += $appId
                 }
             }
         }
 
-        Write-verbose "Get-TargetResource: process ExcludeApplications"
+        Write-verbose -Message "Get-TargetResource: process ExcludeApplications"
         $ExcludeApplications = @()
         if ($Policy.Conditions.Applications.IncludeApplications)
         {
@@ -571,7 +571,7 @@ function Get-TargetResource
                 {
                     # if appId is a GUID then it MUST correspond to an existing AppId
                     $spn = Get-MgServicePrincipalByAppId -AppId $appId
-                    Write-verbose "Get-TargetResource: ExcludeApplications: AppId GUID $appid refers to SPN $($spn.DisplayName)"
+                    Write-verbose -Message "Get-TargetResource: ExcludeApplications: AppId GUID $appid refers to SPN $($spn.DisplayName)"
                     # check if displayname is unique
                     $spnUnique = Get-MgServicePrincipal -Filter "DisplayName eq '$($spn.DisplayName)'"
                     if ($spnUnique.Count -gt 1)
@@ -590,7 +590,7 @@ function Get-TargetResource
                 }
                 else
                 {
-                    Write-verbose "Get-TargetResource: ExcludeApplications: AppId $appid is a logical app name"
+                    Write-verbose -Message "Get-TargetResource: ExcludeApplications: AppId $appid is a logical app name"
                     # if appId is *not* a GUID, add it untranslated (ie 'All', 'Office365', 'MicrosoftAdminPortals'), see https://learn.microsoft.com/en-us/entra/identity/conditional-access/concept-conditional-access-cloud-apps
                     $ExcludeApplications += $appId
                 }
@@ -743,7 +743,7 @@ function Get-TargetResource
             CertificateThumbprint                    = $CertificateThumbprint
             Managedidentity                          = $ManagedIdentity.IsPresent
         }
-        Write-Verbose "Get-TargetResource Result: `n $(Convert-M365DscHashtableToString -Hashtable $result)"
+        Write-Verbose -Message "Get-TargetResource Result: `n $(Convert-M365DscHashtableToString -Hashtable $result)"
         return $result
     }
 }
@@ -968,7 +968,7 @@ function Set-TargetResource
         [Switch]
         $ManagedIdentity
     )
-    Write-Verbose 'Setting configuration of AzureAD Conditional Access Policy'
+    Write-Verbose -Message 'Setting configuration of AzureAD Conditional Access Policy'
 
     #Ensure the proper dependencies are installed in the current environment.
     Confirm-M365DSCDependencies
@@ -982,9 +982,9 @@ function Set-TargetResource
     Add-M365DSCTelemetryEvent -Data $data
     #endregion
 
-    Write-Verbose 'Set-Targetresource: Running Get-TargetResource'
+    Write-Verbose -Message 'Set-Targetresource: Running Get-TargetResource'
     $currentPolicy = Get-TargetResource @PSBoundParameters
-    Write-Verbose 'Set-Targetresource: Cleaning up parameters'
+    Write-Verbose -Message 'Set-Targetresource: Cleaning up parameters'
     $currentParameters = $PSBoundParameters
     $currentParameters.Remove('ApplicationId') | Out-Null
     $currentParameters.Remove('TenantId') | Out-Null
@@ -996,12 +996,12 @@ function Set-TargetResource
 
     if ($Ensure -eq 'Present')#create policy attribute objects
     {
-        Write-Verbose "Set-Targetresource: Policy $Displayname Ensure Present"
+        Write-Verbose -Message "Set-Targetresource: Policy $Displayname Ensure Present"
         $NewParameters = @{}
         $NewParameters.Add('DisplayName', $DisplayName)
         $NewParameters.Add('State', $State)
         #create Conditions object
-        Write-Verbose 'Set-Targetresource: create Conditions object'
+        Write-Verbose -Message 'Set-Targetresource: create Conditions object'
         $conditions = @{
             Applications = @{
             }
@@ -1009,8 +1009,8 @@ function Set-TargetResource
             }
         }
         #create and provision Application Condition object
-        Write-Verbose 'Set-Targetresource: create Application Condition object'
-        Write-Verbose 'Set-Targetresource: process IncludeApplications'
+        Write-Verbose -Message 'Set-Targetresource: create Application Condition object'
+        Write-Verbose -Message 'Set-Targetresource: process IncludeApplications'
         if ($IncludeApplications)
         {
             $includeApps = @()
@@ -1018,7 +1018,7 @@ function Set-TargetResource
             {
                 if (Test-MSLogicalAppName -Name $appName) # appNames with special meaning are always added by name.
                 {
-                    Write-verbose "Set-Targetresource: IncludeApplications: Using Name '$appName' as-is"
+                    Write-verbose -Message "Set-Targetresource: IncludeApplications: Using Name '$appName' as-is"
                     $includeApps += $appName
                 }
                 else
@@ -1026,7 +1026,7 @@ function Set-TargetResource
                     if ($appName -as [guid]) # is this a GUID ?
                     {
                         # no attempt to verify if SPN exists
-                        Write-verbose "Set-Targetresource: IncludeApplications: Using AppId '$appName' as-is"
+                        Write-verbose -Message "Set-Targetresource: IncludeApplications: Using AppId '$appName' as-is"
                         $includeApps += $appName
                     }
                     else
@@ -1065,7 +1065,7 @@ function Set-TargetResource
             }
             $conditions.Applications.Add('IncludeApplications', $includeApps)
         }
-        Write-Verbose 'Set-Targetresource: process ExcludeApplications'
+        Write-Verbose -Message 'Set-Targetresource: process ExcludeApplications'
         if ($ExcludeApplications)
         {
             $excludeApps = @()
@@ -1073,7 +1073,7 @@ function Set-TargetResource
             {
                 if (Test-MSLogicalAppName -Name $appName) # appNames with special meaning are always added by name
                 {
-                    Write-verbose "Set-Targetresource: ExcludeApplications: Using Name '$appName' as-is"
+                    Write-verbose -Message "Set-Targetresource: ExcludeApplications: Using Name '$appName' as-is"
                     $excludeApps += $appName
                 }
                 else
@@ -1081,7 +1081,7 @@ function Set-TargetResource
                     if ($appName -as [guid])
                     {
                         # no attempt to verify if SPN exists
-                        Write-verbose "Set-Targetresource: ExcludeApplications: Using AppId '$appName' as-is"
+                        Write-verbose -Message "Set-Targetresource: ExcludeApplications: Using AppId '$appName' as-is"
                         $excludeApps += $appName
                     }
                     else
@@ -1102,7 +1102,7 @@ function Set-TargetResource
                             }
                             else
                             {
-                                Write-verbose "Set-Targetresource: ExcludeApplications: Using AppId $($spn.AppId) from SPN '$appName'"
+                                Write-verbose -Message "Set-Targetresource: ExcludeApplications: Using AppId $($spn.AppId) from SPN '$appName'"
                                 $excludeApps += $spn.AppId
                             }
                         }
@@ -1142,7 +1142,7 @@ function Set-TargetResource
         }
 
         #create and provision User Condition object
-        Write-Verbose 'Set-Targetresource: process includeusers'
+        Write-Verbose -Message 'Set-Targetresource: process includeusers'
         $conditions.Users.Add('IncludeUsers', @())
         foreach ($includeuser in $IncludeUsers)
         {
@@ -1183,7 +1183,7 @@ function Set-TargetResource
                 }
             }
         }
-        Write-Verbose 'Set-Targetresource: process excludeusers'
+        Write-Verbose -Message 'Set-Targetresource: process excludeusers'
 
         $conditions.Users.Add('ExcludeUsers', @())
         foreach ($excludeuser in $ExcludeUsers)
@@ -1225,7 +1225,7 @@ function Set-TargetResource
                 }
             }
         }
-        Write-Verbose 'Set-Targetresource: process includegroups'
+        Write-Verbose -Message 'Set-Targetresource: process includegroups'
         $conditions.Users.Add('IncludeGroups', @())
         foreach ($includegroup in $IncludeGroups)
         {
@@ -1263,14 +1263,14 @@ function Set-TargetResource
                 }
                 else
                 {
-                    Write-Verbose 'adding group to includegroups'
+                    Write-Verbose -Message 'adding group to includegroups'
                     $conditions.Users.IncludeGroups += $GroupLookup.Id
                 }
             }
         }
 
         $conditions.Users.Add('ExcludeGroups', @())
-        Write-Verbose 'Set-Targetresource: process excludegroups'
+        Write-Verbose -Message 'Set-Targetresource: process excludegroups'
         foreach ($ExcludeGroup in $ExcludeGroups)
         {
             #translate user Group names to GUID
@@ -1307,12 +1307,12 @@ function Set-TargetResource
                 }
                 else
                 {
-                    Write-Verbose 'adding group to ExcludeGroups'
+                    Write-Verbose -Message 'adding group to ExcludeGroups'
                     $conditions.Users.ExcludeGroups += $GroupLookup.Id
                 }
             }
         }
-        Write-Verbose 'Set-Targetresource: process includeroles'
+        Write-Verbose -Message 'Set-Targetresource: process includeroles'
         $conditions.Users.Add('IncludeRoles', @())
         if ($IncludeRoles)
         {
@@ -1341,7 +1341,7 @@ function Set-TargetResource
                 }
             }
         }
-        Write-Verbose 'Set-Targetresource: process excluderoles'
+        Write-Verbose -Message 'Set-Targetresource: process excluderoles'
         $conditions.Users.Add('ExcludeRoles', @())
         if ($ExcludeRoles)
         {
@@ -1371,7 +1371,7 @@ function Set-TargetResource
                 }
             }
         }
-        Write-Verbose 'Set-Targetresource: process includeGuestsOrExternalUsers'
+        Write-Verbose -Message 'Set-Targetresource: process includeGuestsOrExternalUsers'
         if ($IncludeGuestOrExternalUserTypes.Count -ne 0)
         {
             $includeGuestsOrExternalUsers = @{}
@@ -1394,7 +1394,7 @@ function Set-TargetResource
             $includeGuestsOrExternalUsers.Add('externalTenants', $externalTenants)
             $conditions.Users.Add('includeGuestsOrExternalUsers', $includeGuestsOrExternalUsers)
         }
-        Write-Verbose 'Set-Targetresource: process excludeGuestsOrExternalUsers'
+        Write-Verbose -Message 'Set-Targetresource: process excludeGuestsOrExternalUsers'
         if ($ExcludeGuestOrExternalUserTypes.Count -ne 0)
         {
             $excludeGuestsOrExternalUsers = @{}
@@ -1417,7 +1417,7 @@ function Set-TargetResource
             $excludeGuestsOrExternalUsers.Add('externalTenants', $externalTenants)
             $conditions.Users.Add('excludeGuestsOrExternalUsers', $excludeGuestsOrExternalUsers)
         }
-        Write-Verbose 'Set-Targetresource: process platform condition'
+        Write-Verbose -Message 'Set-Targetresource: process platform condition'
         if ($IncludePlatforms -or $ExcludePlatforms)
         {
             #create and provision Platform condition object if used
@@ -1433,7 +1433,7 @@ function Set-TargetResource
                 $conditions.Platforms.Add('ExcludePlatforms', @())
                 $conditions.Platforms.Add('IncludePlatforms', @())
             }
-            Write-Verbose "Set-Targetresource: IncludePlatforms: $IncludePlatforms"
+            Write-Verbose -Message "Set-Targetresource: IncludePlatforms: $IncludePlatforms"
             if (([Array]$IncludePlatforms).Length -eq 0)
             {
                 $conditions.Platforms.IncludePlatforms = @('all')
@@ -1443,16 +1443,16 @@ function Set-TargetResource
                 $conditions.Platforms.IncludePlatforms = @() + $IncludePlatforms
             }
             #no translation or conversion needed
-            Write-Verbose "Set-Targetresource: ExcludePlatforms: $ExcludePlatforms"
+            Write-Verbose -Message "Set-Targetresource: ExcludePlatforms: $ExcludePlatforms"
             $conditions.Platforms.ExcludePlatforms = @() + $ExcludePlatforms
             #no translation or conversion needed
         }
         else
         {
-            Write-Verbose 'Set-Targetresource: setting platform condition to null'
+            Write-Verbose -Message 'Set-Targetresource: setting platform condition to null'
             $conditions.Platforms = $null
         }
-        Write-Verbose 'Set-Targetresource: process include and exclude locations'
+        Write-Verbose -Message 'Set-Targetresource: process include and exclude locations'
         if ($IncludeLocations -or $ExcludeLocations)
         {
             $conditions.Add('Locations', @{
@@ -1461,7 +1461,7 @@ function Set-TargetResource
                 })
             $conditions.Locations.IncludeLocations = @()
             $conditions.Locations.ExcludeLocations = @()
-            Write-Verbose 'Set-Targetresource: locations specified'
+            Write-Verbose -Message 'Set-Targetresource: locations specified'
             #create and provision Location condition object if used, translate Location names to guid
             $LocationLookup = @{}
             foreach ($Location in Get-MgBetaIdentityConditionalAccessNamedLocation)
@@ -1522,7 +1522,7 @@ function Set-TargetResource
             }
         }
 
-        Write-Verbose 'Set-Targetresource: process device filter'
+        Write-Verbose -Message 'Set-Targetresource: process device filter'
         if ($DeviceFilterMode -and $DeviceFilterRule)
         {
             if (-not $conditions.Contains('Devices'))
@@ -1562,21 +1562,21 @@ function Set-TargetResource
             }
         }
 
-        Write-Verbose 'Set-Targetresource: process risk levels and app types'
-        Write-Verbose "Set-Targetresource: UserRiskLevels: $UserRiskLevels"
+        Write-Verbose -Message 'Set-Targetresource: process risk levels and app types'
+        Write-Verbose -Message "Set-Targetresource: UserRiskLevels: $UserRiskLevels"
         $Conditions.Add('UserRiskLevels', $UserRiskLevels)
         #no translation or conversion needed
-        Write-Verbose "Set-Targetresource: SignInRiskLevels: $SignInRiskLevels"
+        Write-Verbose -Message "Set-Targetresource: SignInRiskLevels: $SignInRiskLevels"
         $Conditions.Add('SignInRiskLevels', $SignInRiskLevels)
         #no translation or conversion needed
-        Write-Verbose "Set-Targetresource: ClientAppTypes: $ClientAppTypes"
+        Write-Verbose -Message "Set-Targetresource: ClientAppTypes: $ClientAppTypes"
         $Conditions.Add('ClientAppTypes', $ClientAppTypes)
         #no translation or conversion needed
-        Write-Verbose 'Set-Targetresource: Adding processed conditions'
+        Write-Verbose -Message 'Set-Targetresource: Adding processed conditions'
         #add all conditions to the parameter list
         $NewParameters.Add('Conditions', $Conditions)
         #create and provision Grant Control object
-        Write-Verbose 'Set-Targetresource: create and provision Grant Control object'
+        Write-Verbose -Message 'Set-Targetresource: create and provision Grant Control object'
 
         if ($GrantControlOperator -and ($BuiltInControls -or $TermsOfUse -or $CustomAuthenticationFactors -or $AuthenticationStrength))
         {
@@ -1607,22 +1607,22 @@ function Set-TargetResource
 
             if ($TermsOfUse)
             {
-                Write-Verbose "Gettign Terms of Use {$TermsOfUse}"
+                Write-Verbose -Message "Gettign Terms of Use {$TermsOfUse}"
                 $TermsOfUseObj = Get-MgBetaAgreement | Where-Object -FilterScript { $_.DisplayName -eq $TermsOfUse }
                 $GrantControls.Add('TermsOfUse', $TermsOfUseObj.Id)
             }
 
             #no translation or conversion needed
-            Write-Verbose 'Set-Targetresource: Adding processed grant controls'
+            Write-Verbose -Message 'Set-Targetresource: Adding processed grant controls'
             $NewParameters.Add('GrantControls', $GrantControls)
         }
 
-        Write-Verbose 'Set-Targetresource: process session controls'
+        Write-Verbose -Message 'Set-Targetresource: process session controls'
 
         $sessioncontrols = $null
         if ($ApplicationEnforcedRestrictionsIsEnabled -or $CloudAppSecurityIsEnabled -or $SignInFrequencyIsEnabled -or $PersistentBrowserIsEnabled)
         {
-            Write-Verbose 'Set-Targetresource: create provision Session Control object'
+            Write-Verbose -Message 'Set-Targetresource: create provision Session Control object'
             $sessioncontrols = @{
                 ApplicationEnforcedRestrictions = @{
                     IsEnabled = $false
@@ -1683,7 +1683,7 @@ function Set-TargetResource
                     Mode      = $false
                 }
                 $sessioncontrols.Add('PersistentBrowser', $PersistentBrowserValue)
-                Write-Verbose "Set-Targetresource: Persistent Browser settings defined: PersistentBrowserIsEnabled:$PersistentBrowserIsEnabled, PersistentBrowserMode:$PersistentBrowserMode"
+                Write-Verbose -Message "Set-Targetresource: Persistent Browser settings defined: PersistentBrowserIsEnabled:$PersistentBrowserIsEnabled, PersistentBrowserMode:$PersistentBrowserMode"
                 #create and provision PersistentBrowser object if used
                 $sessioncontrols.PersistentBrowser.IsEnabled = $true
                 $sessioncontrols.PersistentBrowser.Mode = $PersistentBrowserMode
@@ -1694,11 +1694,11 @@ function Set-TargetResource
     }
     if ($Ensure -eq 'Present' -and $currentPolicy.Ensure -eq 'Present')
     {
-        Write-Verbose "Set-Targetresource: Change policy $DisplayName"
+        Write-Verbose -Message "Set-Targetresource: Change policy $DisplayName"
         $NewParameters.Add('ConditionalAccessPolicyId', $currentPolicy.Id)
         try
         {
-            Write-Verbose "Updating existing policy with values: $(Convert-M365DscHashtableToString -Hashtable $NewParameters)"
+            Write-Verbose -Message "Updating existing policy with values: $(Convert-M365DscHashtableToString -Hashtable $NewParameters)"
             Update-MgBetaIdentityConditionalAccessPolicy @NewParameters
         }
         catch
@@ -1709,14 +1709,14 @@ function Set-TargetResource
                 -TenantId $TenantId `
                 -Credential $Credential
 
-            Write-Verbose "Set-Targetresource: Failed change policy $DisplayName"
+            Write-Verbose -Message "Set-Targetresource: Failed change policy $DisplayName"
         }
     }
     elseif ($Ensure -eq 'Present' -and $currentPolicy.Ensure -eq 'Absent')
     {
-        Write-Verbose "Set-Targetresource: create policy $DisplayName"
-        Write-Verbose 'Create Parameters:'
-        Write-Verbose (Convert-M365DscHashtableToString $NewParameters)
+        Write-Verbose -Message "Set-Targetresource: create policy $DisplayName"
+        Write-Verbose -Message 'Create Parameters:'
+        Write-Verbose -Message (Convert-M365DscHashtableToString $NewParameters)
         try
         {
             New-MgBetaIdentityConditionalAccessPolicy @NewParameters
@@ -1729,12 +1729,12 @@ function Set-TargetResource
                 -TenantId $TenantId `
                 -Credential $Credential
 
-            Write-Verbose 'Set-Targetresource: Failed creating policy'
+            Write-Verbose -Message 'Set-Targetresource: Failed creating policy'
         }
     }
     elseif ($Ensure -eq 'Absent' -and $currentPolicy.Ensure -eq 'Present')
     {
-        Write-Verbose "Set-Targetresource: delete policy $DisplayName"
+        Write-Verbose -Message "Set-Targetresource: delete policy $DisplayName"
         try
         {
             Remove-MgBetaIdentityConditionalAccessPolicy -ConditionalAccessPolicyId $currentPolicy.ID
@@ -1747,10 +1747,10 @@ function Set-TargetResource
                 -TenantId $TenantId `
                 -Credential $Credential
 
-            Write-Verbose "Set-Targetresource: Failed deleting policy $DisplayName"
+            Write-Verbose -Message "Set-Targetresource: Failed deleting policy $DisplayName"
         }
     }
-    Write-Verbose "Set-Targetresource: finished processing Policy $Displayname"
+    Write-Verbose -Message "Set-Targetresource: finished processing Policy $Displayname"
 }
 
 function Test-TargetResource
@@ -1975,11 +1975,11 @@ function Test-TargetResource
         $ManagedIdentity
     )
 
-    Write-Verbose 'Testing configuration of AzureAD CA Policies'
+    Write-Verbose -Message 'Testing configuration of AzureAD CA Policies'
 
     $CurrentValues = Get-TargetResource @PSBoundParameters
 
-    Write-Verbose "Target Values: $(Convert-M365DscHashtableToString -Hashtable $PSBoundParameters)"
+    Write-Verbose -Message "Target Values: $(Convert-M365DscHashtableToString -Hashtable $PSBoundParameters)"
 
     $params = $PSBoundParameters # copy as we may need to update IncludeApplications/ExcludeApplications
 
@@ -1990,7 +1990,7 @@ function Test-TargetResource
     $ValuesToCheck.Remove('ManagedIdentity') | Out-Null
     $ValuesToCheck.Remove('Id') | Out-Null
 
-    Write-verbose "Test-TargetResource: process IncludeApplications"
+    Write-verbose -Message "Test-TargetResource: process IncludeApplications"
     if ($IncludeApplications)
     {
         # to ensure backwards compatibility, convert app GUIDs to their DisplayName - if it's unique
@@ -2005,12 +2005,12 @@ function Test-TargetResource
                     $spnUnique = Get-MgServicePrincipal -Filter "DisplayName eq '$($spn.DisplayName)'"
                     if ($spnUnique.Count -gt 1)
                     {
-                        write-verbose "Test-TargetResource: IncludeApplications AppId $app used as-is since the app name $($spn.DisplayName) is ambiguous"
+                        write-verbose -Message "Test-TargetResource: IncludeApplications AppId $app used as-is since the app name $($spn.DisplayName) is ambiguous"
                         $formatApps += $app
                     }
                     else
                     {
-                        Write-verbose "Test-TargetResource: Translated IncludeApplications AppId $app to unique name $($spn.DisplayName)"
+                        Write-verbose -Message "Test-TargetResource: Translated IncludeApplications AppId $app to unique name $($spn.DisplayName)"
                         $formatApps += $spn.DisplayName
                     }
                 }
@@ -2028,7 +2028,7 @@ function Test-TargetResource
             {
                 if (Test-MSLogicalAppName -Name $app)
                 {
-                    Write-verbose "Test-TargetResource: IncludeApplications: Logical App Name $app used as-is"
+                    Write-verbose -Message "Test-TargetResource: IncludeApplications: Logical App Name $app used as-is"
                     $formatApps += $app
                 }
                 else
@@ -2045,7 +2045,7 @@ function Test-TargetResource
                     }
                     else
                     {
-                        Write-verbose "Test-TargetResource: IncludeApplications App name $app is unique and used as-is"
+                        Write-verbose -Message "Test-TargetResource: IncludeApplications App name $app is unique and used as-is"
                         $formatApps += $app
                     }
                 }
@@ -2055,7 +2055,7 @@ function Test-TargetResource
         $params.IncludeApplications = $formatApps
     }
 
-    Write-verbose "Test-TargetResource: process ExcludeApplications"
+    Write-verbose -Message "Test-TargetResource: process ExcludeApplications"
     if ($ExcludeApplications)
     {
         # to ensure backwards compatibility, convert app GUIDs to their DisplayName - if it's unique
@@ -2070,12 +2070,12 @@ function Test-TargetResource
                     $spnUnique = Get-MgServicePrincipal -Filter "DisplayName eq '$($spn.DisplayName)'"
                     if ($spnUnique.Count -gt 1)
                     {
-                        Write-verbose "Test-TargetResource: ExcludeApplications AppId $app used as-is since the app name ($($spn.DisplayName)) is ambiguous"
+                        Write-verbose -Message "Test-TargetResource: ExcludeApplications AppId $app used as-is since the app name ($($spn.DisplayName)) is ambiguous"
                         $formatApps += $app
                     }
                     else
                     {
-                        Write-verbose "Test-TargetResource: Translated ExcludeApplications AppId $app to unique SPN $($spn.DisplayName)"
+                        Write-verbose -Message "Test-TargetResource: Translated ExcludeApplications AppId $app to unique SPN $($spn.DisplayName)"
                         $formatApps += $spn.DisplayName
                     }
                 }
@@ -2093,7 +2093,7 @@ function Test-TargetResource
             {
                 if (Test-MSLogicalAppName -Name $app)
                 {
-                    Write-verbose "Test-TargetResource: ExcludeApplications: Logical App name $app used as-is"
+                    Write-verbose -Message "Test-TargetResource: ExcludeApplications: Logical App name $app used as-is"
                     $formatApps += $app
                 }
                 else
@@ -2110,7 +2110,7 @@ function Test-TargetResource
                     }
                     else
                     {
-                        Write-verbose "Test-TargetResource: ExcludeApplications App name '$app' is unique and used as-is"
+                        Write-verbose -Message "Test-TargetResource: ExcludeApplications App name '$app' is unique and used as-is"
                         $formatApps += $app
                     }
                 }
@@ -2125,7 +2125,7 @@ function Test-TargetResource
         -DesiredValues $params `
         -ValuesToCheck $ValuesToCheck.Keys
 
-    Write-Verbose "Test-TargetResource returned $TestResult"
+    Write-Verbose -Message "Test-TargetResource returned $TestResult"
 
     return $TestResult
 }
@@ -2233,7 +2233,7 @@ function Export-TargetResource
     }
     catch
     {
-        Write-Verbose $Global:M365DSCEmojiRedX
+        Write-Host $Global:M365DSCEmojiRedX
 
         New-M365DSCLogEntry -Message 'Error during Export:' `
             -Exception $_ `

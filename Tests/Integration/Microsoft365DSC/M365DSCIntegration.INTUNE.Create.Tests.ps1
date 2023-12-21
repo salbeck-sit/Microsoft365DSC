@@ -60,7 +60,7 @@
                 {
                     DisplayName                                            = 'test'
                     deviceGuardLocalSystemAuthorityCredentialGuardSettings = "notConfigured"
-                    WindowsHelloForBusinessBlocked                         = $true
+                    WindowsHelloForBusinessBlocked                         = $false
                     PinMinimumLength                                       = 5
                     PinSpecialCharactersUsage                              = 'required'
                     Ensure                                                 = 'Present'
@@ -2586,7 +2586,7 @@
     try
     {
         Master -ConfigurationData $ConfigurationData -Credscredential $Credential
-        Start-DscConfiguration Master -Wait -Force -Verbose
+        Start-DscConfiguration Master -Wait -Force -Verbose -ErrorAction Stop
     }
     catch
     {

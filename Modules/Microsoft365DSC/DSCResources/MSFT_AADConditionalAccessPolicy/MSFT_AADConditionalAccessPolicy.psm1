@@ -533,23 +533,35 @@ function Get-TargetResource
             {
                 if ($appId -as [guid]) # is this a GUID ?
                 {
-                    # if appId is a GUID then it MUST correspond to an existing AppId
-                    $spn = Get-MgServicePrincipalByAppId -AppId $appId
-                    Write-verbose -Message "Get-TargetResource: IncludeApplications: AppId GUID $appid refers to SPN $($spn.DisplayName)"
-                    # check if displayname is unique
-                    $spnUnique = Get-MgServicePrincipal -Filter "DisplayName eq '$($spn.DisplayName)'"
-                    if ($spnUnique.Count -gt 1)
+                    # if appId is a GUID then it corresponds to an AppId. However, the ServicePrincipal may or may not exist
+                    $spn = Get-MgServicePrincipalByAppId -AppId $appId -ErrorAction SilentlyContinue
+                    if ($spn)
                     {
-                        Add-M365DSCEvent -Message "AADConditionalAccessPolicy $DisplayName, Get-TargetResource, IncludeApplications: SPN DisplayName $($spn.DisplayName) is not unique, target app by GUID" `
-                            -Source $($MyInvocation.MyCommand.Source) `
-                            -EntryType Warning `
-                            -EventID 2 `
-                            -EventType Warning
-                        $IncludeApplications += $appId
+                        Write-verbose -Message "Get-TargetResource: IncludeApplications: AppId GUID $appid refers to SPN $($spn.DisplayName)"
+                        # check if displayname is unique
+                        $spnUnique = Get-MgServicePrincipal -Filter "DisplayName eq '$($spn.DisplayName)'"
+                        if ($spnUnique.Count -gt 1)
+                        {
+                            Add-M365DSCEvent -Message "AADConditionalAccessPolicy $DisplayName, Get-TargetResource, IncludeApplications: SPN    DisplayName $($spn.DisplayName) is not unique, target app by GUID" `
+                                -Source $($MyInvocation.MyCommand.Source) `
+                                -EntryType Warning `
+                                -EventID 2 `
+                                -EventType Warning
+                            $IncludeApplications += $appId
+                        }
+                        else
+                        {
+                            $IncludeApplications += $spn.DisplayName
+                        }
                     }
                     else
                     {
-                        $IncludeApplications += $spn.DisplayName
+                        Add-M365DSCEvent -Message "AADConditionalAccessPolicy $DisplayName, Get-TargetResource, IncludeApplications: SPN for AppId $appId does not exist" `
+                        -Source $($MyInvocation.MyCommand.Source) `
+                        -EntryType Warning `
+                        -EventID 3 `
+                        -EventType Warning
+                        $IncludeApplications += $appId
                     }
                 }
                 else
@@ -569,23 +581,35 @@ function Get-TargetResource
             {
                 if ($appId -as [guid]) # is this a GUID ?
                 {
-                    # if appId is a GUID then it MUST correspond to an existing AppId
-                    $spn = Get-MgServicePrincipalByAppId -AppId $appId
-                    Write-verbose -Message "Get-TargetResource: ExcludeApplications: AppId GUID $appid refers to SPN $($spn.DisplayName)"
-                    # check if displayname is unique
-                    $spnUnique = Get-MgServicePrincipal -Filter "DisplayName eq '$($spn.DisplayName)'"
-                    if ($spnUnique.Count -gt 1)
+                    # if appId is a GUID then it corresponds to an AppId. However, the ServicePrincipal may or may not exist
+                    $spn = Get-MgServicePrincipalByAppId -AppId $appId -ErrorAction SilentlyContinue
+                    if ($spn)
                     {
-                        Add-M365DSCEvent -Message "AADConditionalAccessPolicy $DisplayName, Get-TargetResource, ExcludeApplications: SPN DisplayName $($spn.DisplayName) is not unique, target app by GUID" `
-                            -Source $($MyInvocation.MyCommand.Source) `
-                            -EntryType Warning `
-                            -EventID 2 `
-                            -EventType Warning
-                        $ExcludeApplications += $appId
+                        Write-verbose -Message "Get-TargetResource: ExcludeApplications: AppId GUID $appid refers to SPN $($spn.DisplayName)"
+                        # check if displayname is unique
+                        $spnUnique = Get-MgServicePrincipal -Filter "DisplayName eq '$($spn.DisplayName)'"
+                        if ($spnUnique.Count -gt 1)
+                        {
+                            Add-M365DSCEvent -Message "AADConditionalAccessPolicy $DisplayName, Get-TargetResource, ExcludeApplications: SPN    DisplayName $($spn.DisplayName) is not unique, target app by GUID" `
+                                -Source $($MyInvocation.MyCommand.Source) `
+                                -EntryType Warning `
+                                -EventID 2 `
+                                -EventType Warning
+                            $ExcludeApplications += $appId
+                        }
+                        else
+                        {
+                            $ExcludeApplications += $spn.DisplayName
+                        }
                     }
                     else
                     {
-                        $ExcludeApplications += $spn.DisplayName
+                        Add-M365DSCEvent -Message "AADConditionalAccessPolicy $DisplayName, Get-TargetResource, ExcludeApplications: SPN for AppId $appId does not exist" `
+                        -Source $($MyInvocation.MyCommand.Source) `
+                        -EntryType Warning `
+                        -EventID 3 `
+                        -EventType Warning
+                        $ExcludeApplications += $appId
                     }
                 }
                 else

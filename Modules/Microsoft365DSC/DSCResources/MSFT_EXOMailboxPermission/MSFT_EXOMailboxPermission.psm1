@@ -245,7 +245,7 @@ function Set-TargetResource
         Write-Verbose -Message "Adding new permission for user {$User} on Mailbox {$Identity}"
         Add-MailboxPermission @instanceParams | Out-Null
     }
-    elseif ($Ensure -eq 'Absent')
+    elseif ($Ensure -eq 'Absent' -and $currentValues.Ensure -eq 'Present')
     {
         Write-Verbose -Message "Removing permission for user {$User} on Mailbox {$Identity}"
         Remove-MailboxPermission @instanceParams

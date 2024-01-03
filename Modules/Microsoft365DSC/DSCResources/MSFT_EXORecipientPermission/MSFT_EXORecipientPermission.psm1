@@ -68,7 +68,7 @@ function Get-TargetResource
             return $nullResult
         }
 
-        Write-Verbose -Message "Found an instance with Identity {$Identity}"
+        Write-Verbose -Message "Found an instance with Identity {$Identity} and Trustee {$Trustee}"
         $results = @{
             AccessRights          = $instance.AccessRights -join ','
             Identity              = $instance.Identity
@@ -174,16 +174,38 @@ function Set-TargetResource
             }
         }
         Write-Verbose -Message "Creating {$Identity} with Parameters:`r`n$(Convert-M365DscHashtableToString -Hashtable $CreateParameters)"
-        Add-RecipientPermission @CreateParameters -Confirm:$false | Out-Null
+        try {
+            Add-RecipientPermission @CreateParameters -Confirm:$false -ErrorAction Stop | Out-Null
+        }
+        catch {
+            $errorMessage = "Error adding recipientpermission for Identity=$Identity and Trustee=$Trustee, $($_.Exception.Message)"
+            Add-M365DSCEvent -Message $errorMessage `
+                -EntryType 'Error' `
+                -EventID 1 `
+                -Source $($MyInvocation.MyCommand.Source) `
+                -TenantId $TenantId
+            throw $errorMessage # stop applying config if values can't be changed
+        }
+    }
+    elseif ($Ensure -eq 'Absent' -and $currentInstance.Ensure -eq 'Present')
+    {
+        Write-Verbose -Message "Removing existing {$Identity}/{$Trustee}"
+        try {
+            Remove-RecipientPermission -Identity $currentInstance.Identity -AccessRights $AccessRights -Trustee $Trustee -Confirm:$false -SkipDomainValidationForMailContact -SkipDomainValidationForMailUser -SkipDomainValidationForSharedMailbox -ErrorAction Stop
+        }
+        catch {
+            $errorMessage = "Error removing recipientpermission for Identity=$Identity and Trustee=$Trustee, $($_.Exception.Message)"
+            Add-M365DSCEvent -Message $errorMessage `
+                -EntryType 'Error' `
+                -EventID 2 `
+                -Source $($MyInvocation.MyCommand.Source) `
+                -TenantId $TenantId
+            throw $errorMessage # stop applying config if values can't be changed
+        }
     }
     elseif ($Ensure -eq 'Present' -and $currentInstance.Ensure -eq 'Present')
     {
         Write-Verbose -Message "RecipientPermissions match for Identity $Identity and Trustee $Trustee, no update required"
-    }
-    elseif ($Ensure -eq 'Absent' -and $currentInstance.Ensure -eq 'Present')
-    {
-        Write-Verbose -Message "Removing {$Identity}"
-        Remove-RecipientPermission -Identity $currentInstance.Identity -AccessRights $AccessRights -Trustee $Trustee -Confirm:$false -SkipDomainValidationForMailContact -SkipDomainValidationForMailUser -SkipDomainValidationForSharedMailbox
     }
 }
 
@@ -327,7 +349,7 @@ function Export-TargetResource
 
     try
     {
-        [array]$getValue = Get-RecipientPermission -ResultSize Unlimited -ErrorAction Stop | Where-Object -FilterScript {$_.IsValid -eq $true -and $_.Inherited -eq $false -and $_.Trustee -notin @('NT AUTHORITY\SELF', 'NULL SID')}
+        [array]$getValue = Get-RecipientPermission -ResultSize Unlimited -ErrorAction Stop | Where-Object -FilterScript {$_.IsValid -eq $true -and $_.IsInherited -eq $false -and $_.Trustee -notin @('NT AUTHORITY\SELF', 'NULL SID')} | Group-Object -Property Identity
 
         $i = 1
         $dscContent = ''
@@ -341,40 +363,49 @@ function Export-TargetResource
         }
         foreach ($config in $getValue)
         {
-            $displayedKey = $config.Identity
+            ## TODO : Convert Identity to email
+            $displayedKey = $config.Name # (ie Identity)
             <#
             if (-not [String]::IsNullOrEmpty($config.Identity))
             {
                 $displayedKey = $config.Identity
             }
             #>
-            Write-Host "    |---[$i/$($getValue.Count)] $displayedKey" -NoNewline
-            #$params = @{
-            $Results = @{
-                Identity = $config.Identity
-                AccessRights = $config.AccessRights -join ','
-                Trustee = $config.Trustee
-                Ensure = 'Present'
-                Credential = $Credential
-                ApplicationId = $ApplicationId
-                TenantId = $TenantId
-                CertificateThumbprint = $CertificateThumbprint
-                ApplicationSecret = $ApplicationSecret
+            Write-Host "    |---[$i/$($getValue.Count)] $displayedKey ($($configGroup.Count) trustees)" -NoNewline
+            foreach ($configValue in $configGroup.Group)
+            {
+                #$params = @{
+                #$Results = Get-TargetResource @Params
 
+                ## TODO : Convert Identity and Trustee to email for mailboxes or DisplayName for securitygroups/DLs
+                $displayIdentity = $configValue.Identity
+                $displayTrustee  = $configValue.Trustee
+
+                $Results = @{
+                    AccessRights          = $configValue.AccessRights -join ','
+                    Identity              = $displayIdentity
+                    Trustee               = $displayTrustee
+                    Ensure                = 'Present'
+                    Credential            = $Credential
+                    ApplicationId         = $ApplicationId
+                    TenantId              = $TenantId
+                    CertificateThumbprint = $CertificateThumbprint
+                    ApplicationSecret     = $ApplicationSecret
+
+                }
+
+                $Results = Update-M365DSCExportAuthenticationResults -ConnectionMode $ConnectionMode `
+                    -Results $params
+
+                $currentDSCBlock = Get-M365DSCExportContentForResource -ResourceName $ResourceName `
+                    -ConnectionMode $ConnectionMode `
+                    -ModulePath $PSScriptRoot `
+                    -Results $Results `
+                    -Credential $Credential
+                $dscContent += $currentDSCBlock
+                Save-M365DSCPartialExport -Content $currentDSCBlock `
+                    -FileName $Global:PartialExportFileName
             }
-
-            #$Results = Get-TargetResource @Params
-            $Results = Update-M365DSCExportAuthenticationResults -ConnectionMode $ConnectionMode `
-                -Results $params
-            
-            $currentDSCBlock = Get-M365DSCExportContentForResource -ResourceName $ResourceName `
-                -ConnectionMode $ConnectionMode `
-                -ModulePath $PSScriptRoot `
-                -Results $Results `
-                -Credential $Credential
-            $dscContent += $currentDSCBlock
-            Save-M365DSCPartialExport -Content $currentDSCBlock `
-                -FileName $Global:PartialExportFileName
             $i++
             Write-Host $Global:M365DSCEmojiGreenCheckMark
         }

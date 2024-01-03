@@ -111,7 +111,7 @@ function Get-TargetResource
                     New-M365DSCConnection -Workload 'MicrosoftGraph' `
                         -InboundParameters $PSBoundParameters | Out-Null
                 }
-                [array]$script:allGroups = Get-MgGroup -All -Property "DisplayName", "SecurityIdentifier"
+                [array]$script:allGroups = Get-MgGroup -All -Property 'DisplayName', 'SecurityIdentifier'
             }
             $trusteeObj = $script:allGroups | Where-Object -FilterScript {$_.SecurityIdentifier -eq '$($instance.TrusteeSidString)'}
             if ($null -ne $trusteeObj)
@@ -215,16 +215,6 @@ function Set-TargetResource
 
         $CreateParameters.Remove('Verbose') | Out-Null
 
-        $keys = $CreateParameters.Keys
-        foreach ($key in $keys)
-        {
-            if ($null -ne $CreateParameters.$key -and $CreateParameters.$key.GetType().Name -like '*cimInstance*')
-            {
-                $keyValue = Convert-M365DSCDRGComplexTypeToHashtable -ComplexObject $CreateParameters.$key
-                $CreateParameters.Remove($key) | Out-Null
-                $CreateParameters.Add($keyName, $keyValue)
-            }
-        }
         Write-Verbose -Message "Creating {$Identity} with Parameters:`r`n$(Convert-M365DscHashtableToString -Hashtable $CreateParameters)"
         try {
             Add-RecipientPermission @CreateParameters -Confirm:$false -ErrorAction Stop | Out-Null
@@ -255,9 +245,9 @@ function Set-TargetResource
             throw $errorMessage # stop applying config if values can't be changed
         }
     }
-    elseif ($Ensure -eq 'Present' -and $currentInstance.Ensure -eq 'Present')
+    else
     {
-        Write-Verbose -Message "RecipientPermissions match for Identity $Identity and Trustee $Trustee, no update required"
+        Write-Verbose -Message "RecipientPermission match for Identity $Identity and Trustee $Trustee, no update required"
     }
 }
 
@@ -321,36 +311,17 @@ function Test-TargetResource
     Write-Verbose -Message "Testing configuration of {$Identity}"
 
     $CurrentValues = Get-TargetResource @PSBoundParameters
-    $ValuesToCheck = ([Hashtable]$PSBoundParameters).Clone()
-    $ValuesToCheck.Remove('Identity') | Out-Null
 
-    if ($CurrentValues.Ensure -eq 'Absent')
+    if ($Ensure -eq $CurrentValues.Ensure)
     {
-        Write-Verbose -Message "Test-TargetResource returned $false"
-        return $false
+        $returnResult = $true
     }
-
-    Write-Verbose -Message "Current Values: $(Convert-M365DscHashtableToString -Hashtable $CurrentValues)"
-    Write-Verbose -Message "Target Values: $(Convert-M365DscHashtableToString -Hashtable $ValuesToCheck)"
-
-    #Convert any DateTime to String
-    foreach ($key in $ValuesToCheck.Keys)
+    else
     {
-        if (($null -ne $CurrentValues[$key]) `
-                -and ($CurrentValues[$key].GetType().Name -eq 'DateTime'))
-        {
-            $CurrentValues[$key] = $CurrentValues[$key].toString()
-        }
+        $returnResult = $false
     }
-
-    $testResult = Test-M365DSCParameterState -CurrentValues $CurrentValues `
-        -Source $($MyInvocation.MyCommand.Source) `
-        -DesiredValues $PSBoundParameters `
-        -ValuesToCheck $ValuesToCheck.Keys
-
-    Write-Verbose -Message "Test-TargetResource returned $testResult"
-
-    return $testResult
+    Write-Verbose -Message "Test-TargetResource returned $returnResult (Ensure=$Ensure)"
+    return $returnResult
 }
 
 function Export-TargetResource

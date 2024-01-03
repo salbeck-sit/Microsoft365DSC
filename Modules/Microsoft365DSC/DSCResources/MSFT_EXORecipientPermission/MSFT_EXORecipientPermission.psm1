@@ -67,12 +67,64 @@ function Get-TargetResource
         {
             return $nullResult
         }
+        $identityObj = Get-Mailbox -Identity $instance.Identity -ErrorAction SilentlyContinue
+        if (-not $identityObj)
+        {
+            $identityObj = Get-MailUser -Identity $instance.Identity -ErrorAction SilentlyContinue
+            if (-not $identityObj)
+            {
+                $identityObj = Get-MailContact -Identity $instance.Identity -ErrorAction SilentlyContinue
+            }
+        }
+        if ($identityObj)
+        {
+            $displayIdentity = $identityObj.WindowsEmailAddress
+        }
+        else
+        {
+            $identityObj = Get-DistributionGroup -Identity $instance.Identity -ErrorAction SilentlyContinue
+            if (-not $identityObj)
+            {
+                $identityObj = Get-DynamicDistributionGroup -Identity $instance.Identity -ErrorAction SilentlyContinue
+            }
+            if ($identityObj)
+            {
+                $displayIdentity = $identityObj.DisplayName
+            }
+        }
+        if (-not $displayIdentity)
+        {
+            $displayIdentity = $instance.Identity
+        }
+        if ($instance.Trustee -match '@')
+        {
+            $displayTrustee = $instance.Trustee
+        }
+        else
+        {
+            # Note. I can't get securitygroups from Get-Group or Get-SecurityPrincipal even though Docs says I can.
+            # Could this be a permissions-issue ? The below workaround seems clumsy
+            if (-not $script:allGroups)
+            {
+                if (-not $Global:MSCloudLoginConnectionProfile.MicrosoftGraph.Connected)
+                {
+                    New-M365DSCConnection -Workload 'MicrosoftGraph' `
+                        -InboundParameters $PSBoundParameters | Out-Null
+                }
+                [array]$script:allGroups = Get-MgGroup -All -Property "DisplayName", "SecurityIdentifier"
+            }
+            $trusteeObj = $script:allGroups | Where-Object -FilterScript {$_.SecurityIdentifier -eq '$($instance.TrusteeSidString)'}
+            if ($null -ne $trusteeObj)
+            {
+                $displayTrustee = $trusteeObj.DisplayName
+            }
+        }
 
         Write-Verbose -Message "Found an instance with Identity {$Identity} and Trustee {$Trustee}"
         $results = @{
             AccessRights          = $instance.AccessRights -join ','
-            Identity              = $instance.Identity
-            Trustee               = $instance.Trustee
+            Identity              = $displayIdentity
+            Trustee               = $displayTrustee
             Ensure                = 'Present'
             Credential            = $Credential
             ApplicationId         = $ApplicationId
@@ -332,7 +384,7 @@ function Export-TargetResource
         $ManagedIdentity
     )
 
-   $ConnectionMode = New-M365DSCConnection -Workload 'ExchangeOnline' `
+    $ConnectionMode = New-M365DSCConnection -Workload 'ExchangeOnline' `
         -InboundParameters $PSBoundParameters
 
     #Ensure the proper dependencies are installed in the current environment.
@@ -363,36 +415,21 @@ function Export-TargetResource
         }
         foreach ($config in $getValue)
         {
-            ## TODO : Convert Identity to email
-            $displayedKey = $config.Name # (ie Identity)
-            <#
-            if (-not [String]::IsNullOrEmpty($config.Identity))
-            {
-                $displayedKey = $config.Identity
-            }
-            #>
             Write-Host "    |---[$i/$($getValue.Count)] $displayedKey ($($configGroup.Count) trustees)" -NoNewline
             foreach ($configValue in $configGroup.Group)
             {
-                #$params = @{
-                #$Results = Get-TargetResource @Params
-
-                ## TODO : Convert Identity and Trustee to email for mailboxes or DisplayName for securitygroups/DLs
-                $displayIdentity = $configValue.Identity
-                $displayTrustee  = $configValue.Trustee
-
-                $Results = @{
+                $params = @{
                     AccessRights          = $configValue.AccessRights -join ','
-                    Identity              = $displayIdentity
-                    Trustee               = $displayTrustee
+                    Identity              = $configValue.Identity
+                    Trustee               = $configValue.Trustee
                     Ensure                = 'Present'
                     Credential            = $Credential
                     ApplicationId         = $ApplicationId
                     TenantId              = $TenantId
                     CertificateThumbprint = $CertificateThumbprint
                     ApplicationSecret     = $ApplicationSecret
-
                 }
+                $Results = Get-TargetResource @Params
 
                 $Results = Update-M365DSCExportAuthenticationResults -ConnectionMode $ConnectionMode `
                     -Results $params

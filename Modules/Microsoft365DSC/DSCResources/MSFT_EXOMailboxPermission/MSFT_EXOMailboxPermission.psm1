@@ -13,7 +13,7 @@ function Get-TargetResource
         [System.String[]]
         $AccessRights,
 
-        [Parameter(Mandatory = $true)]
+        [Parameter()]
         [System.String]
         [ValidateSet("None", "All", "Children", "Descendents", "SelfAndChildren")]
         $InheritanceType = 'All',
@@ -161,7 +161,7 @@ function Set-TargetResource
         [System.String[]]
         $AccessRights,
 
-        [Parameter(Mandatory = $true)]
+        [Parameter()]
         [System.String]
         [ValidateSet("None", "All", "Children", "Descendents", "SelfAndChildren")]
         $InheritanceType = 'All',
@@ -267,7 +267,7 @@ function Test-TargetResource
         [System.String[]]
         $AccessRights,
 
-        [Parameter(Mandatory = $true)]
+        [Parameter()]
         [System.String]
         [ValidateSet("None", "All", "Children", "Descendents", "SelfAndChildren")]
         $InheritanceType = 'All',

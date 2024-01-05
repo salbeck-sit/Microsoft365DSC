@@ -5,17 +5,17 @@ function Get-TargetResource
     param
     (
         [Parameter(Mandatory = $true)]
-        [ValidateSet('SendAs')]
-        [System.String]
-        $AccessRights,
-
-        [Parameter(Mandatory = $true)]
         [System.String]
         $Identity,
 
         [Parameter(Mandatory = $true)]
         [System.String]
         $Trustee,
+
+        [Parameter()]
+        [ValidateSet('SendAs')]
+        [System.String]
+        $AccessRights = 'SendAs',
 
         [Parameter()]
         [ValidateSet('Present', 'Absent')]
@@ -122,9 +122,9 @@ function Get-TargetResource
 
         Write-Verbose -Message "Found an instance with Identity {$Identity} and Trustee {$Trustee}"
         $results = @{
-            AccessRights          = $instance.AccessRights -join ','
             Identity              = $displayIdentity
             Trustee               = $displayTrustee
+            AccessRights          = $instance.AccessRights -join ','
             Ensure                = 'Present'
             Credential            = $Credential
             ApplicationId         = $ApplicationId
@@ -152,17 +152,17 @@ function Set-TargetResource
     param
     (
         [Parameter(Mandatory = $true)]
-        [ValidateSet('SendAs')]
-        [System.String]
-        $AccessRights,
-
-        [Parameter(Mandatory = $true)]
         [System.String]
         $Identity,
 
         [Parameter(Mandatory = $true)]
         [System.String]
         $Trustee,
+
+        [Parameter()]
+        [ValidateSet('SendAs')]
+        [System.String]
+        $AccessRights = 'SendAs',
 
         [Parameter()]
         [ValidateSet('Present', 'Absent')]
@@ -258,17 +258,17 @@ function Test-TargetResource
     param
     (
         [Parameter(Mandatory = $true)]
-        [ValidateSet('SendAs')]
-        [System.String]
-        $AccessRights,
-
-        [Parameter(Mandatory = $true)]
         [System.String]
         $Identity,
 
         [Parameter(Mandatory = $true)]
         [System.String]
         $Trustee,
+
+        [Parameter()]
+        [ValidateSet('SendAs')]
+        [System.String]
+        $AccessRights = 'SendAs',
 
         [Parameter()]
         [ValidateSet('Present', 'Absent')]
@@ -390,9 +390,9 @@ function Export-TargetResource
             foreach ($configValue in $configGroup.Group)
             {
                 $params = @{
-                    AccessRights          = $configValue.AccessRights -join ','
                     Identity              = $configValue.Identity
                     Trustee               = $configValue.Trustee
+                    AccessRights          = $configValue.AccessRights -join ','
                     Ensure                = 'Present'
                     Credential            = $Credential
                     ApplicationId         = $ApplicationId

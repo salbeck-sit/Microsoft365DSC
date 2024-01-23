@@ -400,10 +400,10 @@ function Set-TargetResource
     }
     $tenant = Set-PnPTenant @CurrentParameters
 
-    if ($null -ne $TenantDefaultTimezone)
+    if ($CurrentParameters.ContainsKey('TenantDefaultTimezone'))
     {
         $ConnectionMode = New-M365DSCConnection -Workload 'MicrosoftGraph' -InboundParameters $PSBoundParameters
-        Update-MgAdminSharepointSetting -TenantDefaultTimezone $TenantDefaultTimezone -ErrorAction Stop
+        $tenantGraph = Update-MgAdminSharepointSetting -TenantDefaultTimezone $TenantDefaultTimezone -ErrorAction Stop
     }
 }
 

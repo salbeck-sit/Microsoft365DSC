@@ -1,0 +1,33 @@
+{
+    "resourceName": "AADAccessReview",
+    "description": "This resource configures an A A D Access Review.",
+    "permissions":    {
+    "graph":  {
+                  "delegated":  {
+                                    "read":  [
+                                                 {
+                                                     "name":  "AccessReview.Read.All"
+                                                 }
+                                             ],
+                                    "update":  [
+                                                {
+                                                    "name":  "AccessReview.ReadWrite.All"
+                                                }
+                                               ]
+                                },
+                  "application":  {
+                                      "read":  [
+                                                   {
+                                                       "name":  "AccessReview.Read.All"
+                                                   }
+                                               ],
+                                      "update":  [
+                                                    {
+                                                        "name":  "AccessReview.ReadWrite.All"
+                                                    }
+                                                 ]
+                                  }
+              }
+}
+
+}

@@ -1,0 +1,115 @@
+
+[ClassVersion("1.0.0")]
+class MSFT_MicrosoftGraphAccessReviewNotificationRecipientItem
+{
+    [Write, Description(""), EmbeddedInstance("MSFT_MicrosoftGraphAccessReviewReviewerScope")] String NotificationRecipientScope;
+    [Write, Description("Indicates the type of access review email to be sent. Supported template type is CompletedAdditionalRecipients, which sends review completion notifications to the recipients.")] String NotificationTemplateType;
+};
+[ClassVersion("1.0.0")]
+class MSFT_MicrosoftGraphAccessReviewReviewerScope
+{
+    [Write, Description("The query specifying who will be the reviewer.")] String Query;
+    [Write, Description("In the scenario where reviewers need to be specified dynamically, this property is used to indicate the relative source of the query. This property is only required if a relative query, for example, ./manager, is specified. Possible value: decisions.")] String QueryRoot;
+    [Write, Description("Indicates the type of query. Must be MicrosoftGraph.")] String QueryType;
+};
+[ClassVersion("1.0.0")]
+class MSFT_MicrosoftGraphAccessReviewPrincipalScope
+{
+    [Write, Description("The query representing principals that will be reviewed in an access review.")] String Query;
+    [Write, Description("Indicates the type of query. Must be MicrosoftGraph.")] String QueryType;
+    [Write, Description("Indicates the scope of the query. Must be #microsoft.graph.accessReviewScope")] String odataType;
+};
+[ClassVersion("1.0.0")]
+class MSFT_MicrosoftGraphAccessReviewResourceScope
+{
+    [Write, Description("The query representing resources that will be reviewed in an access review.")] String Query;
+    [Write, Description("Indicates the type of query. Must be MicrosoftGraph.")] String QueryType;
+    [Write, Description("Indicates the scope of the query. Must be #microsoft.graph.accessReviewScope")] String odataType;
+};
+[ClassVersion("1.0.0")]
+class MSFT_MicrosoftGraphAccessReviewScope
+{
+    [Write, Description("The query representing what will be reviewed in an access review.")] String Query;
+    [Write, Description("Indicates the type of query. Types include MicrosoftGraph and ARM.")] String QueryType;
+    [Write, Description("Indicates the review scope. Specifying the OData type in the scope is highly recommended for all types but required for principalResourceMembershipsScope and accessReviewInactiveUserQueryScope. See https://learn.microsoft.com/en-us/graph/api/resources/accessreviewscope?view=graph-rest-1.0")] String odataType;
+    [Write, Description("Defines the scopes of the principals whose access to resources are reviewed in the access review."), EmbeddedInstance("MSFT_MicrosoftGraphAccessReviewPrincipalScope")] String PrincipalScopes[];
+    [Write, Description("Defines the scopes of the resources for which access is reviewed."), EmbeddedInstance("MSFT_MicrosoftGraphAccessReviewResourceScope")] String ResourceScopes[];
+    [Write, Description("Period of inactivity for accessReviewInactiveUserQueryScope. See odataType.")] String InactiveDuration;
+};
+[ClassVersion("1.0.0")]
+class MSFT_MicrosoftGraphAccessReviewScheduleSettings
+{
+    [Write, Description("Optional field. Describes the actions to take once a review is complete. There are two types that are currently supported: removeAccessApplyAction (default) and disableAndDeleteUserApplyAction. Field only needs to be specified in the case of disableAndDeleteUserApplyAction."), EmbeddedInstance("MSFT_MicrosoftGraphAccessReviewApplyaction")] String ApplyActions[];
+    [Write, Description("Indicates whether decisions are automatically applied. When set to false, an admin must apply the decisions manually once the reviewer completes the access review. When set to true, decisions are applied automatically after the access review instance duration ends, whether or not the reviewers have responded. Default value is false.")] Boolean AutoApplyDecisionsEnabled;
+    [Write, Description("Indicates whether decisions on previous access review stages are available for reviewers on an accessReviewInstance with multiple subsequent stages. If not provided, the default is disabled (false).")] Boolean DecisionHistoriesForReviewersEnabled;
+    [Write, Description("Decision chosen if defaultDecisionEnabled is enabled. Can be one of Approve, Deny, or Recommendation.")] String DefaultDecision;
+    [Write, Description("Indicates whether the default decision is enabled or disabled when reviewers do not respond. Default value is false.")] Boolean DefaultDecisionEnabled;
+    [Write, Description("Duration of an access review instance in days. NOTE: If the stageSettings of the accessReviewScheduleDefinition object is defined, its durationInDays setting will be used instead of the value of this property.")] UInt32 InstanceDurationInDays;
+    [Write, Description("Indicates whether reviewers are required to provide justification with their decision. Default value is false.")] Boolean JustificationRequiredOnApproval;
+    [Write, Description("Indicates whether emails are enabled or disabled. Default value is false.")] Boolean MailNotificationsEnabled;
+    [Write, Description("Indicates whether decision recommendations are enabled or disabled. NOTE: If the stageSettings of the accessReviewScheduleDefinition object is defined, its recommendationsEnabled setting will be used instead of the value of this property.")] Boolean RecommendationsEnabled;
+    [Write, Description("Detailed settings for recurrence using the standard Outlook recurrence object. Note: Only dayOfMonth, interval, and type (weekly, absoluteMonthly) properties are supported. Use the property startDate on recurrenceRange to determine the day the review starts."), EmbeddedInstance("MSFT_MicrosoftGraphPatternedRecurrence")] String Recurrence;
+    [Write, Description("Indicates whether reminders are enabled or disabled. Default value is false.")] Boolean ReminderNotificationsEnabled;
+};
+[ClassVersion("1.0.0")]
+class MSFT_MicrosoftGraphAccessReviewApplyAction
+{
+    [Write, Description("Optional field. Describes the actions to take once a review is complete. There are two types that are currently supported: removeAccessApplyAction (default) and disableAndDeleteUserApplyAction. Field only needs to be specified in the case of disableAndDeleteUserApplyAction.")] String odataType;
+};
+[ClassVersion("1.0.0")]
+class MSFT_MicrosoftGraphPatternedRecurrence
+{
+    [Write, Description("The frequency of an event. For access reviews: Do not specify this property for a one-time access review. Only interval, dayOfMonth, and type (weekly, absoluteMonthly) properties of recurrencePattern are supported."), EmbeddedInstance("MSFT_MicrosoftGraphRecurrencePattern")] String Pattern;
+    [Write, Description("The duration of an event."), EmbeddedInstance("MSFT_MicrosoftGraphRecurrenceRange")] String Range;
+};
+[ClassVersion("1.0.0")]
+class MSFT_MicrosoftGraphRecurrencePattern
+{
+    [Write, Description("The day of the month on which the event occurs. Required if type is absoluteMonthly or absoluteYearly.")] UInt32 DayOfMonth;
+    [Write, Description("The number of units between occurrences, where units can be in days, weeks, months, or years, depending on the type. Required.")] UInt32 Interval;
+    [Write, Description("The recurrence pattern type: daily, weekly, absoluteMonthly, relativeMonthly, absoluteYearly, relativeYearly. Required. See https://learn.microsoft.com/en-us/graph/api/resources/recurrencepattern?view=graph-rest-1.0#values-of-type-property")] String Type;
+};
+[ClassVersion("1.0.0")]
+class MSFT_MicrosoftGraphRecurrenceRange
+{
+    [Write, Description("The date to stop applying the recurrence pattern. Depending on the recurrence pattern of the event, the last occurrence of the meeting may not be this date. Required if type is endDate.")] String EndDate;
+    [Write, Description("The number of times to repeat the event. Required and must be positive if type is numbered.")] UInt32 NumberOfOccurrences;
+    [Write, Description("Time zone for the startDate and endDate properties. Optional. If not specified, the time zone of the event is used.")] String RecurrenceTimeZone;
+    [Write, Description("The date to start applying the recurrence pattern. The first occurrence of the meeting may be this date or later, depending on the recurrence pattern of the event. Must be the same value as the start property of the recurring event. Required.")] String StartDate;
+    [Write, Description("The recurrence range. The possible values are: endDate, noEnd, numbered. Required.")] String Type;
+};
+[ClassVersion("1.0.0")]
+class MSFT_MicrosoftGraphAccessReviewStageSettings
+{
+    [Write, Description("Indicate which decisions will go to the next stage. Can be a sub-set of Approve, Deny, Recommendation, or NotReviewed. If not provided, all decisions will go to the next stage. Optional.")] String DecisionsThatWillMoveToNextStage[];
+    [Write, Description("Defines the sequential or parallel order of the stages and depends on the stageId. Only sequential stages are currently supported. For example, if stageId is 2, then dependsOn must be 1. If stageId is 1, do not specify dependsOn. Required if stageId is not 1.")] String DependsOn[];
+    [Write, Description("The duration of the stage. Required. NOTE: The cumulative value of this property across all stages 1. Will override the instanceDurationInDays setting on the accessReviewScheduleDefinition object. 2. Cannot exceed the length of one recurrence. That is, if the review recurs weekly, the cumulative durationInDays cannot exceed 7.")] UInt32 DurationInDays;
+    [Write, Description("If provided, the fallback reviewers are asked to complete a review if the primary reviewers do not exist. For example, if managers are selected as reviewers and a principal under review does not have a manager in Azure AD, the fallback reviewers are asked to review that principal. NOTE: The value of this property will override the corresponding setting on the accessReviewScheduleDefinition object."), EmbeddedInstance("MSFT_MicrosoftGraphAccessReviewReviewerScope")] String FallbackReviewers[];
+    [Write, Description("Indicates whether showing recommendations to reviewers is enabled. Required. NOTE: The value of this property will override override the corresponding setting on the accessReviewScheduleDefinition object.")] Boolean RecommendationsEnabled;
+    [Write, Description("Unique identifier of the accessReviewStageSettings object. The stageId will be used by the dependsOn property to indicate the order of the stages. Required.")] String StageId;
+};
+
+[ClassVersion("1.0.0.0"), FriendlyName("AADAccessReview")]
+class MSFT_AADAccessReview : OMI_BaseResource
+{
+    [Write, Description("The unique idenfier. Read-only.")] String Id;
+    [Write, Description("Defines the list of additional users or group members to be notified of the access review progress."), EmbeddedInstance("MSFT_MicrosoftGraphAccessreviewNotificationRecipientItem")] String AdditionalNotificationRecipients[];
+    [Write, Description("Description provided by review creators to provide more context of the review to admins.")] String DescriptionForAdmins;
+    [Write, Description("Description provided by review creators to provide more context of the review to reviewers. Reviewers will see this description in the email sent to them requesting their review. Email notifications support up to 256 characters.")] String DescriptionForReviewers;
+    [Write, Description("Name of the access review series.")] String DisplayName;
+    [Write, Description("This collection of reviewer scopes is used to define the list of fallback reviewers. These fallback reviewers will be notified to take action if no users are found from the list of reviewers specified. This could occur when either the group owner is specified as the reviewer but the group owner does not exist, or manager is specified as reviewer but a user's manager does not exist. See accessReviewReviewerScope. Replaces backupReviewers. Supports $select. NOTE: The value of this property will be ignored if fallback reviewers are assigned through the stageSettings property."), EmbeddedInstance("MSFT_MicrosoftGraphAccessReviewreviewerScope")] String FallbackReviewers[];
+    [Write, Description("This collection of access review scopes is used to define who are the reviewers. The reviewers property is only updatable if individual users are assigned as reviewers. Required on create. Supports $select. For examples of options for assigning reviewers, see Assign reviewers to your access review definition using the Microsoft Graph API. NOTE: The value of this property will be ignored if reviewers are assigned through the stageSettings property."), EmbeddedInstance("MSFT_MicrosoftGraphAccessReviewReviewerScope")] String Reviewers[];
+    [Write, Description("Defines the entities whose access is reviewed."), EmbeddedInstance("MSFT_MicrosoftGraphAccessReviewScope")] String Scope;
+    [Write, Description(""), EmbeddedInstance("MSFT_MicrosoftGraphAccessReviewScheduleSettings")] String Settings;
+    [Write, Description(""), EmbeddedInstance("MSFT_MicrosoftGraphAccessReviewStageSettings")] String StageSettings[];
+    //[Write, Description("This read-only field specifies the status of an access review. The typical states include Initializing, NotStarted, Starting, InProgress, Completing, Completed, AutoReviewing, and AutoReviewed. Read-only.")] String Status;
+
+
+    [Write, Description("Present ensures the policy exists, absent ensures it is removed."), ValueMap{"Present","Absent"}, Values{"Present","Absent"}] string Ensure;
+    [Write, Description("Credentials of the Intune Admin"), EmbeddedInstance("MSFT_Credential")] string Credential;
+    [Write, Description("Id of the Azure Active Directory application to authenticate with.")] String ApplicationId;
+    [Write, Description("Id of the Azure Active Directory tenant used for authentication.")] String TenantId;
+    [Write, Description("Secret of the Azure Active Directory tenant used for authentication."), EmbeddedInstance("MSFT_Credential")] String ApplicationSecret;
+    [Write, Description("Thumbprint of the Azure Active Directory application's authentication certificate to use for authentication.")] String CertificateThumbprint;
+	[Write, Description("Managed ID being used for authentication.")] Boolean ManagedIdentity;
+};

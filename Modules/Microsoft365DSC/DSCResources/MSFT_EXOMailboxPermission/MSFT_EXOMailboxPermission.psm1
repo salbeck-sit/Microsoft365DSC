@@ -13,7 +13,7 @@ function Get-TargetResource
         [System.String[]]
         $AccessRights,
 
-        [Parameter(Mandatory = $true)]
+        [Parameter()]
         [System.String]
         [ValidateSet("None", "All", "Children", "Descendents", "SelfAndChildren")]
         $InheritanceType = 'All',
@@ -161,7 +161,7 @@ function Set-TargetResource
         [System.String[]]
         $AccessRights,
 
-        [Parameter(Mandatory = $true)]
+        [Parameter()]
         [System.String]
         [ValidateSet("None", "All", "Children", "Descendents", "SelfAndChildren")]
         $InheritanceType = 'All',
@@ -245,7 +245,7 @@ function Set-TargetResource
         Write-Verbose -Message "Adding new permission for user {$User} on Mailbox {$Identity}"
         Add-MailboxPermission @instanceParams | Out-Null
     }
-    elseif ($Ensure -eq 'Absent')
+    elseif ($Ensure -eq 'Absent' -and $currentValues.Ensure -eq 'Present')
     {
         Write-Verbose -Message "Removing permission for user {$User} on Mailbox {$Identity}"
         Remove-MailboxPermission @instanceParams
@@ -267,7 +267,7 @@ function Test-TargetResource
         [System.String[]]
         $AccessRights,
 
-        [Parameter(Mandatory = $true)]
+        [Parameter()]
         [System.String]
         [ValidateSet("None", "All", "Children", "Descendents", "SelfAndChildren")]
         $InheritanceType = 'All',

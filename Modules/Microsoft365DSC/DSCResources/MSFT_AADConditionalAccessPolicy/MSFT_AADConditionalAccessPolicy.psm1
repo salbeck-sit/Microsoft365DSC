@@ -254,7 +254,7 @@ function Get-TargetResource
         }
         catch
         {
-            Write-Verbose -Message "Couldn't find existing policy by ID {$Id}"
+            Write-Verbose Message "Couldn't find existing policy by ID {$Id}"
             $Policy = Get-MgBetaIdentityConditionalAccessPolicy -Filter "DisplayName eq '$DisplayName'"
             if ($Policy.Length -gt 1)
             {
@@ -570,7 +570,7 @@ function Get-TargetResource
         $termofUse = Get-MgBetaAgreement | Where-Object -FilterScript { $_.Id -eq $Policy.GrantControls.TermsOfUse }
         if ($termOfUse)
         {
-            $termOfUseName = $termOfUse.DisplayName
+            $termsOfUseName = $termOfUse.DisplayName
         }
     }
 
@@ -669,7 +669,7 @@ function Get-TargetResource
         AuthenticationStrength                   = $AuthenticationStrengthValue
         AuthenticationContexts                   = $AuthenticationContextsValues
         #Standard part
-        TermsOfUse                               = $termOfUseName
+        TermsOfUse                               = $termsOfUseName
         Ensure                                   = 'Present'
         Credential                               = $Credential
         ApplicationSecret                        = $ApplicationSecret
@@ -954,13 +954,115 @@ function Set-TargetResource
         }
         #create and provision Application Condition object
         Write-Verbose -Message 'Set-Targetresource: create Application Condition object'
-        if ($currentParameters.ContainsKey("IncludeApplications"))
+        if ($IncludeApplications)
         {
-            $conditions.Applications.Add('IncludeApplications', $IncludeApplications)
+            $includeApps = @()
+            foreach ($appName in $IncludeApplications)
+            {
+                if (Test-MSLogicalAppName -Name $appName) # appNames with special meaning are always added by name.
+                {
+                    Write-verbose -Message "Set-Targetresource: IncludeApplications: Using Name '$appName' as-is"
+                    $includeApps += $appName
+                }
+                else
+                {
+                    if ($appName -as [guid]) # is this a GUID ?
+                    {
+                        # no attempt to verify if SPN exists
+                        Write-verbose -Message "Set-Targetresource: IncludeApplications: Using AppId '$appName' as-is"
+                        $includeApps += $appName
+                    }
+                    else
+                    {
+                        # try to translate app-name to app-id, see https://learn.microsoft.com/en-us/entra/identity/conditional-access/concept-conditional-access-cloud-apps
+                        $spn = Get-MgServicePrincipal -Filter "DisplayName eq '$appName'" -ErrorAction SilentlyContinue
+                        if ($null -ne $spn)
+                        {
+                            if ($spn.Count -gt 1)
+                            {
+                                $message = "AADConditionalAccessPolicy $DisplayName, Set-TargetResource, IncludeApplications: App name '$($spn.DisplayName)' is not unique, unable to target app"
+                                Add-M365DSCEvent -Message $message `
+                                    -Source $($MyInvocation.MyCommand.Source) `
+                                    -EntryType Error `
+                                    -EventID 3 `
+                                    -EventType Error
+                                throw $message
+                            }
+                            else
+                            {
+                                $includeApps += $spn.AppId
+                            }
+                        }
+                        else
+                        {
+                            $message = "AADConditionalAccessPolicy $DisplayName, Set-Targetresource: IncludeApplications: Could NOT find App '$appName'"
+                            Add-M365DSCEvent -Message $message `
+                                -Source $($MyInvocation.MyCommand.Source) `
+                                -EntryType Error `
+                                -EventID 4 `
+                                -EventType Error
+                            throw $message
+                        }
+                    }
+                }
+            }
+            $conditions.Applications.Add('IncludeApplications', $includeApps)
         }
-        if ($currentParameters.ContainsKey("ExcludeApplications"))
+        Write-Verbose -Message 'Set-TargetResource: process ExcludeApplications'
+        if ($ExcludeApplications)
         {
-            $conditions.Applications.Add('ExcludeApplications', $ExcludeApplications)
+            $excludeApps = @()
+            foreach ($appName in $ExcludeApplications)
+            {
+                if (Test-MSLogicalAppName -Name $appName) # appNames with special meaning are always added by name
+                {
+                    Write-verbose -Message "Set-Targetresource: ExcludeApplications: Using Name '$appName' as-is"
+                    $excludeApps += $appName
+                }
+                else
+                {
+                    if ($appName -as [guid])
+                    {
+                        # no attempt to verify if SPN exists
+                        Write-verbose -Message "Set-Targetresource: ExcludeApplications: Using AppId '$appName' as-is"
+                        $excludeApps += $appName
+                    }
+                    else
+                    {
+                        # try to translate app-name to app-id, see https://learn.microsoft.com/en-us/entra/identity/conditional-access/concept-conditional-access-cloud-apps
+                        $spn = Get-MgServicePrincipal -Filter "DisplayName eq '$appName'" -ErrorAction SilentlyContinue
+                        if ($null -ne $spn)
+                        {
+                            if ($spn.Count -gt 1)
+                            {
+                                $message = "AADConditionalAccessPolicy $DisplayName, Set-TargetResource, ExcludeApplications: SPN DisplayName $($spn.DisplayName) is not unique, unable to target app"
+                                Add-M365DSCEvent -Message $message `
+                                    -Source $($MyInvocation.MyCommand.Source) `
+                                    -EntryType Error `
+                                    -EventID 3 `
+                                    -EventType Error
+                                throw $message
+                            }
+                            else
+                            {
+                                Write-verbose -Message "Set-Targetresource: ExcludeApplications: Using AppId $($spn.AppId) from SPN '$appName'"
+                                $excludeApps += $spn.AppId
+                            }
+                        }
+                        else
+                        {
+                            $message = "AADConditionalAccessPolicy $DisplayName, Set-Targetresource: ExcludeApplications: Could NOT find App '$appName'"
+                            Add-M365DSCEvent -Message $message `
+                                -Source $($MyInvocation.MyCommand.Source) `
+                                -EntryType Error `
+                                -EventID 4 `
+                                -EventType Error
+                            throw $message
+                        }
+                    }
+                }
+            }
+            $conditions.Applications.Add('ExcludeApplications', $excludeApps)
         }
         if ($ApplicationsFilter -and $ApplicationsFilterMode)
         {
@@ -1902,6 +2004,8 @@ function Test-TargetResource
 
     Write-Verbose -Message "Target Values: $(Convert-M365DscHashtableToString -Hashtable $PSBoundParameters)"
 
+    $params = $PSBoundParameters # copy as we may need to update IncludeApplications/ExcludeApplications
+
     $ValuesToCheck = $PSBoundParameters
     $ValuesToCheck.Remove('ApplicationId') | Out-Null
     $ValuesToCheck.Remove('TenantId') | Out-Null
@@ -1909,9 +2013,139 @@ function Test-TargetResource
     $ValuesToCheck.Remove('ManagedIdentity') | Out-Null
     $ValuesToCheck.Remove('Id') | Out-Null
 
+    Write-verbose -Message "Test-TargetResource: process IncludeApplications"
+    if ($IncludeApplications)
+    {
+        # to ensure backwards compatibility, convert app GUIDs to their DisplayName - if it's unique
+        $formatApps = @()
+        foreach ($app in $IncludeApplications)
+        {
+            if ($app -as [guid]) # is this a GUID ?
+            {
+                $spn = Get-MgServicePrincipalByAppId -AppId $app
+                if ($spn) {
+                    # check for duplicate names
+                    $spnUnique = Get-MgServicePrincipal -Filter "DisplayName eq '$($spn.DisplayName)'"
+                    if ($spnUnique.Count -gt 1)
+                    {
+                        write-verbose -Message "Test-TargetResource: IncludeApplications AppId $app used as-is since the app name $($spn.DisplayName) is ambiguous"
+                        $formatApps += $app
+                    }
+                    else
+                    {
+                        Write-verbose -Message "Test-TargetResource: Translated IncludeApplications AppId $app to unique name $($spn.DisplayName)"
+                        $formatApps += $spn.DisplayName
+                    }
+                }
+                else
+                {
+                    Add-M365DSCEvent -Message "Couldn't find ServicePrincipal with AppId $app used in IncludeApplications for Conditional Access policy $DisplayName" `
+                        -Source $($MyInvocation.MyCommand.Source) `
+                        -EntryType Warning `
+                        -EventType Warning `
+                        -EventID 3
+                    $formatApps += $app
+                }
+            }
+            else
+            {
+                if (Test-MSLogicalAppName -Name $app)
+                {
+                    Write-verbose -Message "Test-TargetResource: IncludeApplications: Logical App Name $app used as-is"
+                    $formatApps += $app
+                }
+                else
+                {
+                    $spnUnique = Get-MgServicePrincipal -Filter "DisplayName eq '$app'"
+                    if ($spnUnique.Count -gt 1)
+                    {
+                        Add-M365DSCEvent -Message "Test-TargetResource: IncludeApplications App name '$app' used as-is BUT the name is ambiguous" `
+                            -Source $($MyInvocation.MyCommand.Source) `
+                            -EntryType Warning `
+                            -EventType Warning `
+                            -EventID 2
+                        $formatApps += $app
+                    }
+                    else
+                    {
+                        Write-verbose -Message "Test-TargetResource: IncludeApplications App name $app is unique and used as-is"
+                        $formatApps += $app
+                    }
+                }
+            }
+        }
+        $IncludeApplications = $formatApps
+        $params.IncludeApplications = $formatApps
+    }
+
+    Write-verbose -Message "Test-TargetResource: process ExcludeApplications"
+    if ($ExcludeApplications)
+    {
+        # to ensure backwards compatibility, convert app GUIDs to their DisplayName - if it's unique
+        $formatApps = @()
+        foreach ($app in $ExcludeApplications)
+        {
+            if ($app -as [guid]) # is this a GUID ?
+            {
+                $spn = Get-MgServicePrincipalByAppId -AppId $app
+                if ($spn) {
+                    # check for duplicate names
+                    $spnUnique = Get-MgServicePrincipal -Filter "DisplayName eq '$($spn.DisplayName)'"
+                    if ($spnUnique.Count -gt 1)
+                    {
+                        Write-verbose -Message "Test-TargetResource: ExcludeApplications AppId $app used as-is since the app name ($($spn.DisplayName)) is ambiguous"
+                        $formatApps += $app
+                    }
+                    else
+                    {
+                        Write-verbose -Message "Test-TargetResource: Translated ExcludeApplications AppId $app to unique SPN $($spn.DisplayName)"
+                        $formatApps += $spn.DisplayName
+                    }
+                }
+                else
+                {
+                    Add-M365DSCEvent -Message "Couldn't find ServicePrincipal with AppId '$app' used in ExcludeApplications for Conditional Access policy $DisplayName" `
+                        -Source $($MyInvocation.MyCommand.Source) `
+                        -EntryType Warning `
+                        -EventType Warning `
+                        -EventID 3
+                    $formatApps += $app
+                }
+            }
+            else
+            {
+                if (Test-MSLogicalAppName -Name $app)
+                {
+                    Write-verbose -Message "Test-TargetResource: ExcludeApplications: Logical App name $app used as-is"
+                    $formatApps += $app
+                }
+                else
+                {
+                    $spnUnique = Get-MgServicePrincipal -Filter "DisplayName eq '$app'"
+                    if ($spnUnique.Count -gt 1)
+                    {
+                        Add-M365DSCEvent -Message "Test-TargetResource: ExcludeApplications App name '$app' used as-is BUT the name is ambiguous" `
+                            -Source $($MyInvocation.MyCommand.Source) `
+                            -EntryType Warning `
+                            -EventType Warning `
+                            -EventID 2
+                        $formatApps += $app
+                    }
+                    else
+                    {
+                        Write-verbose -Message "Test-TargetResource: ExcludeApplications App name '$app' is unique and used as-is"
+                        $formatApps += $app
+                    }
+                }
+            }
+        }
+        $ExcludeApplications = $formatApps
+        $params.ExcludeApplications = $formatApps
+    }
+
     $TestResult = Test-M365DSCParameterState -CurrentValues $CurrentValues `
         -Source $($MyInvocation.MyCommand.Source) `
-        -DesiredValues $PSBoundParameters `
+        -DesiredValues $params `
         -ValuesToCheck $ValuesToCheck.Keys
 
     Write-Verbose -Message "Test-TargetResource returned $TestResult"
@@ -2031,6 +2265,22 @@ function Export-TargetResource
             -Credential $Credential
 
         return ''
+    }
+}
+
+function Test-MSLogicalAppName
+{
+    param(
+        [parameter(Mandatory)]
+        [string]$Name
+    )
+    if ($Name -in @('All', 'Office365', 'MicrosoftAdminPortals'))
+    {
+        $true
+    }
+    else
+    {
+        $false
     }
 }
 

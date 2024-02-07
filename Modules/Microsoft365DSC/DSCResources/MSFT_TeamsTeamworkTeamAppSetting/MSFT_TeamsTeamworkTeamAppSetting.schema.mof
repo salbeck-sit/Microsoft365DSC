@@ -1,0 +1,15 @@
+
+[ClassVersion("1.0.0.0"), FriendlyName("TeamsTeamworkTeamAppSetting")]
+class MSFT_TeamsTeamworkTeamAppSetting : OMI_BaseResource
+{
+    [Write, Description("Indicates whether users are allowed to request access to the unavailable Teams apps.")] Boolean AllowUserRequestsForAppAccess;
+    [Write, Description("Indicates whether resource-specific consent for chats/meetings has been enabled for the tenant. True indicates that Teams apps that are allowed in the tenant and require resource-specific permissions can be installed inside chats and meetings. False blocks the installation of any Teams app that requires resource-specific permissions in a chat or a meeting.")] Boolean IsChatResourceSpecificConsentEnabled;
+    [Write, Description("Indicates whether resource-specific consent for personal scope in Teams apps has been enabled for the tenant. True indicates that Teams apps that are allowed in the tenant and require resource-specific permissions can be installed in the personal scope. False blocks the installation of any Teams app that requires resource-specific permissions in the personal scope.")] Boolean IsUserPersonalScopeResourceSpecificConsentEnabled;
+    [Write, Description("Present ensures the policy exists, this is the only accepted value."), ValueMap{"Present"}, Values{"Present"}] string Ensure;
+    [Write, Description("Credentials of the Admin"), EmbeddedInstance("MSFT_Credential")] string Credential;
+    [Write, Description("Id of the Azure Active Directory application to authenticate with.")] String ApplicationId;
+    [Write, Description("Id of the Azure Active Directory tenant used for authentication.")] String TenantId;
+    [Write, Description("Secret of the Azure Active Directory tenant used for authentication."), EmbeddedInstance("MSFT_Credential")] String ApplicationSecret;
+    [Write, Description("Thumbprint of the Azure Active Directory application's authentication certificate to use for authentication.")] String CertificateThumbprint;
+    [Write, Description("Managed ID being used for authentication.")] Boolean ManagedIdentity;
+};

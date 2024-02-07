@@ -1,0 +1,33 @@
+{
+    "resourceName": "TeamsTeamworkTeamAppSetting",
+    "description": "This resource configures an Teams TeamworkTeamAppSetting.",
+    "permissions":    {
+    "graph":  {
+                  "delegated":  {
+                                    "read":  [
+                                                 {
+                                                     "name":  "TeamworkAppSettings.Read.All"
+                                                 }
+                                             ],
+                                    "update":  [
+                                                   {
+                                                       "name":  "TeamworkAppSettings.ReadWrite.All"
+                                                   }
+                                               ]
+                                },
+                  "application":  {
+                                      "read":  [
+                                                   {
+                                                       "name":  "TeamworkAppSettings.Read.All"
+                                                   }
+                                               ],
+                                      "update":  [
+                                                     {
+                                                         "name":  "TeamworkAppSettings.ReadWrite.All"
+                                                     }
+                                                 ]
+                                  }
+              }
+}
+
+}

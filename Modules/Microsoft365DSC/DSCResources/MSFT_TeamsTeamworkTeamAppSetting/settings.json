@@ -1,6 +1,6 @@
 {
     "resourceName": "TeamsTeamworkTeamAppSetting",
-    "description": "This resource configures an Teams TeamworkTeamAppSetting.",
+    "description": "This resource configures a Teams TeamworkTeamAppSetting.",
     "permissions":    {
     "graph":  {
                   "delegated":  {

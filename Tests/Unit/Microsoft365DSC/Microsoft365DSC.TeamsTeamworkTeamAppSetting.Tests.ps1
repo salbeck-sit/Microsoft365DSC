@@ -36,14 +36,21 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             Mock -CommandName Update-MgBetaTeamworkTeamAppSetting -MockWith {
             }
 
-            Mock -CommandName New-MgBetaTeamworkTeamAppSetting -MockWith {
-            }
-
-            Mock -CommandName Remove-MgBetaTeamworkTeamAppSetting -MockWith {
-            }
-
             Mock -CommandName New-M365DSCConnection -MockWith {
                 return "Credentials"
+            }
+
+            Mock -CommandName Get-MgBetaTeamworkTeamAppSetting -MockWith {
+                return @{
+                    AdditionalProperties = @{
+                        '@odata.type' = "#microsoft.graph.TeamsAppSettings"
+                    }
+                    AllowUserRequestsForAppAccess = $True
+                    Id = "FakeStringValue"
+                    IsChatResourceSpecificConsentEnabled = $True
+                    IsUserPersonalScopeResourceSpecificConsentEnabled = $True
+
+                }
             }
 
             # Mock Write-Host to hide output during the tests
@@ -51,96 +58,17 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             }
         }
         # Test contexts
-        Context -Name "The TeamsResourceSpecificConsentSettings should exist but it DOES NOT" -Fixture {
-            BeforeAll {
-                $testParams = @{
-                    AllowUserRequestsForAppAccess = $True
-                    Id = "FakeStringValue"
-                    IsChatResourceSpecificConsentEnabled = $True
-                    IsUserPersonalScopeResourceSpecificConsentEnabled = $True
-                    Ensure = "Present"
-                    Credential = $Credential;
-                }
-
-                Mock -CommandName Get-MgBetaTeamworkTeamAppSetting -MockWith {
-                    return $null
-                }
-            }
-            It 'Should return Values from the Get method' {
-                (Get-TargetResource @testParams).Ensure | Should -Be 'Absent'
-            }
-            It 'Should return false from the Test method' {
-                Test-TargetResource @testParams | Should -Be $false
-            }
-            It 'Should Create the group from the Set method' {
-                Set-TargetResource @testParams
-                Should -Invoke -CommandName New-MgBetaTeamworkTeamAppSetting -Exactly 1
-            }
-        }
-
-        Context -Name "The TeamsResourceSpecificConsentSettings exists but it SHOULD NOT" -Fixture {
-            BeforeAll {
-                $testParams = @{
-                    AllowUserRequestsForAppAccess = $True
-                    Id = "FakeStringValue"
-                    IsChatResourceSpecificConsentEnabled = $True
-                    IsUserPersonalScopeResourceSpecificConsentEnabled = $True
-                    Ensure = 'Absent'
-                    Credential = $Credential;
-                }
-
-                Mock -CommandName Get-MgBetaTeamworkTeamAppSetting -MockWith {
-                    return @{
-                        AdditionalProperties = @{
-                            '@odata.type' = "#microsoft.graph.TeamsAppSettings"
-                        }
-                        AllowUserRequestsForAppAccess = $True
-                        Id = "FakeStringValue"
-                        IsChatResourceSpecificConsentEnabled = $True
-                        IsUserPersonalScopeResourceSpecificConsentEnabled = $True
-
-                    }
-                }
-            }
-
-            It 'Should return Values from the Get method' {
-                (Get-TargetResource @testParams).Ensure | Should -Be 'Present'
-            }
-
-            It 'Should return true from the Test method' {
-                Test-TargetResource @testParams | Should -Be $false
-            }
-
-            It 'Should Remove the group from the Set method' {
-                Set-TargetResource @testParams
-                Should -Invoke -CommandName Remove-MgBetaTeamworkTeamAppSetting -Exactly 1
-            }
-        }
         Context -Name "The TeamsResourceSpecificConsentSettings Exists and Values are already in the desired state" -Fixture {
             BeforeAll {
                 $testParams = @{
-                    AllowUserRequestsForAppAccess = $True
-                    Id = "FakeStringValue"
-                    IsChatResourceSpecificConsentEnabled = $True
+                    IsSingleInstance                                  = 'Yes'
+                    AllowUserRequestsForAppAccess                     = $True
+                    IsChatResourceSpecificConsentEnabled              = $True
                     IsUserPersonalScopeResourceSpecificConsentEnabled = $True
                     Ensure = 'Present'
                     Credential = $Credential;
                 }
-
-                Mock -CommandName Get-MgBetaTeamworkTeamAppSetting -MockWith {
-                    return @{
-                        AdditionalProperties = @{
-                            '@odata.type' = "#microsoft.graph.TeamsAppSettings"
-                        }
-                        AllowUserRequestsForAppAccess = $True
-                        Id = "FakeStringValue"
-                        IsChatResourceSpecificConsentEnabled = $True
-                        IsUserPersonalScopeResourceSpecificConsentEnabled = $True
-
-                    }
-                }
             }
-
 
             It 'Should return true from the Test method' {
                 Test-TargetResource @testParams | Should -Be $true
@@ -150,18 +78,12 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
         Context -Name "The TeamsResourceSpecificConsentSettings exists and values are NOT in the desired state" -Fixture {
             BeforeAll {
                 $testParams = @{
-                    AllowUserRequestsForAppAccess = $True
-                    Id = "FakeStringValue"
-                    IsChatResourceSpecificConsentEnabled = $True
-                    IsUserPersonalScopeResourceSpecificConsentEnabled = $True
+                    IsSingleInstance                                  = 'Yes'
+                    AllowUserRequestsForAppAccess                     = $False
+                    IsChatResourceSpecificConsentEnabled              = $False
+                    IsUserPersonalScopeResourceSpecificConsentEnabled = $False
                     Ensure = 'Present'
                     Credential = $Credential;
-                }
-
-                Mock -CommandName Get-MgBetaTeamworkTeamAppSetting -MockWith {
-                    return @{
-                        Id = "FakeStringValue"
-                    }
                 }
             }
 

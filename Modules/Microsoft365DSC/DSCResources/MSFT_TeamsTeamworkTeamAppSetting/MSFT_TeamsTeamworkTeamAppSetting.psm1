@@ -4,6 +4,11 @@ function Get-TargetResource
     [OutputType([System.Collections.Hashtable])]
     param
     (
+        [Parameter(Mandatory)]
+        [ValidateSet('Yes')]
+        [System.String]
+        $IsSingleInstance,
+
         #region resource generator code
         [Parameter()]
         [System.Boolean]
@@ -115,6 +120,11 @@ function Set-TargetResource
     [CmdletBinding()]
     param
     (
+        [Parameter(Mandatory)]
+        [ValidateSet('Yes')]
+        [System.String]
+        $IsSingleInstance,
+
         #region resource generator code
         [Parameter()]
         [System.Boolean]
@@ -174,6 +184,7 @@ function Set-TargetResource
     $currentInstance = Get-TargetResource @PSBoundParameters
 
     $BoundParameters = Remove-M365DSCAuthenticationParameter -BoundParameters $PSBoundParameters
+    $BoundParameters.Remove('IsSingleInstance') | Out-Null
 
     if ($Ensure -eq 'Present' -and $currentInstance.Ensure -eq 'Absent')
     {
@@ -202,8 +213,6 @@ function Set-TargetResource
         $UpdateParameters = ([Hashtable]$BoundParameters).clone()
         $UpdateParameters = Rename-M365DSCCimInstanceParameter -Properties $UpdateParameters
 
-        $UpdateParameters.Remove('Id') | Out-Null
-
         $keys = (([Hashtable]$UpdateParameters).clone()).Keys
         foreach ($key in $keys)
         {
@@ -225,6 +234,11 @@ function Test-TargetResource
     [OutputType([System.Boolean])]
     param
     (
+        [Parameter(Mandatory)]
+        [ValidateSet('Yes')]
+        [System.String]
+        $IsSingleInstance,
+
         #region resource generator code
         [Parameter()]
         [System.Boolean]
@@ -317,7 +331,7 @@ function Test-TargetResource
         }
     }
 
-    $ValuesToCheck.remove('Id') | Out-Null
+    $ValuesToCheck.remove('IsSingleInstance') | Out-Null
     $ValuesToCheck.Remove('Credential') | Out-Null
     $ValuesToCheck.Remove('ApplicationId') | Out-Null
     $ValuesToCheck.Remove('TenantId') | Out-Null
@@ -404,8 +418,7 @@ function Export-TargetResource
         }
         foreach ($config in $getValue)
         {
-            $displayedKey = $config.Id
-            Write-Host "    |---[$i/$($getValue.Count)] $displayedKey" -NoNewline
+            Write-Host "    |---[$i/$($getValue.Count)]" -NoNewline
             $params = @{
                 Ensure = 'Present'
                 Credential = $Credential

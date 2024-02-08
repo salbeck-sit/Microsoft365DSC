@@ -331,7 +331,6 @@ function Test-TargetResource
         }
     }
 
-    $ValuesToCheck.remove('IsSingleInstance') | Out-Null
     $ValuesToCheck.Remove('Credential') | Out-Null
     $ValuesToCheck.Remove('ApplicationId') | Out-Null
     $ValuesToCheck.Remove('TenantId') | Out-Null
@@ -420,6 +419,7 @@ function Export-TargetResource
         {
             Write-Host "    |---[$i/$($getValue.Count)]" -NoNewline
             $params = @{
+                IsSingleInstance = 'Yes'
                 Ensure = 'Present'
                 Credential = $Credential
                 ApplicationId = $ApplicationId
@@ -428,7 +428,6 @@ function Export-TargetResource
                 CertificateThumbprint = $CertificateThumbprint
                 Managedidentity = $ManagedIdentity.IsPresent
             }
-
             $Results = Get-TargetResource @Params
             $Results = Update-M365DSCExportAuthenticationResults -ConnectionMode $ConnectionMode `
                 -Results $Results

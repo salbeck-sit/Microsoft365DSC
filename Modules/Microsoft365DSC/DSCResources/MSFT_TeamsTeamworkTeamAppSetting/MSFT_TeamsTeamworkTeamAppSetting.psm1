@@ -87,6 +87,7 @@ function Get-TargetResource
         Write-Verbose -Message "An Teams Resource Specific Consent Settings was found."
 
         $results = @{
+            IsSingleInstance                                  = 'Yes'
             #region resource generator code
             AllowUserRequestsForAppAccess                     = $getValue.AllowUserRequestsForAppAccess
             IsChatResourceSpecificConsentEnabled              = $getValue.IsChatResourceSpecificConsentEnabled

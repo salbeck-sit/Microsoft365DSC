@@ -2,8 +2,21 @@
 
 # UNRELEASED
 
+* IntuneAppConfigurationPolicy
+  * Fix comparison in Test-TargetResource
+    FIXES [#4451](https://github.com/microsoft/Microsoft365DSC/issues/4451)
+* TeamsGroupPolicyAssignment
+  * Skip assignments that have orphaned/deleted groups or without display name
+    instead of throwing an error
+    FIXES [#4407](https://github.com/microsoft/Microsoft365DSC/issues/4407)
+* TeamsTenantDialPlan
+  * Fix output of property NormalizationRules as a string to the blueprint
+    FIXES [#4428](https://github.com/microsoft/Microsoft365DSC/issues/4428)
+  * Fix creation, update and deletion of resource
 * DEPENDENCIES
   * Updated DSCParser to version 2.0.0.0.
+* MISC
+  * Initial release of Get-M365DSCEvaluationRulesForConfiguration
 
 # 1.24.313.1
 
@@ -88,7 +101,7 @@
     Get-TargetResource
   * Fixed an issue with the parameter InterfaceTypes from firewallrules defined
     as a string instead of string[]
-* IntuneDeviceConfigurationPKCSCertificatePolicyWindows10
+* IntuneDeviceConfigurationSCEPCertificatePolicyWindows10
   * Add property RootCertificateDisplayName in order to support assigning root
     certificates by display name since their Ids in a blueprint might be from a
     different source tenant

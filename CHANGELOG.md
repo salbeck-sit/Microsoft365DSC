@@ -2,6 +2,11 @@
 
 # UNRELEASED
 
+* DEPENDENCIES
+  * Updated Microsoft.Graph dependencies to version 2.16.0.
+
+# 1.24.403.1
+
 * AADAdministrativeUnit
   * Fix issue with deploying/creating a new AU with members and/or adding members to an existing AU
     FIXES [#4404](https://github.com/microsoft/Microsoft365DSC/issues/4404)
@@ -38,6 +43,9 @@
   * Fix group assignment by using the corrected function
     Update-DeviceConfigurationPolicyAssignment from module M365DSCDRGUtil
     FIXES [#4467](https://github.com/microsoft/Microsoft365DSC/issues/4467)
+* IntuneDeviceEnrollmentPlatformRestriction
+  * Fixed an issue where nested settings would throw a conflict
+    FIXES [#4082](https://github.com/microsoft/Microsoft365DSC/issues/4082)
 * IntuneDeviceEnrollmentStatusPageWindows10
   * Added support for specifying SelectedMobileAppNames in addition to SelectedMobileAppIds,
     which are different for each tenant.
@@ -57,6 +65,7 @@
     duplication in SPOAccessControlSettings
     FIXES [#3576](https://github.com/microsoft/Microsoft365DSC/issues/3576)
   * Added SocialBarOnSitePagesDisabled parameter, moved from SPOAccessControlSettings.
+  * Added EnableAIPIntegration.
 * TeamsChannelTab
   * Fixed schema file
 * TeamsGroupPolicyAssignment
@@ -71,7 +80,7 @@
   * Adds support for the NewTeamsOnly value or the UseNewTeamsClient property.
     FIXES [#4496](https://github.com/microsoft/Microsoft365DSC/issues/4496)
 * DEPENDENCIES
-  * Updated DSCParser to version 2.0.0.2.
+  * Updated DSCParser to version 2.0.0.3.
 * MISC
   * Initial release of Get-M365DSCEvaluationRulesForConfiguration
   * M365DSCDRGUtil

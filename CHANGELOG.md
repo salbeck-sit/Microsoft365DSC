@@ -2,6 +2,8 @@
 
 # UNRELEASED
 
+* AADRoleEligibilitySecheduleRquest
+  * Cleaned Export logic.
 * EXOActiveSyncDeviceAccessRule
   * Retrieve instance by Identity if not found by characteristic.
 * EXOMailboxSettings
@@ -10,6 +12,9 @@
 * DEPENDENCIES
   * Updated Microsoft.Graph dependencies to version 2.17.0.
   * Updated MicrosoftTeams to version 6.1.0.
+* MISC
+  * Telemetry
+    * Get operating system using faster method to speed up telemetry calls.
 
 # 1.24.403.1
 

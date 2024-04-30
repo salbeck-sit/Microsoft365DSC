@@ -1,0 +1,22 @@
+[ClassVersion("1.0.0")]
+class MSFT_AADSelfServicePurchaseOfferType
+{
+    [Key, Description("OfferType.  Can be 'All', 'SaaS', 'PowerBIVisuals', 'DynamicsCE' or 'DynamicsBC'")] String OfferType;
+    [Write, Description("Enable or Disable self-service access to the offer.")] Boolean IsEnabled;
+}
+[ClassVersion("1.0.0.0"), FriendlyName("AADSelfServicePurchase")]
+class MSFT_AADSelfServicePurchase : OMI_BaseResource
+{
+    [Key, Description("Only valid value is 'Yes'."), ValueMap{"Yes"}, Values{"Yes"}] String IsSingleInstance;
+    [Write, Description("PolicyValue.")] Boolean IsEnabled;
+    [Write, Description("Specify products to be enabled for self-service trial without option to buy.")] String[] OnlyTrialsWithoutPaymentMethod;
+    [Write, Description("Enable or Disable Offer Types.", EmbeddedInstance("MSFT_AADSelfServicePurchaseOfferType"))] String[] OfferTypes;
+    [Write, Description("Specify if the Azure AD App should exist or not."), ValueMap{"Present"}, Values{"Present"}] String Ensure;
+    [Write, Description("Id of the Azure Active Directory application to authenticate with.")] String ApplicationId;
+    [Write, Description("Id of the Azure Active Directory tenant used for authentication.")] String TenantId;
+    [Write, Description("Thumbprint of the Azure Active Directory application's authentication certificate to use for authentication.")] String CertificateThumbprint;
+    [Write, Description("Secret of the Azure Active Directory application to authenticate with."), EmbeddedInstance("MSFT_Credential")] String ApplicationSecret;
+    [Write, Description("Credentials of the Azure AD Admin"), EmbeddedInstance("MSFT_Credential")] string Credential;
+    [Write, Description("Managed ID being used for authentication.")] Boolean ManagedIdentity;
+    [Write, Description("Access token used for authentication.")] String AccessTokens[];
+};

@@ -1,0 +1,32 @@
+﻿{
+    "resourceName": "AADSelfServicePurchase",
+    "description": "This resource configures Azure Active Directory Self-Service Purchase options.",
+    "permissions": {
+        "M365 License Manager": {
+            "delegated": {
+                "read": [
+                    {
+                        "name": "LicenseManager.AccessAsUser"
+                    }
+                ],
+                "update": [
+                    {
+                        "name": "LicenseManager.AccessAsUser"
+                    }
+                ]
+            },
+            "application": {
+                "read": [
+                    {
+                        "name": "LicenseManager.AccessAsUser"
+                    }
+                ],
+                "update": [
+                    {
+                        "name": "LicenseManager.AccessAsUser"
+                    }
+                ]
+            }
+        }
+    }
+}

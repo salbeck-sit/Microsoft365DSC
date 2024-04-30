@@ -90,7 +90,7 @@
         },
         @{
             ModuleName      = "MSCloudLoginAssistant"
-            RequiredVersion = "1.1.16"
+            RequiredVersion = "1.2.0" # must include code to manage access for the MSCommerce cmdlets
         },
         @{
             ModuleName      = 'PnP.PowerShell'

@@ -1,6 +1,6 @@
 # Change log for Microsoft365DSC
 
-# UNRELEASED
+# 1.24.522.1
 
 * IntuneDeviceConfigurationPlatformScriptWindows
   * Initial Release
@@ -17,6 +17,9 @@
 * IntuneDeviceRemediation
   * Initial Release  
     FIXES [#4159](https://github.com/microsoft/Microsoft365DSC/issues/4159)
+* IntuneWindowsUpdateForBusinessDriverUpdateProfileWindows10
+  * Initial Release  
+    FIXES [#3747](https://github.com/microsoft/Microsoft365DSC/issues/3747)
 * SPOTenantCdnPolicy
   * If properties in the tenant are empty then export them as empty arrays
     instead of null strings, missed while fixing #4658
@@ -28,6 +31,9 @@
     of a blueprint with a GUID could lead to configuration name starting
     with a digit instead of a letter.
     Partially fixes [#4681](https://github.com/microsoft/Microsoft365DSC/issues/4681)
+* DEPENDENCIES
+  * Updated ExchangeOnlineManagement to version 3.5.0
+  * Updated MicrosoftTeams to version 6.2.0
 
 # 1.24.515.2
 

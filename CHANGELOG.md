@@ -1,5 +1,26 @@
 # Change log for Microsoft365DSC
 
+# UNRELEASED
+
+* AADAdministrativeUnit
+  * Implemented advanced query based on 
+    https://learn.microsoft.com/en-us/graph/aad-advanced-queries?tabs=http#administrative-unit-properties
+* AADAuthenticationMethodPolicy
+  * Add support for disabled policies
+* AADConditionalAccessPolicy
+  * Fix get method if value is null instead of false
+* IntuneAppConfigurationDevicePolicy
+  * Initial release
+* IntuneDeviceRemediation
+  * Added support for Access Tokens
+* IntuneDiskEncryptionMacOS
+  * Initial Release
+* ResourceGenerator
+  * Added `AccessTokens` parameter to PS1 and MOF template
+* DEPENDENCIES
+  * Updated DSCParser to version 2.0.0.5.
+  * Updated Microsoft.PowerApps.Administration.PowerShell to version 2.0.188.
+
 # 1.24.522.1
 
 * IntuneDeviceConfigurationPlatformScriptWindows
@@ -9,16 +30,16 @@
   * Initial Release
   FIXES [#4157](https://github.com/microsoft/Microsoft365DSC/issues/4157)
 * IntuneDeviceEnrollmentPlatformRestriction
-  * Fix missing export of the default policy  
+  * Fix missing export of the default policy
   FIXES [#4694](https://github.com/microsoft/Microsoft365DSC/issues/4694)
 * IntuneDeviceEnrollmentStatusPageWindows10
   * Return all authentication methods when retrieving the policies otherwise
     it may fail deducing the OrganizationName via TenantId
 * IntuneDeviceRemediation
-  * Initial Release  
+  * Initial Release
     FIXES [#4159](https://github.com/microsoft/Microsoft365DSC/issues/4159)
 * IntuneWindowsUpdateForBusinessDriverUpdateProfileWindows10
-  * Initial Release  
+  * Initial Release
     FIXES [#3747](https://github.com/microsoft/Microsoft365DSC/issues/3747)
 * SPOTenantCdnPolicy
   * If properties in the tenant are empty then export them as empty arrays

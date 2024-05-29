@@ -3,7 +3,7 @@
 # UNRELEASED
 
 * AADAdministrativeUnit
-  * Implemented advanced query based on 
+  * Implemented advanced query based on
     https://learn.microsoft.com/en-us/graph/aad-advanced-queries?tabs=http#administrative-unit-properties
 * AADAuthenticationMethodPolicy
   * Add support for disabled policies
@@ -15,10 +15,14 @@
   * Added support for Access Tokens
 * IntuneDiskEncryptionMacOS
   * Initial Release
+* IntuneSettingCatalogASRRulesPolicyWindows10
+  * Add missing properties
+    FIXES [#4713](https://github.com/microsoft/Microsoft365DSC/issues/4713)
 * ResourceGenerator
   * Added `AccessTokens` parameter to PS1 and MOF template
 * DEPENDENCIES
   * Updated DSCParser to version 2.0.0.5.
+  * Rolling back ExchangeOnlineManagement to version 3.4.0.
   * Updated Microsoft.PowerApps.Administration.PowerShell to version 2.0.188.
 
 # 1.24.522.1

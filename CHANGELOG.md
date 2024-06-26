@@ -1,5 +1,14 @@
 # Change log for Microsoft365DSC
 
+# UNRELEASED
+
+* AADGroup
+  * FIXES [#4782](https://github.com/microsoft/Microsoft365DSC/issues/4782)
+* IntuneDeviceManagementComplianceSettings
+  * Initial Release.
+* DEPENDENCIES
+  * Updated MSCloudLoginAssistant to version 1.1.18
+
 # 1.24.619.1
 
 * SCDLPComplianceRule

@@ -47,7 +47,7 @@
                             RoleName       = 'User Administrator'
                             RoleMemberInfo = MSFT_MicrosoftGraphMember
                             {
-                                Identity = "admin@$Domain"
+                                Identity = "admin@$TenantId"
                                 Type     = "User"
                             }
                         }
@@ -62,12 +62,12 @@
                     AvailableToOtherTenants   = $false
                     Description               = "Application Description"
                     GroupMembershipClaims     = "None"
-                    Homepage                  = "https://$Domain"
-                    IdentifierUris            = "https://$Domain"
+                    Homepage                  = "https://$TenantId"
+                    IdentifierUris            = "https://$TenantId"
                     KnownClientApplications   = ""
-                    LogoutURL                 = "https://$Domain/logout"
+                    LogoutURL                 = "https://$TenantId/logout"
                     PublicClient              = $false
-                    ReplyURLs                 = "https://$Domain"
+                    ReplyURLs                 = "https://$TenantId"
                     Permissions               = @(
                         MSFT_AADApplicationPermission
                         {
@@ -218,7 +218,9 @@
                         IsApprovalRequiredForExtension = $False
                     };
                     Ensure                     = "Present"
-                    Credential                 = $Credscredential
+                    ApplicationId         = $ApplicationId
+                    TenantId              = $TenantId
+                    CertificateThumbprint = $CertificateThumbprint
                 }
                 AADEntitlementManagementAccessPackageCatalog 'myAccessPackageCatalog'
                 {
@@ -237,12 +239,12 @@
                 {
                     DisplayName         = 'Human Resources'
                     CatalogId           = 'My Catalog'
-                    Description         = "https://$($Domain.Split('.')[0]).sharepoint.com/sites/HumanResources"
+                    Description         = "https://$($TenantId.Split('.')[0]).sharepoint.com/sites/HumanResources"
                     IsPendingOnboarding = $true
-                    OriginId            = "https://$($Domain.Split('.')[0]).sharepoint.com/sites/HumanResources"
+                    OriginId            = "https://$($TenantId.Split('.')[0]).sharepoint.com/sites/HumanResources"
                     OriginSystem        = 'SharePointOnline'
                     ResourceType        = 'SharePoint Online Site'
-                    Url                 = "https://$($Domain.Split('.')[0]).sharepoint.com/sites/HumanResources"
+                    Url                 = "https://$($TenantId.Split('.')[0]).sharepoint.com/sites/HumanResources"
                     Ensure              = 'Present'
                     ApplicationId         = $ApplicationId
                     TenantId              = $TenantId

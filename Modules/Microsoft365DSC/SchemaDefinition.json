@@ -16034,6 +16034,11 @@
                            },
                            {
                                "CIMType":  "String",
+                               "Name":  "DisableSshParsing",
+                               "Option":  "Write"
+                           },
+                           {
+                               "CIMType":  "String",
                                "Name":  "enablelowcpupriority",
                                "Option":  "Write"
                            },
@@ -32850,6 +32855,16 @@
                            {
                                "CIMType":  "String",
                                "Name":  "FeatureUpdateVersion",
+                               "Option":  "Write"
+                           },
+                           {
+                               "CIMType":  "Boolean",
+                               "Name":  "InstallFeatureUpdatesOptional",
+                               "Option":  "Write"
+                           },
+                           {
+                               "CIMType":  "Boolean",
+                               "Name":  "InstallLatestWindows10OnWindows11IneligibleDevice",
                                "Option":  "Write"
                            },
                            {

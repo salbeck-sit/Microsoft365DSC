@@ -2,7 +2,7 @@
     Dependencies = @(
         @{
             ModuleName      = 'DSCParser'
-            RequiredVersion = '2.0.0.7'
+            RequiredVersion = '2.0.0.8'
         },
         @{
             ModuleName      = 'ExchangeOnlineManagement'
@@ -95,6 +95,13 @@
         @{
             ModuleName      = 'PnP.PowerShell'
             RequiredVersion = '1.12.0'
+        },
+        @{
+            ModuleName      = 'PSDesiredStateConfiguration'
+            RequiredVersion = '2.0.7'
+            PowerShellCore  = $true
+            ExplicitLoading = $true
+            Prefix          = 'Pwsh'
         },
         @{
             ModuleName      = 'ReverseDSC'

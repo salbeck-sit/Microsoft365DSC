@@ -1,6 +1,6 @@
 # Change log for Microsoft365DSC
 
-# UNRELEASED
+# 1.24.731.1
 
 * AADAuthenticationMethodPolicyFido2
   * Add missing class identifier to schema.
@@ -20,9 +20,6 @@
   * M365DSCReport
     * Update key properties for delta report in `AADGroup` resource.
       FIXES [#4921](https://github.com/microsoft/Microsoft365DSC/issues/4921)
-  * Improve PowerShell Core support across the DSC resources.
-    FIXES [#4911](https://github.com/microsoft/Microsoft365DSC/issues/4911)
-
 
 # 1.24.724.1
 

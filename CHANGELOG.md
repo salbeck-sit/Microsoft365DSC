@@ -51,6 +51,9 @@
 * EXOMailboxFolderPermission
   * Initial Release.
 * EXOMailboxIRMAccess
+  * Initial Release.
+* EXOMailTips
+  * Remove property `Ensure` since this resource is of type `IsSingleInstance`
 * EXOManagementScope
   * Initial Release.
 * EXORetenionPolicy
@@ -95,6 +98,8 @@
   * Added support for Auto Labeling settings
     FIXES [#3784](https://github.com/microsoft/Microsoft365DSC/issues/3784)
 * SentinelSetting
+  * Initial release.
+* SentinelWatchlist
   * Initial release.
 * SPOAccessControlSettings
   * Added support for property EnableRestrictedAccessControl.

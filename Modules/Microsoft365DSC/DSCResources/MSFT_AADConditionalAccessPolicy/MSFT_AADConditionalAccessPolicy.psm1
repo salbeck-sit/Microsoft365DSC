@@ -92,6 +92,23 @@ function Get-TargetResource
         [System.String[]]
         $ExcludeExternalTenantsMembers,
 
+        [Parameter()]
+        [System.String[]]
+        $IncludeServicePrincipals,
+
+        [Parameter()]
+        [System.String[]]
+        $ExcludeServicePrincipals,
+
+        [Parameter()]
+        [ValidateSet('include', 'exclude')]
+        [System.String]
+        $ServicePrincipalFilterMode,
+
+        [Parameter()]
+        [System.String]
+        $ServicePrincipalFilterRule,
+
         #ConditionalAccessPlatformCondition
         [Parameter()]
         [System.String[]]
@@ -201,6 +218,11 @@ function Get-TargetResource
         [Parameter()]
         [System.String]
         $TransferMethods,
+
+        [Parameter()]
+        [ValidateSet('minor', 'moderate', 'elevated', 'unknownFutureValue')]
+        [System.String]
+        $InsiderRiskLevels,
 
         #generic
         [Parameter()]
@@ -642,6 +664,11 @@ function Get-TargetResource
         ExcludeExternalTenantsMembershipKind     = [System.String]$Policy.Conditions.Users.ExcludeGuestsOrExternalUsers.ExternalTenants.MembershipKind
         ExcludeExternalTenantsMembers            = [System.String[]](@() + $Policy.Conditions.Users.ExcludeGuestsOrExternalUsers.ExternalTenants.AdditionalProperties.members)
 
+        IncludeServicePrincipals                 = $Policy.Conditions.ClientApplications.IncludeServicePrincipals
+        ExcludeServicePrincipals                 = $Policy.Conditions.ClientApplications.ExcludeServicePrincipals
+        ServicePrincipalFilterMode               = $Policy.Conditions.ClientApplications.ServicePrincipalFilter.Mode
+        ServicePrincipalFilterRule               = $Policy.Conditions.ClientApplications.ServicePrincipalFilter.Rule
+
         IncludePlatforms                         = [System.String[]](@() + $Policy.Conditions.Platforms.IncludePlatforms)
         #no translation needed, return empty string array if undefined
         ExcludePlatforms                         = [System.String[]](@() + $Policy.Conditions.Platforms.ExcludePlatforms)
@@ -687,6 +714,7 @@ function Get-TargetResource
         TransferMethods                          = [System.String]$Policy.Conditions.AuthenticationFlows.TransferMethods
         #Standard part
         TermsOfUse                               = $termOfUseName
+        InsiderRiskLevels                        = $Policy.Conditions.InsiderRiskLevels
         Ensure                                   = 'Present'
         Credential                               = $Credential
         ApplicationSecret                        = $ApplicationSecret
@@ -793,6 +821,23 @@ function Set-TargetResource
         [Parameter()]
         [System.String[]]
         $ExcludeExternalTenantsMembers,
+
+        [Parameter()]
+        [System.String[]]
+        $IncludeServicePrincipals,
+
+        [Parameter()]
+        [System.String[]]
+        $ExcludeServicePrincipals,
+
+        [Parameter()]
+        [ValidateSet('include', 'exclude')]
+        [System.String]
+        $ServicePrincipalFilterMode,
+
+        [Parameter()]
+        [System.String]
+        $ServicePrincipalFilterRule,
 
         #ConditionalAccessPlatformCondition
         [Parameter()]
@@ -904,6 +949,11 @@ function Set-TargetResource
         [System.String]
         $TransferMethods,
 
+        [Parameter()]
+        [ValidateSet('minor', 'moderate', 'elevated', 'unknownFutureValue')]
+        [System.String]
+        $InsiderRiskLevels,
+
         #generic
         [Parameter()]
         [ValidateSet('Present', 'Absent')]
@@ -981,11 +1031,54 @@ function Set-TargetResource
         Write-Verbose -Message 'Set-Targetresource: create Application Condition object'
         if ($currentParameters.ContainsKey('IncludeApplications'))
         {
-            $conditions.Applications.Add('includeApplications', $IncludeApplications)
+            $IncludeApplicationsValue = @()
+            foreach ($app in $IncludeApplications)
+            {
+                $ObjectGuid = [System.Guid]::empty
+                if ([System.Guid]::TryParse($app, [System.Management.Automation.PSReference]$ObjectGuid))
+                {
+                    $IncludeApplicationsValue += $app
+                }
+                else
+                {
+                    $appInfo = Get-MgApplication -Filter "DisplayName eq '$app'" -ErrorAction SilentlyContinue
+                    if ($null -ne $appInfo)
+                    {
+                        $IncludeApplicationsValue += $appInfo.AppId
+                    }
+                    else
+                    {
+                        $IncludeApplicationsValue += $app
+                    }
+                }
+            }
+
+            $conditions.Applications.Add('includeApplications', $IncludeApplicationsValue)
         }
         if ($currentParameters.ContainsKey('excludeApplications'))
         {
-            $conditions.Applications.Add('excludeApplications', $ExcludeApplications)
+            $ExcludeApplicationsValue = @()
+            foreach ($app in $ExcludeApplications)
+            {
+                $ObjectGuid = [System.Guid]::empty
+                if ([System.Guid]::TryParse($app, [System.Management.Automation.PSReference]$ObjectGuid))
+                {
+                    $ExcludeApplicationsValue += $app
+                }
+                else
+                {
+                    $appInfo = Get-MgApplication -Filter "DisplayName eq '$app'" -ErrorAction SilentlyContinue
+                    if ($null -ne $appInfo)
+                    {
+                        $ExcludeApplicationsValue += $appInfo.AppId
+                    }
+                    else
+                    {
+                        $ExcludeApplicationsValue += $app
+                    }
+                }
+            }
+            $conditions.Applications.Add('excludeApplications', $ExcludeApplicationsValue)
         }
         if ($ApplicationsFilter -and $ApplicationsFilterMode)
         {
@@ -1340,6 +1433,49 @@ function Set-TargetResource
             $conditions.Users.Add('excludeGuestsOrExternalUsers', $excludeGuestsOrExternalUsers)
         }
 
+        Write-Verbose -Message 'Set-Targetresource: process includeServicePrincipals'
+        if ($currentParameters.ContainsKey('IncludeServicePrincipals'))
+        {
+            if (-not $conditions.ContainsKey('clientApplications')) {
+                $conditions.Add('clientApplications', @{})
+            }
+            $conditions.clientApplications.Add('includeServicePrincipals', $IncludeServicePrincipals)
+        }
+
+        Write-Verbose -Message 'Set-Targetresource: process excludeServicePrincipals'
+        if ($currentParameters.ContainsKey('ExcludeServicePrincipals'))
+        {
+            if (-not $conditions.ContainsKey('clientApplications')) {
+                $conditions.Add('clientApplications', @{})
+            }
+            $conditions.clientApplications.Add('excludeServicePrincipals', $ExcludeServicePrincipals)
+        }
+
+        Write-Verbose -Message 'Set-Targetresource: process servicePrincipalFilter'
+        if ($currentParameters.ContainsKey('ServicePrincipalFilterMode') -and $currentParameters.ContainsKey('ServicePrincipalFilterRule'))
+        {
+            #check if the custom attribute exist.
+            $customattribute = Invoke-MgGraphRequest -Method GET -Uri ($Global:MSCloudLoginConnectionProfile.MicrosoftGraph.ResourceUrl + "v1.0/directory/customSecurityAttributeDefinitions")
+            $ServicePrincipalFilterRule -match "CustomSecurityAttribute.(?<attribute>.*) -.*"
+            $attrinrule = $matches.attribute
+            if ($customattribute.value.id -contains $attrinrule){
+                if (-not $conditions.ContainsKey('clientApplications')) {
+                    $conditions.Add('clientApplications', @{})
+                }
+                $conditions.clientApplications.Add('servicePrincipalFilter', @{})
+                $conditions.clientApplications.servicePrincipalFilter.Add('mode', $ServicePrincipalFilterMode)
+                $conditions.clientApplications.servicePrincipalFilter.Add('rule', $ServicePrincipalFilterRule)
+            }
+            else{
+                $message = "Couldn't find the custom attribute $attrinrule in the tenant, couldn't add the filter to policy $DisplayName"
+                Write-Verbose -Message $message
+                New-M365DSCLogEntry -Message $message `
+                    -Source $($MyInvocation.MyCommand.Source) `
+                    -TenantId $TenantId `
+                    -Credential $Credential
+            }
+        }
+
         Write-Verbose -Message 'Set-Targetresource: process platform condition'
         if ($currentParameters.ContainsKey('IncludePlatforms') -or $currentParameters.ContainsKey('ExcludePlatforms'))
         {
@@ -1349,13 +1485,11 @@ function Set-TargetResource
                 if (-not $conditions.Contains('platforms'))
                 {
                     $conditions.Add('platforms', @{
-                            excludePlatforms = @()
                             includePlatforms = @()
                         })
                 }
                 else
                 {
-                    $conditions.platforms.Add('excludePlatforms', @())
                     $conditions.platforms.Add('includePlatforms', @())
                 }
                 Write-Verbose -Message "Set-Targetresource: IncludePlatforms: $IncludePlatforms"
@@ -1368,8 +1502,11 @@ function Set-TargetResource
                     $conditions.platforms.includePlatforms = @() + $IncludePlatforms
                 }
                 #no translation or conversion needed
-                Write-Verbose -Message "Set-Targetresource: ExcludePlatforms: $ExcludePlatforms"
-                $conditions.platforms.excludePlatforms = @() + $ExcludePlatforms
+                if (([Array]$ExcludePlatforms).Length -ne 0)
+                {
+                    $conditions.platforms.Add('excludePlatforms', @())
+                    $conditions.platforms.excludePlatforms = @() + $ExcludePlatforms
+                }
                 #no translation or conversion needed
             }
             else
@@ -1495,6 +1632,11 @@ function Set-TargetResource
             }
         }
 
+        if ([String]::IsNullOrEmpty($InsiderRiskLevels) -eq $false)
+        {
+            $conditions.Add("insiderRiskLevels", $InsiderRiskLevels)
+        }
+
         Write-Verbose -Message 'Set-Targetresource: process risk levels and app types'
         Write-Verbose -Message "Set-Targetresource: UserRiskLevels: $UserRiskLevels"
         If ($currentParameters.ContainsKey('UserRiskLevels'))
@@ -1588,18 +1730,16 @@ function Set-TargetResource
             $NewParameters.Add('grantControls', $GrantControls)
         }
 
-        Write-Verbose -Message 'Set-Targetresource: process session controls'
-
-        $sessioncontrols = $null
         if ($ApplicationEnforcedRestrictionsIsEnabled -or $CloudAppSecurityIsEnabled -or $SignInFrequencyIsEnabled -or $PersistentBrowserIsEnabled)
         {
+            Write-Verbose -Message 'Set-Targetresource: process session controls'
+            $sessioncontrols = $null
             Write-Verbose -Message 'Set-Targetresource: create provision Session Control object'
-            $sessioncontrols = @{
-                applicationEnforcedRestrictions = @{}
-            }
+            $sessioncontrols = @{}
 
             if ($ApplicationEnforcedRestrictionsIsEnabled -eq $true)
             {
+                $sessioncontrols.Add('applicationEnforcedRestrictions', @{})
                 #create and provision ApplicationEnforcedRestrictions object if used
                 $sessioncontrols.applicationEnforcedRestrictions.Add('IsEnabled', $true)
             }
@@ -1657,10 +1797,13 @@ function Set-TargetResource
                 $sessioncontrols.persistentBrowser.isEnabled = $true
                 $sessioncontrols.persistentBrowser.mode = $PersistentBrowserMode
             }
+            $NewParameters.Add('sessionControls', $sessioncontrols)
+            #add SessionControls to the parameter list
         }
-        $NewParameters.Add('sessionControls', $sessioncontrols)
-        #add SessionControls to the parameter list
     }
+
+    Write-Host "newparameters: $($NewParameters | ConvertTo-Json -Depth 5)"
+
     if ($Ensure -eq 'Present' -and $currentPolicy.Ensure -eq 'Present')
     {
         Write-Verbose -Message "Set-Targetresource: Change policy $DisplayName"
@@ -1668,7 +1811,9 @@ function Set-TargetResource
         try
         {
             Write-Verbose -Message "Updating existing policy with values: $(Convert-M365DscHashtableToString -Hashtable $NewParameters)"
-            Invoke-MgGraphRequest -Method PATCH -Uri "https://graph.microsoft.com/beta/identity/conditionalAccess/policies/$($currentPolicy.Id)" -Body $NewParameters
+
+            $Uri = $Global:MSCloudLoginConnectionProfile.MicrosoftGraph.ResourceUrl + "beta/identity/conditionalAccess/policies/$($currentPolicy.Id)"
+            Invoke-MgGraphRequest -Method PATCH -Uri $Uri -Body $NewParameters
         }
         catch
         {
@@ -1691,7 +1836,8 @@ function Set-TargetResource
         {
             try
             {
-                Invoke-MgGraphRequest -Method POST -Uri 'https://graph.microsoft.com/beta/identity/conditionalAccess/policies' -Body $NewParameters
+                $Uri = $Global:MSCloudLoginConnectionProfile.MicrosoftGraph.ResourceUrl + "beta/identity/conditionalAccess/policies"
+                Invoke-MgGraphRequest -Method POST -Uri $Uri -Body $NewParameters
             }
             catch
             {
@@ -1829,6 +1975,23 @@ function Test-TargetResource
         [System.String[]]
         $ExcludeExternalTenantsMembers,
 
+        [Parameter()]
+        [System.String[]]
+        $IncludeServicePrincipals,
+
+        [Parameter()]
+        [System.String[]]
+        $ExcludeServicePrincipals,
+
+        [Parameter()]
+        [ValidateSet('include', 'exclude')]
+        [System.String]
+        $ServicePrincipalFilterMode,
+
+        [Parameter()]
+        [System.String]
+        $ServicePrincipalFilterRule,
+
         #ConditionalAccessPlatformCondition
         [Parameter()]
         [System.String[]]
@@ -1938,6 +2101,11 @@ function Test-TargetResource
         [Parameter()]
         [System.String]
         $TransferMethods,
+
+        [Parameter()]
+        [ValidateSet('minor', 'moderate', 'elevated', 'unknownFutureValue')]
+        [System.String]
+        $InsiderRiskLevels,
 
         #generic
         [Parameter()]

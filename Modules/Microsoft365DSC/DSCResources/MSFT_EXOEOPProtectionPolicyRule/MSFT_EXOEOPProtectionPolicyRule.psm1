@@ -71,7 +71,11 @@ function Get-TargetResource
 
         [Parameter()]
         [System.Management.Automation.PSCredential]
-        $ApplicationSecret
+        $ApplicationSecret,
+
+        [Parameter()]
+        [System.String[]]
+        $AccessTokens
     )
 
     New-M365DSCConnection -Workload 'ExchangeOnline' `
@@ -118,6 +122,7 @@ function Get-TargetResource
             TenantId                  = $TenantId
             CertificateThumbprint     = $CertificateThumbprint
             ApplicationSecret         = $ApplicationSecret
+            AccessTokens              = $AccessTokens
         }
         return [System.Collections.Hashtable] $results
     }
@@ -205,7 +210,11 @@ function Set-TargetResource
 
         [Parameter()]
         [System.Management.Automation.PSCredential]
-        $ApplicationSecret
+        $ApplicationSecret,
+
+        [Parameter()]
+        [System.String[]]
+        $AccessTokens
     )
 
     New-M365DSCConnection -Workload 'ExchangeOnline' `
@@ -344,7 +353,11 @@ function Test-TargetResource
 
         [Parameter()]
         [System.Management.Automation.PSCredential]
-        $ApplicationSecret
+        $ApplicationSecret,
+
+        [Parameter()]
+        [System.String[]]
+        $AccessTokens
     )
 
     #Ensure the proper dependencies are installed in the current environment.
@@ -374,13 +387,26 @@ function Test-TargetResource
     Write-Verbose -Message "Current Values: $(Convert-M365DscHashtableToString -Hashtable $CurrentValues)"
     Write-Verbose -Message "Target Values: $(Convert-M365DscHashtableToString -Hashtable $ValuesToCheck)"
 
-    #Convert any DateTime to String
     foreach ($key in $ValuesToCheck.Keys)
     {
+        # Convert any DateTime to String
         if (($null -ne $CurrentValues[$key]) `
                 -and ($CurrentValues[$key].GetType().Name -eq 'DateTime'))
         {
             $CurrentValues[$key] = $CurrentValues[$key].toString()
+            continue
+        }
+
+        if ($null -eq $CurrentValues[$key])
+        {
+            switch -regex ($key)
+            {
+                "^ExceptIf\w+$|^RecipientDomainIs$|^SentTo(\w+)?$"
+                {
+                    $CurrentValues[$key] = @()
+                    break
+                }
+            }
         }
     }
 
@@ -422,7 +448,11 @@ function Export-TargetResource
 
         [Parameter()]
         [Switch]
-        $ManagedIdentity
+        $ManagedIdentity,
+
+        [Parameter()]
+        [System.String[]]
+        $AccessTokens
     )
 
    $ConnectionMode = New-M365DSCConnection -Workload 'ExchangeOnline' `
@@ -468,14 +498,14 @@ function Export-TargetResource
             }
             Write-Host "    |---[$i/$($getValue.Count)] $displayedKey" -NoNewline
             $params = @{
-                Identity = $config.Identity
-                Ensure = 'Present'
-                Credential = $Credential
-                ApplicationId = $ApplicationId
-                TenantId = $TenantId
+                Identity              = $config.Identity
+                Ensure                = 'Present'
+                Credential            = $Credential
+                ApplicationId         = $ApplicationId
+                TenantId              = $TenantId
                 CertificateThumbprint = $CertificateThumbprint
-                ApplicationSecret = $ApplicationSecret
-
+                ApplicationSecret     = $ApplicationSecret
+                AccessTokens          = $AccessTokens
             }
 
             $Results = Get-TargetResource @Params

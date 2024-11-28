@@ -391,8 +391,9 @@ function Get-TargetResource
 
             try
             {
+                $Uri = $Global:MSCloudLoginConnectionProfile.MicrosoftGraph.ResourceUrl + "beta/applications/$($AADBetaApp.Id)/onPremisesPublishing"
                 $oppInfo = Invoke-MgGraphRequest -Method GET `
-                                                 -Uri "https://graph.microsoft.com/beta/applications/$($AADBetaApp.Id)/onPremisesPublishing" `
+                                                 -Uri $Uri `
                                                  -ErrorAction SilentlyContinue
             }
             catch
@@ -456,13 +457,19 @@ function Get-TargetResource
             }
             #endregion
 
+            $IdentifierUrisValue = @()
+            if ($null -ne $AADApp.IdentifierUris)
+            {
+                $IdentifierUrisValue = $AADApp.IdentifierUris
+            }
+
             $result = @{
                 DisplayName             = $AADApp.DisplayName
                 AvailableToOtherTenants = $AvailableToOtherTenantsValue
                 Description             = $AADApp.Description
                 GroupMembershipClaims   = $AADApp.GroupMembershipClaims
                 Homepage                = $AADApp.web.HomepageUrl
-                IdentifierUris          = $AADApp.IdentifierUris
+                IdentifierUris          = $IdentifierUrisValue
                 IsFallbackPublicClient  = $IsFallbackPublicClientValue
                 KnownClientApplications = $AADApp.Api.KnownClientApplications
                 LogoutURL               = $AADApp.web.LogoutURL
@@ -924,7 +931,7 @@ function Set-TargetResource
                 {
                     $Type = 'directoryObjects'
                 }
-                $ObjectUri = 'https://graph.microsoft.com/v1.0/{0}/{1}' -f $Type, $diff.InputObject
+                $ObjectUri = $Global:MSCloudLoginConnectionProfile.MicrosoftGraph.ResourceUrl + 'v1.0/{0}/{1}' -f $Type, $diff.InputObject
                 $ownerObject = @{
                     '@odata.id' = $ObjectUri
                 }
@@ -1135,8 +1142,10 @@ function Set-TargetResource
         $onPremisesPublishingValue.Add('singleSignOnSettings', $singleSignOnValues)
         $onPremisesPayload = ConvertTo-Json $onPremisesPublishingValue -Depth 10 -Compress
         Write-Verbose -Message "Updating the OnPremisesPublishing settings for application {$($currentAADApp.DisplayName)} with payload: $onPremisesPayload"
+
+        $Uri = $Global:MSCloudLoginConnectionProfile.MicrosoftGraph.ResourceUrl + "beta/applications/$($currentAADApp.Id)/onPremisesPublishing"
         Invoke-MgGraphRequest -Method 'PATCH' `
-                              -Uri "https://graph.microsoft.com/beta/applications/$($currentAADApp.Id)/onPremisesPublishing" `
+                              -Uri $Uri `
                               -Body $onPremisesPayload
     }
     #endregion

@@ -241,7 +241,7 @@ function Get-TargetResource
     try
     {
         Write-Verbose -Message "Checking for the Intune Endpoint Protection Attack Surface Protection rules Policy {$DisplayName}"
-        
+
         $ConnectionMode = New-M365DSCConnection -Workload 'MicrosoftGraph' `
             -InboundParameters $PSBoundParameters `
             -ErrorAction Stop
@@ -274,6 +274,7 @@ function Get-TargetResource
             if (-not [System.String]::IsNullOrEmpty($DisplayName))
             {
                 $policy = Get-MgBetaDeviceManagementConfigurationPolicy `
+                    -All `
                     -Filter "Name eq '$DisplayName' and templateReference/TemplateId eq '$templateReferenceId'" `
                     -ErrorAction SilentlyContinue
             }
@@ -1084,7 +1085,7 @@ function Export-TargetResource
                     $Results.Remove('Assignments') | Out-Null
                 }
             }
-            
+
             $currentDSCBlock = Get-M365DSCExportContentForResource -ResourceName $ResourceName `
                 -ConnectionMode $ConnectionMode `
                 -ModulePath $PSScriptRoot `

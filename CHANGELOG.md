@@ -1,6 +1,429 @@
 # Change log for Microsoft365DSC
 
-# UNRELEASED
+# 1.24.1127.1
+
+* AAD
+  * Added ApplicationSecret auth method to multiple resources
+* AADFilteringPolicyRule
+  * Fixed an issue with the export of the Destinations property where
+    the CIMInstance array object was malformed.
+* EXOEOPProtectionPolicyRule
+  * Added support for AccessTokens.
+* EXOExternalInOutlook
+  * Added support for AccessTokens.
+* EXOMailContact
+  * Changed how empty arrays are returned.
+* EXOPlace
+  * Changed how empty arrays are returned.
+* EXORecipientPermission
+  * Added logic to update an existing recipients permissions.
+* EXOTransportRule
+  * Changed how empty arrays are returned.
+* INTUNE
+  * Add parameter `-All` to Graph requests to fetch all policies on Get.
+* IntuneAndroidManagedStoreAppConfiguration
+  * Initial release.
+* IntuneAppConfigurationPolicy
+  * Fixes an issue where assignment was not properly set if the
+    groupId was null.
+    FIXES [#5430](https://github.com/microsoft/Microsoft365DSC/issues/5430)
+* IntuneMobileAppConfigurationPolicyIOS
+  * Removing resource. Already possible with IntuneAppConfigurationDevicePolicy
+* IntuneMobileThreatDefenseConnector
+  * Fixes a NotFound error when the resource does not exist and remove
+    `LastHeartbeatDateTime` from comparison.
+* IntuneRoleAssignment
+  * Improve verbose output and fix copy-pasted variables.
+* IntuneRoleScopeTag
+  * Initial release.
+* TeamsUserPolicyAssignment
+  * Added support for the Global policies.
+* TeamsUpgradePolicy
+  * DEPRECATED: Users properties. Use the TeamsUserPolicyAssignment resource
+    instead.
+* M365DSCUtil
+  * Add default Ensure value `Present` if not specified.
+    FIXES [#5085](https://github.com/microsoft/Microsoft365DSC/issues/5085)
+  * When exporting generate the instance names of resources with their mandatory
+    keys instead of random GUIDs , this makes exports idempotent again
+    FIXES [#5469](https://github.com/microsoft/Microsoft365DSC/issues/5469)
+* MISC
+  * Removed hardcoded Graph urls and replaced by MSCloudLoginAssistant values.
+  * Add separate module handling for PowerShell Core.
+* DEPENDENCIES
+  * Updated DSCParser to version 2.0.0.14.
+  * Updated Microsoft.Graph to version 2.25.0.
+  * Updated Microsoft.PowerApps.Administration.PowerShell to version 2.0.200.
+  * Updated MicrosoftTeams to version 6.7.0.
+
+# 1.24.1120.1
+
+* AADAdminConsentRequestPolicy
+  * Added error handling to Group display name retrieval to prevent errors
+    when an assigned group no longer exists.
+* AADAuthenticationMethodPolicyAuthenticator
+  * Added error handling to Group display name retrieval to prevent errors
+    when an assigned group no longer exists.
+* AADAuthenticationMethodPolicyEmail
+  * Added error handling to Group display name retrieval to prevent errors
+    when an assigned group no longer exists.
+* AADAuthenticationMethodPolicyExternal
+  * Added error handling to Group display name retrieval to prevent errors
+    when an assigned group no longer exists.
+* AADAuthenticationMethodPolicyFido2
+  * Added error handling to Group display name retrieval to prevent errors
+    when an assigned group no longer exists.
+* AADAuthenticationMethodPolicyHardware
+  * Added error handling to Group display name retrieval to prevent errors
+    when an assigned group no longer exists.
+* AADAuthenticationMethodPolicySms
+  * Added error handling to Group display name retrieval to prevent errors
+    when an assigned group no longer exists.
+* AADAuthenticationMethodPolicySoftware
+  * Added error handling to Group display name retrieval to prevent errors
+    when an assigned group no longer exists.
+* AADAuthenticationMethodPolicyTemporary
+  * Added error handling to Group display name retrieval to prevent errors
+    when an assigned group no longer exists.
+* AADAuthenticationMethodPolicyVoice
+  * Added error handling to Group display name retrieval to prevent errors
+    when an assigned group no longer exists.
+* AADAuthenticationMethodPolicyX509
+  * Added error handling to Group display name retrieval to prevent errors
+    when an assigned group no longer exists.
+* AADConditionalAccessPolicy
+  * Fixed bug where a null value was passed in the request for the
+    excludePlatforms parameter when just values were assigned to includePlatforms, which throws an error.
+  * Fixed bug where a null value was passed in the request for the
+    sessionControl parameter when there are no session controls, which throws an error.
+  * Fixed bug where a null value was passed in the request for the
+    applicationEnforcedRestrictions parameter when value was set to false, which throws an error.
+* AADDeviceRegistrationPolicy
+  * Added error handling to Group display name retrieval to prevent errors
+    when an assigned group no longer exists.
+* AADRoleAssignmentScheduleRequest
+  * Initial release.
+* AADRoleEligibilityScheduleRequest
+  * Adds support for custom role assignments at app scope.
+* AADRoleSettings
+  * Fixing issue where the ActivateApprover parameter is not processed correctly
+    when an approver does not exist.
+    FIXES [#5423](https://github.com/microsoft/Microsoft365DSC/issues/5423)
+    FIXES [#5415](https://github.com/microsoft/Microsoft365DSC/issues/5415)
+* ADOSecurityPolicy
+  * Fixed an error in the export when using a Service Principal to authenticate.
+* AzureBillingAccountPolicy
+  * Initial release.
+* IntuneDeviceConfigurationPolicyAndroidDeviceOwner
+  * Fixed issue when properties `DetailedHelpText`,
+    `DeviceOwnerLockScreenMessage` or `ShortHelpText` were defined but the
+    request was not being sent correctly
+    FIXES [#5411](https://github.com/microsoft/Microsoft365DSC/issues/5411)
+* IntuneDiskEncryptionPDEPolicyWindows10
+  * Initial release.
+* IntuneFirewallRulesHyperVPolicyWindows10
+  * Initial release.
+* IntuneFirewallRulesPolicyWindows10ConfigMgr
+  * Initial release.
+* IntuneMobileAppConfigurationPolicyIOS
+  * Initial release.
+* SCPolicyConfig
+  * Fixed an issue extracting empty groups properties.
+* TeamsMeetingPolicy
+  * FIXES #5442(https://github.com/microsoft/Microsoft365DSC/issues/5442)
+* TeamsUpdateManagementPolicy
+  * Added conversion of the UpdateTimeOfDay parameter to the local culture format
+    so that the comparison will work consistently.
+    FIXES [#5424](https://github.com/microsoft/Microsoft365DSC/issues/5424)
+* M365DSCDRGUtil
+  * Improve CIM instance detection for specific Intune resources.
+* AADUser
+  * Fixed issue updating user group membership when looking for the group by DisplayName.
+  * Fixed missing User Id when changing  group membership in Set-TargetResource function.
+
+# 1.24.1113.1
+
+* AADConditionalAccessPolicy
+  * Fixed bug where an empty value was passed in the request for the
+    insiderRiskLevels parameter, which throws an error.
+    FIXES [#5389](https://github.com/microsoft/Microsoft365DSC/issues/5389)
+  * Fixes a bug where 3P apps could not be assigned by DisplayName for both
+    IncludeApplications and ExcludeApplications
+    FIXES [#5390](https://github.com/microsoft/Microsoft365DSC/issues/5390)
+* AADRoleEligibilityScheduleRequest
+  * FIXES [#3787](https://github.com/microsoft/Microsoft365DSC/issues/3787)
+  * FIXES [#5089](https://github.com/microsoft/Microsoft365DSC/issues/5089)
+* EXOATPBuiltInProtectionRule, EXOEOPProtectionRule
+  * Fixed issue where empty arrays were being compared incorrectly to null
+    strings
+    FIXES [#5394](https://github.com/microsoft/Microsoft365DSC/issues/5394)
+* IntuneAccountProtectionLocalAdministratorPasswordSolutionPolicy
+  * Update property `PasswordAgeDays_AAD` to be lower-case.
+    FIXES [#5378](https://github.com/microsoft/Microsoft365DSC/issues/5378) (1/2)
+* IntuneAntivirusExclusionsPolicyMacOS
+  * Initial release.
+* IntuneAntivirusPolicyWindows10SettingCatalog
+  * Update properties to be upper-case.
+    Fixes [#5373](https://github.com/microsoft/Microsoft365DSC/issues/5373)
+* IntuneDeviceConfigurationCustomPolicyWindows10
+  * Fixed issue where `Value`, from `OmaSettings`, could not be compared
+    correctly if it was boolean and set to `$False`
+    FIXES [#5384](https://github.com/microsoft/Microsoft365DSC/issues/5384)
+* IntuneEndpointDetectionAndResponsePolicyWindows10
+  * Remove changed property name from export.
+    FIXES [#5300](https://github.com/microsoft/Microsoft365DSC/issues/5300)* IntuneSecurityBaselineMicrosoftEdge
+  * Deprecate property `authschemes` and replace with `AuthSchemes_AuthSchemes`
+* M365DSCDRGUtil
+  * Restrict CIM instance access to properties that appear multiple times.
+  * Switch log type for not found Intune assignments to `Warning`.
+* M365DSCIntuneSettingsCatalogUtil
+  * Add ADMX handling for `edge~httpauthentication_`.
+    FIXES [#5378](https://github.com/microsoft/Microsoft365DSC/issues/5378) (2/2)
+* TeamsUpgradePolicy
+  * Changes to how we are retrieving the users to improve performance.
+* DEPENDENCIES
+  * Updated DSCParser to version 2.0.0.12.
+  * Updated MSCloudLoginAssistant to version 1.1.28.
+
+# 1.24.1106.3
+
+* AzureBillingAccountScheduledAction
+  * Initial release.
+* AzureSubscription
+  * Added the ability to delete subscriptions.
+* EXODataAtRestEncryptionPolicyAssignment
+  * Initial release.
+* EXODataAtRestEncryptionPolicy
+  * Initial release.
+* IntuneAntivirusPolicyMacOS
+  * Initial release.
+* IntuneAntivirusExclusionsPolicyLinux
+  * Initial release.
+* IntuneFirewallRulesPolicyWindows10
+  * Initial release.
+* MISC
+  * Fixed issues with API Url's parsing.
+
+# 1.24.1106.1
+
+* AADAccessReviewDefinition
+  * Initial release.
+* AADAccessReviewPolicy
+  * Initial release.
+* AADAuthenticationMethodPolicyExternal
+  * Initial release.
+* AADClaimsMappingPolicy
+  * Initial release.
+* AADConditionalAccessPolicy
+  * FIXES [#5282](https://github.com/microsoft/Microsoft365DSC/issues/5282)
+  * Added support for InsiderRiskLevels.
+* AADCustomSecurityAttributeDefinition
+  * Fixed missing permissions in settings.json
+* AADEnrichedAuditLogs
+  * Initial release.
+* AADFederationConfiguration
+  * Initial release.
+* AADFilteringPolicy
+  * Initial release.
+* AADFilteringPolicyRule
+  * Initial release.
+* AADFilteringProfile
+  * Initial release.
+* AADGroup
+  * Added support for custom roles assignment.
+    FIXES [#5322](https://github.com/microsoft/Microsoft365DSC/issues/5322)
+* AADHomeRealmDiscoveryPolicy
+  * Initial Release
+* AADIdentityAPIConnector
+  * Initial release.
+* AADIdentityB2XUserFlow
+  * Initial release.
+* AADIdentityGovernanceLifecycleWorkflowCustomTaskExtension
+  * Initial release.
+* AADIdentityGovernanceProgram
+  * Initial release.
+* AADIdentityProtectionPolicySettings
+  * Initial release.
+* AADNamedLocationPolicy
+  * Fixed issue where duplicate names were not detected correctly.
+* AADNetworkAccessForwardingPolicy
+  * Initial release.
+* AADNetworkAccessForwardingProfile
+  * Initial release.
+* AADNetworkAccessSettingConditionalAccess
+  * Initial release.
+* AADNetworkAccessSettingCrossTenantAccess
+  * Initial release.
+* AADOnPremisesPublishingProfilesSettings
+  * Initial release.
+* AADOrganizationCertificateBasedAuthConfiguration
+  * Initial release.
+* AADRemoteNetwork
+  * Initial release.
+* AADRoleEligibilityScheduleRequest
+  * Fixes for Custom roles.
+    FIXES [#5330](https://github.com/microsoft/Microsoft365DSC/issues/5330)
+  * Fixes to remove elegibility schedule for custom roles.
+    FIXES [#5331](https://github.com/microsoft/Microsoft365DSC/issues/5331)
+* AADRoleManagementPolicyRule
+  * Initial release.
+* AADServicePrincipal
+  * Added the notes field.
+    FIXES [#5312](https://github.com/microsoft/Microsoft365DSC/issues/5312)
+  * Added support for KeyCredentials and PasswordCredentials.
+  * Added support for SAML.
+  * Fixed issue with Owners.
+* AADSocialIdentityProvider
+  * Fixed missing permissions in settings.json
+* AADUserFlowAttribute
+  * Initial Release
+* AADVerifiedIdAuthority
+  * Initial release.
+* AADVerifiedIdAuthorityContract
+  * Initial release.
+* AzureBillingAccountsAssociatedTenant
+  * Initial release.
+* AzureBillingAccountsRoleAssignment
+  * Initial release.
+* AzureDiagnosticSettings
+  * Initial release.
+* AzureDiagnosticSettingsCustomSecurityAttribute
+  * Initial release.
+* AzureSubscription
+  * Renamed parameters and added logic flow to create new subscriptions.
+* AzureVerifiedIdFaceCheck
+  * Initial release.
+* DefenderDeviceAuthenticatedScanDefinition
+  * Initial release.
+* EXOActiveSyncMailboxPolicy
+  * Initial release.
+* EXOArcConfig
+  * Fixed `Test-TargetResource` to correctly check property `ArcTrustedSealers`
+    when it has an array
+* EXOMailboxAuditBypassAssociation
+  * Initial release.
+* EXOMailboxSettings
+  * Added support for AddressBookPolicy, RetentionPolicy, RoleAssignmentPolicy
+    and SharingPolicy.
+* EXOMigration
+  * Initial release.
+* EXOServicePrincipal
+  * Initial release.
+* EXOTenantAllowBlockListItems
+  * Fixed `Test-TargetResource` to correctly mark when this resource is removed
+* EXOTenantAllowBlockListSpoofItems
+  * Initial release.
+* IntuneAccountProtectionLocalUserGroupMembershipPolicy
+  * Updates values in `UserSelectionType`.
+    FIXES [#5318](https://github.com/microsoft/Microsoft365DSC/issues/5318)
+* IntuneAntivirusPolicyLinux
+  * Initial release.
+* IntuneAppAndBrowserIsolationPolicyWindows10ConfigMgr
+  * Initial release.
+* IntuneAppCategory
+  * Fixed retrieval of resource which could then result in multiple categories
+    being created with same name.
+* IntuneAppleMDMPushNotificationCertificate
+  * Initial release.
+* IntuneAppProtectionPolicyiOS
+  * Fixes an issue that could cause multiple instances to be created when multiple
+    instances with the same display name exist.
+* IntuneDerivedCredential
+  * Fixed export and deployment when `NotificationType` had more than one option
+    selected
+  * Fixed retrieval of resource when it cannot be found by `Id`
+  * Added a few verbose messages
+* IntuneDeviceManagmentAndroidDeviceOwnerEnrollmentProfile
+  * Initial release.
+* IntuneEndpointDetectionAndResponsePolicyWindows10
+  * Fixes an issue with `AutoFromConnector` as the Configuration package type.
+    FIXES [#5246](https://github.com/microsoft/Microsoft365DSC/issues/5246)
+* IntuneMobileThreatDefenseConnector
+  * Initial release.
+* IntuneSecurityBaselineDefenderForEndpoint
+  * Initial release.
+* IntuneSettingCatalogCustomPolicyWindows10
+  * Fixes an issue with limited results when more than 25 results are present.
+* Intune workload
+  * Fixed missing permissions in settings.json
+* M365DSCRuleEvaluation
+  * Changed the name of the Key property from ResourceName to ResourceTypeName.
+    While this is considered a breaking change, the old property name was
+    breaking the DSCParser process. The impact of this breaking the parsing
+    process is important enough to justify an out-of-band breaking change of
+    this resource.
+* ODSettings
+  * Deprecated property NotifyOwnersWhenInvitationsAccepted.
+    FIXES [#4979](https://github.com/microsoft/Microsoft365DSC/issues/4979)
+* PPPowerAppsEnvironment
+  * Add ProvisionDatabase attribute
+    FIXES [#5207](https://github.com/microsoft/Microsoft365DSC/issues/5207)
+* PPTenantSettings
+  * Updated to support latest settings.
+* SCInsiderRiskPolicy
+  * Added support for property MDATPTriageStatus.
+  * Added support for GPUUtilizationLimit and CPUUtilizationLimit.
+* SCPolicyConfig
+  * Initial release.
+* SCSensitivityLabel
+  * Fixed issue with setting label priority
+    FIXES [#5266](https://github.com/microsoft/Microsoft365DSC/issues/5266)
+* SentinelAlertRule
+  * Initial release.
+* SentinelThreatIntelligenceIndicator
+  * Initial release.
+* SPOSharingSettings
+  * Deprecated property RequireAcceptingAccountMatchInvitedAccount.
+    FIXES [#4979](https://github.com/microsoft/Microsoft365DSC/issues/4979)
+* SPOTenantSettings
+  * Added support for AllowSelectSGsInODBListInTenant,
+    DenySelectSGsInODBListInTenant, DenySelectSecurityGroupsInSPSitesList,
+    AllowSelectSecurityGroupsInSPSitesList,
+    ExemptNativeUsersFromTenantLevelRestricedAccessControl properties.
+  * TenantDefaultTimezone changed to String instead of Array.
+* TeamsMeetingPolicy
+  * Added new parameters: AllowExternalNonTrustedMeetingChat, AttendeeIdentityMasking,
+    AutomaticallyStartCopilot, AutoRecording, ConnectToMeetingControls,
+    ContentSharingInExternalMeetings, Copilot, CopyRestriction,
+    DetectSensitiveContentDuringScreenSharing, ExternalMeetingJoin, ParticipantNameChange,
+    VoiceIsolation
+* TeamsOrgWideAppSettings
+  * Fixed an issue where ManagedIdentity wasn't define in the methods' signatures.
+    FIXES [#5188](https://github.com/microsoft/Microsoft365DSC/issues/5188)
+* M365DSCDRGUtil
+  * Fixes an issue where non-unique properties were not combined
+    properly with their respective parent setting.
+* MISC
+  * Fixed references to graph.microsoft.com with dynamic domain name based on target cloud.
+    Impacted AADAdminConsentRequestPolicy, AADApplication, AADConditionalAccessPolicy, AADGroup,
+    AADNamedLocationPolicy, AADServiePrincipal, IntuneASRRulesPolicyWindows10,
+    IntuneAccountProtectionLocalUsersGroupMembershipPolicy, IntuneAccountProtectionPolicy,
+    IntuneAppProtectionPolicyiOS,IntuneDeviceConfigurationAdministrativeTemplatePolicyWindows10,
+    IntuneDeviceConfigurationSCEPCertificatePolicyWindows10, IntuneDeviceConfigurationWiredNetworkPolicyWindows10,
+    IntuneDeviceEnrollmentStatusPageWindows10, IntuneDiskEncryptionMacOS, IntunePolicySets,
+    IntuneSettingCatalogCustomPolicyWindows10, M365DSCRGUtil
+  * Exponential performance improvements by reducing complexity and roundtrips.
+  * Changed the logic that appends GUID in the resource name when primary key is not found during an
+    export. We will only append a GUID if the IsSingleInstance property is not found on the resource.
+  * Add check in AADGroupSettings for NewUnifiedGroupWritebackDefault not existing in Government by default
+    FIXES [#5213](https://github.com/microsoft/Microsoft365DSC/issues/5213)
+  * Fix static refrences to graph.microsoft.com
+    FIXES [#5339](https://github.com/microsoft/Microsoft365DSC/issues/5339)
+    AADNetworkAccessForwardingPolicy. AADOrganizationCertificateBasedAuthConfiguration,
+    AADAuthenticationMethodPolicyExternal, AADEnrichedAuditLogs
+    FIXES [#5340](https://github.com/microsoft/Microsoft365DSC/issues/5340)
+    IntuneDeviceManagementEnrollmentAndroidGooglePlay, IntuneAppleMDMPushNotificationCertificate
+  * Fixes static OData refrences to graph.microsoft.com
+    AADApplication, AADEntitlementManagementAccessPackage, AADEntitlementManagementConnectedOrganization
+    AADServicePrincipal
+    FIXES [#5342](https://github.com/microsoft/Microsoft365DSC/issues/5342)
+* DEPENDENCIES
+  * Updated Microsoft.Graph to version 2.24.0.
+  * Updated Microsoft.PowerApps.Administration.PowerShell to version 2.0.199.
+  * Updated MSCloudLoginAssistant to version 1.1.27
+  * Updated MicrosoftTeams to version 6.6.0.
+
+# 1.24.1016.1
 
 * AADAdminConsentRequestPolicy
   * Initial release.
@@ -14,6 +437,8 @@
   * Initial release.
 * AADConnectorGroupApplicationProxy
   * Initial release.
+* AADCustomAuthenticationExtension
+  * Initial release.
 * AADCustomSecurityAttributeDefinition
   * Initial release.
 * AADDeviceRegistrationPolicy
@@ -25,7 +450,8 @@
 * AADLifecycleWorkflowSettings
   * Initial release.
 * AADServicePrincipal
-  * Adding Delegated Permission Classification Property
+  * Added Delegated Permission Classification Property
+  * Added Custom Security Attributes Property
 * ADOPermissionGroupSettings
   * Initial release.
 * EXOATPBuiltInProtectionRule
@@ -44,6 +470,8 @@
   * Initial release.
 * IntuneDeviceConfigurationIdentityProtectionPolicyWindows10
   * Added deprecation notice.
+* IntuneDeviceManagementEnrollmentAndroidGooglePlay
+  * Initial release
 * IntuneEndpointDetectionAndResponsePolicyWindows10
   * Migrate to new Settings Catalog cmdlets.
 * IntuneMobileAppsMacOSLobApp
@@ -67,6 +495,8 @@
 * TeamsUpgradePolicy
   * Added support for tenant wide changes using the * value for users.
     FIXES [#5174](https://github.com/microsoft/Microsoft365DSC/issues/5174)
+* TeamsGroupPolicyAssignments
+  * FIXES [#5179](https://github.com/microsoft/Microsoft365DSC/issues/5179)
 * M365DSCDRGUtil
   * Fixes an issue for the handling of skipped one-property elements in the
     Settings Catalog. FIXES [#5086](https://github.com/microsoft/Microsoft365DSC/issues/5086)

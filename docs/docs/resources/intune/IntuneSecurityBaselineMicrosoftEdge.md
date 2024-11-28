@@ -19,7 +19,8 @@
 | **WebSQLAccess** | Write | String | Force WebSQL to be enabled (0: Disabled, 1: Enabled) | `0`, `1` |
 | **BasicAuthOverHttpEnabled** | Write | String | Allow Basic authentication for HTTP (0: Disabled, 1: Enabled) | `0`, `1` |
 | **MicrosoftEdge_HTTPAuthentication_AuthSchemes** | Write | String | Supported authentication schemes (0: Disabled, 1: Enabled) | `0`, `1` |
-| **authschemes** | Write | String | Supported authentication schemes (Device) - Depends on MicrosoftEdge_HTTPAuthentication_AuthSchemes | |
+| **authschemes** | Write | String | (Deprecated) - Supported authentication schemes (Device) - Depends on MicrosoftEdge_HTTPAuthentication_AuthSchemes | |
+| **AuthSchemes_AuthSchemes** | Write | String | Supported authentication schemes (Device) - Depends on MicrosoftEdge_HTTPAuthentication_AuthSchemes | |
 | **NativeMessagingUserLevelHosts** | Write | String | Allow user-level native messaging hosts (installed without admin permissions) (0: Disabled, 1: Enabled) | `0`, `1` |
 | **InsecurePrivateNetworkRequestsAllowed** | Write | String | Specifies whether to allow insecure websites to make requests to more-private network endpoints (0: Disabled, 1: Enabled) | `0`, `1` |
 | **InternetExplorerModeToolbarButtonEnabled** | Write | String | Show the Reload in Internet Explorer mode button in the toolbar (0: Disabled, 1: Enabled) | `0`, `1` |
@@ -67,21 +68,21 @@ To authenticate with the Microsoft Graph API, this resource required the followi
 
 - **Read**
 
-    - DeviceManagementConfiguration.Read.All
+    - Group.Read.All, DeviceManagementConfiguration.Read.All
 
 - **Update**
 
-    - DeviceManagementConfiguration.ReadWrite.All
+    - Group.Read.All, DeviceManagementConfiguration.ReadWrite.All
 
 #### Application permissions
 
 - **Read**
 
-    - DeviceManagementConfiguration.Read.All
+    - Group.Read.All, DeviceManagementConfiguration.Read.All
 
 - **Update**
 
-    - DeviceManagementConfiguration.ReadWrite.All
+    - Group.Read.All, DeviceManagementConfiguration.ReadWrite.All
 
 ## Examples
 

@@ -27,6 +27,12 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             Mock -CommandName Confirm-M365DSCDependencies -MockWith {
             }
 
+            Mock -CommandName Get-MSCloudLoginConnectionProfile -MockWith {
+            }
+
+            Mock -CommandName Reset-MSCloudLoginConnectionProfileContext -MockWith {
+            }
+
             Mock -CommandName Get-PSSession -MockWith {
             }
 
@@ -52,6 +58,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             $Script:exportedInstances =$null
             $Script:ExportMode = $false<AssignmentMock>
         }
+
         # Test contexts
         Context -Name "The <ResourceName> should exist but it DOES NOT" -Fixture {
             BeforeAll {
@@ -103,6 +110,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                 Should -Invoke -CommandName <RemoveCmdletName> -Exactly 1
             }
         }
+
         Context -Name "The <ResourceName> Exists and Values are already in the desired state" -Fixture {
             BeforeAll {
                 $testParams = @{
@@ -116,7 +124,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     }
                 }
             }
-
 
             It 'Should return true from the Test method' {
                 Test-TargetResource @testParams | Should -Be $true
@@ -164,6 +171,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     }
                 }
             }
+
             It 'Should Reverse Engineer resource from the Export method' {
                 $result = Export-TargetResource @testParams
                 $result | Should -Not -BeNullOrEmpty

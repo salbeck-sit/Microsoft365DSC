@@ -71,6 +71,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                             @{
                                 Id = 'device_vendor_msft_windowsadvancedthreatprotection_onboarding'
                                 Name = 'Onboarding'
+                                OffsetUri = '/Onboarding'
                                 AdditionalProperties = @{
                                     '@odata.type' = '#microsoft.graph.deviceManagementConfigurationSimpleSettingDefinition'
                                     valueDefinition = @{
@@ -81,6 +82,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                             @{
                                 Id = 'device_vendor_msft_windowsadvancedthreatprotection_configurationtype'
                                 Name = 'ClientConfigurationPackageType'
+                                OffsetUri = '/'
                                 AdditionalProperties = @{
                                     '@odata.type' = '#microsoft.graph.deviceManagementConfigurationChoiceSettingDefinition'
                                 }
@@ -117,6 +119,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                             @{
                                 Id = 'device_vendor_msft_windowsadvancedthreatprotection_configuration_samplesharing'
                                 Name = 'SampleSharing'
+                                OffsetUri = '/Configuration/SampleSharing'
                                 AdditionalProperties = @{
                                     '@odata.type' = '#microsoft.graph.deviceManagementConfigurationChoiceSettingDefinition'
                                 }
@@ -162,6 +165,9 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             # Mock Write-Host to hide output during the tests
             Mock -CommandName Write-Host -MockWith {
             }
+            Mock -CommandName Write-Warning -MockWith {
+            }
+
             $Script:exportedInstances =$null
             $Script:ExportMode = $false
 

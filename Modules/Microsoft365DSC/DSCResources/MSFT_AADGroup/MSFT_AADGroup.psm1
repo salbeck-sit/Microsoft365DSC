@@ -209,7 +209,7 @@ function Get-TargetResource
                 {
                     $OwnersValues += $owner.AdditionalProperties.userPrincipalName
                 }
-                elseif($owner.AdditionalProperties.'@odata.type' -eq "#microsoft.graph.servicePrincipal")
+                elseif ($owner.AdditionalProperties.'@odata.type' -eq '#microsoft.graph.servicePrincipal')
                 {
                     $OwnersValues += $owner.AdditionalProperties.displayName
                 }
@@ -224,7 +224,7 @@ function Get-TargetResource
                 $GroupAsMembersValues = @()
                 foreach ($member in $members)
                 {
-                    if ($member.AdditionalProperties.'@odata.type' -eq "#microsoft.graph.user")
+                    if ($member.AdditionalProperties.'@odata.type' -eq '#microsoft.graph.user')
                     {
                         $MembersValues += $member.AdditionalProperties.userPrincipalName
                     }
@@ -232,7 +232,7 @@ function Get-TargetResource
                     {
                         $MembersValues += $member.AdditionalProperties.displayName
                     }
-                    elseif($member.AdditionalProperties.'@odata.type' -eq "#microsoft.graph.group")
+                    elseif ($member.AdditionalProperties.'@odata.type' -eq '#microsoft.graph.group')
                     {
                         $GroupAsMembersValues += $member.AdditionalProperties.displayName
                     }
@@ -256,20 +256,19 @@ function Get-TargetResource
             if ($Group.IsAssignableToRole -eq $true)
             {
                 $AssignedToRoleValues = @()
-                # Note: only process directory roles and not group membership (if any)
-                foreach ($role in $($memberOf | Where-Object -FilterScript { $_.AdditionalProperties.'@odata.type' -eq '#microsoft.graph.directoryRole' }))
+                $roleAssignments = Get-MgBetaRoleManagementDirectoryRoleAssignment -Filter "PrincipalId eq '$($Group.Id)'"
+                foreach ($assignment in $roleAssignments)
                 {
-                    if ($null -ne $role.AdditionalProperties.displayName)
-                    {
-                        $AssignedToRoleValues += $role.AdditionalProperties.displayName
-                    }
+                    $roleDefinition = Get-MgBetaRoleManagementDirectoryRoleDefinition -UnifiedRoleDefinitionId $assignment.RoleDefinitionId
+                    $AssignedToRoleValues += $roleDefinition.DisplayName
                 }
             }
 
             # Licenses
             $assignedLicensesValues = $null
+            $uri = (Get-MSCloudLoginConnectionProfile -Workload MicrosoftGraph).ResourceUrl + "v1.0/groups/$($Group.Id)/assignedLicenses"
             $assignedLicensesRequest = Invoke-MgGraphRequest -Method 'GET' `
-                -Uri "https://graph.microsoft.com/v1.0/groups/$($Group.Id)/assignedLicenses"
+                -Uri $uri
 
             if ($assignedLicensesRequest.value.Length -gt 0)
             {
@@ -620,7 +619,7 @@ function Set-TargetResource
             {
                 try
                 {
-                    Write-Verbose -Message "Setting Group Licenses"
+                    Write-Verbose -Message 'Setting Group Licenses'
                     Set-MgGroupLicense -GroupId $currentGroup.Id `
                         -AddLicenses $licensesToAdd `
                         -RemoveLicenses $licensesToRemove `
@@ -656,7 +655,7 @@ function Set-TargetResource
     if ($Ensure -ne 'Absent')
     {
         #Owners
-        Write-Verbose -Message "Updating Owners"
+        Write-Verbose -Message 'Updating Owners'
         if ($PSBoundParameters.ContainsKey('Owners'))
         {
             $currentOwnersValue = @()
@@ -690,7 +689,7 @@ function Set-TargetResource
                 {
                     Write-Verbose -Message "Adding new owner {$($diff.InputObject)} to AAD Group {$($currentGroup.DisplayName)}"
                     $ownerObject = @{
-                        '@odata.id' = "https://graph.microsoft.com/v1.0/directoryObjects/{$($directoryObject.Id)}"
+                        '@odata.id' = (Get-MSCloudLoginConnectionProfile -Workload MicrosoftGraph).ResourceUrl + "v1.0/directoryObjects/{$($directoryObject.Id)}"
                     }
                     try
                     {
@@ -714,7 +713,7 @@ function Set-TargetResource
         }
 
         #Members
-        Write-Verbose -Message "Updating Members"
+        Write-Verbose -Message 'Updating Members'
         if ($MembershipRuleProcessingState -ne 'On' -and $PSBoundParameters.ContainsKey('Members'))
         {
             $currentMembersValue = @()
@@ -731,7 +730,7 @@ function Set-TargetResource
             {
                 $backCurrentMembers = @()
             }
-            Write-Verbose -Message "Comparing current members and desired list"
+            Write-Verbose -Message 'Comparing current members and desired list'
             $membersDiff = Compare-Object -ReferenceObject $backCurrentMembers -DifferenceObject $desiredMembersValue
             foreach ($diff in $membersDiff)
             {
@@ -752,7 +751,7 @@ function Set-TargetResource
                 {
                     Write-Verbose -Message "Adding new member {$($diff.InputObject)} to AAD Group {$($currentGroup.DisplayName)}"
                     $memberObject = @{
-                        '@odata.id' = "https://graph.microsoft.com/v1.0/directoryObjects/{$($directoryObject.Id)}"
+                        '@odata.id' = (Get-MSCloudLoginConnectionProfile -Workload MicrosoftGraph).ResourceUrl + "v1.0/directoryObjects/{$($directoryObject.Id)}"
                     }
                     New-MgGroupMemberByRef -GroupId ($currentGroup.Id) -BodyParameter $memberObject | Out-Null
                 }
@@ -760,7 +759,7 @@ function Set-TargetResource
                 {
                     Write-Verbose -Message "Removing new member {$($diff.InputObject)} to AAD Group {$($currentGroup.DisplayName)}"
                     $memberObject = @{
-                        '@odata.id' = "https://graph.microsoft.com/v1.0/directoryObjects/{$($directoryObject.Id)}"
+                        '@odata.id' = (Get-MSCloudLoginConnectionProfile -Workload MicrosoftGraph).ResourceUrl + "v1.0/directoryObjects/{$($directoryObject.Id)}"
                     }
                     Remove-MgGroupMemberDirectoryObjectByRef -GroupId ($currentGroup.Id) -DirectoryObjectId ($directoryObject.Id) | Out-Null
                 }
@@ -772,7 +771,7 @@ function Set-TargetResource
         }
 
         #GroupAsMembers
-        Write-Verbose -Message "Updating GroupAsMembers"
+        Write-Verbose -Message 'Updating GroupAsMembers'
         if ($MembershipRuleProcessingState -ne 'On' -and $PSBoundParameters.ContainsKey('GroupAsMembers'))
         {
             $currentGroupAsMembersValue = @()
@@ -810,7 +809,7 @@ function Set-TargetResource
                     {
                         Write-Verbose -Message "Adding AAD group {$($groupAsMember.DisplayName)} as member of AAD group {$($currentGroup.DisplayName)}"
                         $groupAsMemberObject = @{
-                            "@odata.id"= "https://graph.microsoft.com/v1.0/directoryObjects/$($groupAsMember.Id)"
+                            '@odata.id' = (Get-MSCloudLoginConnectionProfile -Workload MicrosoftGraph).ResourceUrl + "v1.0/directoryObjects/$($groupAsMember.Id)"
                         }
                         New-MgBetaGroupMemberByRef -GroupId ($currentGroup.Id) -Body $groupAsMemberObject | Out-Null
                     }
@@ -824,7 +823,7 @@ function Set-TargetResource
         }
 
         #MemberOf
-        Write-Verbose -Message "Updating MemberOf"
+        Write-Verbose -Message 'Updating MemberOf'
         if ($PSBoundParameters.ContainsKey('MemberOf'))
         {
             $currentMemberOfValue = @()
@@ -864,9 +863,6 @@ function Set-TargetResource
                         if ($memberOfgroup.psobject.Typenames -match 'Group')
                         {
                             Write-Verbose -Message "Adding AAD group {$($currentGroup.DisplayName)} as member of AAD group {$($memberOfGroup.DisplayName)}"
-                            #$memberOfObject = @{
-                            #    "@odata.id"= "https://graph.microsoft.com/v1.0/groups/{$($group.Id)}"
-                            #}
                             New-MgGroupMember -GroupId ($memberOfGroup.Id) -DirectoryObject ($currentGroup.Id) | Out-Null
                         }
                         else
@@ -912,13 +908,7 @@ function Set-TargetResource
             {
                 try
                 {
-                    $role = Get-MgBetaDirectoryRole -Filter "DisplayName eq '$($diff.InputObject)'"
-                    # If the role hasn't been activated, we need to get the role template ID to first activate the role
-                    if ($null -eq $role)
-                    {
-                        $adminRoleTemplate = Get-MgBetaDirectoryRoleTemplate -All | Where-Object { $_.DisplayName -eq $diff.InputObject }
-                        $role = New-MgBetaDirectoryRole -RoleTemplateId $adminRoleTemplate.Id
-                    }
+                    $role = Get-MgBetaRoleManagementDirectoryRoleDefinition -Filter "DisplayName eq '$($diff.InputObject)'"
                 }
                 catch
                 {
@@ -933,15 +923,15 @@ function Set-TargetResource
                     if ($diff.SideIndicator -eq '=>')
                     {
                         Write-Verbose -Message "Assigning AAD group {$($currentGroup.DisplayName)} to Directory Role {$($diff.InputObject)}"
-                        $DirObject = @{
-                            '@odata.id' = "https://graph.microsoft.com/v1.0/directoryObjects/$($currentGroup.Id)"
-                        }
-                        New-MgBetaDirectoryRoleMemberByRef -DirectoryRoleId ($role.Id) -BodyParameter $DirObject | Out-Null
+                        New-MgBetaRoleManagementDirectoryRoleAssignment -RoleDefinitionId $role.Id -PrincipalId $currentGroup.Id -DirectoryScopeId '/'
                     }
                     elseif ($diff.SideIndicator -eq '<=')
                     {
                         Write-Verbose -Message "Removing AAD group {$($currentGroup.DisplayName)} from Directory Role {$($role.DisplayName)}"
-                        Remove-MgBetaDirectoryRoleMemberDirectoryObjectByRef -DirectoryRoleId ($role.Id) -DirectoryObjectId ($currentGroup.Id) | Out-Null
+                        Write-Verbose "GroupId = $($currentGroup.Id)"
+                        Write-Verbose "RoleDefinitionId = $($role.Id)"
+                        $roleAssignment = Get-MgBetaRoleManagementDirectoryRoleAssignment -Filter "PrincipalId eq '$($currentGroup.Id)' and RoleDefinitionId eq '$($role.Id)'"
+                        Remove-MgBetaRoleManagementDirectoryRoleAssignment -UnifiedRoleAssignmentId $roleAssignment.Id
                     }
                 }
             }
@@ -1130,10 +1120,11 @@ function Test-TargetResource
                 foreach ($assignedLicense in $AssignedLicenses)
                 {
                     Write-Verbose "Compare DisabledPlans for SkuId $($assignedLicense.SkuId) in group {$DisplayName}"
-                    $currentLicense = $CurrentValues.AssignedLicenses | Where-Object -FilterScript {$_.SkuId -eq $assignedLicense.SkuId}
+                    $currentLicense = $CurrentValues.AssignedLicenses | Where-Object -FilterScript { $_.SkuId -eq $assignedLicense.SkuId }
                     if ($assignedLicense.DisabledPlans.Count -ne 0 -or $currentLicense.DisabledPlans.Count -ne 0)
                     {
-                        try {
+                        try
+                        {
                             $licensesDiff = Compare-Object -ReferenceObject $assignedLicense.DisabledPlans -DifferenceObject $currentLicense.DisabledPlans
                             if ($null -ne $licensesDiff)
                             {

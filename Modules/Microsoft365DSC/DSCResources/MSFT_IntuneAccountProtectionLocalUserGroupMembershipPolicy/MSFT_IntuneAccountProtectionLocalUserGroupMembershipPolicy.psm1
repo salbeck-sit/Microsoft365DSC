@@ -90,9 +90,9 @@ function Get-TargetResource
             Write-Verbose -Message "No Account Protection Local User Group Membership Policy with identity {$Identity} was found"
             if (-not [String]::IsNullOrEmpty($DisplayName))
             {
-                $policy = Get-MgBetaDeviceManagementConfigurationPolicy -Filter "Name eq '$DisplayName'" -ErrorAction SilentlyContinue
+                $policy = Get-MgBetaDeviceManagementConfigurationPolicy -All -Filter "Name eq '$DisplayName'" -ErrorAction SilentlyContinue
 
-                if(([array]$devicePolicy).count -gt 1)
+                if (([array]$devicePolicy).Count -gt 1)
                 {
                     throw "A policy with a duplicated displayName {'$DisplayName'} was found - Ensure displayName is unique"
                 }
@@ -109,7 +109,7 @@ function Get-TargetResource
 
 
         #Retrieve policy specific settings
-        $Identity = $policy.id
+        $Identity = $policy.Id
         [array]$settings = $policy.settings
 
         $returnHashtable = @{}
@@ -165,8 +165,8 @@ function Get-TargetResource
         if ($graphAssignments.count -gt 0)
         {
             $returnAssignments += ConvertFrom-IntunePolicyAssignment `
-                                -IncludeDeviceFilter:$true `
-                                -Assignments ($graphAssignments)
+                -IncludeDeviceFilter:$true `
+                -Assignments ($graphAssignments)
         }
         $returnHashtable.Add('Assignments', $returnAssignments)
 
@@ -175,7 +175,7 @@ function Get-TargetResource
     catch
     {
         if ($_.Exception -like '*401*' -or $_.ErrorDetails.Message -like "*`"ErrorCode`":`"Forbidden`"*" -or `
-            $_.Exception -like "*Unable to perform redirect as Location Header is not set in response*")
+                $_.Exception -like '*Unable to perform redirect as Location Header is not set in response*')
         {
             if (Assert-M365DSCIsNonInteractiveShell)
             {
@@ -295,14 +295,14 @@ function Set-TargetResource
         $settings = Get-M365DSCIntuneDeviceConfigurationSettings -Properties ([System.Collections.Hashtable]$PSBoundParameters)
 
         $createParameters = @{}
-        $createParameters.add('name', $DisplayName)
-        $createParameters.add('description', $Description)
-        $createParameters.add('settings', @($settings))
-        $createParameters.add('platforms', $platforms)
-        $createParameters.add('technologies', $technologies)
-        $createParameters.add('templateReference', @{
-            templateId = $templateReferenceId
-        })
+        $createParameters.Add('name', $DisplayName)
+        $createParameters.Add('description', $Description)
+        $createParameters.Add('settings', @($settings))
+        $createParameters.Add('platforms', $platforms)
+        $createParameters.Add('technologies', $technologies)
+        $createParameters.Add('templateReference', @{
+                templateId = $templateReferenceId
+            })
         $policy = New-MgBetaDeviceManagementConfigurationPolicy -BodyParameter $createParameters
 
         #region Assignments
@@ -323,11 +323,11 @@ function Set-TargetResource
 
         $settings = Get-M365DSCIntuneDeviceConfigurationSettings -Properties ([System.Collections.Hashtable]$PSBoundParameters)
 
-        Update-DeviceManagementConfigurationPolicy `
-            -DeviceManagementConfigurationPolicyId $currentPolicy.Identity `
-            -DisplayName $DisplayName `
+        Update-IntuneDeviceConfigurationPolicy `
+            -DeviceConfigurationPolicyId $currentPolicy.Identity `
+            -Name $DisplayName `
             -Description $Description `
-            -TemplateReference $templateReferenceId `
+            -TemplateReferenceId $templateReferenceId `
             -Platforms $platforms `
             -Technologies $technologies `
             -Settings $settings
@@ -419,69 +419,45 @@ function Test-TargetResource
     Write-Verbose -Message "Testing configuration of Account Protection Local User Group Membership Policy {$DisplayName}"
 
     $CurrentValues = Get-TargetResource @PSBoundParameters
-    if (-not (Test-M365DSCAuthenticationParameter -BoundParameters $CurrentValues))
+    $ValuesToCheck = ([Hashtable]$PSBoundParameters).Clone()
+
+    if ($CurrentValues.Ensure -ne $Ensure)
     {
-        Write-Verbose "An error occured in Get-TargetResource, the policy {$displayName} will not be processed"
-        throw "An error occured in Get-TargetResource, the policy {$displayName} will not be processed. Refer to the event viewer logs for more information."
+        Write-Verbose -Message "Test-TargetResource returned $false"
+        return $false
     }
+    $testResult = $true
+
     Write-Verbose -Message "Current Values: $(Convert-M365DscHashtableToString -Hashtable $CurrentValues)"
     Write-Verbose -Message "Target Values: $(Convert-M365DscHashtableToString -Hashtable $PSBoundParameters)"
 
-    $ValuesToCheck = ([Hashtable]$PSBoundParameters).clone()
+    #Compare Cim instances
+    foreach ($key in $PSBoundParameters.Keys)
+    {
+        $source = $PSBoundParameters.$key
+        $target = $CurrentValues.$key
+        if ($null -ne $source -and $source.GetType().Name -like '*CimInstance*')
+        {
+            if ($source.UserSelectionType -eq 'add_replace')
+            {
+                Write-Warning -Message "The UserSelectionType 'add_replace' is not supported anymore. It will be converted to 'add_restrict'"
+                $source.UserSelectionType = 'add_restrict'
+            }
+            $testResult = Compare-M365DSCComplexObject `
+                -Source ($source) `
+                -Target ($target)
+
+            if (-not $testResult)
+            {
+                break
+            }
+
+            $ValuesToCheck.Remove($key) | Out-Null
+        }
+    }
+
     $ValuesToCheck.Remove('Identity') | Out-Null
-
-    $testResult = $true
-    if ($CurrentValues.Ensure -ne $Ensure)
-    {
-        $testResult = $false
-    }
-
-    #region LocalUserGroupCollection
-    if ($testResult)
-    {
-        if ((-not $CurrentValues.LocalUserGroupCollection) -xor (-not $ValuesToCheck.LocalUserGroupCollection))
-        {
-            Write-Verbose -Message 'Configuration drift: one the LocalUserGroupCollection is null'
-            return $false
-        }
-
-        if ($CurrentValues.LocalUserGroupCollection)
-        {
-            if ($CurrentValues.LocalUserGroupCollection.count -ne $ValuesToCheck.LocalUserGroupCollection.count)
-            {
-                Write-Verbose -Message "Configuration drift: Number of LocalUserGroupCollection has changed - current {$($CurrentValues.LocalUserGroupCollection.count)} target {$($ValuesToCheck.LocalUserGroupCollection.count)}"
-                return $false
-            }
-            for ($i = 0; $i -lt $CurrentValues.LocalUserGroupCollection.count; $i++)
-            {
-                $source = $ValuesToCheck.LocalUserGroupCollection[$i]
-                $sourceHash = Convert-M365DSCDRGComplexTypeToHashtable -ComplexObject $source
-                $testResult = Compare-M365DSCComplexObject -Source $sourceHash -Target $CurrentValues.LocalUserGroupCollection[$i]
-
-                if (-not $testResult)
-                {
-                    $testResult = $false
-                    break
-                }
-            }
-        }
-        if (-not $testResult)
-        {
-            return $false
-        }
-        $ValuesToCheck.Remove('LocalUserGroupCollection') | Out-Null
-    }
-    #endregion
-
-    #region Assignments
-    if ($testResult)
-    {
-        $source = Get-M365DSCDRGComplexTypeToHashtable -ComplexObject $PSBoundParameters.Assignments
-        $target = $CurrentValues.Assignments
-        $testResult = Compare-M365DSCIntunePolicyAssignment -Source $source -Target $target
-        $ValuesToCheck.Remove('Assignments') | Out-Null
-    }
-    #endregion
+    $ValuesToCheck = Remove-M365DSCAuthenticationParameter -BoundParameters $ValuesToCheck
 
     if ($testResult)
     {
@@ -669,8 +645,8 @@ function Export-TargetResource
     catch
     {
         if ($_.Exception -like '*401*' -or $_.ErrorDetails.Message -like "*`"ErrorCode`":`"Forbidden`"*" -or `
-        $_.Exception -like "*Unable to perform redirect as Location Header is not set in response*" -or `
-        $_.Exception -like "*Request not applicable to target tenant*")
+                $_.Exception -like '*Unable to perform redirect as Location Header is not set in response*' -or `
+                $_.Exception -like '*Request not applicable to target tenant*')
         {
             Write-Host "`r`n    $($Global:M365DSCEmojiYellowCircle) The current tenant is not registered for Intune."
         }
@@ -702,53 +678,58 @@ function Get-M365DSCIntuneDeviceConfigurationSettings
 
     $settingDefinition = 'device_vendor_msft_policy_config_localusersandgroups_configure'
     $defaultValue = @{
-        '@odata.type' = '#microsoft.graph.deviceManagementConfigurationSetting'
+        '@odata.type'     = '#microsoft.graph.deviceManagementConfigurationSetting'
         'settingInstance' = @{
-            '@odata.type' = '#microsoft.graph.deviceManagementConfigurationGroupSettingCollectionInstance'
-            'settingDefinitionId' = $settingDefinition
-            'groupSettingCollectionValue' = @()
+            '@odata.type'                      = '#microsoft.graph.deviceManagementConfigurationGroupSettingCollectionInstance'
+            'settingDefinitionId'              = $settingDefinition
+            'groupSettingCollectionValue'      = @()
             'settingInstanceTemplateReference' = @{
                 'settingInstanceTemplateId' = 'de06bec1-4852-48a0-9799-cf7b85992d45'
-             }
+            }
         }
     }
     foreach ($groupConfiguration in $Properties.LocalUserGroupCollection)
     {
+        if ($groupConfiguration.UserSelectionType -eq 'add_replace')
+        {
+            Write-Warning -Message "The UserSelectionType 'add_replace' is not supported anymore. It will be converted to 'add_restrict'"
+            $groupConfiguration.UserSelectionType = 'add_restrict'
+        }
         $groupDefaultValue = @{
             children = @(
                 @{
-                    '@odata.type' = '#microsoft.graph.deviceManagementConfigurationGroupSettingCollectionInstance'
-                    'settingDefinitionId' = $settingDefinition + '_groupconfiguration_accessgroup'
-                    'groupSettingCollectionValue' = @(
+                    '@odata.type'                      = '#microsoft.graph.deviceManagementConfigurationGroupSettingCollectionInstance'
+                    'settingDefinitionId'              = $settingDefinition + '_groupconfiguration_accessgroup'
+                    'groupSettingCollectionValue'      = @(
                         @{
                             'children' = @(
                                 @{
-                                    '@odata.type' = '#microsoft.graph.deviceManagementConfigurationChoiceSettingInstance'
+                                    '@odata.type'         = '#microsoft.graph.deviceManagementConfigurationChoiceSettingInstance'
                                     'settingDefinitionId' = $settingDefinition + '_groupconfiguration_accessgroup_userselectiontype'
-                                    'choiceSettingValue' = @{
+                                    'choiceSettingValue'  = @{
                                         '@odata.type' = '#microsoft.graph.deviceManagementConfigurationChoiceSettingValue'
-                                        'value' = $settingDefinition + '_groupconfiguration_accessgroup_userselectiontype_' + $groupConfiguration.UserSelectionType
-                                        'children' = @(
+                                        'value'       = $settingDefinition + '_groupconfiguration_accessgroup_userselectiontype_' + $groupConfiguration.UserSelectionType
+                                        'children'    = @(
                                             @{
-                                                '@odata.type' = '#microsoft.graph.deviceManagementConfigurationSimpleSettingCollectionInstance'
-                                                'settingDefinitionId' = $settingDefinition + '_groupconfiguration_accessgroup_users'
+                                                '@odata.type'                  = '#microsoft.graph.deviceManagementConfigurationSimpleSettingCollectionInstance'
+                                                'settingDefinitionId'          = $settingDefinition + '_groupconfiguration_accessgroup_users'
                                                 'simpleSettingCollectionValue' = @()
                                             }
                                         )
                                     }
                                 },
                                 @{
-                                    '@odata.type' = '#microsoft.graph.deviceManagementConfigurationChoiceSettingInstance'
+                                    '@odata.type'         = '#microsoft.graph.deviceManagementConfigurationChoiceSettingInstance'
                                     'settingDefinitionId' = $settingDefinition + '_groupconfiguration_accessgroup_action'
-                                    'choiceSettingValue' = @{
+                                    'choiceSettingValue'  = @{
                                         '@odata.type' = '#microsoft.graph.deviceManagementConfigurationChoiceSettingValue'
-                                        'value' = $settingDefinition + '_groupconfiguration_accessgroup_action_' + $groupConfiguration.Action
-                                        'children' = @()
+                                        'value'       = $settingDefinition + '_groupconfiguration_accessgroup_action_' + $groupConfiguration.Action
+                                        'children'    = @()
                                     }
                                 },
                                 @{
-                                    '@odata.type' = '#microsoft.graph.deviceManagementConfigurationChoiceSettingCollectionInstance'
-                                    'settingDefinitionId' = $settingDefinition + '_groupconfiguration_accessgroup_desc'
+                                    '@odata.type'                  = '#microsoft.graph.deviceManagementConfigurationChoiceSettingCollectionInstance'
+                                    'settingDefinitionId'          = $settingDefinition + '_groupconfiguration_accessgroup_desc'
                                     'choiceSettingCollectionValue' = @()
                                 }
                             )
@@ -765,7 +746,7 @@ function Get-M365DSCIntuneDeviceConfigurationSettings
         {
             $groupDefaultValue.children[0].groupSettingCollectionValue[0].children[0].choiceSettingValue.children[0].simpleSettingCollectionValue += @{
                 '@odata.type' = '#microsoft.graph.deviceManagementConfigurationStringSettingValue'
-                'value' = $member
+                'value'       = $member
             }
         }
 
@@ -773,67 +754,14 @@ function Get-M365DSCIntuneDeviceConfigurationSettings
         {
             $groupDefaultValue.children[0].groupSettingCollectionValue[0].children[2].choiceSettingCollectionValue += @{
                 '@odata.type' = '#microsoft.graph.deviceManagementConfigurationChoiceSettingValue'
-                'value' = $settingDefinition + '_groupconfiguration_accessgroup_desc_' + $localGroup
-                'children' = @()
+                'value'       = $settingDefinition + '_groupconfiguration_accessgroup_desc_' + $localGroup
+                'children'    = @()
             }
         }
 
         $defaultValue.settingInstance.groupSettingCollectionValue += $groupDefaultValue
     }
     return $defaultValue
-}
-
-function Update-DeviceManagementConfigurationPolicy
-{
-    [CmdletBinding()]
-    param (
-        [Parameter(Mandatory = 'true')]
-        [System.String]
-        $DeviceManagementConfigurationPolicyId,
-
-        [Parameter(Mandatory = 'true')]
-        [System.String]
-        $DisplayName,
-
-        [Parameter()]
-        [System.String]
-        $Description,
-
-        [Parameter()]
-        [System.String]
-        $TemplateReferenceId,
-
-        [Parameter()]
-        [System.String]
-        $Platforms,
-
-        [Parameter()]
-        [System.String]
-        $Technologies,
-
-        [Parameter()]
-        [System.Array]
-        $Settings
-    )
-
-    $templateReference = @{
-        'templateId' = $TemplateReferenceId
-    }
-
-    $Uri = "https://graph.microsoft.com/beta/deviceManagement/ConfigurationPolicies/$DeviceManagementConfigurationPolicyId"
-    $policy = @{
-        'name'              = $DisplayName
-        'description'       = $Description
-        'platforms'         = $Platforms
-        'technologies'      = $Technologies
-        'settings'          = $Settings
-        'templateReference' = $templateReference
-    }
-
-    Invoke-MgGraphRequest -Method PUT `
-        -Uri $Uri `
-        -ContentType 'application/json' `
-        -Body ($policy | ConvertTo-Json -Depth 20) 4> $null
 }
 
 Export-ModuleMember -Function *-TargetResource

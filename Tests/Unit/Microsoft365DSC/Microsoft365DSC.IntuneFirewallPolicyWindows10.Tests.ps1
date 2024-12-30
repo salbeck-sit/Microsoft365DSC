@@ -73,6 +73,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                             @{
                                 Id = 'vendor_msft_firewall_mdmstore_global_disablestatefulftp'
                                 Name = 'DisableStatefulFtp'
+                                OffsetUri = '/MdmStore/Global/DisableStatefulFtp'
                                 AdditionalProperties = @{
                                     '@odata.type' = '#microsoft.graph.deviceManagementConfigurationChoiceSettingDefinition'
                                 }
@@ -115,6 +116,14 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                                             parentSettingId = 'vendor_msft_firewall_mdmstore_domainprofile_enablefirewall'
                                         }
                                     )
+                                }
+                            },
+                            @{
+                                Id = 'vendor_msft_firewall_mdmstore_publicprofile_enablefirewall'
+                                Name = 'EnableFirewall'
+                                OffsetUri = '/MdmStore/PublicProfile/EnableFirewall'
+                                AdditionalProperties = @{
+                                    '@odata.type' = '#microsoft.graph.deviceManagementConfigurationChoiceSettingDefinition'
                                 }
                             },
                             @{
@@ -175,7 +184,27 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                                                     parentSettingId = 'vendor_msft_firewall_mdmstore_hypervvmsettings_{vmcreatorid}_target'
                                                 }
                                             )
-
+                                        }
+                                    )
+                                }
+                            },
+                            @{
+                                Id = 'vendor_msft_firewall_mdmstore_hypervvmsettings_{vmcreatorid}_publicprofile_enablefirewall'
+                                Name = 'EnableFirewall'
+                                OffsetUri = '/MdmStore/HyperVVMSettings/{0}/PublicProfile/EnableFirewall'
+                                AdditionalProperties = @{
+                                    '@odata.type' = '#microsoft.graph.deviceManagementConfigurationChoiceSettingDefinition'
+                                    options = @(
+                                        # Only option used in the tests is defined here
+                                        @{
+                                            name = 'Enable Firewall'
+                                            itemId = 'vendor_msft_firewall_mdmstore_hypervvmsettings_{vmcreatorid}_publicprofile_enablefirewall_true'
+                                            dependentOn = @(
+                                                @{
+                                                    dependentOn = 'vendor_msft_firewall_mdmstore_hypervvmsettings_{vmcreatorid}_target_wsl'
+                                                    parentSettingId = 'vendor_msft_firewall_mdmstore_hypervvmsettings_{vmcreatorid}_target'
+                                                }
+                                            )
                                         }
                                     )
                                 }
@@ -203,6 +232,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                             @{
                                 Id = 'vendor_msft_firewall_mdmstore_hypervvmsettings_{vmcreatorid}'
                                 Name = '{VMCreatorId}'
+                                OffsetUri = '/MdmStore/HyperVVMSettings/{0}'
                                 AdditionalProperties = @{
                                     '@odata.type' = '#microsoft.graph.deviceManagementConfigurationSettingGroupCollectionDefinition'
                                     childIds = @(
@@ -249,6 +279,150 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                 )
             }
 
+            Mock -CommandName Get-MgBetaDeviceManagementConfigurationPolicyTemplateSettingTemplate -MockWith {
+                return @(
+                    @{
+                        SettingDefinitions = @(
+                            @{
+                                Id = 'vendor_msft_firewall_mdmstore_global_disablestatefulftp'
+                                Name = 'DisableStatefulFtp'
+                                OffsetUri = '/MdmStore/Global/DisableStatefulFtp'
+                                AdditionalProperties = @{
+                                    '@odata.type' = '#microsoft.graph.deviceManagementConfigurationChoiceSettingDefinition'
+                                }
+                            }
+                        )
+                    },
+                    @{
+                        SettingDefinitions = @(
+                            @{
+                                Id = 'vendor_msft_firewall_mdmstore_domainprofile_enablefirewall'
+                                Name = 'EnableFirewall'
+                                OffsetUri = '/MdmStore/DomainProfile/EnableFirewall'
+                                AdditionalProperties = @{
+                                    '@odata.type' = '#microsoft.graph.deviceManagementConfigurationChoiceSettingDefinition'
+                                }
+                            },
+                            @{
+                                Id = 'vendor_msft_firewall_mdmstore_domainprofile_logfilepath'
+                                Name = 'LogFilePath'
+                                OffsetUri = '/MdmStore/DomainProfile/LogFilePath'
+                                AdditionalProperties = @{
+                                    '@odata.type' = '#microsoft.graph.deviceManagementConfigurationStringSettingDefinition'
+                                    dependentOn = @(
+                                        @{
+                                            dependentOn = 'vendor_msft_firewall_mdmstore_domainprofile_enablefirewall_true'
+                                            parentSettingId = 'vendor_msft_firewall_mdmstore_domainprofile_enablefirewall'
+                                        }
+                                    )
+                                }
+                            },
+                            @{
+                                Id = 'vendor_msft_firewall_mdmstore_publicprofile_enablefirewall'
+                                Name = 'EnableFirewall'
+                                OffsetUri = '/MdmStore/PublicProfile/EnableFirewall'
+                                AdditionalProperties = @{
+                                    '@odata.type' = '#microsoft.graph.deviceManagementConfigurationChoiceSettingDefinition'
+                                }
+                            },
+                            @{
+                                Id = 'vendor_msft_firewall_mdmstore_publicprofile_logfilepath'
+                                Name = 'LogFilePath'
+                                OffsetUri = '/MdmStore/PublicProfile/LogFilePath'
+                                AdditionalProperties = @{
+                                    '@odata.type' = '#microsoft.graph.deviceManagementConfigurationStringSettingDefinition'
+                                    dependentOn = @(
+                                        @{
+                                            dependentOn = 'vendor_msft_firewall_mdmstore_publicprofile_enablefirewall_true'
+                                            parentSettingId = 'vendor_msft_firewall_mdmstore_publicprofile_enablefirewall'
+                                        }
+                                    )
+                                }
+                            }
+                        )
+                    },
+                    @{
+                        SettingDefinitions = @(
+                            @{
+                                Id = 'vendor_msft_firewall_mdmstore_hypervvmsettings_{vmcreatorid}_domainprofile_enablefirewall'
+                                Name = 'EnableFirewall'
+                                OffsetUri = '/MdmStore/HyperVVMSettings/{0}/DomainProfile/EnableFirewall'
+                                AdditionalProperties = @{
+                                    '@odata.type' = '#microsoft.graph.deviceManagementConfigurationChoiceSettingDefinition'
+                                    options = @(
+                                        # Only option used in the tests is defined here
+                                        @{
+                                            name = 'Enable Firewall'
+                                            itemId = 'vendor_msft_firewall_mdmstore_hypervvmsettings_{vmcreatorid}_domainprofile_enablefirewall_true'
+                                            dependentOn = @(
+                                                @{
+                                                    dependentOn = 'vendor_msft_firewall_mdmstore_hypervvmsettings_{vmcreatorid}_target_wsl'
+                                                    parentSettingId = 'vendor_msft_firewall_mdmstore_hypervvmsettings_{vmcreatorid}_target'
+                                                }
+                                            )
+                                        }
+                                    )
+                                }
+                            },
+                            @{
+                                Id = 'vendor_msft_firewall_mdmstore_hypervvmsettings_{vmcreatorid}_publicprofile_enablefirewall'
+                                Name = 'EnableFirewall'
+                                OffsetUri = '/MdmStore/HyperVVMSettings/{0}/PublicProfile/EnableFirewall'
+                                AdditionalProperties = @{
+                                    '@odata.type' = '#microsoft.graph.deviceManagementConfigurationChoiceSettingDefinition'
+                                    options = @(
+                                        # Only option used in the tests is defined here
+                                        @{
+                                            name = 'Enable Firewall'
+                                            itemId = 'vendor_msft_firewall_mdmstore_hypervvmsettings_{vmcreatorid}_publicprofile_enablefirewall_true'
+                                            dependentOn = @(
+                                                @{
+                                                    dependentOn = 'vendor_msft_firewall_mdmstore_hypervvmsettings_{vmcreatorid}_target_wsl'
+                                                    parentSettingId = 'vendor_msft_firewall_mdmstore_hypervvmsettings_{vmcreatorid}_target'
+                                                }
+                                            )
+                                        }
+                                    )
+                                }
+                            },
+                            @{
+                                Id = 'vendor_msft_firewall_mdmstore_hypervvmsettings_{vmcreatorid}_target'
+                                Name = 'Target'
+                                OffsetUri = '/MdmStore/HyperVVMSettings/{0}/Target'
+                                AdditionalProperties = @{
+                                    '@odata.type' = '#microsoft.graph.deviceManagementConfigurationChoiceSettingDefinition'
+                                    options = @(
+                                        @{
+                                            dependentOn = @(
+                                                @{
+                                                    dependentOn = 'vendor_msft_firewall_mdmstore_hypervvmsettings_{vmcreatorid}'
+                                                    parentSettingId = 'vendor_msft_firewall_mdmstore_hypervvmsettings_{vmcreatorid}'
+                                                }
+                                            )
+                                            name = 'WSL'
+                                            itemId = 'vendor_msft_firewall_mdmstore_hypervvmsettings_{vmcreatorid}_target_wsl'
+                                        }
+                                    )
+                                }
+                            },
+                            @{
+                                Id = 'vendor_msft_firewall_mdmstore_hypervvmsettings_{vmcreatorid}'
+                                Name = '{VMCreatorId}'
+                                OffsetUri = '/MdmStore/HyperVVMSettings/{0}'
+                                AdditionalProperties = @{
+                                    '@odata.type' = '#microsoft.graph.deviceManagementConfigurationSettingGroupCollectionDefinition'
+                                    childIds = @(
+                                        'vendor_msft_firewall_mdmstore_hypervvmsettings_{vmcreatorid}_target'
+                                    )
+                                    maximumCount = 1
+                                    minimumCount = 0
+                                }
+                            }
+                        )
+                    }
+                )
+            }
+
             Mock -CommandName Update-DeviceConfigurationPolicyAssignment -MockWith {
             }
 
@@ -259,6 +433,9 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             # Mock Write-Host to hide output during the tests
             Mock -CommandName Write-Host -MockWith {
             }
+            Mock -CommandName Write-Warning -MockWith {
+            }
+
             $Script:exportedInstances =$null
             $Script:ExportMode = $false
 
@@ -348,7 +525,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                 (Get-TargetResource @testParams).Ensure | Should -Be 'Present'
             }
 
-            It 'Should return true from the Test method' {
+            It 'Should return false from the Test method' {
                 Test-TargetResource @testParams | Should -Be $false
             }
 

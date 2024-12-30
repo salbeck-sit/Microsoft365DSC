@@ -82,16 +82,16 @@ function Get-TargetResource
         $ArcConfigSettings = Get-ArcConfig -ErrorAction Stop
 
         $result = @{
-            IsSingleInstance                           = 'Yes'
-            ArcTrustedSealers                          = $ArcConfigSettings.ArcTrustedSealers
-            Credential                                 = $Credential
-            ApplicationId                              = $ApplicationId
-            CertificateThumbprint                      = $CertificateThumbprint
-            CertificatePath                            = $CertificatePath
-            CertificatePassword                        = $CertificatePassword
-            Managedidentity                            = $ManagedIdentity.IsPresent
-            TenantId                                   = $TenantId
-            AccessTokens                               = $AccessTokens
+            IsSingleInstance      = 'Yes'
+            ArcTrustedSealers     = $ArcConfigSettings.ArcTrustedSealers
+            Credential            = $Credential
+            ApplicationId         = $ApplicationId
+            CertificateThumbprint = $CertificateThumbprint
+            CertificatePath       = $CertificatePath
+            CertificatePassword   = $CertificatePassword
+            Managedidentity       = $ManagedIdentity.IsPresent
+            TenantId              = $TenantId
+            AccessTokens          = $AccessTokens
         }
 
         Write-Verbose -Message 'Found Arc config settings'
@@ -256,14 +256,16 @@ function Test-TargetResource
     Write-Verbose -Message 'Testing configuration of Arc Config settings'
 
     $CurrentValues = Get-TargetResource @PSBoundParameters
+    $ValuesToCheck = ([Hashtable]$PSBoundParameters).Clone()
+
+    $ValuesToCheck = Remove-M365DSCAuthenticationParameter -BoundParameters $ValuesToCheck
+    # Need to remove Identity as Get-ArcConfig doesn't return Identity
+    $ValuesToCheck.Remove('Identity') | Out-Null
+
+    $PSBoundParameters.ArcTrustedSealers = $PSBoundParameters.ArcTrustedSealers -Join ','
 
     Write-Verbose -Message "Current Values: $(Convert-M365DscHashtableToString -Hashtable $CurrentValues)"
     Write-Verbose -Message "Target Values: $(Convert-M365DscHashtableToString -Hashtable $PSBoundParameters)"
-
-    $ValuesToCheck = $PSBoundParameters
-
-    # Need to remove Identity as Get-ArcConfig doesn't return Identity
-    $ValuesToCheck.Remove('Identity') | Out-Null
 
     $TestResult = Test-M365DSCParameterState -CurrentValues $CurrentValues `
         -Source $($MyInvocation.MyCommand.Source) `
@@ -343,7 +345,7 @@ function Export-TargetResource
         $dscContent = ''
         Write-Host "`r`n" -NoNewline
 
-        Write-Host "    |---[1/1]" -NoNewline
+        Write-Host '    |---[1/1]' -NoNewline
 
         $Params = @{
             IsSingleInstance      = 'Yes'

@@ -19,9 +19,13 @@ function Get-TargetResource
 
         [Parameter()]
         [System.String[]]
-        $AccessTokens
+        $AccessTokens,
+
+        [Parameter()]
+        [Switch]
+        $ManagedIdentity
     )
-    Write-Verbose -Message 'Checking the Teams Upgrade Configuration'
+    Write-Verbose -Message 'Checking the Teams Org Wide App Settings'
 
     $ConnectionMode = New-M365DSCConnection -Workload 'MicrosoftTeams' `
         -InboundParameters $PSBoundParameters
@@ -46,15 +50,16 @@ function Get-TargetResource
     {
         $settings = Get-CsTeamsSettingsCustomApp -ErrorAction Stop
         return @{
-            IsSingleInstance      = 'Yes'
+            IsSingleInstance                   = 'Yes'
             IsSideloadedAppsInteractionEnabled = $settings.IsSideloadedAppsInteractionEnabled
             Credential                         = $Credential
             AccessTokens                       = $AccessTokens
+            ManagedIdentity                    = $ManagedIdentity.IsPresent
         }
     }
     catch
     {
-        if ($_.Exception.Message -like "*Resource not found.*")
+        if ($_.Exception.Message -like '*Resource not found.*')
         {
             Write-Warning -Message "The API doesn't exist for the selected environment."
         }
@@ -93,10 +98,14 @@ function Set-TargetResource
 
         [Parameter()]
         [System.String[]]
-        $AccessTokens
+        $AccessTokens,
+
+        [Parameter()]
+        [Switch]
+        $ManagedIdentity
     )
 
-    Write-Verbose -Message 'Setting Teams Upgrade Configuration'
+    Write-Verbose -Message 'Setting the Teams Org Wide App Settings'
 
     #Ensure the proper dependencies are installed in the current environment.
     Confirm-M365DSCDependencies
@@ -142,7 +151,11 @@ function Test-TargetResource
 
         [Parameter()]
         [System.String[]]
-        $AccessTokens
+        $AccessTokens,
+
+        [Parameter()]
+        [Switch]
+        $ManagedIdentity
     )
     #Ensure the proper dependencies are installed in the current environment.
     Confirm-M365DSCDependencies
@@ -156,7 +169,7 @@ function Test-TargetResource
     Add-M365DSCTelemetryEvent -Data $data
     #endregion
 
-    Write-Verbose -Message 'Testing configuration of Team Upgrade Settings'
+    Write-Verbose -Message 'Testing configuration for the Teams Org Wide App Settings'
 
     $CurrentValues = Get-TargetResource @PSBoundParameters
 
@@ -209,9 +222,9 @@ function Export-TargetResource
     {
         $dscContent = ''
         $params = @{
-            IsSingleInstance      = 'Yes'
-            Credential            = $Credential
-            AccessTokens          = $AccessTokens
+            IsSingleInstance = 'Yes'
+            Credential       = $Credential
+            AccessTokens     = $AccessTokens
         }
         $Results = Get-TargetResource @Params
 
@@ -223,7 +236,7 @@ function Export-TargetResource
             }
 
             $Results = Update-M365DSCExportAuthenticationResults -ConnectionMode $ConnectionMode `
-                    -Results $Results
+                -Results $Results
             $currentDSCBlock = Get-M365DSCExportContentForResource -ResourceName $ResourceName `
                 -ConnectionMode $ConnectionMode `
                 -ModulePath $PSScriptRoot `

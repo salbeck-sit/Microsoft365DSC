@@ -115,7 +115,15 @@ function Update-MgServicePrincipal
 
         [Parameter()]
         [System.String[]]
-        $Tags
+        $Tags,
+
+        [Parameter()]
+        [PSObject]
+        $PasswordCredentials,
+
+        [Parameter()]
+        [PSObject]
+        $KeyCredentials
     )
 }
 
@@ -187,7 +195,15 @@ function New-MGServicePrincipal
 
         [Parameter()]
         [System.String[]]
-        $Tags
+        $Tags,
+
+        [Parameter()]
+        [PSObject]
+        $PasswordCredentials,
+
+        [Parameter()]
+        [PSObject]
+        $KeyCredentials
     )
 }
 
@@ -1257,3 +1273,20 @@ function Disable-EOPProtectionPolicyRule
         $Identity
     )
 }
+
+
+#region MSCloudLoginAssistant
+function Get-MSCloudLoginConnectionProfile{
+    [CmdletBinding()]
+    param
+    (
+        [Parameter()]
+        [System.String]
+        $Workload
+    )
+}
+
+function Reset-MSCloudLoginConnectionProfileContext
+{
+}
+#endregion

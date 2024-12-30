@@ -162,11 +162,10 @@ function Get-TargetResource
 
     # Workaround for issue when if connected to S+C prior to calling cmdlet, an error about an invalid token is thrown.
     # If connected to S+C, then we need to re-initialize the connection to EXO.
-    if ($Global:MSCloudLoginConnectionProfile.SecurityComplianceCenter.Connected -and `
-        $Global:MSCloudLoginConnectionProfile.ExchangeOnline.Connected)
+    if ((Get-MSCloudLoginConnectionProfile -Workload SecurityComplianceCenter).Connected -and `
+            (Get-MSCloudLoginConnectionProfile -Workload ExchangeOnline).Connected)
     {
-        $Global:MSCloudLoginConnectionProfile.ExchangeOnline.Disconnect()
-        $Global:MSCloudLoginConnectionProfile.SecurityComplianceCenter.Connected = $false
+        Reset-MSCloudLoginConnectionProfileContext -Workload ExchangeOnline
     }
     $ConnectionMode = New-M365DSCConnection -Workload 'ExchangeOnline' `
         -InboundParameters $PSBoundParameters
@@ -204,7 +203,7 @@ function Get-TargetResource
         $M365WebEnableUsersToOpenFilesFrom3PStorageValue = Get-MgServicePrincipal -Filter "appId eq '$OfficeOnlineId'" -Property 'AccountEnabled' -ErrorAction SilentlyContinue
         if ($null -eq $M365WebEnableUsersToOpenFilesFrom3PStorageValue)
         {
-            Write-Verbose -Message "Registering the Office on the web Service Principal"
+            Write-Verbose -Message 'Registering the Office on the web Service Principal'
             New-MgServicePrincipal -AppId 'c1f33bc0-bdb4-4248-ba9b-096807ddb43e' -ErrorAction Stop | Out-Null
             $M365WebEnableUsersToOpenFilesFrom3PStorageValue = Get-MgServicePrincipal -Filter "appId eq '$OfficeOnlineId'" -Property 'AccountEnabled' -ErrorAction SilentlyContinue
         }
@@ -308,7 +307,7 @@ function Get-TargetResource
             $servicePrincipal = Get-MgServicePrincipal -Filter "appid eq 'ebe0c285-db95-403f-a1a3-a793bd6d7767'"
             if ($null -eq $servicePrincipal)
             {
-                Write-Verbose -Message "Registering the MRO Device Manager Service Principal"
+                Write-Verbose -Message 'Registering the MRO Device Manager Service Principal'
                 New-MgServicePrincipal -AppId 'ebe0c285-db95-403f-a1a3-a793bd6d7767' -ErrorAction Stop | Out-Null
             }
         }
@@ -359,13 +358,13 @@ function Get-TargetResource
         if ($null -ne $FormsSettings)
         {
             $results += @{
-                FormsIsExternalSendFormEnabled                        = $FormsSettings.isExternalSendFormEnabled
-                FormsIsExternalShareCollaborationEnabled              = $FormsSettings.isExternalShareCollaborationEnabled
-                FormsIsExternalShareResultEnabled                     = $FormsSettings.isExternalShareResultEnabled
-                FormsIsExternalShareTemplateEnabled                   = $FormsSettings.isExternalShareTemplateEnabled
-                FormsIsRecordIdentityByDefaultEnabled                 = $FormsSettings.isRecordIdentityByDefaultEnabled
-                FormsIsBingImageSearchEnabled                         = $FormsSettings.isBingImageSearchEnabled
-                FormsIsInOrgFormsPhishingScanEnabled                  = $FormsSettings.isInOrgFormsPhishingScanEnabled
+                FormsIsExternalSendFormEnabled           = $FormsSettings.isExternalSendFormEnabled
+                FormsIsExternalShareCollaborationEnabled = $FormsSettings.isExternalShareCollaborationEnabled
+                FormsIsExternalShareResultEnabled        = $FormsSettings.isExternalShareResultEnabled
+                FormsIsExternalShareTemplateEnabled      = $FormsSettings.isExternalShareTemplateEnabled
+                FormsIsRecordIdentityByDefaultEnabled    = $FormsSettings.isRecordIdentityByDefaultEnabled
+                FormsIsBingImageSearchEnabled            = $FormsSettings.isBingImageSearchEnabled
+                FormsIsInOrgFormsPhishingScanEnabled     = $FormsSettings.isInOrgFormsPhishingScanEnabled
             }
         }
 
@@ -385,8 +384,8 @@ function Get-TargetResource
         if ($null -ne $AppsAndServicesSettings)
         {
             $results += @{
-                AppsAndServicesIsOfficeStoreEnabled                   = $AppsAndServicesSettings.isOfficeStoreEnabled
-                AppsAndServicesIsAppAndServicesTrialEnabled           = $AppsAndServicesSettings.IsAppAndServicesTrialEnabled
+                AppsAndServicesIsOfficeStoreEnabled         = $AppsAndServicesSettings.isOfficeStoreEnabled
+                AppsAndServicesIsAppAndServicesTrialEnabled = $AppsAndServicesSettings.IsAppAndServicesTrialEnabled
             }
         }
 
@@ -395,9 +394,9 @@ function Get-TargetResource
         if ($null -ne $ToDoSettings)
         {
             $results += @{
-                ToDoIsPushNotificationEnabled                         = $ToDoSettings.IsPushNotificationEnabled
-                ToDoIsExternalJoinEnabled                             = $ToDoSettings.IsExternalJoinEnabled
-                ToDoIsExternalShareEnabled                            = $ToDoSettings.IsExternalShareEnabled
+                ToDoIsPushNotificationEnabled = $ToDoSettings.IsPushNotificationEnabled
+                ToDoIsExternalJoinEnabled     = $ToDoSettings.IsExternalJoinEnabled
+                ToDoIsExternalShareEnabled    = $ToDoSettings.IsExternalShareEnabled
             }
         }
 
@@ -597,7 +596,7 @@ function Set-TargetResource
         Write-Verbose -Message "Updating the Microsoft 365 On the Web setting to {$M365WebEnableUsersToOpenFilesFrom3PStorage}"
         $OfficeOnlineId = 'c1f33bc0-bdb4-4248-ba9b-096807ddb43e'
         $M365WebEnableUsersToOpenFilesFrom3PStorageValue = Get-MgServicePrincipal -Filter "appId eq '$OfficeOnlineId'" -Property 'AccountEnabled, Id'
-        Update-MgservicePrincipal -ServicePrincipalId $($M365WebEnableUsersToOpenFilesFrom3PStorageValue.Id) `
+        Update-MgServicePrincipal -ServicePrincipalId $($M365WebEnableUsersToOpenFilesFrom3PStorageValue.Id) `
             -AccountEnabled:$M365WebEnableUsersToOpenFilesFrom3PStorage
     }
     if ($PSBoundParameters.ContainsKey('PlannerAllowCalendarSharing') -and `
@@ -624,7 +623,7 @@ function Set-TargetResource
     # Microsoft Viva Briefing Email
     if ($null -ne $MicrosoftVivaBriefingEmail)
     {
-        Write-Verbose -Message "DEPRECATED - The MicrosoftVivaBriefingEmail parameter is deprecated and will be ignored."
+        Write-Verbose -Message 'DEPRECATED - The MicrosoftVivaBriefingEmail parameter is deprecated and will be ignored.'
     }
     #$briefingValue = 'opt-out'
 
@@ -639,29 +638,29 @@ function Set-TargetResource
     if ($PSBoundParameters.ContainsKey('VivaInsightsWebExperience') -and `
         ($currentValues.VivaInsightsWebExperience -ne $VivaInsightsWebExperience))
     {
-        Write-Verbose -Message "Updating Viva Insights settings for Web Experience"
-        Set-DefaultTenantMyAnalyticsFeatureConfig -Feature "Dashboard" -IsEnabled $VivaInsightsWebExperience -Verbose:$false | Out-Null
+        Write-Verbose -Message 'Updating Viva Insights settings for Web Experience'
+        Set-DefaultTenantMyAnalyticsFeatureConfig -Feature 'Dashboard' -IsEnabled $VivaInsightsWebExperience -Verbose:$false | Out-Null
     }
 
     if ($PSBoundParameters.ContainsKey('VivaInsightsDigestEmail') -and `
         ($currentValues.VivaInsightsDigestEmail -ne $VivaInsightsDigestEmail))
     {
-        Write-Verbose -Message "Updating Viva Insights settings for Digest Email"
-        Set-DefaultTenantMyAnalyticsFeatureConfig -Feature "Digest-email" -IsEnabled $VivaInsightsDigestEmail -Verbose:$false | Out-Null
+        Write-Verbose -Message 'Updating Viva Insights settings for Digest Email'
+        Set-DefaultTenantMyAnalyticsFeatureConfig -Feature 'Digest-email' -IsEnabled $VivaInsightsDigestEmail -Verbose:$false | Out-Null
     }
 
     if ($PSBoundParameters.ContainsKey('VivaInsightsOutlookAddInAndInlineSuggestions') -and `
         ($currentValues.VivaInsightsOutlookAddInAndInlineSuggestions -ne $VivaInsightsOutlookAddInAndInlineSuggestions))
     {
-        Write-Verbose -Message "Updating Viva Insights settings for Addin and Inline Suggestions"
-        Set-DefaultTenantMyAnalyticsFeatureConfig -Feature "Add-In" -IsEnabled $VivaInsightsOutlookAddInAndInlineSuggestions -Verbose:$false | Out-Null
+        Write-Verbose -Message 'Updating Viva Insights settings for Addin and Inline Suggestions'
+        Set-DefaultTenantMyAnalyticsFeatureConfig -Feature 'Add-In' -IsEnabled $VivaInsightsOutlookAddInAndInlineSuggestions -Verbose:$false | Out-Null
     }
 
     if ($PSBoundParameters.ContainsKey('VivaInsightsScheduleSendSuggestions') -and `
         ($currentValues.VivaInsightsScheduleSendSuggestions -ne $VivaInsightsScheduleSendSuggestions))
     {
-        Write-Verbose -Message "Updating Viva Insights settings for ScheduleSendSuggestions"
-        Set-DefaultTenantMyAnalyticsFeatureConfig -Feature "Scheduled-send" -IsEnabled $VivaInsightsScheduleSendSuggestions -Verbose:$false | Out-Null
+        Write-Verbose -Message 'Updating Viva Insights settings for ScheduleSendSuggestions'
+        Set-DefaultTenantMyAnalyticsFeatureConfig -Feature 'Scheduled-send' -IsEnabled $VivaInsightsScheduleSendSuggestions -Verbose:$false | Out-Null
     }
 
     # Reports Display Names
@@ -674,29 +673,29 @@ function Set-TargetResource
     }
 
     # Apps Installation
-    if (($PSBoundParameters.ContainsKey("InstallationOptionsAppsForWindows") -or `
-        $PSBoundParameters.ContainsKey("InstallationOptionsAppsForMac")) -and `
+    if (($PSBoundParameters.ContainsKey('InstallationOptionsAppsForWindows') -or `
+                $PSBoundParameters.ContainsKey('InstallationOptionsAppsForMac')) -and `
         ($null -ne (Compare-Object -ReferenceObject $currentValues.InstallationOptionsAppsForWindows -DifferenceObject $InstallationOptionsAppsForWindows) -or `
-         $null -ne (Compare-Object -ReferenceObject $currentValues.InstallationOptionsAppsForMac -DifferenceObject $InstallationOptionsAppsForMac)))
+                $null -ne (Compare-Object -ReferenceObject $currentValues.InstallationOptionsAppsForMac -DifferenceObject $InstallationOptionsAppsForMac)))
     {
         $ConnectionModeTasks = New-M365DSCConnection -Workload 'Tasks' `
             -InboundParameters $PSBoundParameters
         $InstallationOptions = Get-M365DSCOrgSettingsInstallationOptions -AuthenticationOption $ConnectionModeTasks
         $InstallationOptionsToUpdate = @{
-            updateChannel = ""
+            updateChannel  = ''
             appsForWindows = @{
                 isMicrosoft365AppsEnabled = $false
                 isProjectEnabled          = $false
                 isSkypeForBusinessEnabled = $false
                 isVisioEnabled            = $false
             }
-            appsForMac = @{
+            appsForMac     = @{
                 isMicrosoft365AppsEnabled = $false
                 isSkypeForBusinessEnabled = $false
             }
         }
 
-        if ($PSBoundParameters.ContainsKey("InstallationOptionsUpdateChannel") -and `
+        if ($PSBoundParameters.ContainsKey('InstallationOptionsUpdateChannel') -and `
             ($InstallationOptionsUpdateChannel -ne $InstallationOptions.updateChannel))
         {
             $InstallationOptionsToUpdate.updateChannel = $InstallationOptionsUpdateChannel
@@ -706,7 +705,7 @@ function Set-TargetResource
             $InstallationOptionsToUpdate.Remove('updateChannel') | Out-Null
         }
 
-        if ($PSBoundParameters.ContainsKey("InstallationOptionsAppsForWindows"))
+        if ($PSBoundParameters.ContainsKey('InstallationOptionsAppsForWindows'))
         {
             foreach ($key in $InstallationOptionsAppsForWindows)
             {
@@ -718,7 +717,7 @@ function Set-TargetResource
             $InstallationOptionsToUpdate.Remove('appsForWindows') | Out-Null
         }
 
-        if ($PSBoundParameters.ContainsKey("InstallationOptionsAppsForMac"))
+        if ($PSBoundParameters.ContainsKey('InstallationOptionsAppsForMac'))
         {
             foreach ($key in $InstallationOptionsAppsForMac)
             {
@@ -1017,7 +1016,7 @@ function Test-TargetResource
 
     $CurrentValues = Get-TargetResource @PSBoundParameters
     $ValuesToCheck = ([Hashtable]$PSBoundParameters).clone()
-    $ValuesToCheck.Remove("MicrosoftVivaBriefingEmail") | Out-Null
+    $ValuesToCheck.Remove('MicrosoftVivaBriefingEmail') | Out-Null
 
     Write-Verbose -Message "Current Values: $(Convert-M365DscHashtableToString -Hashtable $CurrentValues)"
     Write-Verbose -Message "Target Values: $(Convert-M365DscHashtableToString -Hashtable $PSBoundParameters)"
@@ -1139,10 +1138,10 @@ function Get-M365DSCO365OrgSettingsPlannerConfig
 
     try
     {
-        $Uri = $Global:MSCloudLoginConnectionProfile.Tasks.HostUrl + "/taskAPI/tenantAdminSettings/Settings";
+        $Uri = (Get-MSCloudLoginConnectionProfile -Workload Tasks).HostUrl + '/taskAPI/tenantAdminSettings/Settings'
         [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
-        $results = Invoke-RestMethod -ContentType "application/json;odata.metadata=full" `
-            -Headers @{"Accept"="application/json"; "Authorization"=$Global:MSCloudLoginConnectionProfile.Tasks.AccessToken; "Accept-Charset"="UTF-8"; "OData-Version"="4.0;NetFx"; "OData-MaxVersion"="4.0;NetFx"} `
+        $results = Invoke-RestMethod -ContentType 'application/json;odata.metadata=full' `
+            -Headers @{'Accept' = 'application/json'; 'Authorization' = (Get-MSCloudLoginConnectionProfile -Workload Tasks).AccessToken; 'Accept-Charset' = 'UTF-8'; 'OData-Version' = '4.0;NetFx'; 'OData-MaxVersion' = '4.0;NetFx' } `
             -Method GET `
             $Uri -ErrorAction Stop
         return $results
@@ -1151,11 +1150,11 @@ function Get-M365DSCO365OrgSettingsPlannerConfig
     {
         if ($_.Exception.Message -eq 'The request was aborted: Could not create SSL/TLS secure channel.')
         {
-            Write-Warning -Message "Could not create SSL/TLS secure channel. Skipping the Planner settings."
+            Write-Warning -Message 'Could not create SSL/TLS secure channel. Skipping the Planner settings.'
         }
         else
         {
-            Write-Verbose -Message "Not able to retrieve Office 365 Planner Settings. Please ensure correct permissions have been granted."
+            Write-Verbose -Message 'Not able to retrieve Office 365 Planner Settings. Please ensure correct permissions have been granted.'
             New-M365DSCLogEntry -Message 'Error updating Office 365 Planner Settings' `
                 -Exception $_ `
                 -Source $($MyInvocation.MyCommand.Source) `
@@ -1182,9 +1181,9 @@ function Set-M365DSCO365OrgSettingsPlannerConfig
     }
 
     $requestBody = $flags | ConvertTo-Json
-    $Uri = $Global:MSCloudLoginConnectionProfile.Tasks.HostUrl + "/taskAPI/tenantAdminSettings/Settings";
-    $results = Invoke-RestMethod -ContentType "application/json;odata.metadata=full" `
-        -Headers @{"Accept"="application/json"; "Authorization"=$Global:MSCloudLoginConnectionProfile.Tasks.AccessToken; "Accept-Charset"="UTF-8"; "OData-Version"="4.0;NetFx"; "OData-MaxVersion"="4.0;NetFx"} `
+    $Uri = (Get-MSCloudLoginConnectionProfile -Workload Tasks).HostUrl + '/taskAPI/tenantAdminSettings/Settings'
+    $results = Invoke-RestMethod -ContentType 'application/json;odata.metadata=full' `
+        -Headers @{'Accept' = 'application/json'; 'Authorization' = (Get-MSCloudLoginConnectionProfile -Workload Tasks).AccessToken; 'Accept-Charset' = 'UTF-8'; 'OData-Version' = '4.0;NetFx'; 'OData-MaxVersion' = '4.0;NetFx' } `
         -Method PATCH `
         -Body $requestBody `
         $Uri
@@ -1203,13 +1202,13 @@ function Get-M365DSCOrgSettingsInstallationOptions
 
     try
     {
-        $url = $Global:MSCloudLoginConnectionProfile.MicrosoftGraph.ResourceUrl + 'beta/admin/microsoft365Apps/installationOptions'
+        $url = (Get-MSCloudLoginConnectionProfile -Workload MicrosoftGraph).ResourceUrl + 'beta/admin/microsoft365Apps/installationOptions'
         $results = Invoke-MgGraphRequest -Method GET -Uri $url
         return $results
     }
     catch
     {
-        Write-Verbose -Message "Not able to retrieve Office 365 Apps Installation Options. Please ensure correct permissions have been granted."
+        Write-Verbose -Message 'Not able to retrieve Office 365 Apps Installation Options. Please ensure correct permissions have been granted.'
         return $null
     }
 }
@@ -1231,7 +1230,7 @@ function Update-M365DSCOrgSettingsInstallationOptions
 
     try
     {
-        $url = $Global:MSCloudLoginConnectionProfile.MicrosoftGraph.ResourceUrl + 'beta/admin/microsoft365Apps/installationOptions'
+        $url = (Get-MSCloudLoginConnectionProfile -Workload MicrosoftGraph).ResourceUrl + 'beta/admin/microsoft365Apps/installationOptions'
         Invoke-MgGraphRequest -Method PATCH -Uri $url -Body $Options | Out-Null
     }
     catch
@@ -1241,8 +1240,8 @@ function Update-M365DSCOrgSettingsInstallationOptions
             if ($AuthenticationOption -eq 'Credentials')
             {
                 $errorMessage = "You don't have the proper permissions to update the Office 365 Apps Installation Options." `
-                    + " When using Credentials to authenticate, you need to grant permissions to the Microsoft Graph PowerShell SDK by running" `
-                    + " Connect-MgGraph -Scopes OrgSettings-Microsoft365Install.ReadWrite.All"
+                    + ' When using Credentials to authenticate, you need to grant permissions to the Microsoft Graph PowerShell SDK by running' `
+                    + ' Connect-MgGraph -Scopes OrgSettings-Microsoft365Install.ReadWrite.All'
                 Write-Error -Message $errorMessage
             }
         }
@@ -1258,13 +1257,13 @@ function Get-M365DSCOrgSettingsForms
 
     try
     {
-        $url = $Global:MSCloudLoginConnectionProfile.MicrosoftGraph.ResourceUrl + 'beta/admin/forms/settings'
+        $url = (Get-MSCloudLoginConnectionProfile -Workload MicrosoftGraph).ResourceUrl + 'beta/admin/forms/settings'
         $results = Invoke-MgGraphRequest -Method GET -Uri $url -ErrorAction Stop
         return $results
     }
     catch
     {
-        Write-Verbose -Message "Not able to retrieve O365OrgSettings Forms Settings. Please ensure correct permissions have been granted."
+        Write-Verbose -Message 'Not able to retrieve O365OrgSettings Forms Settings. Please ensure correct permissions have been granted.'
         return $null
     }
 }
@@ -1282,8 +1281,8 @@ function Update-M365DSCOrgSettingsForms
 
     try
     {
-        Write-Verbose -Message "Updating Forms Settings"
-        $url = $Global:MSCloudLoginConnectionProfile.MicrosoftGraph.ResourceUrl + 'beta/admin/forms/settings'
+        Write-Verbose -Message 'Updating Forms Settings'
+        $url = (Get-MSCloudLoginConnectionProfile -Workload MicrosoftGraph).ResourceUrl + 'beta/admin/forms/settings'
         Invoke-MgGraphRequest -Method PATCH -Uri $url -Body $Options | Out-Null
     }
     catch
@@ -1305,13 +1304,13 @@ function Get-M365DSCOrgSettingsDynamicsCustomerVoice
 
     try
     {
-        $url = $Global:MSCloudLoginConnectionProfile.MicrosoftGraph.ResourceUrl + 'beta/admin/dynamics/customerVoice'
+        $url = (Get-MSCloudLoginConnectionProfile -Workload MicrosoftGraph).ResourceUrl + 'beta/admin/dynamics/customerVoice'
         $results = Invoke-MgGraphRequest -Method GET -Uri $url -ErrorAction Stop
         return $results
     }
     catch
     {
-        Write-Verbose -Message "Not able to retrieve O365OrgSettings Dynamics Customer Voice Settings. Please ensure correct permissions have been granted."
+        Write-Verbose -Message 'Not able to retrieve O365OrgSettings Dynamics Customer Voice Settings. Please ensure correct permissions have been granted.'
         return $null
     }
 }
@@ -1329,7 +1328,7 @@ function Update-M365DSCOrgSettingsDynamicsCustomerVoice
 
     try
     {
-        $url = $Global:MSCloudLoginConnectionProfile.MicrosoftGraph.ResourceUrl + 'beta/admin/dynamics/customerVoice'
+        $url = (Get-MSCloudLoginConnectionProfile -Workload MicrosoftGraph).ResourceUrl + 'beta/admin/dynamics/customerVoice'
         Invoke-MgGraphRequest -Method PATCH -Uri $url -Body $Options | Out-Null
     }
     catch
@@ -1351,13 +1350,13 @@ function Get-M365DSCOrgSettingsAppsAndServices
 
     try
     {
-        $url = $Global:MSCloudLoginConnectionProfile.MicrosoftGraph.ResourceUrl + 'beta/admin/appsAndServices/settings'
+        $url = (Get-MSCloudLoginConnectionProfile -Workload MicrosoftGraph).ResourceUrl + 'beta/admin/appsAndServices/settings'
         $results = Invoke-MgGraphRequest -Method GET -Uri $url -ErrorAction Stop
         return $results
     }
     catch
     {
-        Write-Verbose -Message "Not able to retrieve O365OrgSettings Apps and Services Settings. Please ensure correct permissions have been granted."
+        Write-Verbose -Message 'Not able to retrieve O365OrgSettings Apps and Services Settings. Please ensure correct permissions have been granted.'
         return $null
     }
 }
@@ -1375,7 +1374,7 @@ function Update-M365DSCOrgSettingsAppsAndServices
 
     try
     {
-        $url = $Global:MSCloudLoginConnectionProfile.MicrosoftGraph.ResourceUrl + 'beta/admin/appsAndServices/settings'
+        $url = (Get-MSCloudLoginConnectionProfile -Workload MicrosoftGraph).ResourceUrl + 'beta/admin/appsAndServices/settings'
         Invoke-MgGraphRequest -Method PATCH -Uri $url -Body $Options | Out-Null
     }
     catch
@@ -1396,13 +1395,13 @@ function Get-M365DSCOrgSettingsToDo
 
     try
     {
-        $url = $Global:MSCloudLoginConnectionProfile.MicrosoftGraph.ResourceUrl + 'beta/admin/todo/settings'
+        $url = (Get-MSCloudLoginConnectionProfile -Workload MicrosoftGraph).ResourceUrl + 'beta/admin/todo/settings'
         $results = Invoke-MgGraphRequest -Method GET -Uri $url -ErrorAction Stop
         return $results
     }
     catch
     {
-        Write-Verbose -Message "Not able to retrieve ToDo settings. Please ensure correct permissions have been granted."
+        Write-Verbose -Message 'Not able to retrieve ToDo settings. Please ensure correct permissions have been granted.'
         return $null
     }
 }
@@ -1420,7 +1419,7 @@ function Update-M365DSCOrgSettingsToDo
 
     try
     {
-        $url = $Global:MSCloudLoginConnectionProfile.MicrosoftGraph.ResourceUrl + 'beta/admin/todo/settings'
+        $url = (Get-MSCloudLoginConnectionProfile -Workload MicrosoftGraph).ResourceUrl + 'beta/admin/todo/settings'
         Invoke-MgGraphRequest -Method PATCH -Uri $url -Body $Options | Out-Null
     }
     catch
@@ -1443,13 +1442,13 @@ function Get-M365DSCOrgSettingsAdminCenterReport
 
     try
     {
-        $url = $Global:MSCloudLoginConnectionProfile.MicrosoftGraph.ResourceUrl + 'beta/admin/reportSettings'
+        $url = (Get-MSCloudLoginConnectionProfile -Workload MicrosoftGraph).ResourceUrl + 'beta/admin/reportSettings'
         $results = Invoke-MgGraphRequest -Method GET -Uri $url -ErrorAction Stop
         return $results
     }
     catch
     {
-        Write-Verbose -Message "Not able to retrieve Office 365 Report Settings. Please ensure correct permissions have been granted."
+        Write-Verbose -Message 'Not able to retrieve Office 365 Report Settings. Please ensure correct permissions have been granted.'
         return $null
     }
 }
@@ -1464,9 +1463,9 @@ function Update-M365DSCOrgSettingsAdminCenterReport
         $DisplayConcealedNames
     )
     $VerbosePreference = 'SilentlyContinue'
-    $url = $Global:MSCloudLoginConnectionProfile.MicrosoftGraph.ResourceUrl + 'beta/admin/reportSettings'
+    $url = (Get-MSCloudLoginConnectionProfile -Workload MicrosoftGraph).ResourceUrl + 'beta/admin/reportSettings'
     $body = @{
-        "@odata.context"      = $Global:MSCloudLoginConnectionProfile.MicrosoftGraph.ResourceUrl + 'beta/$metadata#admin/reportSettings/$entity'
+        '@odata.context'      = (Get-MSCloudLoginConnectionProfile -Workload MicrosoftGraph).ResourceUrl + 'beta/$metadata#admin/reportSettings/$entity'
         displayConcealedNames = $DisplayConcealedNames
     }
     Invoke-MgGraphRequest -Method PATCH -Uri $url -Body $body | Out-Null

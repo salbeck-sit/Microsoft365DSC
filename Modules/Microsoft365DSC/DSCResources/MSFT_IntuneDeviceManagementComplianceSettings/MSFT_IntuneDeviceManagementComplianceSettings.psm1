@@ -46,7 +46,7 @@ function Get-TargetResource
         $AccessTokens
     )
 
-    Write-Verbose -Message "Checking for the Intune Device Management Compliance Settings"
+    Write-Verbose -Message 'Checking for the Intune Device Management Compliance Settings'
     $ConnectionMode = New-M365DSCConnection -Workload 'MicrosoftGraph' `
         -InboundParameters $PSBoundParameters
 
@@ -65,7 +65,7 @@ function Get-TargetResource
     $nullResult = $PSBoundParameters
     try
     {
-        $uri = $Global:MSCloudLoginConnectionProfile.MicrosoftGraph.ResourceUrl + 'beta/deviceManagement/settings'
+        $uri = (Get-MSCloudLoginConnectionProfile -Workload MicrosoftGraph).ResourceUrl + 'beta/deviceManagement/settings'
         $settings = Invoke-MgGraphRequest -Method 'GET' -Uri $uri
         $results = @{
             IsSingleInstance                     = 'Yes'
@@ -142,7 +142,7 @@ function Set-TargetResource
         $AccessTokens
     )
 
-    Write-Verbose -Message "Updating the Intune Device Management Compliance Settings"
+    Write-Verbose -Message 'Updating the Intune Device Management Compliance Settings'
     $ConnectionMode = New-M365DSCConnection -Workload 'MicrosoftGraph' `
         -InboundParameters $PSBoundParameters
 
@@ -225,7 +225,8 @@ function Test-TargetResource
     Add-M365DSCTelemetryEvent -Data $data
     #endregion
 
-    Write-Verbose -Message "Testing configuration of Intune Device Management Compliance Settings"
+    $ValuesToCheck = $PSBoundParameters
+    Write-Verbose -Message 'Testing configuration of Intune Device Management Compliance Settings'
 
     $CurrentValues = Get-TargetResource @PSBoundParameters
     Write-Verbose -Message "Current Values: $(Convert-M365DscHashtableToString -Hashtable $CurrentValues)"
@@ -307,16 +308,16 @@ function Export-TargetResource
         }
         $Results = Get-TargetResource @params
         $Results = Update-M365DSCExportAuthenticationResults -ConnectionMode $ConnectionMode `
-                       -Results $Results
+            -Results $Results
 
         $currentDSCBlock = Get-M365DSCExportContentForResource -ResourceName $ResourceName `
-                -ConnectionMode $ConnectionMode `
-                -ModulePath $PSScriptRoot `
-                -Results $Results `
-                -Credential $Credential
+            -ConnectionMode $ConnectionMode `
+            -ModulePath $PSScriptRoot `
+            -Results $Results `
+            -Credential $Credential
 
         Save-M365DSCPartialExport -Content $currentDSCBlock `
-                -FileName $Global:PartialExportFileName
+            -FileName $Global:PartialExportFileName
 
         Write-Host $Global:M365DSCEmojiGreenCheckMark
         return $currentDSCBlock
@@ -324,7 +325,7 @@ function Export-TargetResource
     catch
     {
         if ($_.Exception -like '*401*' -or $_.ErrorDetails.Message -like "*`"ErrorCode`":`"Forbidden`"*" -or `
-        $_.Exception -like "*Request not applicable to target tenant*")
+                $_.Exception -like '*Request not applicable to target tenant*')
         {
             Write-Host "`r`n    $($Global:M365DSCEmojiYellowCircle) The current tenant is not registered for Intune."
         }

@@ -31,6 +31,9 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             Mock -CommandName Confirm-M365DSCDependencies -MockWith {
             }
 
+            Mock -CommandName Get-MSCloudLoginConnectionProfile -MockWith {
+            }
+
             Mock -CommandName Get-PSSession -MockWith {
             }
 
@@ -138,7 +141,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                         Owner                 = ""
                         PrivacyInformationUrl = ""
                         Publisher             = "Contoso"
-                        PublishingState       = "published"
                         RoleScopeTagIds       = @()
                         IgnoreVersionDetection = $True
                         AdditionalProperties   = @{
@@ -204,7 +206,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                         Owner                 = ""
                         PrivacyInformationUrl = ""
                         Publisher             = "Contoso"
-                        PublishingState       = "published"
                         RoleScopeTagIds       = @()
                         AdditionalProperties   = @{
                             '@odata.type' = '#microsoft.graph.macOSLobApp'
@@ -260,7 +261,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                         Owner                 = ""
                         PrivacyInformationUrl = ""
                         Publisher             = "Contoso"
-                        PublishingState       = "published"
                         AdditionalProperties   = @{
                             '@odata.type' = '#microsoft.graph.macOSLobApp'
                             minimumSupportedOperatingSystem = @{
@@ -307,7 +307,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                         Owner                 = ""
                         PrivacyInformationUrl = ""
                         Publisher             = "Contoso"
-                        PublishingState       = "published"
                         RoleScopeTagIds       = @()
                         AdditionalProperties   = @{
                             '@odata.type' = '#microsoft.graph.macOSLobApp'

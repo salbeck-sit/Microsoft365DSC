@@ -8,6 +8,7 @@ function Get-TargetResource
         [System.String]
         $Identity,
 
+        # DEPRECATED
         [Parameter()]
         [System.String[]]
         $Users,
@@ -66,22 +67,6 @@ function Get-TargetResource
         $policy = Get-CsTeamsUpgradePolicy -Identity $Identity `
             -ErrorAction SilentlyContinue
 
-        if ($Identity -eq 'Global')
-        {
-            [array]$users = Get-CsOnlineUser | Where-Object -Filter { $_.TeamsUpgradePolicy -eq $null }
-        }
-        else
-        {
-            try
-            {
-                [array]$users = Get-CsOnlineUser -Filter "TeamsUpgradePolicy -eq '$Identity'"
-            }
-            catch
-            {
-                [array]$users = Get-CsOnlineUser | Where-Object -Filter { $_.TeamsUpgradePolicy -eq $Identity }
-            }
-        }
-
         if ($null -eq $policy)
         {
             throw "No Teams Upgrade Policy with Identity {$Identity} was found"
@@ -95,7 +80,8 @@ function Get-TargetResource
         Write-Verbose -Message "Found Teams Upgrade Policy with Identity {$Identity}"
         return @{
             Identity               = $Identity
-            Users                  = $usersList
+            #DEPRECATED
+            #Users                  = $usersList
             MigrateMeetingsToTeams = $MigrateMeetingsToTeams
             Credential             = $Credential
             ApplicationId          = $ApplicationId
@@ -126,6 +112,7 @@ function Set-TargetResource
         [System.String]
         $Identity,
 
+        # DEPRECATED
         [Parameter()]
         [System.String[]]
         $Users,
@@ -175,10 +162,22 @@ function Set-TargetResource
     $ConnectionMode = New-M365DSCConnection -Workload 'MicrosoftTeams' `
         -InboundParameters $PSBoundParameters
 
-    foreach ($user in $Users)
+    if ($Identity -eq 'Global' -and $Users.Length -eq 1 -and $Users[0] -eq '*')
     {
-        Write-Verbose -Message "Granting TeamsUpgradePolicy {$Identity} to User {$user} with MigrateMeetingsToTeams=$MigrateMeetingsToTeams"
-        Grant-CsTeamsUpgradePolicy -PolicyName $Identity -Identity $user -MigrateMeetingsToTeams:$MigrateMeetingsToTeams
+        Write-Verbose -Message "Granting TeamsUpgradePolicy {$Identity} to all Users with MigrateMeetingsToTeams=$MigrateMeetingsToTeams"
+        Grant-CsTeamsUpgradePolicy -PolicyName $Identity `
+            -MigrateMeetingsToTeams:$MigrateMeetingsToTeams `
+            -Global
+    }
+    else
+    {
+        foreach ($user in $Users)
+        {
+            Write-Verbose -Message "Granting TeamsUpgradePolicy {$Identity} to User {$user} with MigrateMeetingsToTeams=$MigrateMeetingsToTeams"
+            Grant-CsTeamsUpgradePolicy -PolicyName $Identity `
+                -Identity $user `
+                -MigrateMeetingsToTeams:$MigrateMeetingsToTeams
+        }
     }
 }
 
@@ -192,6 +191,7 @@ function Test-TargetResource
         [System.String]
         $Identity,
 
+        # DEPRECATED
         [Parameter()]
         [System.String[]]
         $Users,
@@ -243,6 +243,7 @@ function Test-TargetResource
     Write-Verbose -Message "Target Values: $(Convert-M365DscHashtableToString -Hashtable $PSBoundParameters)"
 
     $ValuesToCheck = $PSBoundParameters
+    $ValuesToCheck.Remove('Users') | Out-Null
 
     $TestResult = Test-M365DSCParameterState -CurrentValues $CurrentValues `
         -Source $($MyInvocation.MyCommand.Source) `

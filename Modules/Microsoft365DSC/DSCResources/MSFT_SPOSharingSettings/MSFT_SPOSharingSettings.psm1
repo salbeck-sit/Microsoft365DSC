@@ -173,7 +173,7 @@ function Get-TargetResource
     try
     {
         $SPOSharingSettings = Get-PnPTenant -ErrorAction Stop
-        $MySite = Get-PnPTenantSite -Filter "Url -like '-my.sharepoint.'" | Where-Object -FilterScript { $_.Template -notmatch "^RedirectSite#" }
+        $MySite = Get-PnPTenantSite -Filter "Url -like '-my.sharepoint.'" | Where-Object -FilterScript { $_.Template -notmatch '^RedirectSite#' }
 
         if ($null -ne $MySite)
         {
@@ -199,39 +199,41 @@ function Get-TargetResource
             $DefaultLinkPermission = $SPOSharingSettings.DefaultLinkPermission
         }
         $results = @{
-            IsSingleInstance                           = 'Yes'
-            SharingCapability                          = $SPOSharingSettings.SharingCapability
-            ShowEveryoneClaim                          = $SPOSharingSettings.ShowEveryoneClaim
-            ShowAllUsersClaim                          = $SPOSharingSettings.ShowAllUsersClaim
-            ShowEveryoneExceptExternalUsersClaim       = $SPOSharingSettings.ShowEveryoneExceptExternalUsersClaim
-            ProvisionSharedWithEveryoneFolder          = $SPOSharingSettings.ProvisionSharedWithEveryoneFolder
-            EnableGuestSignInAcceleration              = $SPOSharingSettings.EnableGuestSignInAcceleration
-            BccExternalSharingInvitations              = $SPOSharingSettings.BccExternalSharingInvitations
-            BccExternalSharingInvitationsList          = $SPOSharingSettings.BccExternalSharingInvitationsList
-            RequireAnonymousLinksExpireInDays          = $SPOSharingSettings.RequireAnonymousLinksExpireInDays
-            ExternalUserExpireInDays                   = $SPOSharingSettings.ExternalUserExpireInDays
-            ExternalUserExpirationRequired             = $SPOSharingSettings.ExternalUserExpirationRequired
-            SharingAllowedDomainList                   = $allowDomains
-            SharingBlockedDomainList                   = $blockDomains
-            SharingDomainRestrictionMode               = $SPOSharingSettings.SharingDomainRestrictionMode
-            DefaultSharingLinkType                     = $SPOSharingSettings.DefaultSharingLinkType
-            PreventExternalUsersFromResharing          = $SPOSharingSettings.PreventExternalUsersFromResharing
-            ShowPeoplePickerSuggestionsForGuestUsers   = $SPOSharingSettings.ShowPeoplePickerSuggestionsForGuestUsers
-            FileAnonymousLinkType                      = $SPOSharingSettings.FileAnonymousLinkType
-            FolderAnonymousLinkType                    = $SPOSharingSettings.FolderAnonymousLinkType
-            NotifyOwnersWhenItemsReshared              = $SPOSharingSettings.NotifyOwnersWhenItemsReshared
-            DefaultLinkPermission                      = $DefaultLinkPermission
-            RequireAcceptingAccountMatchInvitedAccount = $SPOSharingSettings.RequireAcceptingAccountMatchInvitedAccount
-            Credential                                 = $Credential
-            ApplicationId                              = $ApplicationId
-            TenantId                                   = $TenantId
-            ApplicationSecret                          = $ApplicationSecret
-            CertificatePassword                        = $CertificatePassword
-            CertificatePath                            = $CertificatePath
-            CertificateThumbprint                      = $CertificateThumbprint
-            Managedidentity                            = $ManagedIdentity.IsPresent
-            Ensure                                     = 'Present'
-            AccessTokens                               = $AccessTokens
+            IsSingleInstance                         = 'Yes'
+            SharingCapability                        = $SPOSharingSettings.SharingCapability
+            ShowEveryoneClaim                        = $SPOSharingSettings.ShowEveryoneClaim
+            ShowAllUsersClaim                        = $SPOSharingSettings.ShowAllUsersClaim
+            ShowEveryoneExceptExternalUsersClaim     = $SPOSharingSettings.ShowEveryoneExceptExternalUsersClaim
+            ProvisionSharedWithEveryoneFolder        = $SPOSharingSettings.ProvisionSharedWithEveryoneFolder
+            EnableGuestSignInAcceleration            = $SPOSharingSettings.EnableGuestSignInAcceleration
+            BccExternalSharingInvitations            = $SPOSharingSettings.BccExternalSharingInvitations
+            BccExternalSharingInvitationsList        = $SPOSharingSettings.BccExternalSharingInvitationsList
+            RequireAnonymousLinksExpireInDays        = $SPOSharingSettings.RequireAnonymousLinksExpireInDays
+            ExternalUserExpireInDays                 = $SPOSharingSettings.ExternalUserExpireInDays
+            ExternalUserExpirationRequired           = $SPOSharingSettings.ExternalUserExpirationRequired
+            SharingAllowedDomainList                 = $allowDomains
+            SharingBlockedDomainList                 = $blockDomains
+            SharingDomainRestrictionMode             = $SPOSharingSettings.SharingDomainRestrictionMode
+            DefaultSharingLinkType                   = $SPOSharingSettings.DefaultSharingLinkType
+            PreventExternalUsersFromResharing        = $SPOSharingSettings.PreventExternalUsersFromResharing
+            ShowPeoplePickerSuggestionsForGuestUsers = $SPOSharingSettings.ShowPeoplePickerSuggestionsForGuestUsers
+            FileAnonymousLinkType                    = $SPOSharingSettings.FileAnonymousLinkType
+            FolderAnonymousLinkType                  = $SPOSharingSettings.FolderAnonymousLinkType
+            NotifyOwnersWhenItemsReshared            = $SPOSharingSettings.NotifyOwnersWhenItemsReshared
+            DefaultLinkPermission                    = $DefaultLinkPermission
+
+            #DEPRECATED
+            #RequireAcceptingAccountMatchInvitedAccount = $SPOSharingSettings.RequireAcceptingAccountMatchInvitedAccount
+            Credential                               = $Credential
+            ApplicationId                            = $ApplicationId
+            TenantId                                 = $TenantId
+            ApplicationSecret                        = $ApplicationSecret
+            CertificatePassword                      = $CertificatePassword
+            CertificatePath                          = $CertificatePath
+            CertificateThumbprint                    = $CertificateThumbprint
+            Managedidentity                          = $ManagedIdentity.IsPresent
+            Ensure                                   = 'Present'
+            AccessTokens                             = $AccessTokens
         }
 
         if (-not [System.String]::IsNullOrEmpty($MySiteSharingCapability))
@@ -439,19 +441,15 @@ function Set-TargetResource
     $CurrentParameters.Remove('ApplicationSecret') | Out-Null
     $CurrentParameters.Remove('AccessTokens') | Out-Null
 
+    # DEPRECATED
+    $CurrentParameters.Remove('RequireAcceptingAccountMatchInvitedAccount') | Out-Null
+
     [bool]$SetMySharingCapability = $false
     if ($null -ne $CurrentParameters['MySiteSharingCapability'])
     {
         $SetMySharingCapability = $true
     }
     $CurrentParameters.Remove('MySiteSharingCapability') | Out-Null
-
-    if ($null -eq $SharingAllowedDomainList -and $null -eq $SharingBlockedDomainList -and
-        ($null -ne $RequireAcceptingAccountMatchInvitedAccount -and $RequireAcceptingAccountMatchInvitedAccount -eq $false))
-    {
-        Write-Warning -Message 'If SharingAllowedDomainList / SharingBlockedDomainList are set to null RequireAcceptingAccountMatchInvitedAccount must be set to True '
-        $CurrentParameters.Remove('RequireAcceptingAccountMatchInvitedAccount') | Out-Null
-    }
 
     if ($null -eq $SignInAccelerationDomain)
     {
@@ -498,10 +496,6 @@ function Set-TargetResource
         Write-Warning -Message 'SharingDomainRestrictionMode is set to BlockList. For that SharingAllowedDomainList cannot be configured'
         $CurrentParameters.Remove('SharingAllowedDomainList') | Out-Null
     }
-    foreach ($value in $CurrentParameters.GetEnumerator())
-    {
-        Write-Verbose -Message "Configuring Tenant with: $value"
-    }
 
     if ($null -ne $CurrentParameters['SharingAllowedDomainList'])
     {
@@ -532,7 +526,7 @@ function Set-TargetResource
     Set-PnPTenant @CurrentParameters | Out-Null
     if ($SetMySharingCapability)
     {
-        $mysite = Get-PnPTenantSite -Filter "Url -like '-my.sharepoint.'" | Where-Object -FilterScript { $_.Template -notmatch "^RedirectSite#" }
+        $mysite = Get-PnPTenantSite -Filter "Url -like '-my.sharepoint.'" | Where-Object -FilterScript { $_.Template -notmatch '^RedirectSite#' }
         Set-PnPTenantSite -Identity $mysite.Url -SharingCapability $MySiteSharingCapability
     }
 }
@@ -717,6 +711,7 @@ function Test-TargetResource
     $ValuesToCheck.Remove('CertificateThumbprint') | Out-Null
     $ValuesToCheck.Remove('ManagedIdentity') | Out-Null
     $ValuesToCheck.Remove('AccessTokens') | Out-Null
+    $ValuesToCheck.Remove('RequireAcceptingAccountMatchInvitedAccount') | Out-Null
 
     if ($DefaultLinkPermission -eq 'None')
     {

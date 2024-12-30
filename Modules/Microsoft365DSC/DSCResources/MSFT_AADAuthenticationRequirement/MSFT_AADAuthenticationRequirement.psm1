@@ -62,7 +62,7 @@ function Get-TargetResource
         $nullResult = $PSBoundParameters
 
         $getValue = $null
-        $url = $Global:MSCloudLoginConnectionProfile.MicrosoftGraph.ResourceUrl + "beta/users/$UserPrincipalName/authentication/requirements"
+        $url = (Get-MSCloudLoginConnectionProfile -Workload MicrosoftGraph).ResourceUrl + "beta/users/$UserPrincipalName/authentication/requirements"
         $getValue = Invoke-MgGraphRequest -Method Get -Uri $url
 
         if ($null -eq $getValue)
@@ -155,19 +155,19 @@ function Set-TargetResource
     #endregion
 
     $currentInstance = Get-TargetResource @PSBoundParameters
-    $url = $Global:MSCloudLoginConnectionProfile.MicrosoftGraph.ResourceUrl + "beta/users/$UserPrincipalName/authentication/requirements"
+    $url = (Get-MSCloudLoginConnectionProfile -Workload MicrosoftGraph).ResourceUrl + "beta/users/$UserPrincipalName/authentication/requirements"
 
     $params = @{}
     if ($PerUserMfaState -eq 'enabled' -and $currentInstance.PerUserMfaState -eq 'disabled')
     {
         $params = @{
-            "perUserMfaState" = "enabled"
+            'perUserMfaState' = 'enabled'
         }
     }
     elseif ($PerUserMfaState -eq 'disabled' -and $currentInstance.PerUserMfaState -eq 'enabled')
     {
         $params = @{
-            "perUserMfaState" = "disabled"
+            'perUserMfaState' = 'disabled'
         }
     }
 
@@ -310,7 +310,7 @@ function Export-TargetResource
 
     try
     {
-        [array]$getValue = Get-MgUser -ErrorAction Stop | Where-Object -FilterScript {$null -ne $_.Id}
+        [array]$getValue = Get-MgUser -ErrorAction Stop | Where-Object -FilterScript { $null -ne $_.Id }
 
         $i = 1
         $dscContent = ''

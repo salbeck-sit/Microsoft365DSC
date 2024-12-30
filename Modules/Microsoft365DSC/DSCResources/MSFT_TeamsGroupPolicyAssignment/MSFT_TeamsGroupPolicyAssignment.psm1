@@ -13,7 +13,7 @@ function Get-TargetResource
         $GroupId,
 
         [Parameter(Mandatory = $true)]
-        [ValidateSet('ApplicationAccessPolicy','CallingLineIdentity','OnlineAudioConferencingRoutingPolicy','OnlineVoicemailPolicy','OnlineVoiceRoutingPolicy','TeamsAudioConferencingPolicy','TeamsCallHoldPolicy','TeamsCallParkPolicy','TeamsChannelsPolicy','TeamsComplianceRecordingPolicy','TeamsCortanaPolicy','TeamsEmergencyCallingPolicy','TeamsEnhancedEncryptionPolicy','TeamsFeedbackPolicy','TeamsFilesPolicy','TeamsIPPhonePolicy','TeamsMediaLoggingPolicy','TeamsMeetingBroadcastPolicy','TeamsMeetingPolicy','TeamsMessagingPolicy','TeamsMobilityPolicy','TeamsRoomVideoTeleConferencingPolicy','TeamsShiftsPolicy','TeamsUpdateManagementPolicy','TeamsVdiPolicy','TeamsVideoInteropServicePolicy','TenantDialPlan','ExternalAccessPolicy','TeamsAppSetupPolicy','TeamsCallingPolicy','TeamsEventsPolicy','TeamsMeetingBrandingPolicy','TeamsMeetingTemplatePermissionPolicy','TeamsVerticalPackagePolicy')]
+        [ValidateSet('ApplicationAccessPolicy', 'CallingLineIdentity', 'OnlineAudioConferencingRoutingPolicy', 'OnlineVoicemailPolicy', 'OnlineVoiceRoutingPolicy', 'TeamsAudioConferencingPolicy', 'TeamsCallHoldPolicy', 'TeamsCallParkPolicy', 'TeamsChannelsPolicy', 'TeamsComplianceRecordingPolicy', 'TeamsCortanaPolicy', 'TeamsEmergencyCallingPolicy', 'TeamsEnhancedEncryptionPolicy', 'TeamsFeedbackPolicy', 'TeamsFilesPolicy', 'TeamsIPPhonePolicy', 'TeamsMediaLoggingPolicy', 'TeamsMeetingBroadcastPolicy', 'TeamsMeetingPolicy', 'TeamsMessagingPolicy', 'TeamsMobilityPolicy', 'TeamsRoomVideoTeleConferencingPolicy', 'TeamsShiftsPolicy', 'TeamsUpdateManagementPolicy', 'TeamsVdiPolicy', 'TeamsVideoInteropServicePolicy', 'TenantDialPlan', 'ExternalAccessPolicy', 'TeamsAppSetupPolicy', 'TeamsCallingPolicy', 'TeamsEventsPolicy', 'TeamsMeetingBrandingPolicy', 'TeamsMeetingTemplatePermissionPolicy', 'TeamsVerticalPackagePolicy')]
         [System.String]
         $PolicyType,
 
@@ -75,8 +75,14 @@ function Get-TargetResource
     try
     {
         Write-Verbose -Message "Getting Group with Id {$GroupId}"
-        $Group = Find-CsGroup -SearchQuery $GroupId -ExactMatchOnly $true -ErrorAction SilentlyContinue
-
+        if ($GroupId -match '\b[A-Fa-f0-9]{8}(?:-[A-Fa-f0-9]{4}){3}-[A-Fa-f0-9]{12}\b' -and $GroupId -ne '00000000-0000-0000-0000-000000000000')
+        {
+            $Group = Find-CsGroup -SearchQuery $GroupId -ExactMatchOnly $true -ErrorAction SilentlyContinue
+        }
+        else
+        {
+            $Group = $null
+        }
         if ($null -eq $Group)
         {
             Write-Verbose -Message "Could not find Group with Id {$GroupId}, searching with DisplayName {$GroupDisplayName}"
@@ -153,7 +159,7 @@ function Set-TargetResource
         $GroupId,
 
         [Parameter(Mandatory = $true)]
-        [ValidateSet('ApplicationAccessPolicy','CallingLineIdentity','OnlineAudioConferencingRoutingPolicy','OnlineVoicemailPolicy','OnlineVoiceRoutingPolicy','TeamsAudioConferencingPolicy','TeamsCallHoldPolicy','TeamsCallParkPolicy','TeamsChannelsPolicy','TeamsComplianceRecordingPolicy','TeamsCortanaPolicy','TeamsEmergencyCallingPolicy','TeamsEnhancedEncryptionPolicy','TeamsFeedbackPolicy','TeamsFilesPolicy','TeamsIPPhonePolicy','TeamsMediaLoggingPolicy','TeamsMeetingBroadcastPolicy','TeamsMeetingPolicy','TeamsMessagingPolicy','TeamsMobilityPolicy','TeamsRoomVideoTeleConferencingPolicy','TeamsShiftsPolicy','TeamsUpdateManagementPolicy','TeamsVdiPolicy','TeamsVideoInteropServicePolicy','TenantDialPlan','ExternalAccessPolicy','TeamsAppSetupPolicy','TeamsCallingPolicy','TeamsEventsPolicy','TeamsMeetingBrandingPolicy','TeamsMeetingTemplatePermissionPolicy','TeamsVerticalPackagePolicy')]
+        [ValidateSet('ApplicationAccessPolicy', 'CallingLineIdentity', 'OnlineAudioConferencingRoutingPolicy', 'OnlineVoicemailPolicy', 'OnlineVoiceRoutingPolicy', 'TeamsAudioConferencingPolicy', 'TeamsCallHoldPolicy', 'TeamsCallParkPolicy', 'TeamsChannelsPolicy', 'TeamsComplianceRecordingPolicy', 'TeamsCortanaPolicy', 'TeamsEmergencyCallingPolicy', 'TeamsEnhancedEncryptionPolicy', 'TeamsFeedbackPolicy', 'TeamsFilesPolicy', 'TeamsIPPhonePolicy', 'TeamsMediaLoggingPolicy', 'TeamsMeetingBroadcastPolicy', 'TeamsMeetingPolicy', 'TeamsMessagingPolicy', 'TeamsMobilityPolicy', 'TeamsRoomVideoTeleConferencingPolicy', 'TeamsShiftsPolicy', 'TeamsUpdateManagementPolicy', 'TeamsVdiPolicy', 'TeamsVideoInteropServicePolicy', 'TenantDialPlan', 'ExternalAccessPolicy', 'TeamsAppSetupPolicy', 'TeamsCallingPolicy', 'TeamsEventsPolicy', 'TeamsMeetingBrandingPolicy', 'TeamsMeetingTemplatePermissionPolicy', 'TeamsVerticalPackagePolicy')]
         [System.String]
         $PolicyType,
 
@@ -273,7 +279,7 @@ function Test-TargetResource
         $GroupId,
 
         [Parameter(Mandatory = $true)]
-        [ValidateSet('ApplicationAccessPolicy','CallingLineIdentity','OnlineAudioConferencingRoutingPolicy','OnlineVoicemailPolicy','OnlineVoiceRoutingPolicy','TeamsAudioConferencingPolicy','TeamsCallHoldPolicy','TeamsCallParkPolicy','TeamsChannelsPolicy','TeamsComplianceRecordingPolicy','TeamsCortanaPolicy','TeamsEmergencyCallingPolicy','TeamsEnhancedEncryptionPolicy','TeamsFeedbackPolicy','TeamsFilesPolicy','TeamsIPPhonePolicy','TeamsMediaLoggingPolicy','TeamsMeetingBroadcastPolicy','TeamsMeetingPolicy','TeamsMessagingPolicy','TeamsMobilityPolicy','TeamsRoomVideoTeleConferencingPolicy','TeamsShiftsPolicy','TeamsUpdateManagementPolicy','TeamsVdiPolicy','TeamsVideoInteropServicePolicy','TenantDialPlan','ExternalAccessPolicy','TeamsAppSetupPolicy','TeamsCallingPolicy','TeamsEventsPolicy','TeamsMeetingBrandingPolicy','TeamsMeetingTemplatePermissionPolicy','TeamsVerticalPackagePolicy')]
+        [ValidateSet('ApplicationAccessPolicy', 'CallingLineIdentity', 'OnlineAudioConferencingRoutingPolicy', 'OnlineVoicemailPolicy', 'OnlineVoiceRoutingPolicy', 'TeamsAudioConferencingPolicy', 'TeamsCallHoldPolicy', 'TeamsCallParkPolicy', 'TeamsChannelsPolicy', 'TeamsComplianceRecordingPolicy', 'TeamsCortanaPolicy', 'TeamsEmergencyCallingPolicy', 'TeamsEnhancedEncryptionPolicy', 'TeamsFeedbackPolicy', 'TeamsFilesPolicy', 'TeamsIPPhonePolicy', 'TeamsMediaLoggingPolicy', 'TeamsMeetingBroadcastPolicy', 'TeamsMeetingPolicy', 'TeamsMessagingPolicy', 'TeamsMobilityPolicy', 'TeamsRoomVideoTeleConferencingPolicy', 'TeamsShiftsPolicy', 'TeamsUpdateManagementPolicy', 'TeamsVdiPolicy', 'TeamsVideoInteropServicePolicy', 'TenantDialPlan', 'ExternalAccessPolicy', 'TeamsAppSetupPolicy', 'TeamsCallingPolicy', 'TeamsEventsPolicy', 'TeamsMeetingBrandingPolicy', 'TeamsMeetingTemplatePermissionPolicy', 'TeamsVerticalPackagePolicy')]
         [System.String]
         $PolicyType,
 

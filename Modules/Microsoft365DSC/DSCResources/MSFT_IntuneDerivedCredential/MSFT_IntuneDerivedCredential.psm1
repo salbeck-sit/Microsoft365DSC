@@ -1,4 +1,5 @@
-function Get-TargetResource {
+function Get-TargetResource
+{
     [CmdletBinding()]
     [OutputType([System.Collections.Hashtable])]
     param (
@@ -23,7 +24,7 @@ function Get-TargetResource {
         $Issuer,
 
         [Parameter()]
-        [ValidateSet('none', 'email', 'companyPortal')]
+        [ValidateSet('none', 'email', 'companyPortal', 'companyPortal,email')]
         [System.String]
         $NotificationType = 'none',
 
@@ -91,22 +92,24 @@ function Get-TargetResource {
         $instance = $null
         if ($null -ne $Script:exportedInstances -and $Script:ExportMode)
         {
-            $instance = $Script:exportedInstances | Where-Object -FilterScript {$_.Id -eq $Id}
+            $instance = $Script:exportedInstances | Where-Object -FilterScript { $_.Id -eq $Id }
         }
 
         if ($null -eq $instance)
         {
-          $instance = Get-MgBetaDeviceManagementDerivedCredential -DeviceManagementDerivedCredentialSettingsId $Id -ErrorAction Stop
+            $instance = Get-MgBetaDeviceManagementDerivedCredential -DeviceManagementDerivedCredentialSettingsId $Id -ErrorAction SilentlyContinue
 
-          if ($null -eq $instance)
-          {
-              Write-Verbose -Message "Could not find Derived Credential by Id {$Id}."
+            if ($null -eq $instance)
+            {
+                Write-Verbose -Message "Could not find Derived Credential by Id {$Id}."
 
-              if (-Not [string]::IsNullOrEmpty($DisplayName))
-              {
-                  $instance = Get-MgBetaDeviceManagementDerivedCredential `
-                    -Filter "DisplayName eq '$DisplayName'" `
-                    -ErrorAction SilentlyContinue
+                if (-Not [string]::IsNullOrEmpty($DisplayName))
+                {
+                    $instance = Get-MgBetaDeviceManagementDerivedCredential `
+                        -All `
+                        -Filter "DisplayName eq '$DisplayName'" `
+                        -ErrorAction SilentlyContinue
+
                     if ($null -eq $instance)
                     {
                         Write-Verbose -Message "Could not find Derived Credential by DisplayName {$DisplayName}."
@@ -117,20 +120,20 @@ function Get-TargetResource {
         }
 
         $results = @{
-            Ensure                      = 'Present'
-            Id                          = $instance.Id
-            DisplayName                 = $instance.DisplayName
-            HelpUrl                     = $instance.HelpUrl
-            Issuer                      = $instance.Issuer.ToString()
-            NotificationType            = $instance.NotificationType.ToString()
-            RenewalThresholdPercentage  = $instance.RenewalThresholdPercentage
-            Credential                  = $Credential
-            ApplicationId               = $ApplicationId
-            TenantId                    = $TenantId
-            CertificateThumbprint       = $CertificateThumbprint
-            ApplicationSecret           = $ApplicationSecret
-            ManagedIdentity             = $ManagedIdentity.IsPresent
-            AccessTokens                = $AccessTokens
+            Ensure                     = 'Present'
+            Id                         = $instance.Id
+            DisplayName                = $instance.DisplayName
+            HelpUrl                    = $instance.HelpUrl
+            Issuer                     = $instance.Issuer.ToString()
+            NotificationType           = $instance.NotificationType.ToString()
+            RenewalThresholdPercentage = $instance.RenewalThresholdPercentage
+            Credential                 = $Credential
+            ApplicationId              = $ApplicationId
+            TenantId                   = $TenantId
+            CertificateThumbprint      = $CertificateThumbprint
+            ApplicationSecret          = $ApplicationSecret
+            ManagedIdentity            = $ManagedIdentity.IsPresent
+            AccessTokens               = $AccessTokens
         }
 
         return [System.Collections.Hashtable] $results
@@ -148,7 +151,8 @@ function Get-TargetResource {
     }
 }
 
-function Set-TargetResource {
+function Set-TargetResource
+{
     [CmdletBinding()]
     param (
 
@@ -178,14 +182,14 @@ function Set-TargetResource {
         #endregion resource params
 
         [Parameter()]
-        [ValidateSet('none', 'email', 'companyPortal')]
+        [ValidateSet('none', 'email', 'companyPortal', 'companyPortal,email')]
         [System.String]
         $NotificationType = 'none',
 
         [Parameter()]
         [ValidateSet('Present', 'Absent')]
         [System.String]
-        $Ensure='Present',
+        $Ensure = 'Present',
 
         [Parameter()]
         [System.Management.Automation.PSCredential]
@@ -231,23 +235,27 @@ function Set-TargetResource {
     $currentInstance = Get-TargetResource @PSBoundParameters
 
     $setParameters = Remove-M365DSCAuthenticationParameter -BoundParameters $PSBoundParameters
-    $setParameters.remove('Id') | Out-Null
-    $setParameters.remove('Ensure') | Out-Null
+    $setParameters.Remove('Id') | Out-Null
 
     # CREATE
     if ($Ensure -eq 'Present' -and $currentInstance.Ensure -eq 'Absent')
     {
+        Write-Verbose -Message "Creating an Intune Derived Credential with DisplayName {$DisplayName}"
+
         New-MgBetaDeviceManagementDerivedCredential @SetParameters
     }
     # UPDATE is not supported API, it always creates a new Derived Credential instance
     # REMOVE
     elseif ($Ensure -eq 'Absent' -and $currentInstance.Ensure -eq 'Present')
     {
+        Write-Verbose -Message "Removing the Intune Derived Credential with DisplayName {$DisplayName}"
+
         Remove-MgBetaDeviceManagementDerivedCredential -DeviceManagementDerivedCredentialSettingsId $currentInstance.Id -Confirm:$false
     }
 }
 
-function Test-TargetResource {
+function Test-TargetResource
+{
     [CmdletBinding()]
     [OutputType([System.Boolean])]
     param (
@@ -272,7 +280,7 @@ function Test-TargetResource {
         $Issuer,
 
         [Parameter()]
-        [ValidateSet('none', 'email', 'companyPortal')]
+        [ValidateSet('none', 'email', 'companyPortal', 'companyPortal,email')]
         [System.String]
         $NotificationType = 'none',
 
@@ -330,20 +338,34 @@ function Test-TargetResource {
     $CurrentValues = Get-TargetResource @PSBoundParameters
     $ValuesToCheck = ([Hashtable]$PSBoundParameters).Clone()
 
+    if ($CurrentValues.Ensure -ne $Ensure)
+    {
+        Write-Verbose -Message "Test-TargetResource returned $false"
+        return $false
+    }
+    $testResult = $true
+
+    $ValuesToCheck = Remove-M365DSCAuthenticationParameter -BoundParameters $ValuesToCheck
+    $ValuesToCheck.Remove('Id') | Out-Null
+
     Write-Verbose -Message "Current Values: $(Convert-M365DscHashtableToString -Hashtable $CurrentValues)"
     Write-Verbose -Message "Target Values: $(Convert-M365DscHashtableToString -Hashtable $ValuesToCheck)"
 
-    $testResult = Test-M365DSCParameterState -CurrentValues $CurrentValues `
-        -Source $($MyInvocation.MyCommand.Source) `
-        -DesiredValues $PSBoundParameters `
-        -ValuesToCheck $ValuesToCheck.Keys
+    if ($testResult)
+    {
+        $testResult = Test-M365DSCParameterState -CurrentValues $CurrentValues `
+            -Source $($MyInvocation.MyCommand.Source) `
+            -DesiredValues $PSBoundParameters `
+            -ValuesToCheck $ValuesToCheck.Keys
+    }
 
     Write-Verbose -Message "Test-TargetResource returned $testResult"
 
     return $testResult
 }
 
-function Export-TargetResource {
+function Export-TargetResource
+{
     [CmdletBinding()]
     [OutputType([System.String])]
     param (
@@ -368,7 +390,7 @@ function Export-TargetResource {
         $Issuer,
 
         [Parameter()]
-        [ValidateSet('none', 'email', 'companyPortal')]
+        [ValidateSet('none', 'email', 'companyPortal', 'companyPortal,email')]
         [System.String]
         $NotificationType = 'none',
 
@@ -413,7 +435,7 @@ function Export-TargetResource {
     )
 
     $ConnectionMode = New-M365DSCConnection -Workload 'MicrosoftGraph' `
-    -InboundParameters $PSBoundParameters
+        -InboundParameters $PSBoundParameters
 
     #Ensure the proper dependencies are installed in the current environment.
     Confirm-M365DSCDependencies
@@ -448,20 +470,20 @@ function Export-TargetResource {
             Write-Host "    |---[$i/$($Script:exportedInstances.Count)] $displayedKey" -NoNewline
 
             $params = @{
-                Ensure                      = 'Present'
-                Id                          = $config.Id
-                DisplayName                 = $config.DisplayName
-                HelpUrl                     = $config.HelpUrl
-                Issuer                      = $config.Issuer.ToString()
-                NotificationType            = $config.NotificationType.ToString()
-                RenewalThresholdPercentage  = $config.RenewalThresholdPercentage
-                Credential                  = $Credential
-                AccessTokens                = $AccessTokens
-                ApplicationId               = $ApplicationId
-                TenantId                    = $TenantId
-                ApplicationSecret           = $ApplicationSecret
-                CertificateThumbprint       = $CertificateThumbprint
-                ManagedIdentity             = $ManagedIdentity.IsPresent
+                Ensure                     = 'Present'
+                Id                         = $config.Id
+                DisplayName                = $config.DisplayName
+                HelpUrl                    = $config.HelpUrl
+                Issuer                     = $config.Issuer.ToString()
+                NotificationType           = $config.NotificationType.ToString()
+                RenewalThresholdPercentage = $config.RenewalThresholdPercentage
+                Credential                 = $Credential
+                AccessTokens               = $AccessTokens
+                ApplicationId              = $ApplicationId
+                TenantId                   = $TenantId
+                ApplicationSecret          = $ApplicationSecret
+                CertificateThumbprint      = $CertificateThumbprint
+                ManagedIdentity            = $ManagedIdentity.IsPresent
             }
 
             $Results = Get-TargetResource @Params

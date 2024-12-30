@@ -29,6 +29,12 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             Mock -CommandName Save-M365DSCPartialExport -MockWith {
             }
 
+            Mock -CommandName Get-MSCloudLoginConnectionProfile -MockWith {
+            }
+
+            Mock -CommandName Reset-MSCloudLoginConnectionProfileContext -MockWith {
+            }
+
             Mock -CommandName New-M365DSCConnection -MockWith {
                 return 'Credentials'
             }
@@ -46,6 +52,12 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             }
 
             Mock -CommandName Remove-PSSession -MockWith {
+            }
+
+            Mock -CommandName Get-MgUser -MockWith {
+                return @{
+                    UserPrincipalName = "John.Smith"
+                }
             }
 
             Mock -CommandName Start-Sleep -MockWith {
@@ -149,7 +161,8 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
 
             It 'Should call the Set method' {
                 Set-TargetResource @testParams
-                Assert-MockCalled -CommandName Set-ManagementRoleAssignment -Exactly 1
+                Assert-MockCalled -CommandName Remove-ManagementRoleAssignment -Exactly 1
+                Assert-MockCalled -CommandName New-ManagementRoleAssignment -Exactly 1
             }
         }
 

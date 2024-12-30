@@ -41,6 +41,10 @@ function Get-TargetResource
         $TenantId,
 
         [Parameter()]
+        [System.Management.Automation.PSCredential]
+        $ApplicationSecret,
+
+        [Parameter()]
         [System.String]
         $CertificateThumbprint,
 
@@ -93,15 +97,27 @@ function Get-TargetResource
             elseif ($reviewer.Query.Contains('/groups/'))
             {
                 $groupId = $reviewer.Query.Split('/')[3]
-                $groupInfo = Get-MgGroup -GroupId $groupId
-                $entry = @{
-                    ReviewerType = 'Group'
-                    ReviewerId   = $groupInfo.DisplayName
+                try
+                {
+                    $groupInfo = Get-MgGroup -GroupId $groupId -ErrorAction SilentlyContinue
+                    $entry = @{
+                        ReviewerType = 'Group'
+                        ReviewerId   = $groupInfo.DisplayName
+                    }
+                }
+                catch
+                {
+                    $message = "Group with ID $groupId specified in Reviewers not found"
+                    New-M365DSCLogEntry -Message $message `
+                        -Source $($MyInvocation.MyCommand.Source) `
+                        -TenantId $TenantId `
+                        -Credential $Credential
+                    continue
                 }
             }
             elseif ($reviewer.Query.Contains('directory/roleAssignments?$'))
             {
-                $roleId = $reviewer.Query.Replace("/beta/roleManagement/directory/roleAssignments?`$filter=roleDefinitionId eq ", "").Replace("'", '')
+                $roleId = $reviewer.Query.Replace("/beta/roleManagement/directory/roleAssignments?`$filter=roleDefinitionId eq ", '').Replace("'", '')
                 $roleInfo = Get-MgBetaRoleManagementDirectoryRoleDefinition -UnifiedRoleDefinitionId $roleId
                 $entry = @{
                     ReviewerType = 'Role'
@@ -121,6 +137,7 @@ function Get-TargetResource
             Credential            = $Credential
             ApplicationId         = $ApplicationId
             TenantId              = $TenantId
+            ApplicationSecret     = $ApplicationSecret
             CertificateThumbprint = $CertificateThumbprint
             ManagedIdentity       = $ManagedIdentity.IsPresent
             AccessTokens          = $AccessTokens
@@ -180,6 +197,10 @@ function Set-TargetResource
         [Parameter()]
         [System.String]
         $TenantId,
+
+        [Parameter()]
+        [System.Management.Automation.PSCredential]
+        $ApplicationSecret,
 
         [Parameter()]
         [System.String]
@@ -251,9 +272,10 @@ function Set-TargetResource
 
     $updateJSON = ConvertTo-Json $updateParameters
     Write-Verbose -Message "Updating the Entra Id Admin Consent Request Policy with values: $updateJSON"
+    $Uri = (Get-MSCloudLoginConnectionProfile -Workload MicrosoftGraph).ResourceUrl + 'beta/policies/adminConsentRequestPolicy'
     Invoke-MgGraphRequest -Method 'PUT' `
-                          -Uri 'https://graph.microsoft.com/beta/policies/adminConsentRequestPolicy' `
-                          -Body $updateJSON | Out-Null
+        -Uri $Uri `
+        -Body $updateJSON | Out-Null
 }
 
 function Test-TargetResource
@@ -299,6 +321,10 @@ function Test-TargetResource
         $TenantId,
 
         [Parameter()]
+        [System.Management.Automation.PSCredential]
+        $ApplicationSecret,
+
+        [Parameter()]
         [System.String]
         $CertificateThumbprint,
 
@@ -332,7 +358,7 @@ function Test-TargetResource
     $testResult = $true
     foreach ($reviewer in $Reviewers)
     {
-        $currentEquivalent = $CurrentValues.Reviewers | Where-Object -FilterScript {$_.ReviewerId -eq $reviewer.ReviewerId -and $_.ReviewerType -eq $reviewer.ReviewerType}
+        $currentEquivalent = $CurrentValues.Reviewers | Where-Object -FilterScript { $_.ReviewerId -eq $reviewer.ReviewerId -and $_.ReviewerType -eq $reviewer.ReviewerType }
         if ($null -eq $currentEquivalent)
         {
             $testResult = $false
@@ -433,6 +459,7 @@ function Export-TargetResource
                 Credential            = $Credential
                 ApplicationId         = $ApplicationId
                 TenantId              = $TenantId
+                ApplicationSecret     = $ApplicationSecret
                 CertificateThumbprint = $CertificateThumbprint
                 ManagedIdentity       = $ManagedIdentity.IsPresent
                 AccessTokens          = $AccessTokens
@@ -455,7 +482,7 @@ function Export-TargetResource
 
             if ($Results.Reviewers)
             {
-                $currentDSCBlock = Convert-DSCStringParamToVariable -DSCBlock $currentDSCBlock -ParameterName "Reviewers" -IsCIMArray:$true
+                $currentDSCBlock = Convert-DSCStringParamToVariable -DSCBlock $currentDSCBlock -ParameterName 'Reviewers' -IsCIMArray:$true
             }
             $dscContent += $currentDSCBlock
             Save-M365DSCPartialExport -Content $currentDSCBlock `

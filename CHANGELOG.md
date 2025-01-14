@@ -6,6 +6,8 @@
 
 * AADAuthenticationRequirement
   * Changed Export logic to extract instances from all users.
+* AADGroupEligibilitySchedule
+  * New resource for Privileged Identity Management (PIM) for Groups
 * AADOrganizationCertificateBasedAuthConfiguration
   * Fixed the primary key of the resource.
     FIXES [#5523](https://github.com/microsoft/Microsoft365DSC/issues/5523)
@@ -13,6 +15,8 @@
   * Fixed error when extracting an entry with a deleted principal.
 * DefenderDeviceAuthenticatedScanDefinition
   * Fixed the Data Type export.
+* EXOSmtpDaneInbound
+  * initial release
 * MISC
   * Added check to `New-M365DSCReportFromConfiguration` to make sure Windows
     Remoting is enabled, which is required to convert the DSC config.

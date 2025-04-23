@@ -2,6 +2,71 @@
 
 # UNRELEASED
 
+* DEPENDENCIES
+  * Updated Microsoft.Graph to version 2.27.0.
+  * Updated MSCoudLoginAssistant to version 1.1.43.
+
+# 1.25.416.1
+
+* EXOResourceConfiguration
+  * Added required permissions to settings.json file.
+* EXOTenantAllowBlockListItems
+  * Inlined function call.
+* IntuneDeviceControlPolicyWindows10
+  * Added support for `DefaultEnforcement` and `DeviceControlEnabled` properties.
+* IntuneDeviceManagementAndroidDeviceOwnerEnrollmentProfile
+  * Fix export and remove read-only properties.
+    FIXES [#5969](https://github.com/microsoft/Microsoft365DSC/issues/5969)
+* IntuneSecurityBaselineHoloLens2Advanced
+  * Initial release.
+ * IntuneWifiConfigurationPolicyMacOS
+  * Fixed an issue where fetching the assignments of a policy that only exists by display name fails.
+    FIXES [#5971](https://github.com/microsoft/Microsoft365DSC/issues/5971)
+* PlannerTask
+  * Update export to use common functions.
+    FIXES [#6004](https://github.com/microsoft/Microsoft365DSC/issues/6004)
+* M365DSCDRGUtil
+  * Removed undefined variable from if statement.
+* M365DSCPermissions
+  * Add `AdministrativeRoles` and `RequiredRoles` property to export.
+* MISC
+  * Removed `-Verbose` parameter from multiple commands where it's not necessary.
+  * Removed unused functions across several resources.
+  * Added export of module functions to several EXO resources.
+  * Update export to use common function for multiple resources.
+  * Update `requiredrolegroups` property of settings.json file to array.
+  * Updated the Write-M365DSCHost function to make the Message parameter
+    optional to fix null errors.
+
+# 1.25.409.1
+
+* AADApplication
+  * DEPRECATED: Parameter AvailableToOtherTenants.
+  * Added direct support for the SignInAudience parameter.
+* AADEntitlementManagementAccessPackage
+  * Fix incorrect assignment where `$results.CatalogId` was assigned
+    `catalog.DisplayName` instead of `catalog.Id`
+* EXOSafeAttachmentRule
+  * Inlined function calls.
+* EXOSafeLinksRule
+  * Inlined function calls.
+* IntuneAccountProtectionLocalAdministratorPasswordSolutionPolicy
+  * Add support for automatic account management and other new options.
+* IntuneSecurityBaselineHoloLens2Standard
+  * Initial release.
+* M365DSCPermissions
+  * Add `AdministrativeRoles` property to export of `Get-M365DSCCompiledPermissionList`.
+  * Removed commented out `Update-M365DSCResourcesSettingsJSON` definition.
+* M365DSCUtil
+  * Removed numerous EXO functions.
+  * Removed additional unnecessary functions.
+* MISC
+  * Removed clearing of M365DSC authentication parameters from numerous Intune resources.
+  * Updated the new Write-M365DSCHost function to only print
+    messages when they are not null.
+
+# 1.25.402.1
+
 * AADAdministrativeUnit
   * Fix issue where AdministrativeUnit calls fail with ODATA error on dynamic membership.
     FIXES [#5815](https://github.com/microsoft/Microsoft365DSC/issues/5815)
@@ -15,8 +80,17 @@
 * AADGroup
   * Fixed `isAssignableToRole` to support for null values returned by graph.
     FIXES [#5959](https://github.com/microsoft/Microsoft365DSC/issues/5959)
+* AADPasswordRuleSettings
+  * [BREAKING CHANGE] Replace `Enforced` with `Enforce` as a possibility of
+    `BannedPasswordCheckOnPremisesMode` to align with updated Graph value.
+* EXOArcConfig
+  * [BREAKING CHANGE] Removed the `Identity` parameter since it does not
+    have any functionality and is not exported by default.
 * EXOMailboxSettings
-  * Add AuditEnabled
+  * Add the AuditEnabled property.
+* EXOMailTips
+  * [BREAKING CHANGE] Removed resource. Use `EXOOrganizationConfig` instead.
+    Fixes [#5647](https://github.com/microsoft/Microsoft365DSC/issues/5647)
 * EXOManagementRoleEntry
   * Added the ability to add and remove entries by adding the Ensure property
     to the resource.
@@ -30,7 +104,7 @@
 * IntuneAppConfigurationPolicy
   * Changed export logic of CustomSettings to use centralized function.
 * IntuneDeviceConfigurationCustomPolicyiOS
-  * Initial release, adds support for iOS 'Custom' Device Configuration policies.
+  * Initial release, adds support for iOS `Custom` Device Configuration policies.
 * IntuneDeviceEnrollmentStatusPageWindows10
   * Use `SelectedMobileAppNames` as the primary source for the apps.
     FIXES [#5913](https://github.com/microsoft/Microsoft365DSC/issues/5913)
@@ -38,6 +112,8 @@
   * Initial release, enables integration with 3rd party MDM solutions
 * IntuneDeviceFeaturesConfigurationPolicyIOS
   * Initial release
+* IntuneSecurityBaselineMicrosoftEdge
+  * [BREAKING CHANGE] Remove deprecated parameter `authschemes`.
 * IntuneWifiConfigurationPolicyMacOS
   * Fixes a naming issue with the primary key when calling the update assignment
     cmdlet.
@@ -63,27 +139,12 @@
     FIXES [#5669](https://github.com/microsoft/Microsoft365DSC/issues/5669)
     FIXES [#4824](https://github.com/microsoft/Microsoft365DSC/issues/4824)
   * Add PowerShell 5 to 7 compatibility layer.
+* DEPENDENCIES
+  * Updated DSCParser to version 2.0.0.16.
 * MISC
   * Fix CSV-report so variable-names are passed correctly in the report
   * Replace `Write-Host` with custom function to support logs in non-interactive
     environments using the verbose stream.
-
-## BREAKING CHANGES
-
-* AADPasswordRuleSettings
-  * [BREAKING CHANGE] Replace `Enforced` with `Enforce` as a possibility of
-    `BannedPasswordCheckOnPremisesMode` to align with updated Graph value.
-* EXOArcConfig
-  * [BREAKING CHANGE] Removed the `Identity` parameter since it does not
-    have any functionality and is not exported by default.
-* EXOMailTips
-  * [BREAKING CHANGE] Removed resource. Use `EXOOrganizationConfig` instead.
-    Fixes [#5647](https://github.com/microsoft/Microsoft365DSC/issues/5647)
-* IntuneAccountProtectionLocalUserGroupMembershipPolicy
-  * [BREAKING CHANGE] Remove deprecated value `add_replace` from `Action` parameter.
-* IntuneSecurityBaselineMicrosoftEdge
-  * [BREAKING CHANGE] Remove deprecated parameter `authschemes`.
-* MISC
   * [BREAKING CHANGE] Removed the command `Import-M365DSCDependencies`.
 * Whitepaper
   * Parallel to this release the code for the whitepaper also implements a

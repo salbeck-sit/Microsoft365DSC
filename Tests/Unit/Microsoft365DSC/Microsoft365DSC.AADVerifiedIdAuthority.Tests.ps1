@@ -43,8 +43,8 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             Mock -CommandName Invoke-WebRequest -MockWith {
             }
 
-            # Mock Write-Host to hide output during the tests
-            Mock -CommandName Write-Host -MockWith {
+            # Mock Write-M365DSCHost to hide output during the tests
+            Mock -CommandName Write-M365DSCHost -MockWith {
             }
             Mock -CommandName Write-Warning -MockWith {
             }
@@ -74,7 +74,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
 
             }
             It 'Should return Values from the Get method' {
-                (Get-TargetResource @testParams -Verbose).Ensure | Should -Be 'Absent'
+                (Get-TargetResource @testParams).Ensure | Should -Be 'Absent'
             }
             It 'Should return false from the Test method' {
                 Test-TargetResource @testParams | Should -Be $false

@@ -225,156 +225,152 @@ function Get-TargetResource
         $AccessTokens
     )
 
-    Write-Verbose -Message "Getting configuration of DLPCompliancePolicy for $Name"
-    if ($Global:CurrentModeIsExport)
-    {
-        $ConnectionMode = New-M365DSCConnection -Workload 'SecurityComplianceCenter' `
-            -InboundParameters $PSBoundParameters `
-            -SkipModuleReload $true
-    }
-    else
-    {
-        $ConnectionMode = New-M365DSCConnection -Workload 'SecurityComplianceCenter' `
-            -InboundParameters $PSBoundParameters
-    }
-
-    #region Telemetry
-    $ResourceName = $MyInvocation.MyCommand.ModuleName -replace 'MSFT_', ''
-    $CommandName = $MyInvocation.MyCommand
-    $data = Format-M365DSCTelemetryParameters -ResourceName $ResourceName `
-        -CommandName $CommandName `
-        -Parameters $PSBoundParameters
-    Add-M365DSCTelemetryEvent -Data $data
-    #endregion
-
-    $nullReturn = $PSBoundParameters
-    $nullReturn.Ensure = 'Absent'
     try
     {
-        $PolicyRule = Get-AutoSensitivityLabelRule -Identity $Name -ErrorAction SilentlyContinue
-
-        if ($null -eq $PolicyRule)
+        if (-not $Script:exportedInstance -or $Script:exportedInstance.Name -ne $Name)
         {
-            Write-Verbose -Message "AutoSensitivityLabelRule $($Name) does not exist."
-            return $nullReturn
+            Write-Verbose -Message "Getting configuration of DLPCompliancePolicy for $Name"
+            $ConnectionMode = New-M365DSCConnection -Workload 'SecurityComplianceCenter' `
+                -InboundParameters $PSBoundParameters
+
+            #region Telemetry
+            $ResourceName = $MyInvocation.MyCommand.ModuleName -replace 'MSFT_', ''
+            $CommandName = $MyInvocation.MyCommand
+            $data = Format-M365DSCTelemetryParameters -ResourceName $ResourceName `
+                -CommandName $CommandName `
+                -Parameters $PSBoundParameters
+            Add-M365DSCTelemetryEvent -Data $data
+            #endregion
+
+            $nullReturn = $PSBoundParameters
+            $nullReturn.Ensure = 'Absent'
+            $PolicyRule = Get-AutoSensitivityLabelRule -Identity $Name -ErrorAction SilentlyContinue
+
+            if ($null -eq $PolicyRule)
+            {
+                Write-Verbose -Message "AutoSensitivityLabelRule $($Name) does not exist."
+                return $nullReturn
+            }
         }
         else
         {
-            Write-Verbose "Found existing AutoSensitivityLabelRule $($Name)"
-
-            if ($null -ne $PolicyRule.AnyOfRecipientAddressContainsWords -and $PolicyRule.AnyOfRecipientAddressContainsWords.count -gt 0)
-            {
-                $AnyOfRecipientAddressContainsWords = $PolicyRule.AnyOfRecipientAddressContainsWords.Replace(' ', '').Split(',')
-            }
-
-            if ($null -ne $PolicyRule.AnyOfRecipientAddressMatchesPatterns -and $PolicyRule.AnyOfRecipientAddressMatchesPatterns -gt 0)
-            {
-                $AnyOfRecipientAddressMatchesPatterns = $PolicyRule.AnyOfRecipientAddressMatchesPatterns.Replace(' ', '').Split(',')
-            }
-
-            if ($null -ne $PolicyRule.ContentExtensionMatchesWords -and $PolicyRule.ContentExtensionMatchesWords.count -gt 0)
-            {
-                $ContentExtensionMatchesWords = $PolicyRule.ContentExtensionMatchesWords.Replace(' ', '').Split(',')
-            }
-
-            if ($null -ne $PolicyRule.ExceptIfContentExtensionMatchesWords -and $PolicyRule.ExceptIfContentExtensionMatchesWords.count -gt 0)
-            {
-                $ExceptIfContentExtensionMatchesWords = $PolicyRule.ExceptIfContentExtensionMatchesWords.Replace(' ', '').Split(',')
-            }
-            if ($null -ne $HeaderMatchesPatterns -and $null -ne $HeaderMatchesPatterns.Name)
-            {
-                $HeaderMatchesPatternsValue = @{}
-                foreach ($value in $HeaderMatchesPatterns[($HeaderMatchesPatterns.Name)])
-                {
-                    if ($HeaderMatchesPatternsValue.ContainsKey($HeaderMatchesPatterns.Name))
-                    {
-                        $HeaderMatchesPatternsValue[$HeaderMatchesPatterns.Name] += $value
-                    }
-                    else
-                    {
-                        $HeaderMatchesPatternsValue.Add($HeaderMatchesPatterns.Name, @($value))
-                    }
-                }
-            }
-            foreach ($pattern in $PolicyRule.HeaderMatchesPatterns.Keys)
-            {
-                $HeaderMatchesPatternsValue += @{
-                    Name  = $pattern
-                    Value = $PolicyRule.HeaderMatchesPatterns.$pattern
-                }
-            }
-
-            $result = @{
-                Name                                         = $PolicyRule.Name
-                Policy                                       = $PolicyRule.ParentPolicyName
-                Workload                                     = $Workload
-                AccessScope                                  = $PolicyRule.AccessScope
-                AnyOfRecipientAddressContainsWords           = $AnyOfRecipientAddressContainsWords
-                AnyOfRecipientAddressMatchesPatterns         = $AnyOfRecipientAddressMatchesPatterns
-                Comment                                      = $PolicyRule.Comment
-                ContentContainsSensitiveInformation          = $PolicyRule.ContentContainsSensitiveInformation
-                ContentExtensionMatchesWords                 = $ContentExtensionMatchesWords
-                Disabled                                     = $PolicyRule.Disabled
-                DocumentIsPasswordProtected                  = $PolicyRule.DocumentIsPasswordProtected
-                DocumentIsUnsupported                        = $PolicyRule.DocumentIsUnsupported
-                ExceptIfAccessScope                          = $PolicyRule.ExceptIfAccessScope
-                ExceptIfAnyOfRecipientAddressContainsWords   = $PolicyRule.ExceptIfAnyOfRecipientAddressContainsWords
-                ExceptIfAnyOfRecipientAddressMatchesPatterns = $PolicyRule.ExceptIfAnyOfRecipientAddressMatchesPatterns
-                ExceptIfContentContainsSensitiveInformation  = $PolicyRule.ExceptIfContentContainsSensitiveInformation
-                ExceptIfContentExtensionMatchesWords         = $ExceptIfContentExtensionMatchesWords
-                ExceptIfDocumentIsPasswordProtected          = $PolicyRule.ExceptIfDocumentIsPasswordProtected
-                ExceptIfDocumentIsUnsupported                = $PolicyRule.ExceptIfDocumentIsUnsupported
-                ExceptIfFrom                                 = $PolicyRule.ExceptIfFrom
-                ExceptIfFromAddressContainsWords             = $PolicyRule.ExceptIfFromAddressContainsWords
-                ExceptIfFromAddressMatchesPatterns           = $PolicyRule.ExceptIfFromAddressMatchesPatterns
-                ExceptIfFromMemberOf                         = $PolicyRule.ExceptIfFromMemberOf
-                ExceptIfHeaderMatchesPatterns                = $PolicyRule.ExceptIfHeaderMatchesPatterns
-                ExceptIfProcessingLimitExceeded              = $PolicyRule.ExceptIfProcessingLimitExceeded
-                ExceptIfRecipientDomainIs                    = $PolicyRule.ExceptIfRecipientDomainIs
-                ExceptIfSenderDomainIs                       = $PolicyRule.ExceptIfSenderDomainIs
-                ExceptIfSenderIPRanges                       = $PolicyRule.ExceptIfSenderIPRanges
-                ExceptIfSentTo                               = $PolicyRule.ExceptIfSentTo
-                ExceptIfSentToMemberOf                       = $PolicyRule.ExceptIfSentToMemberOf
-                ExceptIfSubjectMatchesPatterns               = $PolicyRule.ExceptIfSubjectMatchesPatterns
-                FromAddressContainsWords                     = $PolicyRule.FromAddressContainsWords
-                FromAddressMatchesPatterns                   = $PolicyRule.FromAddressMatchesPatterns
-                HeaderMatchesPatterns                        = $HeaderMatchesPatternsValue
-                ProcessingLimitExceeded                      = $PolicyRule.ProcessingLimitExceeded
-                RecipientDomainIs                            = $PolicyRule.RecipientDomainIs
-                ReportSeverityLevel                          = $PolicyRule.ReportSeverityLevel
-                RuleErrorAction                              = $PolicyRule.RuleErrorAction
-                SenderDomainIs                               = $PolicyRule.SenderDomainIs
-                SenderIPRanges                               = $PolicyRule.SenderIPRanges
-                SentTo                                       = $PolicyRule.SentTo
-                SentToMemberOf                               = $PolicyRule.SentToMemberOf
-                SubjectMatchesPatterns                       = $PolicyRule.SubjectMatchesPatterns
-                Ensure                                       = 'Present'
-                Credential                                   = $Credential
-                ApplicationId                                = $ApplicationId
-                TenantId                                     = $TenantId
-                CertificateThumbprint                        = $CertificateThumbprint
-                CertificatePath                              = $CertificatePath
-                CertificatePassword                          = $CertificatePassword
-                AccessTokens                                 = $AccessTokens
-            }
-
-            $paramsToRemove = @()
-            foreach ($paramName in $result.Keys)
-            {
-                if ($null -eq $result[$paramName] -or '' -eq $result[$paramName] -or @() -eq $result[$paramName])
-                {
-                    $paramsToRemove += $paramName
-                }
-            }
-
-            foreach ($paramName in $paramsToRemove)
-            {
-                $result.Remove($paramName)
-            }
-
-            Write-Verbose -Message "Get-TargetResource Result: `n $(Convert-M365DscHashtableToString -Hashtable $result)"
-            return $result
+            $PolicyRule = $Script:exportedInstance
         }
+
+        Write-Verbose "Found existing AutoSensitivityLabelRule $($Name)"
+
+        if ($null -ne $PolicyRule.AnyOfRecipientAddressContainsWords -and $PolicyRule.AnyOfRecipientAddressContainsWords.count -gt 0)
+        {
+            $AnyOfRecipientAddressContainsWords = $PolicyRule.AnyOfRecipientAddressContainsWords.Replace(' ', '').Split(',')
+        }
+
+        if ($null -ne $PolicyRule.AnyOfRecipientAddressMatchesPatterns -and $PolicyRule.AnyOfRecipientAddressMatchesPatterns -gt 0)
+        {
+            $AnyOfRecipientAddressMatchesPatterns = $PolicyRule.AnyOfRecipientAddressMatchesPatterns.Replace(' ', '').Split(',')
+        }
+
+        if ($null -ne $PolicyRule.ContentExtensionMatchesWords -and $PolicyRule.ContentExtensionMatchesWords.count -gt 0)
+        {
+            $ContentExtensionMatchesWords = $PolicyRule.ContentExtensionMatchesWords.Replace(' ', '').Split(',')
+        }
+
+        if ($null -ne $PolicyRule.ExceptIfContentExtensionMatchesWords -and $PolicyRule.ExceptIfContentExtensionMatchesWords.count -gt 0)
+        {
+            $ExceptIfContentExtensionMatchesWords = $PolicyRule.ExceptIfContentExtensionMatchesWords.Replace(' ', '').Split(',')
+        }
+        if ($null -ne $HeaderMatchesPatterns -and $null -ne $HeaderMatchesPatterns.Name)
+        {
+            $HeaderMatchesPatternsValue = @{}
+            foreach ($value in $HeaderMatchesPatterns[($HeaderMatchesPatterns.Name)])
+            {
+                if ($HeaderMatchesPatternsValue.ContainsKey($HeaderMatchesPatterns.Name))
+                {
+                    $HeaderMatchesPatternsValue[$HeaderMatchesPatterns.Name] += $value
+                }
+                else
+                {
+                    $HeaderMatchesPatternsValue.Add($HeaderMatchesPatterns.Name, @($value))
+                }
+            }
+        }
+        foreach ($pattern in $PolicyRule.HeaderMatchesPatterns.Keys)
+        {
+            $HeaderMatchesPatternsValue += @{
+                Name  = $pattern
+                Value = $PolicyRule.HeaderMatchesPatterns.$pattern
+            }
+        }
+
+        $result = @{
+            Name                                         = $PolicyRule.Name
+            Policy                                       = $PolicyRule.ParentPolicyName
+            Workload                                     = $Workload
+            AccessScope                                  = $PolicyRule.AccessScope
+            AnyOfRecipientAddressContainsWords           = $AnyOfRecipientAddressContainsWords
+            AnyOfRecipientAddressMatchesPatterns         = $AnyOfRecipientAddressMatchesPatterns
+            Comment                                      = $PolicyRule.Comment
+            ContentContainsSensitiveInformation          = $PolicyRule.ContentContainsSensitiveInformation
+            ContentExtensionMatchesWords                 = $ContentExtensionMatchesWords
+            Disabled                                     = $PolicyRule.Disabled
+            DocumentIsPasswordProtected                  = $PolicyRule.DocumentIsPasswordProtected
+            DocumentIsUnsupported                        = $PolicyRule.DocumentIsUnsupported
+            ExceptIfAccessScope                          = $PolicyRule.ExceptIfAccessScope
+            ExceptIfAnyOfRecipientAddressContainsWords   = $PolicyRule.ExceptIfAnyOfRecipientAddressContainsWords
+            ExceptIfAnyOfRecipientAddressMatchesPatterns = $PolicyRule.ExceptIfAnyOfRecipientAddressMatchesPatterns
+            ExceptIfContentContainsSensitiveInformation  = $PolicyRule.ExceptIfContentContainsSensitiveInformation
+            ExceptIfContentExtensionMatchesWords         = $ExceptIfContentExtensionMatchesWords
+            ExceptIfDocumentIsPasswordProtected          = $PolicyRule.ExceptIfDocumentIsPasswordProtected
+            ExceptIfDocumentIsUnsupported                = $PolicyRule.ExceptIfDocumentIsUnsupported
+            ExceptIfFrom                                 = $PolicyRule.ExceptIfFrom
+            ExceptIfFromAddressContainsWords             = $PolicyRule.ExceptIfFromAddressContainsWords
+            ExceptIfFromAddressMatchesPatterns           = $PolicyRule.ExceptIfFromAddressMatchesPatterns
+            ExceptIfFromMemberOf                         = $PolicyRule.ExceptIfFromMemberOf
+            ExceptIfHeaderMatchesPatterns                = $PolicyRule.ExceptIfHeaderMatchesPatterns
+            ExceptIfProcessingLimitExceeded              = $PolicyRule.ExceptIfProcessingLimitExceeded
+            ExceptIfRecipientDomainIs                    = $PolicyRule.ExceptIfRecipientDomainIs
+            ExceptIfSenderDomainIs                       = $PolicyRule.ExceptIfSenderDomainIs
+            ExceptIfSenderIPRanges                       = $PolicyRule.ExceptIfSenderIPRanges
+            ExceptIfSentTo                               = $PolicyRule.ExceptIfSentTo
+            ExceptIfSentToMemberOf                       = $PolicyRule.ExceptIfSentToMemberOf
+            ExceptIfSubjectMatchesPatterns               = $PolicyRule.ExceptIfSubjectMatchesPatterns
+            FromAddressContainsWords                     = $PolicyRule.FromAddressContainsWords
+            FromAddressMatchesPatterns                   = $PolicyRule.FromAddressMatchesPatterns
+            HeaderMatchesPatterns                        = $HeaderMatchesPatternsValue
+            ProcessingLimitExceeded                      = $PolicyRule.ProcessingLimitExceeded
+            RecipientDomainIs                            = $PolicyRule.RecipientDomainIs
+            ReportSeverityLevel                          = $PolicyRule.ReportSeverityLevel
+            RuleErrorAction                              = $PolicyRule.RuleErrorAction
+            SenderDomainIs                               = $PolicyRule.SenderDomainIs
+            SenderIPRanges                               = $PolicyRule.SenderIPRanges
+            SentTo                                       = $PolicyRule.SentTo
+            SentToMemberOf                               = $PolicyRule.SentToMemberOf
+            SubjectMatchesPatterns                       = $PolicyRule.SubjectMatchesPatterns
+            Ensure                                       = 'Present'
+            Credential                                   = $Credential
+            ApplicationId                                = $ApplicationId
+            TenantId                                     = $TenantId
+            CertificateThumbprint                        = $CertificateThumbprint
+            CertificatePath                              = $CertificatePath
+            CertificatePassword                          = $CertificatePassword
+            AccessTokens                                 = $AccessTokens
+        }
+
+        $paramsToRemove = @()
+        foreach ($paramName in $result.Keys)
+        {
+            if ($null -eq $result[$paramName] -or '' -eq $result[$paramName] -or @() -eq $result[$paramName])
+            {
+                $paramsToRemove += $paramName
+            }
+        }
+
+        foreach ($paramName in $paramsToRemove)
+        {
+            $result.Remove($paramName)
+        }
+
+        Write-Verbose -Message "Get-TargetResource Result: `n $(Convert-M365DscHashtableToString -Hashtable $result)"
+        return $result
     }
     catch
     {
@@ -1114,8 +1110,7 @@ function Export-TargetResource
     )
 
     $ConnectionMode = New-M365DSCConnection -Workload 'SecurityComplianceCenter' `
-        -InboundParameters $PSBoundParameters `
-        -SkipModuleReload $true
+        -InboundParameters $PSBoundParameters
 
     #region Telemetry
     $ResourceName = $MyInvocation.MyCommand.ModuleName -replace 'MSFT_', ''
@@ -1134,11 +1129,11 @@ function Export-TargetResource
         $dscContent = ''
         if ($rules.Length -eq 0)
         {
-            Write-Host $Global:M365DSCEmojiGreenCheckMark
+            Write-M365DSCHost -Message $Global:M365DSCEmojiGreenCheckMark -CommitWrite
         }
         else
         {
-            Write-Host "`r`n" -NoNewline
+            Write-M365DSCHost -Message "`r`n" -DeferWrite
         }
 
         foreach ($rule in $rules)
@@ -1148,81 +1143,167 @@ function Export-TargetResource
                 $Global:M365DSCExportResourceInstancesCount++
             }
 
-            Write-Host "    |---[$i/$($rules.Length)] $($rule.Name)" -NoNewline
+            Write-M365DSCHost -Message "    |---[$i/$($rules.Length)] $($rule.Name)" -DeferWrite
+            $Script:exportedInstance = $rule
             $Results = Get-TargetResource @PSBoundParameters `
                 -Name $rule.name `
                 -Policy $rule.ParentPolicyName `
                 -Workload $rule.LogicalWorkload
 
-            $IsCIMArray = $false
-            $IsSitCIMArray = $false
-
-            if ($Results.ContentContainsSensitiveInformation.Length -gt 1)
-            {
-                $IsSitCIMArray = $true
-            }
-
-            if ($Results.ExceptIfContentContainsSensitiveInformation.Length -gt 1)
-            {
-                $IsCIMArray = $true
-            }
-
             if ($null -ne $Results.ContentContainsSensitiveInformation)
             {
-                if ($null -ne $results.ContentContainsSensitiveInformation.Groups)
+                $complexTypeMapping = @(
+                    @{
+                        Name            = 'ContentContainsSensitiveInformation'
+                        CimInstanceName = 'SCDLPContainsSensitiveInformation'
+                    },
+                    @{
+                        Name            = 'Groups'
+                        CimInstanceName = 'SCDLPContainsSensitiveInformationGroup'
+                        IsArray         = $true
+                    },
+                    @{
+                        Name            = 'SensitiveInformation'
+                        CimInstanceName = 'SCDLPSensitiveInformation'
+                        IsArray         = $true
+                    },
+                    @{
+                        Name            = 'Labels'
+                        CimInstanceName = 'SCDLPLabel'
+                        IsArray         = $true
+                    }
+                )
+
+                if ($null -ne $Results.ContentContainsSensitiveInformation.groups)
                 {
-                    $Results.ContentContainsSensitiveInformation = ConvertTo-SCDLPSensitiveInformationStringGroup -InformationArray $Results.ContentContainsSensitiveInformation
+                    foreach ($group in $Results.ContentContainsSensitiveInformation.groups)
+                    {
+                        foreach ($sensitiveType in $group.sensitivetypes)
+                        {
+                            $sensitiveType.Remove('confidencelevel') | Out-Null
+                            $sensitiveType.Remove('rulePackId') | Out-Null
+                        }
+                        $group.SensitiveInformation = [array]$group.sensitivetypes
+                        $group.Remove('sensitivetypes') | Out-Null
+                    }
                 }
                 else
                 {
-                    $Results.ContentContainsSensitiveInformation = ConvertTo-SCDLPSensitiveInformationString -InformationArray $Results.ContentContainsSensitiveInformation
+                    foreach ($sensitiveInformation in $Results.ContentContainsSensitiveInformation)
+                    {
+                        $sensitiveInformation.Remove('confidencelevel') | Out-Null
+                        $sensitiveInformation.Remove('rulePackId') | Out-Null
+                    }
+                    $Results.ContentContainsSensitiveInformation = @{
+                        SensitiveInformation = [array]$Results.ContentContainsSensitiveInformation
+                    }
+                }
+
+                $complexTypeStringResult = Get-M365DSCDRGComplexTypeToString `
+                    -ComplexObject $Results.ContentContainsSensitiveInformation `
+                    -CIMInstanceName 'SCDLPContainsSensitiveInformation' `
+                    -ComplexTypeMapping $complexTypeMapping
+                if (-not [String]::IsNullOrEmpty($complexTypeStringResult))
+                {
+                    $Results.ContentContainsSensitiveInformation = $complexTypeStringResult
+                }
+                else
+                {
+                    $Results.Remove('ContentContainsSensitiveInformation') | Out-Null
                 }
             }
 
             if ($null -ne $Results.ExceptIfContentContainsSensitiveInformation)
             {
-                if ($null -ne $results.ExceptIfContentContainsSensitiveInformation.Groups)
+                $complexTypeMapping = @(
+                    @{
+                        Name            = 'ExceptIfContentContainsSensitiveInformation'
+                        CimInstanceName = 'SCDLPContainsSensitiveInformation'
+                    },
+                    @{
+                        Name            = 'Groups'
+                        CimInstanceName = 'SCDLPContainsSensitiveInformationGroup'
+                        IsArray         = $true
+                    },
+                    @{
+                        Name            = 'SensitiveInformation'
+                        CimInstanceName = 'SCDLPSensitiveInformation'
+                        IsArray         = $true
+                    },
+                    @{
+                        Name            = 'Labels'
+                        CimInstanceName = 'SCDLPLabel'
+                        IsArray         = $true
+                    }
+                )
+
+                if ($null -ne $Results.ExceptIfContentContainsSensitiveInformation.groups)
                 {
-                    $Results.ExceptIfContentContainsSensitiveInformation = ConvertTo-SCDLPSensitiveInformationStringGroup -InformationArray $Results.ExceptIfContentContainsSensitiveInformation
+                    foreach ($group in $Results.ExceptIfContentContainsSensitiveInformation.groups)
+                    {
+                        foreach ($sensitiveType in $group.sensitivetypes)
+                        {
+                            $sensitiveType.Remove('confidencelevel') | Out-Null
+                            $sensitiveType.Remove('rulePackId') | Out-Null
+                        }
+                        $group.SensitiveInformation = [array]$group.sensitivetypes
+                        $group.Remove('sensitivetypes') | Out-Null
+                    }
                 }
                 else
                 {
-                    $Results.ExceptIfContentContainsSensitiveInformation = ConvertTo-SCDLPSensitiveInformationString -InformationArray $Results.ExceptIfContentContainsSensitiveInformation
+                    foreach ($sensitiveInformation in $Results.ExceptIfContentContainsSensitiveInformation)
+                    {
+                        $sensitiveInformation.Remove('confidencelevel') | Out-Null
+                        $sensitiveInformation.Remove('rulePackId') | Out-Null
+                    }
+                    $Results.ExceptIfContentContainsSensitiveInformation = @{
+                        SensitiveInformation = [array]$Results.ExceptIfContentContainsSensitiveInformation
+                    }
+                }
+
+                $complexTypeStringResult = Get-M365DSCDRGComplexTypeToString `
+                    -ComplexObject $Results.ExceptIfContentContainsSensitiveInformation `
+                    -CIMInstanceName 'SCDLPContainsSensitiveInformation' `
+                    -ComplexTypeMapping $complexTypeMapping
+                if (-not [String]::IsNullOrEmpty($complexTypeStringResult))
+                {
+                    $Results.ExceptIfContentContainsSensitiveInformation = $complexTypeStringResult
+                }
+                else
+                {
+                    $Results.Remove('ExceptIfContentContainsSensitiveInformation') | Out-Null
                 }
             }
 
-            $IsHeaderPatternsCIMArray = $false
             if ($null -ne $Results.HeaderMatchesPatterns -and $null -ne $Results.HeaderMatchesPatterns.Name)
             {
-                $Results.HeaderMatchesPatterns = ConvertTo-HeadersMatchesPatternString -Patterns $Results.HeaderMatchesPatterns
+                $complexTypeStringResult = Get-M365DSCDRGComplexTypeToString `
+                    -ComplexObject $Results.HeaderMatchesPatterns `
+                    -ComplexTypeName 'SCHeaderPattern'
+                if (-not [String]::IsNullOrEmpty($complexTypeStringResult))
+                {
+                    $Results.HeaderMatchesPatterns = $complexTypeStringResult
+                }
+                else
+                {
+                    $Results.Remove('HeaderMatchesPatterns') | Out-Null
+                }
             }
 
-            $Results = Update-M365DSCExportAuthenticationResults -ConnectionMode $ConnectionMode `
-                -Results $Results
             $currentDSCBlock = Get-M365DSCExportContentForResource -ResourceName $ResourceName `
                 -ConnectionMode $ConnectionMode `
                 -ModulePath $PSScriptRoot `
                 -Results $Results `
-                -Credential $Credential
+                -Credential $Credential `
+                -NoEscape @('ContentContainsSensitiveInformation', 'ExceptIfContentContainsSensitiveInformation', 'HeaderMatchesPatterns')
 
-            if ($null -ne $Results.ContentContainsSensitiveInformation )
-            {
-                $currentDSCBlock = Convert-DSCStringParamToVariable -DSCBlock $currentDSCBlock -ParameterName 'ContentContainsSensitiveInformation' -IsCIMArray $IsSitCIMArray
-            }
-            if ($null -ne $Results.ExceptIfContentContainsSensitiveInformation )
-            {
-                $currentDSCBlock = Convert-DSCStringParamToVariable -DSCBlock $currentDSCBlock -ParameterName 'ExceptIfContentContainsSensitiveInformation' -IsCIMArray $IsCIMArray
-            }
-            if ($null -ne $Results.HeaderMatchesPatterns)
-            {
-                $currentDSCBlock = Convert-DSCStringParamToVariable -DSCBlock $currentDSCBlock -ParameterName 'HeaderMatchesPatterns' -IsCIMArray $false
-            }
             $dscContent += $currentDSCBlock
 
             Save-M365DSCPartialExport -Content $currentDSCBlock `
                 -FileName $Global:PartialExportFileName
 
-            Write-Host $Global:M365DSCEmojiGreenCheckMark
+            Write-M365DSCHost -Message $Global:M365DSCEmojiGreenCheckMark -CommitWrite
             $i++
         }
 
@@ -1232,11 +1313,11 @@ function Export-TargetResource
     {
         if ($_.Exception.Message -like '*is not recognized as the name of a cmdlet*')
         {
-            Write-Host "`r`n    $($Global:M365DSCEmojiYellowCircle) The current tenant is not registered for this feature."
+            Write-M365DSCHost -Message "`r`n    $($Global:M365DSCEmojiYellowCircle) The current tenant is not registered for this feature."
         }
         else
         {
-            Write-Host $Global:M365DSCEmojiRedX
+            Write-M365DSCHost -Message $Global:M365DSCEmojiRedX -CommitWrite
 
             New-M365DSCLogEntry -Message 'Error during Export:' `
                 -Exception $_ `
@@ -1248,185 +1329,6 @@ function Export-TargetResource
         return ''
     }
 }
-
-function ConvertTo-HeadersMatchesPatternString
-{
-    [CmdletBinding()]
-    [OutputType([System.String])]
-    param
-    (
-        [Parameter(Mandatory = $true)]
-        [System.Object[]]
-        $Patterns
-    )
-    $result = ''
-
-    $result = "`r`n                MSFT_SCHeaderPattern`r`n                {`r`n"
-    $result += "                        Name   = '$($Patterns.Name)'`r`n"
-    $result += '                        Values = @('
-    foreach ($value in $Patterns.Value)
-    {
-        $result += "'$($value.Replace("'", "''"))',"
-    }
-    $result = $result.Substring(0, $result.Length - 1) + ")`r`n"
-    $result += "                }`r`n"
-    return $result
-}
-function ConvertTo-SCDLPSensitiveInformationStringGroup
-{
-    [CmdletBinding()]
-    [OutputType([System.String[]])]
-    param
-    (
-        [Parameter(Mandatory = $true)]
-        [System.Object[]]
-        $InformationArray
-    )
-    $result = ''
-
-    foreach ($SensitiveInformationHash in $InformationArray)
-    {
-        $StringContent = "MSFT_SCDLPContainsSensitiveInformation {`r`n"
-        if ($null -ne $InformationArray.Groups)
-        {
-            $StringContent += "                operator = '$($SensitiveInformationHash.operator.Replace("'", "''"))'`r`n"
-            $StringContent += "                Groups = @(`r`n"
-        }
-        foreach ($group in $SensitiveInformationHash.Groups)
-        {
-            $StringContent += "                    MSFT_SCDLPContainsSensitiveInformationGroup {`r`n"
-            $StringContent += "                        operator = '$($group.operator.Replace("'", "''"))'`r`n"
-            $StringContent += "                        name = '$($group.name.Replace("'", "''"))'`r`n"
-            if ($null -ne $group.sensitivetypes)
-            {
-                $StringContent += "                        SensitiveInformation = @(`r`n"
-                foreach ($sit in $group.sensitivetypes)
-                {
-                    $StringContent += "                            MSFT_SCDLPSensitiveInformation {`r`n"
-                    $StringContent += "                                name = '$($sit.name.Replace("'", "''"))'`r`n"
-                    if ($null -ne $sit.id)
-                    {
-                        $StringContent += "                                id = '$($sit.id)'`r`n"
-                    }
-
-                    if ($null -ne $sit.maxconfidence)
-                    {
-                        $StringContent += "                                maxconfidence = '$($sit.maxconfidence)'`r`n"
-                    }
-
-                    if ($null -ne $sit.minconfidence)
-                    {
-                        $StringContent += "                                minconfidence = '$($sit.minconfidence)'`r`n"
-                    }
-
-                    if ($null -ne $sit.classifiertype)
-                    {
-                        $StringContent += "                                classifiertype = '$($sit.classifiertype)'`r`n"
-                    }
-
-                    if ($null -ne $sit.mincount)
-                    {
-                        $StringContent += "                                mincount = '$($sit.mincount)'`r`n"
-                    }
-
-                    if ($null -ne $sit.maxcount)
-                    {
-                        $StringContent += "                                maxcount = '$($sit.maxcount)'`r`n"
-                    }
-
-                    $StringContent += "                            }`r`n"
-                }
-                $StringContent += "                        )`r`n"
-                $StringContent += "                    }`r`n"
-            }
-            if ($null -ne $group.labels)
-            {
-                $StringContent += "                        labels = @(`r`n"
-                foreach ($label in $group.labels)
-                {
-                    $StringContent += "                            MSFT_SCDLPLabel {`r`n"
-                    $StringContent += "                                name = '$($label.name.Replace("'", "''"))'`r`n"
-                    if ($null -ne $label.id)
-                    {
-                        $StringContent += "                                id = '$($label.id)'`r`n"
-                    }
-
-                    if ($null -ne $label.type)
-                    {
-                        $StringContent += "                                type = '$($label.type)'`r`n"
-                    }
-
-                    $StringContent += "                            }`r`n"
-                }
-                $StringContent += "                        )`r`n"
-                $StringContent += "                    }`r`n"
-            }
-        }
-        $StringContent += "                )`r`n"
-        $StringContent += "            }`r`n"
-        $result += $StringContent
-    }
-    return $result
-}
-function ConvertTo-SCDLPSensitiveInformationString
-{
-    [CmdletBinding()]
-    [OutputType([System.String[]])]
-    param
-    (
-        [Parameter(Mandatory = $true)]
-        [System.Object[]]
-        $InformationArray
-    )
-    $result = ''
-    $StringContent = "MSFT_SCDLPContainsSensitiveInformation {`r`n"
-    $StringContent += '                SensitiveInformation = '
-    $StringContent += "@(`r`n"
-    $result += $StringContent
-    foreach ($SensitiveInformationHash in $InformationArray)
-    {
-
-        $StringContent = "                    MSFT_SCDLPSensitiveInformation`r`n                    {`r`n"
-        $StringContent += "                        name = '$($SensitiveInformationHash.name.Replace("'", "''"))'`r`n"
-
-        if ($null -ne $SensitiveInformationHash.id)
-        {
-            $StringContent += "                        id = '$($SensitiveInformationHash.id)'`r`n"
-        }
-
-        if ($null -ne $SensitiveInformationHash.maxconfidence)
-        {
-            $StringContent += "                        maxconfidence = '$($SensitiveInformationHash.maxconfidence)'`r`n"
-        }
-
-        if ($null -ne $SensitiveInformationHash.minconfidence)
-        {
-            $StringContent += "                        minconfidence = '$($SensitiveInformationHash.minconfidence)'`r`n"
-        }
-
-        if ($null -ne $SensitiveInformationHash.classifiertype)
-        {
-            $StringContent += "                        classifiertype = '$($SensitiveInformationHash.classifiertype)'`r`n"
-        }
-
-        if ($null -ne $SensitiveInformationHash.mincount)
-        {
-            $StringContent += "                        mincount = '$($SensitiveInformationHash.mincount)'`r`n"
-        }
-
-        if ($null -ne $SensitiveInformationHash.maxcount)
-        {
-            $StringContent += "                        maxcount = '$($SensitiveInformationHash.maxcount)'`r`n"
-        }
-
-        $StringContent += "                    }`r`n"
-        $result += $StringContent
-    }
-    $result += "                )`r`n"
-    $result += "            }`r`n"
-    return $result
-}
-
 
 function Get-SCDLPSensitiveInformation
 {

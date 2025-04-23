@@ -76,7 +76,7 @@ function Get-TargetResource
 
             if ($null -eq $instance)
             {
-                $instance = $Script:exportedInstances | Where-Object -FilterScript { $_.principalName -eq $PrincipalName }
+                $instance = $Script:exportedInstances | Where-Object -FilterScript { $_.principalName -eq $GroupName }
             }
         }
         else
@@ -89,7 +89,7 @@ function Get-TargetResource
             }
             if ($null -eq $instance)
             {
-                $instance = $allInstances | Where-Object -FilterScript { $_.principalName -eq $PrincipalName }
+                $instance = $allInstances | Where-Object -FilterScript { $_.principalName -eq $GroupName }
             }
         }
         if ($null -eq $instance)
@@ -320,10 +320,12 @@ function Test-TargetResource
     $testResult = $true
     foreach ($permission in $AllowPermissions)
     {
-        $instance = $CurrentValues.AllowPermissions | Where-Object -FilterScript { $_.Token -eq $permission.Token -and `
-                $_.DisplayName -eq $permission.DisplayName -and `
-                $_.Bit -eq $permission.Bit -and `
-                $_.NamespaceId -eq $permission.NamespaceId }
+        $instance = $CurrentValues.AllowPermissions | Where-Object -FilterScript { 
+            $_.Token -eq $permission.Token -and `
+            $_.DisplayName -eq $permission.DisplayName -and `
+            $_.Bit -eq $permission.Bit -and `
+            $_.NamespaceId -eq $permission.NamespaceId
+        }
         if ($null -eq $instance)
         {
             $testResult = $false
@@ -333,10 +335,12 @@ function Test-TargetResource
 
     foreach ($permission in $DenyPermissions)
     {
-        $instance = $CurrentValues.DenyPermissions | Where-Object -FilterScript { $_.Token -eq $permission.Token -and `
-                $_.DisplayName -eq $permission.DisplayName -and `
-                $_.Bit -eq $permission.Bit -and `
-                $_.NamespaceId -eq $permission.NamespaceId }
+        $instance = $CurrentValues.DenyPermissions | Where-Object -FilterScript {
+            $_.Token -eq $permission.Token -and `
+            $_.DisplayName -eq $permission.DisplayName -and `
+            $_.Bit -eq $permission.Bit -and `
+            $_.NamespaceId -eq $permission.NamespaceId
+        }
         if ($null -eq $instance)
         {
             $testResult = $false
@@ -414,7 +418,6 @@ function Export-TargetResource
     try
     {
         $Script:ExportMode = $true
-
         $profileValue = Invoke-M365DSCAzureDevOPSWebRequest -Uri 'https://app.vssps.visualstudio.com/_apis/profile/profiles/me?api-version=5.1'
         $accounts = Invoke-M365DSCAzureDevOPSWebRequest -Uri "https://app.vssps.visualstudio.com/_apis/accounts?api-version=7.1-preview.1&memberId=$($profileValue.id)"
 
@@ -422,12 +425,12 @@ function Export-TargetResource
         $dscContent = ''
         if ($accounts.count -eq 0)
         {
-            Write-Host $Global:M365DSCEmojiGreenCheckMark
+            Write-M365DSCHost -Message $Global:M365DSCEmojiGreenCheckMark -CommitWrite
             return ''
         }
         else
         {
-            Write-Host "`r`n" -NoNewline
+            Write-M365DSCHost -Message "`r`n" -DeferWrite
         }
         foreach ($account in $accounts)
         {
@@ -440,11 +443,11 @@ function Export-TargetResource
             $dscContent = ''
             if ($Script:exportedInstances.Length -eq 0)
             {
-                Write-Host $Global:M365DSCEmojiGreenCheckMark
+                Write-M365DSCHost -Message $Global:M365DSCEmojiGreenCheckMark -CommitWrite
             }
             else
             {
-                Write-Host "`r`n" -NoNewline
+                Write-M365DSCHost -Message "`r`n" -DeferWrite
             }
             foreach ($config in $Script:exportedInstances)
             {
@@ -453,7 +456,7 @@ function Export-TargetResource
                 {
                     $Global:M365DSCExportResourceInstancesCount++
                 }
-                Write-Host "    |---[$i/$($Script:exportedInstances.Count)] $displayedKey" -NoNewline
+                Write-M365DSCHost -Message "    |---[$i/$($Script:exportedInstances.Count)] $displayedKey" -DeferWrite
                 $params = @{
                     OrganizationName      = $Organization
                     GroupName             = $config.principalName
@@ -469,48 +472,58 @@ function Export-TargetResource
                 if (-not $config.principalName.StartsWith('[TEAM FOUNDATION]'))
                 {
                     $Results = Get-TargetResource @Params
-                    $Results = Update-M365DSCExportAuthenticationResults -ConnectionMode $ConnectionMode `
-                        -Results $Results
                     if ($results.AllowPermissions.Length -gt 0)
                     {
-                        $Results.AllowPermissions = Get-M365DSCADOPermissionsAsString $Results.AllowPermissions
+                        $complexTypeStringResult = Get-M365DSCDRGComplexTypeToString `
+                            -ComplexObject $Results.AllowPermissions `
+                            -CIMInstanceName 'ADOPermission' `
+                            -IsArray
+                        if (-not [String]::IsNullOrEmpty($complexTypeStringResult))
+                        {
+                            $Results.AllowPermissions = $complexTypeStringResult
+                        }
+                        else
+                        {
+                            $Results.Remove('AllowPermissions') | Out-Null
+                        }
                     }
 
                     if ($results.DenyPermissions.Length -gt 0)
                     {
-                        $Results.DenyPermissions = Get-M365DSCADOPermissionsAsString $Results.DenyPermissions
+                        $complexTypeStringResult = Get-M365DSCDRGComplexTypeToString `
+                            -ComplexObject $Results.DenyPermissions `
+                            -CIMInstanceName 'ADOPermission' `
+                            -IsArray
+                        if (-not [String]::IsNullOrEmpty($complexTypeStringResult))
+                        {
+                            $Results.DenyPermissions = $complexTypeStringResult
+                        }
+                        else
+                        {
+                            $Results.Remove('DenyPermissions') | Out-Null
+                        }
                     }
 
                     $currentDSCBlock = Get-M365DSCExportContentForResource -ResourceName $ResourceName `
                         -ConnectionMode $ConnectionMode `
                         -ModulePath $PSScriptRoot `
                         -Results $Results `
-                        -Credential $Credential
-
-                    if ($null -ne $Results.AllowPermissions)
-                    {
-                        $currentDSCBlock = Convert-DSCStringParamToVariable -DSCBlock $currentDSCBlock `
-                            -ParameterName 'AllowPermissions'
-                    }
-                    if ($null -ne $Results.DenyPermissions)
-                    {
-                        $currentDSCBlock = Convert-DSCStringParamToVariable -DSCBlock $currentDSCBlock `
-                            -ParameterName 'DenyPermissions'
-                    }
+                        -Credential $Credential `
+                        -NoEscape @('AllowPermissions', 'DenyPermissions')
 
                     $dscContent += $currentDSCBlock
                     Save-M365DSCPartialExport -Content $currentDSCBlock `
                         -FileName $Global:PartialExportFileName
                 }
                 $i++
-                Write-Host $Global:M365DSCEmojiGreenCheckMark
+                Write-M365DSCHost -Message $Global:M365DSCEmojiGreenCheckMark -CommitWrite
             }
         }
         return $dscContent
     }
     catch
     {
-        Write-Host $Global:M365DSCEmojiRedX
+        Write-M365DSCHost -Message $Global:M365DSCEmojiRedX -CommitWrite
 
         New-M365DSCLogEntry -Message 'Error during Export:' `
             -Exception $_ `
@@ -650,31 +663,6 @@ function Get-M365DSCADOGroupPermission
         throw $_
     }
     return $results
-}
-
-function Get-M365DSCADOPermissionsAsString
-{
-    [CmdletBinding()]
-    [OutputType([System.String])]
-    param(
-        [Parameter(Mandatory = $true)]
-        [System.Collections.ArrayList]
-        $Permissions
-    )
-
-    $StringContent = [System.Text.StringBuilder]::new()
-    $StringContent.Append('@(') | Out-Null
-    foreach ($permission in $Permissions)
-    {
-        $StringContent.Append("            MSFT_ADOPermission { `r`n") | Out-Null
-        $StringContent.Append("                NamespaceId = '$($permission.NamespaceId)'`r`n") | Out-Null
-        $StringContent.Append("                DisplayName = '$($permission.DisplayName.Replace("'", "''"))'`r`n") | Out-Null
-        $StringContent.Append("                Bit         = '$($permission.Bit)'`r`n") | Out-Null
-        $StringContent.Append("                Token       = '$($permission.Token)'`r`n") | Out-Null
-        $StringContent.Append("            }`r`n") | Out-Null
-    }
-    $StringContent.Append('        )') | Out-Null
-    return $StringContent.ToString()
 }
 
 Export-ModuleMember -Function *-TargetResource

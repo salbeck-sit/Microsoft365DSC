@@ -407,7 +407,7 @@ function Export-TargetResource
 
         if ($null -eq $cmdletInfo)
         {
-            Write-Host "    `r`n$($Global:M365DSCEmojiYellowCircle) The Get-MailboxFolder cmdlet is not avalaible. Service Principals do not have mailboxes."
+            Write-M365DSCHost -Message "    `r`n$($Global:M365DSCEmojiYellowCircle) The Get-MailboxFolder cmdlet is not available. Service Principals do not have mailboxes." -CommitWrite
             return ''
         }
 
@@ -415,18 +415,18 @@ function Export-TargetResource
 
         if ($mailboxes.Length -eq 0)
         {
-            Write-Host $Global:M365DSCEmojiGreenCheckMark
+            Write-M365DSCHost -Message $Global:M365DSCEmojiGreenCheckMark -CommitWrite
         }
         else
         {
-            Write-Host "`r`n" -NoNewline
+            Write-M365DSCHost -Message "`r`n" -DeferWrite
         }
 
         $j = 1
         foreach ($mailboxFolder in $mailboxFolders)
         {
-            Write-Host "        |---[$j/$($mailboxFolders.count)] $($mailboxFolder.Identity)" -NoNewline
-            Write-Host "`r`n" -NoNewline
+            Write-M365DSCHost -Message "        |---[$j/$($mailboxFolders.count)] $($mailboxFolder.Identity)" -DeferWrite
+            Write-M365DSCHost -Message "`r`n" -DeferWrite
 
             $Params = @{
                 Identity              = $mailboxFolder.Identity
@@ -435,30 +435,34 @@ function Export-TargetResource
                 ApplicationId         = $ApplicationId
                 TenantId              = $TenantId
                 CertificateThumbprint = $CertificateThumbprint
-                Managedidentity       = $ManagedIdentity.IsPresent
+                ManagedIdentity       = $ManagedIdentity.IsPresent
                 AccessTokens          = $AccessTokens
             }
 
             $MailboxFolderPermissions = Get-TargetResource @Params
 
             $Result = $MailboxFolderPermissions
-            $Result = Update-M365DSCExportAuthenticationResults -ConnectionMode $ConnectionMode `
-                -Results $Result
-            if ($Result.UserPermissions.Count -gt 0)
+            if ($Result.UserPermissions)
             {
-                $Result.UserPermissions = Get-M365DSCEXOUserPermissionsList $Result.UserPermissions
+                $complexTypeStringResult = Get-M365DSCDRGComplexTypeToString `
+                    -ComplexObject $Result.UserPermissions `
+                    -CIMInstanceName 'EXOMailboxFolderUserPermission' `
+                    -IsArray
+                if (-not [String]::IsNullOrEmpty($complexTypeStringResult))
+                {
+                    $Result.UserPermissions = $complexTypeStringResult
+                }
+                else
+                {
+                    $Result.Remove('UserPermissions') | Out-Null
+                }
             }
             $currentDSCBlock = Get-M365DSCExportContentForResource -ResourceName $ResourceName `
                 -ConnectionMode $ConnectionMode `
                 -ModulePath $PSScriptRoot `
                 -Results $Result `
-                -Credential $Credential
-
-            if ($null -ne $Result.UserPermissions)
-            {
-                $currentDSCBlock = Convert-DSCStringParamToVariable -DSCBlock $currentDSCBlock `
-                    -ParameterName 'UserPermissions'
-            }
+                -Credential $Credential `
+                -NoEscape @('UserPermissions')
 
             $dscContent += $currentDSCBlock
 
@@ -471,7 +475,7 @@ function Export-TargetResource
     }
     catch
     {
-        Write-Host $Global:M365DSCEmojiRedX
+        Write-M365DSCHost -Message $Global:M365DSCEmojiRedX -CommitWrite
 
         New-M365DSCLogEntry -Message 'Error during Export:' `
             -Exception $_ `
@@ -481,34 +485,6 @@ function Export-TargetResource
 
         return ''
     }
-}
-
-function Get-M365DSCEXOUserPermissionsList
-{
-    [CmdletBinding()]
-    [OutputType([System.String])]
-    param(
-        [Parameter(Mandatory = $true)]
-        [System.Collections.ArrayList]
-        $Permissions
-    )
-
-    $StringContent = '@('
-    foreach ($permission in $Permissions)
-    {
-        $StringContent += "MSFT_EXOMailboxFolderUserPermission {`r`n"
-        $StringContent += "                User                   = '" + $permission.User + "'`r`n"
-        $StringContent += "                AccessRights           = '" + $permission.AccessRights + "'`r`n"
-        if ($null -ne $permission.SharingPermissionFlags)
-        {
-            #     $StringContent += "                SharingPermissionFlags = `$null" + "`r`n"
-            # } else {
-            $StringContent += "                SharingPermissionFlags = '" + $permission.SharingPermissionFlags + "'`r`n"
-        }
-        $StringContent += "            }`r`n"
-    }
-    $StringContent += '            )'
-    return $StringContent
 }
 
 Export-ModuleMember -Function *-TargetResource

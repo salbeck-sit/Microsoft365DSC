@@ -733,20 +733,14 @@ function Set-TargetResource
         -InboundParameters $PSBoundParameters
 
     Write-Verbose (Get-HostedContentFilterPolicy | Out-String)
-    $HostedContentFilterPolicies = Get-HostedContentFilterPolicy
+    $HostedContentFilterPolicy = Get-HostedContentFilterPolicy -Identity $Identity
 
-    $HostedContentFilterPolicy = $HostedContentFilterPolicies | Where-Object -FilterScript { $_.Identity -eq $Identity }
-    $HostedContentFilterPolicyParams = [System.Collections.Hashtable]($PSBoundParameters)
-    $HostedContentFilterPolicyParams.Remove('Ensure') | Out-Null
-    $HostedContentFilterPolicyParams.Remove('Credential') | Out-Null
-    $HostedContentFilterPolicyParams.Remove('MakeDefault') | Out-Null
-    $HostedContentFilterPolicyParams.Remove('ApplicationId') | Out-Null
-    $HostedContentFilterPolicyParams.Remove('TenantId') | Out-Null
-    $HostedContentFilterPolicyParams.Remove('CertificateThumbprint') | Out-Null
-    $HostedContentFilterPolicyParams.Remove('CertificatePath') | Out-Null
-    $HostedContentFilterPolicyParams.Remove('CertificatePassword') | Out-Null
-    $HostedContentFilterPolicyParams.Remove('ManagedIdentity') | Out-Null
-    $HostedContentFilterPolicyParams.Remove('AccessTokens') | Out-Null
+    $HostedContentFilterPolicyParams = Remove-M365DSCAuthenticationParameter -BoundParameters $PSBoundParameters
+
+    if ($IntraOrgFilterState -eq 'Default')
+    {
+        $HostedContentFilterPolicyParams.IntraOrgFilterState = 'HighConfidencePhish'
+    }
 
     if (('Present' -eq $Ensure ) -and ($null -eq $HostedContentFilterPolicy))
     {
@@ -759,6 +753,7 @@ function Set-TargetResource
         if ($PSBoundParameters.MakeDefault)
         {
             Write-Verbose -Message 'Updating Policy as default'
+            $HostedContentFilterPolicyParams.Remove('MakeDefault') | Out-Null
             Set-HostedContentFilterPolicy @HostedContentFilterPolicyParams -MakeDefault -Confirm:$false
         }
     }
@@ -768,6 +763,7 @@ function Set-TargetResource
         if ($PSBoundParameters.MakeDefault)
         {
             Write-Verbose -Message 'Updating Policy as default'
+            $HostedContentFilterPolicyParams.Remove('MakeDefault') | Out-Null
             Set-HostedContentFilterPolicy @HostedContentFilterPolicyParams -MakeDefault -Confirm:$false
         }
         else
@@ -1089,9 +1085,14 @@ function Test-TargetResource
     $ValuesToCheck.Remove('EndUserSpamNotificationFrequency') | Out-Null
     $ValuesToCheck.Remove('EndUserSpamNotificationCustomSubject') | Out-Null
 
+    if ($CurrentValues.IntraOrgFilterState -ne $IntraOrgFilterState -and $IntraOrgFilterState -eq 'Default')
+    {
+        $ValuesToCheck.IntraOrgFilterState = 'HighConfidencePhish'
+    }
+
     $TestResult = Test-M365DSCParameterState -CurrentValues $CurrentValues `
         -Source $($MyInvocation.MyCommand.Source) `
-        -DesiredValues $ValuesToCheck `
+        -DesiredValues $PSBoundParameters `
         -ValuesToCheck $ValuesToCheck.Keys
 
     Write-Verbose -Message "Test-TargetResource returned $TestResult"
@@ -1161,11 +1162,11 @@ function Export-TargetResource
 
         if ($HostedContentFilterPolicies.Length -eq 0)
         {
-            Write-Host $Global:M365DSCEmojiGreenCheckMark
+            Write-M365DSCHost -Message $Global:M365DSCEmojiGreenCheckMark -CommitWrite
         }
         else
         {
-            Write-Host "`r`n" -NoNewline
+            Write-M365DSCHost -Message "`r`n" -DeferWrite
         }
         $i = 1
         foreach ($HostedContentFilterPolicy in $HostedContentFilterPolicies)
@@ -1186,10 +1187,8 @@ function Export-TargetResource
                 CertificatePath       = $CertificatePath
                 AccessTokens          = $AccessTokens
             }
-            Write-Host "    |---[$i/$($HostedContentFilterPolicies.Length)] $($HostedContentFilterPolicy.Identity)" -NoNewline
+            Write-M365DSCHost -Message "    |---[$i/$($HostedContentFilterPolicies.Length)] $($HostedContentFilterPolicy.Identity)" -DeferWrite
             $Results = Get-TargetResource @Params
-            $Results = Update-M365DSCExportAuthenticationResults -ConnectionMode $ConnectionMode `
-                -Results $Results
             $currentDSCBlock = Get-M365DSCExportContentForResource -ResourceName $ResourceName `
                 -ConnectionMode $ConnectionMode `
                 -ModulePath $PSScriptRoot `
@@ -1198,14 +1197,14 @@ function Export-TargetResource
             $dscContent += $currentDSCBlock
             Save-M365DSCPartialExport -Content $currentDSCBlock `
                 -FileName $Global:PartialExportFileName
-            Write-Host $Global:M365DSCEmojiGreenCheckMark
+            Write-M365DSCHost -Message $Global:M365DSCEmojiGreenCheckMark -CommitWrite
             $i++
         }
         return $dscContent
     }
     catch
     {
-        Write-Host $Global:M365DSCEmojiRedX
+        Write-M365DSCHost -Message $Global:M365DSCEmojiRedX -CommitWrite
 
         New-M365DSCLogEntry -Message 'Error during Export:' `
             -Exception $_ `

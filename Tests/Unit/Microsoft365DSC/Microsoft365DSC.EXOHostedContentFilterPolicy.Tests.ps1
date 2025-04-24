@@ -45,8 +45,8 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             Mock -CommandName Remove-HostedContentFilterPolicy -MockWith {
             }
 
-            # Mock Write-Host to hide output during the tests
-            Mock -CommandName Write-Host -MockWith {
+            # Mock Write-M365DSCHost to hide output during the tests
+            Mock -CommandName Write-M365DSCHost -MockWith {
             }
             $Script:exportedInstances =$null
             $Script:ExportMode = $false
@@ -70,6 +70,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     IncreaseScoreWithNumericIps          = 'On'
                     IncreaseScoreWithRedirectToOtherPort = 'On'
                     IncreaseScoreWithBizOrInfoUrls       = 'On'
+                    IntraOrgFilterState                  = 'Default'
                     MarkAsSpamEmptyMessages              = 'On'
                     MarkAsSpamJavaScriptInHtml           = 'On'
                     MarkAsSpamFramesInHtml               = 'On'
@@ -140,6 +141,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     IncreaseScoreWithNumericIps          = 'On'
                     IncreaseScoreWithRedirectToOtherPort = 'On'
                     IncreaseScoreWithBizOrInfoUrls       = 'On'
+                    IntraOrgFilterState                  = 'Default'
                     MarkAsSpamEmptyMessages              = 'On'
                     MarkAsSpamJavaScriptInHtml           = 'On'
                     MarkAsSpamFramesInHtml               = 'On'
@@ -190,6 +192,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                         IncreaseScoreWithNumericIps          = 'On'
                         IncreaseScoreWithRedirectToOtherPort = 'On'
                         IncreaseScoreWithBizOrInfoUrls       = 'On'
+                        IntraOrgFilterState                  = 'Default'
                         MarkAsSpamEmptyMessages              = 'On'
                         MarkAsSpamJavaScriptInHtml           = 'On'
                         MarkAsSpamFramesInHtml               = 'On'
@@ -264,6 +267,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     IncreaseScoreWithNumericIps          = 'On'
                     IncreaseScoreWithRedirectToOtherPort = 'On'
                     IncreaseScoreWithBizOrInfoUrls       = 'On'
+                    IntraOrgFilterState                  = 'Default'
                     MarkAsSpamEmptyMessages              = 'On'
                     MarkAsSpamJavaScriptInHtml           = 'On'
                     MarkAsSpamFramesInHtml               = 'On'
@@ -317,6 +321,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                         IncreaseScoreWithNumericIps          = 'On'
                         IncreaseScoreWithRedirectToOtherPort = 'On'
                         IncreaseScoreWithBizOrInfoUrls       = 'On'
+                        IntraOrgFilterState                  = 'Default'
                         MarkAsSpamEmptyMessages              = 'On'
                         MarkAsSpamJavaScriptInHtml           = 'On'
                         MarkAsSpamFramesInHtml               = 'On'

@@ -1,27 +1,3 @@
-function Add-ActionParameters
-{
-    [CmdletBinding()]
-    param(
-        [Parameter(Mandatory = $true)]
-        [System.String]
-        $Action,
-
-        [Parameter(Mandatory = $true)]
-        [System.Collections.Hashtable]
-        $Parameters
-    )
-
-    if ($Action -eq 'Allow')
-    {
-        $Parameters.Add('Allow', $true) | Out-Null
-    }
-    elseif ($Action -eq 'Block')
-    {
-        $Parameters.Add('Block', $true) | Out-Null
-    }
-    $Parameters.Remove('Action') | Out-Null
-}
-
 function Get-TargetResource
 {
     [CmdletBinding()]
@@ -245,7 +221,15 @@ function Set-TargetResource
         $CreateParameters.Remove('Verbose') | Out-Null
         $CreateParameters.Remove('Value') | Out-Null
         $CreateParameters.Add('Entries', @($Value)) | Out-Null
-        Add-ActionParameters -Action $Action -Parameters $CreateParameters
+        if ($Action -eq 'Allow')
+        {
+            $CreateParameters.Add('Allow', $true) | Out-Null
+        }
+        elseif ($Action -eq 'Block')
+        {
+            $CreateParameters.Add('Block', $true) | Out-Null
+        }
+        $CreateParameters.Remove('Action') | Out-Null
 
         $keys = $CreateParameters.Keys
         foreach ($key in $keys)
@@ -379,12 +363,6 @@ function Test-TargetResource
     $CurrentValues = Get-TargetResource @PSBoundParameters
     $ValuesToCheck = ([Hashtable]$PSBoundParameters).Clone()
 
-    if ($CurrentValues.Ensure -ne $Ensure)
-    {
-        Write-Verbose -Message "Test-TargetResource returned $false"
-        return $false
-    }
-
     if ($null -ne $ValuesToCheck.ExpirationDate -and $ValuesToCheck.ExpirationDate.Kind -eq 'Local')
     {
         $ValuesToCheck.ExpirationDate = $ValuesToCheck.ExpirationDate.ToUniversalTime().ToString()
@@ -409,7 +387,7 @@ function Test-TargetResource
 
     $testResult = Test-M365DSCParameterState -CurrentValues $CurrentValues `
         -Source $($MyInvocation.MyCommand.Source) `
-        -DesiredValues $ValuesToCheck `
+        -DesiredValues $PSBoundParameters `
         -ValuesToCheck $ValuesToCheck.Keys
 
     Write-Verbose -Message "Test-TargetResource returned $testResult"
@@ -485,11 +463,11 @@ function Export-TargetResource
         $dscContent = ''
         if ($getValues.Length -eq 0)
         {
-            Write-Host $Global:M365DSCEmojiGreenCheckMark
+            Write-M365DSCHost -Message $Global:M365DSCEmojiGreenCheckMark -CommitWrite
         }
         else
         {
-            Write-Host "`r`n" -NoNewline
+            Write-M365DSCHost -Message "`r`n" -DeferWrite
         }
         foreach ($config in $getValues)
         {
@@ -503,7 +481,7 @@ function Export-TargetResource
             {
                 $displayedKey = $config.displayName
             }
-            Write-Host "    |---[$i/$($getValues.Count)] $displayedKey" -NoNewline
+            Write-M365DSCHost -Message "    |---[$i/$($getValues.Count)] $displayedKey" -DeferWrite
             $params = @{
                 Action                = $config.Action
                 ListType              = $config.ListType
@@ -518,8 +496,6 @@ function Export-TargetResource
             }
 
             $Results = Get-TargetResource @Params
-            $Results = Update-M365DSCExportAuthenticationResults -ConnectionMode $ConnectionMode `
-                -Results $Results
 
             $currentDSCBlock = Get-M365DSCExportContentForResource -ResourceName $ResourceName `
                 -ConnectionMode $ConnectionMode `
@@ -530,13 +506,13 @@ function Export-TargetResource
             Save-M365DSCPartialExport -Content $currentDSCBlock `
                 -FileName $Global:PartialExportFileName
             $i++
-            Write-Host $Global:M365DSCEmojiGreenCheckMark
+            Write-M365DSCHost -Message $Global:M365DSCEmojiGreenCheckMark -CommitWrite
         }
         return $dscContent
     }
     catch
     {
-        Write-Host $Global:M365DSCEmojiRedX
+        Write-M365DSCHost -Message $Global:M365DSCEmojiRedX -CommitWrite
 
         New-M365DSCLogEntry -Message 'Error during Export:' `
             -Exception $_ `

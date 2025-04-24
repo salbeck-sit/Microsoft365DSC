@@ -94,71 +94,77 @@ function Get-TargetResource
         [System.String[]]
         $AccessTokens
     )
-    Write-Verbose -Message "Checking for the Intune Device Enrollment Restriction {$DisplayName}"
-    $ConnectionMode = New-M365DSCConnection -Workload 'MicrosoftGraph' `
-        -InboundParameters $PSBoundParameters
 
-    #Ensure the proper dependencies are installed in the current environment.
-    Confirm-M365DSCDependencies
-
-    #region Telemetry
-    $ResourceName = $MyInvocation.MyCommand.ModuleName -replace 'MSFT_', ''
-    $CommandName = $MyInvocation.MyCommand
-    $data = Format-M365DSCTelemetryParameters -ResourceName $ResourceName `
-        -CommandName $CommandName `
-        -Parameters $PSBoundParameters
-    Add-M365DSCTelemetryEvent -Data $data
-    #endregion
-
-    $nullResult = $PSBoundParameters
-    $nullResult.Ensure = 'Absent'
-
-    $PlatformType = ''
-    $keys = (([Hashtable]$PSBoundParameters).Clone()).Keys
-    foreach ($key in $keys)
-    {
-        if ($null -ne $PSBoundParameters.$key -and $PSBoundParameters.$key.getType().Name -like '*cimInstance*' -and $key -like '*Restriction')
-        {
-            if ($DeviceEnrollmentConfigurationType -eq 'singlePlatformRestriction' )
-            {
-                $PlatformType = $key.replace('Restriction', '')
-                break
-            }
-        }
-    }
+    Write-Verbose -Message "Getting configuration of the Intune Device Enrollment Restriction with Id {$Identity} and DisplayName {$DisplayName}"
 
     try
     {
-        try
+        if (-not $Script:exportedInstance -or $Script:exportedInstance.DisplayName -ne $DisplayName)
         {
-            $config = Get-MgBetaDeviceManagementDeviceEnrollmentConfiguration -DeviceEnrollmentConfigurationId $Identity -ErrorAction Stop
-        }
-        catch
-        {
-            $config = $null
-        }
+            $ConnectionMode = New-M365DSCConnection -Workload 'MicrosoftGraph' `
+                -InboundParameters $PSBoundParameters
 
-        if ($null -eq $config)
-        {
-            Write-Verbose -Message "Could not find an Intune Device Enrollment Platform Restriction with Id {$Identity}"
-            $config = Get-MgBetaDeviceManagementDeviceEnrollmentConfiguration -All -Filter "DisplayName eq '$DisplayName'" `
-                -ErrorAction SilentlyContinue | Where-Object -FilterScript {
-                $_.AdditionalProperties.'@odata.type' -like '#microsoft.graph.deviceEnrollmentPlatformRestriction*Configuration' -and
-                $(if ($null -ne $_.AdditionalProperties.platformType)
+            #Ensure the proper dependencies are installed in the current environment.
+            Confirm-M365DSCDependencies
+
+            #region Telemetry
+            $ResourceName = $MyInvocation.MyCommand.ModuleName -replace 'MSFT_', ''
+            $CommandName = $MyInvocation.MyCommand
+            $data = Format-M365DSCTelemetryParameters -ResourceName $ResourceName `
+                -CommandName $CommandName `
+                -Parameters $PSBoundParameters
+            Add-M365DSCTelemetryEvent -Data $data
+            #endregion
+
+            $nullResult = $PSBoundParameters
+            $nullResult.Ensure = 'Absent'
+
+            $PlatformType = ''
+            $keys = (([Hashtable]$PSBoundParameters).Clone()).Keys
+            foreach ($key in $keys)
+            {
+                if ($null -ne $PSBoundParameters.$key -and $PSBoundParameters.$key.GetType().Name -like '*cimInstance*' -and $key -like '*Restriction')
+                {
+                    if ($DeviceEnrollmentConfigurationType -eq 'singlePlatformRestriction' )
                     {
-                        $_.AdditionalProperties.platformType -eq $PlatformType
+                        $PlatformType = $key.Replace('Restriction', '')
+                        break
                     }
-                    else
-                    {
-                        $true
-                    })
+                }
+            }
+
+            $config = $null
+            if (-not [string]::IsNullOrEmpty($Identity))
+            {
+                $config = Get-MgBetaDeviceManagementDeviceEnrollmentConfiguration -DeviceEnrollmentConfigurationId $Identity -ErrorAction SilentlyContinue
             }
 
             if ($null -eq $config)
             {
-                Write-Verbose -Message "Could not find an Intune Device Enrollment Platform Restriction with DisplayName {$DisplayName}"
-                return $nullResult
+                Write-Verbose -Message "Could not find an Intune Device Enrollment Platform Restriction with Id {$Identity}"
+                $config = Get-MgBetaDeviceManagementDeviceEnrollmentConfiguration -All -Filter "DisplayName eq '$DisplayName'" `
+                    -ErrorAction SilentlyContinue | Where-Object -FilterScript {
+                    $_.AdditionalProperties.'@odata.type' -like '#microsoft.graph.deviceEnrollmentPlatformRestriction*Configuration' -and
+                    $(if ($null -ne $_.AdditionalProperties.platformType)
+                        {
+                            $_.AdditionalProperties.platformType -eq $PlatformType
+                        }
+                        else
+                        {
+                            $true
+                        })
+                }
+
+                if ($null -eq $config)
+                {
+                    Write-Verbose -Message "Could not find an Intune Device Enrollment Platform Restriction with DisplayName {$DisplayName}"
+                    return $nullResult
+                }
             }
+        }
+        else
+        {
+            $config = $Script:exportedInstance
         }
 
         Write-Verbose -Message "Found Intune Device Enrollment Platform Restriction with Name {$($config.DisplayName)}"
@@ -353,28 +359,28 @@ function Set-TargetResource
         $keys = (([Hashtable]$PSBoundParameters).Clone()).Keys
         foreach ($key in $keys)
         {
-            $keyName = $key.substring(0, 1).toLower() + $key.substring(1, $key.length - 1)
+            $keyName = $key.Substring(0, 1).ToLower() + $key.Substring(1, $key.Length - 1)
             $keyValue = $PSBoundParameters.$key
-            if ($null -ne $PSBoundParameters.$key -and $PSBoundParameters.$key.getType().Name -like '*cimInstance*')
+            if ($null -ne $PSBoundParameters.$key -and $PSBoundParameters.$key.GetType().Name -like '*cimInstance*')
             {
                 $keyValue = Convert-M365DSCDRGComplexTypeToHashtable -ComplexObject $PSBoundParameters.$key
                 if ($DeviceEnrollmentConfigurationType -eq 'singlePlatformRestriction' )
                 {
                     $keyName = 'platformRestriction'
-                    $PSBoundParameters.add('platformType', ($key.replace('Restriction', '')))
+                    $PSBoundParameters.Add('platformType', ($key.Replace('Restriction', '')))
                 }
             }
-            $PSBoundParameters.remove($key)
-            $PSBoundParameters.add($keyName, $keyValue)
+            $PSBoundParameters.Remove($key)
+            $PSBoundParameters.Add($keyName, $keyValue)
         }
 
         $policyType = '#microsoft.graph.deviceEnrollmentPlatformRestrictionConfiguration'
         if ($DeviceEnrollmentConfigurationType -eq 'platformRestrictions' )
         {
             $policyType = '#microsoft.graph.deviceEnrollmentPlatformRestrictionsConfiguration'
-            $PSBoundParameters.add('deviceEnrollmentConfigurationType ', 'limit')
+            $PSBoundParameters.Add('deviceEnrollmentConfigurationType ', 'limit')
         }
-        $PSBoundParameters.add('@odata.type', $policyType)
+        $PSBoundParameters.Add('@odata.type', $policyType)
 
         #Write-Verbose ($PSBoundParameters | ConvertTo-Json -Depth 20)
 
@@ -419,9 +425,9 @@ function Set-TargetResource
         $keys = (([Hashtable]$PSBoundParameters).Clone()).Keys
         foreach ($key in $keys)
         {
-            $keyName = $key.substring(0, 1).toLower() + $key.substring(1, $key.length - 1)
+            $keyName = $key.Substring(0, 1).ToLower() + $key.Substring(1, $key.Length - 1)
             $keyValue = $PSBoundParameters.$key
-            if ($null -ne $PSBoundParameters.$key -and $PSBoundParameters.$key.getType().Name -like '*cimInstance*')
+            if ($null -ne $PSBoundParameters.$key -and $PSBoundParameters.$key.GetType().Name -like '*cimInstance*')
             {
                 $keyValue = Convert-M365DSCDRGComplexTypeToHashtable -ComplexObject $PSBoundParameters.$key
                 if ($DeviceEnrollmentConfigurationType -eq 'singlePlatformRestriction' )
@@ -429,8 +435,8 @@ function Set-TargetResource
                     $keyName = 'platformRestriction'
                 }
             }
-            $PSBoundParameters.remove($key)
-            $PSBoundParameters.add($keyName, $keyValue)
+            $PSBoundParameters.Remove($key)
+            $PSBoundParameters.Add($keyName, $keyValue)
         }
 
         $policyType = '#microsoft.graph.deviceEnrollmentPlatformRestrictionConfiguration'
@@ -438,9 +444,9 @@ function Set-TargetResource
         {
             $policyType = '#microsoft.graph.deviceEnrollmentPlatformRestrictionsConfiguration'
         }
-        $PSBoundParameters.add('@odata.type', $policyType)
+        $PSBoundParameters.Add('@odata.type', $policyType)
 
-        #Write-Verbose ($PSBoundParameters | ConvertTo-Json -Depth 20)
+        Write-Verbose "Updating with values:`r`n$($PSBoundParameters | ConvertTo-Json -Depth 20)"
 
         Update-MgBetaDeviceManagementDeviceEnrollmentConfiguration `
             -DeviceEnrollmentConfigurationId $currentInstance.Identity `
@@ -584,12 +590,6 @@ function Test-TargetResource
 
     $CurrentValues = Get-TargetResource @PSBoundParameters
     $ValuesToCheck = ([Hashtable]$PSBoundParameters).Clone()
-
-    if ($CurrentValues.Ensure -ne $Ensure)
-    {
-        Write-Verbose -Message "Test-TargetResource returned $false"
-        return $false
-    }
     $testResult = $true
 
     #Compare Cim instances
@@ -597,13 +597,13 @@ function Test-TargetResource
     {
         $source = $PSBoundParameters.$key
         $target = $CurrentValues.$key
-        if ($source.getType().Name -like '*CimInstance*' -and $key -ne 'WindowsMobileRestriction')
+        if ($source.GetType().Name -like '*CimInstance*' -and $key -ne 'WindowsMobileRestriction')
         {
             $testResult = Compare-M365DSCComplexObject `
                 -Source ($source) `
                 -Target ($target)
 
-            if (-Not $testResult)
+            if (-not $testResult)
             {
                 $testResult = $false
                 break
@@ -621,9 +621,9 @@ function Test-TargetResource
     foreach ($key in $ValuesToCheck.Keys)
     {
         if (($null -ne $CurrentValues[$key]) `
-                -and ($CurrentValues[$key].getType().Name -eq 'DateTime'))
+                -and ($CurrentValues[$key].GetType().Name -eq 'DateTime'))
         {
-            $CurrentValues[$key] = $CurrentValues[$key].toString()
+            $CurrentValues[$key] = $CurrentValues[$key].ToString()
         }
     }
 
@@ -683,6 +683,7 @@ function Export-TargetResource
         [System.String[]]
         $AccessTokens
     )
+
     $ConnectionMode = New-M365DSCConnection -Workload 'MicrosoftGraph' `
         -InboundParameters $PSBoundParameters
 
@@ -707,11 +708,11 @@ function Export-TargetResource
         $dscContent = ''
         if ($configs.Length -eq 0)
         {
-            Write-Host $Global:M365DSCEmojiGreenCheckMark
+            Write-M365DSCHost -Message $Global:M365DSCEmojiGreenCheckMark -CommitWrite
         }
         else
         {
-            Write-Host "`r`n" -NoNewline
+            Write-M365DSCHost -Message "`r`n" -DeferWrite
         }
         foreach ($config in $configs)
         {
@@ -720,7 +721,7 @@ function Export-TargetResource
                 $Global:M365DSCExportResourceInstancesCount++
             }
 
-            Write-Host "    |---[$i/$($configs.Count)] $($config.displayName)" -NoNewline
+            Write-M365DSCHost -Message "    |---[$i/$($configs.Count)] $($config.displayName)" -DeferWrite
             $params = @{
                 Identity              = $config.id
                 DisplayName           = $config.displayName
@@ -733,8 +734,9 @@ function Export-TargetResource
                 ManagedIdentity       = $ManagedIdentity.IsPresent
                 AccessTokens          = $AccessTokens
             }
-            $Results = Get-TargetResource @Params
 
+            $Script:exportedInstance = $config
+            $Results = Get-TargetResource @Params
             if ($null -ne $Results.Assignments)
             {
                 $complexTypeStringResult = Get-M365DSCDRGComplexTypeToString -ComplexObject ([Array]$Results.Assignments) -CIMInstanceName DeviceManagementConfigurationPolicyAssignments
@@ -852,70 +854,20 @@ function Export-TargetResource
                 }
             }
 
-
-            $Results = Update-M365DSCExportAuthenticationResults -ConnectionMode $ConnectionMode `
-                -Results $Results
             $currentDSCBlock = Get-M365DSCExportContentForResource -ResourceName $ResourceName `
                 -ConnectionMode $ConnectionMode `
                 -ModulePath $PSScriptRoot `
                 -Results $Results `
-                -Credential $Credential
-
-            if ($null -ne $Results.Assignments)
-            {
-                $isCIMArray = $false
-                if ($Results.Assignments.getType().Fullname -like '*[[\]]')
-                {
-                    $isCIMArray = $true
-                }
-                $currentDSCBlock = Convert-DSCStringParamToVariable -DSCBlock $currentDSCBlock -ParameterName 'Assignments' -IsCIMArray:$isCIMArray
-            }
-
-            if ($null -ne $Results.IosRestriction)
-            {
-                $currentDSCBlock = Convert-DSCStringParamToVariable -DSCBlock $currentDSCBlock -ParameterName 'IosRestriction'
-            }
-
-            if ($null -ne $Results.WindowsRestriction)
-            {
-                $currentDSCBlock = Convert-DSCStringParamToVariable -DSCBlock $currentDSCBlock -ParameterName 'WindowsRestriction'
-            }
-
-            if ($null -ne $Results.WindowsHomeSkuRestriction)
-            {
-                $currentDSCBlock = Convert-DSCStringParamToVariable -DSCBlock $currentDSCBlock -ParameterName 'WindowsHomeSkuRestriction'
-            }
-
-            if ($null -ne $Results.WindowsMobileRestriction)
-            {
-                $currentDSCBlock = Convert-DSCStringParamToVariable -DSCBlock $currentDSCBlock -ParameterName 'WindowsMobileRestriction'
-            }
-
-            if ($null -ne $Results.AndroidRestriction)
-            {
-                $currentDSCBlock = Convert-DSCStringParamToVariable -DSCBlock $currentDSCBlock -ParameterName 'AndroidRestriction'
-            }
-
-            if ($null -ne $Results.AndroidForWorkRestriction)
-            {
-                $currentDSCBlock = Convert-DSCStringParamToVariable -DSCBlock $currentDSCBlock -ParameterName 'AndroidForWorkRestriction'
-            }
-
-            if ($null -ne $Results.MacRestriction)
-            {
-                $currentDSCBlock = Convert-DSCStringParamToVariable -DSCBlock $currentDSCBlock -ParameterName 'MacRestriction'
-            }
-
-            if ($null -ne $Results.MacOSRestriction)
-            {
-                $currentDSCBlock = Convert-DSCStringParamToVariable -DSCBlock $currentDSCBlock -ParameterName 'MacOSRestriction'
-            }
+                -Credential $Credential `
+                -NoEscape @('Assignments', 'IosRestriction', 'WindowsRestriction', 'WindowsHomeSkuRestriction',
+                    'WindowsMobileRestriction', 'AndroidRestriction', 'AndroidForWorkRestriction',
+                    'MacRestriction','MacOSRestriction')
 
             $dscContent += $currentDSCBlock
             Save-M365DSCPartialExport -Content $currentDSCBlock `
                 -FileName $Global:PartialExportFileName
             $i++
-            Write-Host $Global:M365DSCEmojiGreenCheckMark
+            Write-M365DSCHost -Message $Global:M365DSCEmojiGreenCheckMark -CommitWrite
         }
         return $dscContent
     }
@@ -924,11 +876,11 @@ function Export-TargetResource
         if ($_.Exception -like '*401*' -or $_.ErrorDetails.Message -like "*`"ErrorCode`":`"Forbidden`"*" -or `
                 $_.Exception -like '*Request not applicable to target tenant*')
         {
-            Write-Host "`r`n    $($Global:M365DSCEmojiYellowCircle) The current tenant is not registered for Intune."
+            Write-M365DSCHost -Message "`r`n    $($Global:M365DSCEmojiYellowCircle) The current tenant is not registered for Intune."
         }
         else
         {
-            Write-Host $Global:M365DSCEmojiRedX
+            Write-M365DSCHost -Message $Global:M365DSCEmojiRedX -CommitWrite
 
             New-M365DSCLogEntry -Message 'Error during Export:' `
                 -Exception $_ `
@@ -956,77 +908,77 @@ function Get-DevicePlatformRestrictionSetting
 
     if ($null -ne $Properties.platformType)
     {
-        $keyName = ($Properties.platformType).Substring(0, 1).toUpper() + ($Properties.platformType).substring(1, $Properties.platformType.length - 1) + 'Restriction'
+        $keyName = ($Properties.platformType).Substring(0, 1).ToUpper() + ($Properties.platformType).Substring(1, $Properties.platformType.length - 1) + 'Restriction'
         $keyValue = [Hashtable]::new($Properties.platformRestriction)
         $hash = @{}
         foreach ($key in $keyValue.Keys)
         {
             if ($null -ne $keyValue.$key)
             {
-                switch -Wildcard ($keyValue.$key.getType().name)
+                switch -Wildcard ($keyValue.$key.GetType().name)
                 {
                     '*[[\]]'
                     {
                         if ($keyValue.$key.count -gt 0)
                         {
-                            $hash.add($key, $keyValue.$key)
+                            $hash.Add($key, $keyValue.$key)
                         }
                     }
                     'String'
                     {
                         if (-Not [String]::IsNullOrEmpty($keyValue.$key))
                         {
-                            $hash.add($key, $keyValue.$key)
+                            $hash.Add($key, $keyValue.$key)
                         }
                     }
                     Default
                     {
-                        $hash.add($key, $keyValue.$key)
+                        $hash.Add($key, $keyValue.$key)
                     }
                 }
             }
         }
-        $results.add($keyName, $hash)
+        $results.Add($keyName, $hash)
     }
     else
     {
         $platformRestrictions = [Hashtable]::new($Properties)
-        $platformRestrictions.remove('@odata.type')
-        $platformRestrictions.remove('@odata.context')
+        $platformRestrictions.Remove('@odata.type')
+        $platformRestrictions.Remove('@odata.context')
         foreach ($key in $platformRestrictions.Keys)
         {
-            $keyName = $key.Substring(0, 1).toUpper() + $key.substring(1, $key.length - 1)
+            $keyName = $key.Substring(0, 1).ToUpper() + $key.Substring(1, $key.Length - 1)
             $keyValue = [Hashtable]::new($platformRestrictions.$key)
             $hash = @{}
             foreach ($key in $keyValue.Keys)
             {
                 if ($null -ne $keyValue.$key)
                 {
-                    switch -Wildcard ($keyValue.$key.getType().name)
+                    switch -Wildcard ($keyValue.$key.GetType().name)
                     {
                         '*[[\]]'
                         {
                             if ($keyValue.$key.count -gt 0)
                             {
-                                $hash.add($key, $keyValue.$key)
+                                $hash.Add($key, $keyValue.$key)
                             }
                         }
                         'String'
                         {
                             if (-Not [String]::IsNullOrEmpty($keyValue.$key))
                             {
-                                $hash.add($key, $keyValue.$key)
+                                $hash.Add($key, $keyValue.$key)
                             }
                         }
                         Default
                         {
-                            $hash.add($key, $keyValue.$key)
+                            $hash.Add($key, $keyValue.$key)
                         }
                     }
 
                 }
             }
-            $results.add($keyName, $hash)
+            $results.Add($keyName, $hash)
         }
     }
 

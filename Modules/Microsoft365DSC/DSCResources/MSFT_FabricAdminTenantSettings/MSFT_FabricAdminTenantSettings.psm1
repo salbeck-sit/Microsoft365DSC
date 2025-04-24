@@ -63,11 +63,23 @@ function Get-TargetResource
 
         [Parameter()]
         [Microsoft.Management.Infrastructure.CimInstance]
+        $AllowGetOneLakeUDK,
+
+        [Parameter()]
+        [Microsoft.Management.Infrastructure.CimInstance]
         $AllowGuestLookup,
 
         [Parameter()]
         [Microsoft.Management.Infrastructure.CimInstance]
         $AllowGuestUserToAccessSharedContent,
+
+        [Parameter()]
+        [Microsoft.Management.Infrastructure.CimInstance]
+        $AllowMountDfCreation,
+
+        [Parameter()]
+        [Microsoft.Management.Infrastructure.CimInstance]
+        $AllowOneLakeUDK,
 
         [Parameter()]
         [Microsoft.Management.Infrastructure.CimInstance]
@@ -92,6 +104,10 @@ function Get-TargetResource
         [Parameter()]
         [Microsoft.Management.Infrastructure.CimInstance]
         $AppPush,
+
+        [Parameter()]
+        [Microsoft.Management.Infrastructure.CimInstance]
+        $ArtifactOrgAppPreview,
 
         [Parameter()]
         [Microsoft.Management.Infrastructure.CimInstance]
@@ -597,14 +613,18 @@ function Get-TargetResource
             AllowExternalDataSharingReceiverSwitch                                = Get-M365DSCFabricTenantSettingObject -Setting ($instance.tenantSettings | Where-Object -FilterScript { $_.settingName -eq 'AllowExternalDataSharingReceiverSwitch' })
             AllowExternalDataSharingSwitch                                        = Get-M365DSCFabricTenantSettingObject -Setting ($instance.tenantSettings | Where-Object -FilterScript { $_.settingName -eq 'AllowExternalDataSharingSwitch' })
             AllowFreeTrial                                                        = Get-M365DSCFabricTenantSettingObject -Setting ($instance.tenantSettings | Where-Object -FilterScript { $_.settingName -eq 'AllowFreeTrial' })
+            AllowGetOneLakeUDK                                                    = Get-M365DSCFabricTenantSettingObject -Setting ($instance.tenantSettings | Where-Object -FilterScript { $_.settingName -eq 'AllowGetOneLakeUDK' })
             AllowGuestLookup                                                      = Get-M365DSCFabricTenantSettingObject -Setting ($instance.tenantSettings | Where-Object -FilterScript { $_.settingName -eq 'AllowGuestLookup' })
             AllowGuestUserToAccessSharedContent                                   = Get-M365DSCFabricTenantSettingObject -Setting ($instance.tenantSettings | Where-Object -FilterScript { $_.settingName -eq 'AllowGuestUserToAccessSharedContent' })
+            AllowMountDfCreation                                                  = Get-M365DSCFabricTenantSettingObject -Setting ($instance.tenantSettings | Where-Object -FilterScript { $_.settingName -eq 'AllowMountDfCreation' })
+            AllowOneLakeUDK                                                       = Get-M365DSCFabricTenantSettingObject -Setting ($instance.tenantSettings | Where-Object -FilterScript { $_.settingName -eq 'AllowOneLakeUDK' })
             AllowPowerBIASDQOnTenant                                              = Get-M365DSCFabricTenantSettingObject -Setting ($instance.tenantSettings | Where-Object -FilterScript { $_.settingName -eq 'AllowPowerBIASDQOnTenant' })
             AllowSendAOAIDataToOtherRegions                                       = Get-M365DSCFabricTenantSettingObject -Setting ($instance.tenantSettings | Where-Object -FilterScript { $_.settingName -eq 'AllowSendAOAIDataToOtherRegions' })
             AllowSendNLToDaxDataToOtherRegions                                    = Get-M365DSCFabricTenantSettingObject -Setting ($instance.tenantSettings | Where-Object -FilterScript { $_.settingName -eq 'AllowSendNLToDaxDataToOtherRegions' })
             AllowServicePrincipalsCreateAndUseProfiles                            = Get-M365DSCFabricTenantSettingObject -Setting ($instance.tenantSettings | Where-Object -FilterScript { $_.settingName -eq 'AllowServicePrincipalsCreateAndUseProfiles' })
             AllowServicePrincipalsUseReadAdminAPIs                                = Get-M365DSCFabricTenantSettingObject -Setting ($instance.tenantSettings | Where-Object -FilterScript { $_.settingName -eq 'AllowServicePrincipalsUseReadAdminAPIs' })
             AppPush                                                               = Get-M365DSCFabricTenantSettingObject -Setting ($instance.tenantSettings | Where-Object -FilterScript { $_.settingName -eq 'AppPush' })
+            ArtifactOrgAppPreview                                                 = Get-M365DSCFabricTenantSettingObject -Setting ($instance.tenantSettings | Where-Object -FilterScript { $_.settingName -eq 'ArtifactOrgAppPreview' })
             ArtifactSearchTenant                                                  = Get-M365DSCFabricTenantSettingObject -Setting ($instance.tenantSettings | Where-Object -FilterScript { $_.settingName -eq 'ArtifactSearchTenant' })
             ASCollectQueryTextTelemetryTenantSwitch                               = Get-M365DSCFabricTenantSettingObject -Setting ($instance.tenantSettings | Where-Object -FilterScript { $_.settingName -eq 'ASCollectQueryTextTelemetryTenantSwitch' })
             ASShareableCloudConnectionBindingSecurityModeTenant                   = Get-M365DSCFabricTenantSettingObject -Setting ($instance.tenantSettings | Where-Object -FilterScript { $_.settingName -eq 'ASShareableCloudConnectionBindingSecurityModeTenant' })
@@ -798,11 +818,23 @@ function Set-TargetResource
 
         [Parameter()]
         [Microsoft.Management.Infrastructure.CimInstance]
+        $AllowGetOneLakeUDK,
+
+        [Parameter()]
+        [Microsoft.Management.Infrastructure.CimInstance]
         $AllowGuestLookup,
 
         [Parameter()]
         [Microsoft.Management.Infrastructure.CimInstance]
         $AllowGuestUserToAccessSharedContent,
+
+        [Parameter()]
+        [Microsoft.Management.Infrastructure.CimInstance]
+        $AllowMountDfCreation,
+
+        [Parameter()]
+        [Microsoft.Management.Infrastructure.CimInstance]
+        $AllowOneLakeUDK,
 
         [Parameter()]
         [Microsoft.Management.Infrastructure.CimInstance]
@@ -827,6 +859,10 @@ function Set-TargetResource
         [Parameter()]
         [Microsoft.Management.Infrastructure.CimInstance]
         $AppPush,
+
+        [Parameter()]
+        [Microsoft.Management.Infrastructure.CimInstance]
+        $ArtifactOrgAppPreview,
 
         [Parameter()]
         [Microsoft.Management.Infrastructure.CimInstance]
@@ -1353,11 +1389,23 @@ function Test-TargetResource
 
         [Parameter()]
         [Microsoft.Management.Infrastructure.CimInstance]
+        $AllowGetOneLakeUDK,
+
+        [Parameter()]
+        [Microsoft.Management.Infrastructure.CimInstance]
         $AllowGuestLookup,
 
         [Parameter()]
         [Microsoft.Management.Infrastructure.CimInstance]
         $AllowGuestUserToAccessSharedContent,
+
+        [Parameter()]
+        [Microsoft.Management.Infrastructure.CimInstance]
+        $AllowMountDfCreation,
+
+        [Parameter()]
+        [Microsoft.Management.Infrastructure.CimInstance]
+        $AllowOneLakeUDK,
 
         [Parameter()]
         [Microsoft.Management.Infrastructure.CimInstance]
@@ -1382,6 +1430,10 @@ function Test-TargetResource
         [Parameter()]
         [Microsoft.Management.Infrastructure.CimInstance]
         $AppPush,
+
+        [Parameter()]
+        [Microsoft.Management.Infrastructure.CimInstance]
+        $ArtifactOrgAppPreview,
 
         [Parameter()]
         [Microsoft.Management.Infrastructure.CimInstance]
@@ -1958,15 +2010,42 @@ function Export-TargetResource
         }
 
         $Results = Get-TargetResource @Params
-        $Results = Update-M365DSCExportAuthenticationResults -ConnectionMode $ConnectionMode `
-            -Results $Results
 
         $newResults = ([Hashtable]$Results).Clone()
-        foreach ($key in $Results.Keys)
+        foreach ($key in @($Results.Keys))
         {
             if ($null -ne $Results.$key -and $key -notin $params.Keys)
             {
-                $newResults.$key = Get-M365DSCFabricTenantSettingAsString -Setting $Results.$key
+                $complexTypeMapping = @(
+                    @{
+                        Name            = $key
+                        CIMInstanceName = 'FabricTenantSetting'
+                    },
+                    @{
+                        Name            = 'properties'
+                        CIMInstanceName = 'FabricTenantSettingProperty'
+                        IsArray         = $true
+                    }
+                )
+
+                if ($null -ne $Results.$key.enabledSecurityGroups)
+                {
+                    $Results.$key.enabledSecurityGroups = $Results.$key.enabledSecurityGroups -join ','
+                }
+
+                if ($null -ne $Results.$key.excludedSecurityGroups)
+                {
+                    $Results.$key.excludedSecurityGroups = $Results.$key.excludedSecurityGroups -join ','
+                }
+
+                $complexTypeStringResult = Get-M365DSCDRGComplexTypeToString `
+                    -ComplexObject $Results.$key `
+                    -CIMInstanceName 'FabricTenantSetting' `
+                    -ComplexTypeMapping $complexTypeMapping
+                if (-not [String]::IsNullOrEmpty($complexTypeStringResult))
+                {
+                    $Results.$key = $complexTypeStringResult
+                }
             }
         }
 
@@ -1975,32 +2054,16 @@ function Export-TargetResource
             -ModulePath $PSScriptRoot `
             -Results $newResults `
             -Credential $Credential
-        $fixQuotes = $false
-        foreach ($key in $Results.Keys)
-        {
-            if ($null -ne $Results.$key -and $key -notin $params.Keys)
-            {
-                if ($currentDSCBlock.Contains('`"'))
-                {
-                    $fixQuotes = $true
-                }
-                $currentDSCBlock = Convert-DSCStringParamToVariable -DSCBlock $currentDSCBlock `
-                    -ParameterName $key
-            }
-        }
-        if ($fixQuotes)
-        {
-            $currentDSCBlock = $currentDSCBlock.Replace('`', '"')
-        }
+
         $dscContent += $currentDSCBlock
         Save-M365DSCPartialExport -Content $currentDSCBlock `
             -FileName $Global:PartialExportFileName
-        Write-Host $Global:M365DSCEmojiGreenCheckMark
+        Write-M365DSCHost -Message $Global:M365DSCEmojiGreenCheckMark -CommitWrite
         return $dscContent
     }
     catch
     {
-        Write-Host $Global:M365DSCEmojiRedX
+        Write-M365DSCHost -Message $Global:M365DSCEmojiRedX -CommitWrite
 
         New-M365DSCLogEntry -Message 'Error during Export:' `
             -Exception $_ `
@@ -2010,63 +2073,6 @@ function Export-TargetResource
 
         return ''
     }
-}
-
-function Get-M365DSCFabricTenantSettingAsString
-{
-    [CmdletBinding()]
-    [OutputType([System.String])]
-    param(
-        [Parameter(Mandatory = $true)]
-        [System.Collections.Hashtable]
-        $Setting
-    )
-
-    $StringContent += "MSFT_FabricTenantSetting {`r`n"
-    $StringContent += "                settingName              = '" + $setting.settingName + "'`r`n"
-    if (-not [System.String]::IsNullOrEmpty($setting.canSpecifySecurityGroups))
-    {
-        $StringContent += "                canSpecifySecurityGroups = `$" + $setting.canSpecifySecurityGroups + "`r`n"
-    }
-    if (-not [System.String]::IsNullOrEmpty($setting.delegateToWorkspace))
-    {
-        $StringContent += "                delegateToWorkspace      = `$" + $setting.delegateToWorkspace + "`r`n"
-    }
-    if (-not [System.String]::IsNullOrEmpty($setting.delegatedFrom))
-    {
-        $StringContent += "                delegatedFrom            = '" + $setting.delegatedFrom + "'`r`n"
-    }
-    $StringContent += "                enabled                  = `$" + $setting.enabled + "`r`n"
-    if (-not [System.String]::IsNullOrEmpty($setting.tenantSettingGroup))
-    {
-        $StringContent += "                tenantSettingGroup       = '" + $setting.tenantSettingGroup + "'`r`n"
-    }
-    $StringContent += "                title                    = '" + $setting.title.Replace("'", "''") + "'`r`n"
-    if (-not [System.String]::IsNullOrEmpty($setting.properties))
-    {
-        $StringContent += '                properties               = @('
-        foreach ($property in $setting.properties)
-        {
-            $StringContent += "                    MSFT_FabricTenantSettingProperty{`r`n"
-            $StringContent += "                        name  = '$($property.name)'`r`n"
-            $StringContent += "                        value = '$($property.value.Replace("'", "''"))'`r`n"
-            $StringContent += "                        type  = '$($property.type)'`r`n"
-            $StringContent += "                    }`r`n"
-        }
-        $StringContent += ')'
-    }
-    if (-not [System.String]::IsNullOrEmpty($setting.excludedSecurityGroups))
-    {
-        $excludedSecurityGroupsValue = $setting.excludedSecurityGroups -join "','"
-        $StringContent += "                excludedSecurityGroups   = @('" + $excludedSecurityGroupsValue + "')`r`n"
-    }
-    if (-not [System.String]::IsNullOrEmpty($setting.enabledSecurityGroups))
-    {
-        $enabledSecurityGroupsValue = $setting.enabledSecurityGroups -join "','"
-        $StringContent += "                enabledSecurityGroups    = @('" + $enabledSecurityGroupsValue + "')`r`n"
-    }
-    $StringContent += "            }`r`n"
-    return $StringContent
 }
 
 function Get-M365DSCFabricTenantSettingObject
@@ -2088,7 +2094,7 @@ function Get-M365DSCFabricTenantSettingObject
     $values = @{
         settingName = $Setting.settingName
         enabled     = [Boolean]$Setting.enabled
-        title       = $Setting.title
+        title       = ($Setting.title -creplace '\P{IsBasicLatin}')
     }
     if (-not [System.String]::IsNullOrEmpty($Setting.canSpecifySecurityGroups))
     {
@@ -2104,7 +2110,7 @@ function Get-M365DSCFabricTenantSettingObject
     }
     if (-not [System.String]::IsNullOrEmpty($Setting.tenantSettingGroup))
     {
-        $values.Add('tenantSettingGroup', $Setting.tenantSettingGroup)
+        $values.Add('tenantSettingGroup',($Setting.tenantSettingGroup -creplace '\P{IsBasicLatin}'))
     }
     if ($null -ne $Setting.properties -and $Setting.properties.Length -gt 0)
     {

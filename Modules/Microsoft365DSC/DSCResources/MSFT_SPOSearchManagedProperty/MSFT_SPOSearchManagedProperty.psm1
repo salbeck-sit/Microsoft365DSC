@@ -128,7 +128,7 @@ function Get-TargetResource
     Write-Verbose -Message "Getting configuration for Managed Property instance $Name"
 
     $ConnectionMode = New-M365DSCConnection -Workload 'PnP' `
-        -InboundParameters $PSBoundParameters
+        -InboundParameters $PSBoundParameters -Url (Get-MSCloudLoginConnectionProfile -Workload PnP).AdminUrl
 
     #Ensure the proper dependencies are installed in the current environment.
     Confirm-M365DSCDependencies
@@ -383,7 +383,7 @@ function Set-TargetResource
     #endregion
 
     $ConnectionMode = New-M365DSCConnection -Workload 'PnP' `
-        -InboundParameters $PSBoundParameters
+        -InboundParameters $PSBoundParameters  -Url (Get-MSCloudLoginConnectionProfile -Workload PnP).AdminUrl
 
     if ($Ensure -eq 'Absent')
     {
@@ -913,7 +913,7 @@ function Export-TargetResource
     try
     {
         $ConnectionMode = New-M365DSCConnection -Workload 'PnP' `
-            -InboundParameters $PSBoundParameters
+            -InboundParameters $PSBoundParameters -Url (Get-MSCloudLoginConnectionProfile -Workload PnP).AdminUrl
 
         #Ensure the proper dependencies are installed in the current environment.
         Confirm-M365DSCDependencies
@@ -935,11 +935,11 @@ function Export-TargetResource
 
         if ($properties.Length -eq 0)
         {
-            Write-Host $Global:M365DSCEmojiGreenCheckMark
+            Write-M365DSCHost -Message $Global:M365DSCEmojiGreenCheckMark -CommitWrite
         }
         else
         {
-            Write-Host "`r`n" -NoNewline
+            Write-M365DSCHost -Message "`r`n" -DeferWrite
         }
         foreach ($property in $properties)
         {
@@ -948,7 +948,7 @@ function Export-TargetResource
                 $Global:M365DSCExportResourceInstancesCount++
             }
 
-            Write-Host "    |---[$i/$($properties.Length)] $($property.Value.Name)" -NoNewline
+            Write-M365DSCHost -Message "    |---[$i/$($properties.Length)] $($property.Value.Name)" -DeferWrite
             $Params = @{
                 Credential            = $Credential
                 Name                  = $property.Value.Name
@@ -964,11 +964,8 @@ function Export-TargetResource
             }
 
             $Results = Get-TargetResource @Params
-
             if ($Results -is [System.Collections.Hashtable] -and $Results.Count -gt 2)
             {
-                $Results = Update-M365DSCExportAuthenticationResults -ConnectionMode $ConnectionMode `
-                    -Results $Results
                 $currentDSCBlock = Get-M365DSCExportContentForResource -ResourceName $ResourceName `
                     -ConnectionMode $ConnectionMode `
                     -ModulePath $PSScriptRoot `
@@ -978,11 +975,11 @@ function Export-TargetResource
                 Save-M365DSCPartialExport -Content $currentDSCBlock `
                     -FileName $Global:PartialExportFileName
 
-                Write-Host $Global:M365DSCEmojiGreenCheckmark
+                Write-M365DSCHost -Message $Global:M365DSCEmojiGreenCheckMark -CommitWrite
             }
             else
             {
-                Write-Host $Global:M365DSCEmojiRedX
+                Write-M365DSCHost -Message $Global:M365DSCEmojiRedX -CommitWrite
             }
 
             $i++
@@ -991,7 +988,7 @@ function Export-TargetResource
     }
     catch
     {
-        Write-Host $Global:M365DSCEmojiRedX
+        Write-M365DSCHost -Message $Global:M365DSCEmojiRedX -CommitWrite
 
         New-M365DSCLogEntry -Message 'Error during Export:' `
             -Exception $_ `

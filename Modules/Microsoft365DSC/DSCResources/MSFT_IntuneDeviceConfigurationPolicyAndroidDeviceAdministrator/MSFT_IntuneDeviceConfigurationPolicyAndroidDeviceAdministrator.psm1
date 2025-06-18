@@ -291,12 +291,12 @@ function Get-TargetResource
             $getValue = $null
             if (-not [System.String]::IsNullOrEmpty($Id))
             {
-                $getValue = Get-MgBetaDeviceManagementDeviceConfiguration -DeviceConfigurationId $Id -ErrorAction SilentlyContinue
+                $getValue = Get-MgBetaDeviceManagementDeviceConfiguration -All -Filter "Id eq '$Id'" -ErrorAction SilentlyContinue
             }
 
             if ($null -eq $getValue)
             {
-                $getValue = Get-MgBetaDeviceManagementDeviceConfiguration -All -Filter "DisplayName eq '$Displayname'" -ErrorAction SilentlyContinue | Where-Object `
+                $getValue = Get-MgBetaDeviceManagementDeviceConfiguration -All -Filter "DisplayName eq '$($Displayname -replace "'", "''")'" -ErrorAction SilentlyContinue | Where-Object `
                     -FilterScript { `
                         $_.AdditionalProperties.'@odata.type' -eq '#microsoft.graph.androidGeneralDeviceConfiguration' `
                 }

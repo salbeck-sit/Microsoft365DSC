@@ -73,6 +73,10 @@
             RequiredVersion = '2.28.0'
         },
         @{
+            ModuleName      = 'Microsoft.Graph.Identity.SignIns'
+            RequiredVersion = '2.28.0'
+        },
+        @{
             ModuleName      = 'Microsoft.Graph.Beta.Reports'
             RequiredVersion = '2.28.0'
         },
@@ -122,7 +126,7 @@
         },
         @{
             ModuleName      = "MSCloudLoginAssistant"
-            RequiredVersion = "1.1.44"
+            RequiredVersion = "1.1.45"
         },
         @{
             ModuleName      = 'PnP.PowerShell'

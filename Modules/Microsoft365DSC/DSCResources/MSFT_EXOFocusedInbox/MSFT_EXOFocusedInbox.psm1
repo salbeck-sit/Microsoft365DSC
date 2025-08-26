@@ -1,3 +1,5 @@
+Confirm-M365DSCModuleDependency -ModuleName 'MSFT_EXOFocusedInbox'
+
 function Get-TargetResource
 {
     [CmdletBinding()]
@@ -65,7 +67,12 @@ function Get-TargetResource
     $nullResult.Ensure = 'Absent'
     try
     {
-        $instance = Get-FocusedInbox -Identity $Identity
+        $mailbox = Get-Mailbox -Identity $Identity -ErrorAction SilentlyContinue
+        if ($null -ne $mailbox)
+        {
+            $instance = Get-FocusedInbox -Identity $Identity
+        }
+
         if ($null -eq $instance)
         {
             return $nullResult
@@ -74,7 +81,8 @@ function Get-TargetResource
         $results = @{
             Identity                     = $Identity
             FocusedInboxOn               = [Boolean]$instance.FocusedInboxOn
-            FocusedInboxOnLastUpdateTime = [DateTime]$instance.FocusedInboxOnLastUpdateTime
+            # DEPRECATED
+            # FocusedInboxOnLastUpdateTime = [DateTime]$instance.FocusedInboxOnLastUpdateTime
             Ensure                       = 'Present'
             Credential                   = $Credential
             ApplicationId                = $ApplicationId
@@ -226,6 +234,7 @@ function Test-TargetResource
 
     $CurrentValues = Get-TargetResource @PSBoundParameters
     $ValuesToCheck = ([Hashtable]$PSBoundParameters).Clone()
+    $ValuesToCheck.Remove('FocusedInboxOnLastUpdateTime') | Out-Null
 
     Write-Verbose -Message "Current Values: $(Convert-M365DscHashtableToString -Hashtable $CurrentValues)"
     Write-Verbose -Message "Target Values: $(Convert-M365DscHashtableToString -Hashtable $ValuesToCheck)"
@@ -307,6 +316,11 @@ function Export-TargetResource
         }
         foreach ($config in $Script:exportedInstances)
         {
+            if ($null -ne $Global:M365DSCExportResourceInstancesCount)
+            {
+                $Global:M365DSCExportResourceInstancesCount++
+            }
+
             $displayedKey = $config.UserPrincipalName
             Write-M365DSCHost -Message "    |---[$i/$($Script:exportedInstances.Count)] $displayedKey" -DeferWrite
             $params = @{
@@ -349,3 +363,4 @@ function Export-TargetResource
 }
 
 Export-ModuleMember -Function *-TargetResource
+

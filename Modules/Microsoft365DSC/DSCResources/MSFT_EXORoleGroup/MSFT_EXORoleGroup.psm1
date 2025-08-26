@@ -1,3 +1,5 @@
+Confirm-M365DSCModuleDependency -ModuleName 'MSFT_EXORoleGroup'
+
 function Get-TargetResource
 {
     [CmdletBinding()]
@@ -358,11 +360,12 @@ function Test-TargetResource
         [System.String[]]
         $AccessTokens
     )
+
     #Ensure the proper dependencies are installed in the current environment.
     Confirm-M365DSCDependencies
 
     #region Telemetry
-    $ResourceName = $MyInvocation.MyCommand.ModuleName -replace 'MSFT_', ''
+    $ResourceName = $MyInvocation.MyCommand.ModuleName.Replace('MSFT_', '')
     $CommandName = $MyInvocation.MyCommand
     $data = Format-M365DSCTelemetryParameters -ResourceName $ResourceName `
         -CommandName $CommandName `
@@ -399,7 +402,14 @@ function Test-TargetResource
             $user = Get-User -Identity $member -ErrorAction 'SilentlyContinue'
             if ($null -ne $user)
             {
-                $newMembersValue += $user.UserPrincipalName
+                if ($member.Contains('@'))
+                {
+                    $newMembersValue += $user.UserPrincipalName
+                }
+                else
+                {
+                    $newMembersValue += $user.DisplayName
+                }
             }
             else
             {
@@ -556,4 +566,5 @@ function Export-TargetResource
 }
 
 Export-ModuleMember -Function *-TargetResource
+
 

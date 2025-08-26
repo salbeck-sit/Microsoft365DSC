@@ -1,3 +1,5 @@
+Confirm-M365DSCModuleDependency -ModuleName 'MSFT_EXOOrganizationConfig'
+
 function Get-TargetResource
 {
     [CmdletBinding()]
@@ -403,6 +405,10 @@ function Get-TargetResource
         $RecallReadMessagesEnabled,
 
         [Parameter()]
+        [System.Boolean]
+        $RejectDirectSend,
+
+        [Parameter()]
         [System.String[]]
         $RemotePublicFolderMailboxes,
 
@@ -610,6 +616,7 @@ function Get-TargetResource
             PublicFolderShowClientControl                             = $ConfigSettings.PublicFolderShowClientControl
             ReadTrackingEnabled                                       = $ConfigSettings.ReadTrackingEnabled
             RecallReadMessagesEnabled                                 = $ConfigSettings.RecallReadMessagesEnabled
+            RejectDirectSend                                          = $ConfigSettings.RejectDirectSend
             RemotePublicFolderMailboxes                               = $ConfigSettings.RemotePublicFolderMailboxes
             SendFromAliasEnabled                                      = $ConfigSettings.SendFromAliasEnabled
             SharedDomainEmailAddressFlowEnabled                       = $ConfigSettings.SharedDomainEmailAddressFlowEnabled
@@ -1066,6 +1073,10 @@ function Set-TargetResource
         [Parameter()]
         [System.Boolean]
         $RecallReadMessagesEnabled,
+
+        [Parameter()]
+        [System.Boolean]
+        $RejectDirectSend,
 
         [Parameter()]
         [System.String[]]
@@ -1589,6 +1600,10 @@ function Test-TargetResource
         $RecallReadMessagesEnabled,
 
         [Parameter()]
+        [System.Boolean]
+        $RejectDirectSend,
+
+        [Parameter()]
         [System.String[]]
         $RemotePublicFolderMailboxes,
 
@@ -1801,3 +1816,4 @@ function Export-TargetResource
 }
 
 Export-ModuleMember -Function *-TargetResource
+

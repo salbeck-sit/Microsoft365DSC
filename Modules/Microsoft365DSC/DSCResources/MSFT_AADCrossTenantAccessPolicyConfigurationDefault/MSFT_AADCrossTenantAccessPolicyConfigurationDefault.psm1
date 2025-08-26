@@ -1,3 +1,5 @@
+Confirm-M365DSCModuleDependency -ModuleName 'MSFT_AADCrossTenantAccessPolicyConfigurationDefault'
+
 function Get-TargetResource
 {
     [CmdletBinding()]
@@ -63,6 +65,8 @@ function Get-TargetResource
         $AccessTokens
     )
 
+    Write-Verbose -Message "Getting configuration of AzureAD Cross Tenant Access Policy Configuration Default"
+
     try
     {
         $ConnectionMode = New-M365DSCConnection -Workload 'MicrosoftGraph' `
@@ -94,24 +98,65 @@ function Get-TargetResource
         $B2BCollaborationInboundValue = $null
         if ($null -ne $getValue.B2BCollaborationInbound)
         {
-            $B2BCollaborationInboundValue = $getValue.B2BCollaborationInbound
+            $B2BCollaborationInboundValue = @{
+                Applications = @{
+                    AccessType = $getValue.B2BCollaborationInbound.Applications.AccessType
+                    Targets    = [System.Array]$getValue.B2BCollaborationInbound.Applications.Targets
+                }
+                UsersAndGroups =@{
+                    AccessType = $getValue.B2BCollaborationInbound.UsersAndGroups.AccessType
+                    Targets    = [System.Array] $getValue.B2BCollaborationInbound.UsersAndGroups.Targets
+                }
+            }
         }
         if ($null -ne $getValue.B2BCollaborationOutbound)
         {
-            $B2BCollaborationOutboundValue = $getValue.B2BCollaborationOutbound
+            $B2BCollaborationOutboundValue = @{
+                Applications = @{
+                    AccessType = $getValue.B2BCollaborationOutbound.Applications.AccessType
+                    Targets    = [System.Array] $getValue.B2BCollaborationOutbound.Applications.Targets
+                }
+                UsersAndGroups =@{
+                    AccessType = $getValue.B2BCollaborationOutbound.UsersAndGroups.AccessType
+                    Targets    = [System.Array] $getValue.B2BCollaborationOutbound.UsersAndGroups.Targets
+                }
+            }
         }
         if ($null -ne $getValue.B2BDirectConnectInbound)
         {
-            $B2BDirectConnectInboundValue = $getValue.B2BDirectConnectInbound
+            $B2BDirectConnectInboundValue = @{
+                Applications = @{
+                    AccessType = $getValue.B2BDirectConnectInbound.Applications.AccessType
+                    Targets    = [System.Array] $getValue.B2BDirectConnectInbound.Applications.Targets
+                }
+                UsersAndGroups =@{
+                    AccessType = $getValue.B2BDirectConnectInbound.UsersAndGroups.AccessType
+                    Targets    = [System.Array] $getValue.B2BDirectConnectInbound.UsersAndGroups.Targets
+                }
+            }
         }
         if ($null -ne $getValue.B2BDirectConnectOutbound)
         {
-            $B2BDirectConnectOutboundValue = $getValue.B2BDirectConnectOutbound
+            $B2BDirectConnectOutboundValue = @{
+                Applications = @{
+                    AccessType = $getValue.B2BDirectConnectOutbound.Applications.AccessType
+                    Targets    = [System.Array] $getValue.B2BDirectConnectOutbound.Applications.Targets
+                }
+                UsersAndGroups =@{
+                    AccessType = $getValue.B2BDirectConnectOutbound.UsersAndGroups.AccessType
+                    Targets    = [System.Array] $getValue.B2BDirectConnectOutbound.UsersAndGroups.Targets
+                }
+            }
         }
         if ($null -ne $getValue.InboundTrust)
         {
-            $InboundTrustValue = $getValue.InboundTrust
+            $InboundTrustValue = @{
+                IsCompliantDeviceAccepted           = $getValue.InboundTrust.IsCompliantDeviceAccepted
+                IsHybridAzureADJoinedDeviceAccepted = $getValue.InboundTrust.IsHybridAzureADJoinedDeviceAccepted
+                IsMfaAccepted                       = $getValue.InboundTrust.IsMfaAccepted
+            }
         }
+
         $results = @{
             IsSingleInstance         = 'Yes'
             B2BCollaborationInbound  = $B2BCollaborationInboundValue
@@ -206,6 +251,8 @@ function Set-TargetResource
         [System.String[]]
         $AccessTokens
     )
+
+    Write-Verbose -Message "Setting configuration of AzureAD Cross Tenant Access Policy Configuration Default"
 
     #Ensure the proper dependencies are installed in the current environment.
     Confirm-M365DSCDependencies
@@ -351,9 +398,6 @@ function Test-TargetResource
         $AccessTokens
     )
 
-    #Ensure the proper dependencies are installed in the current environment.
-    Confirm-M365DSCDependencies
-
     #region Telemetry
     $ResourceName = $MyInvocation.MyCommand.ModuleName.Replace('MSFT_', '')
     $CommandName = $MyInvocation.MyCommand
@@ -363,51 +407,9 @@ function Test-TargetResource
     Add-M365DSCTelemetryEvent -Data $data
     #endregion
 
-    Write-Verbose -Message "Testing configuration of the Azure AD Cross Tenant Access Policy Configuration Default"
-
-    $CurrentValues = Get-TargetResource @PSBoundParameters
-    $ValuesToCheck = ([Hashtable]$PSBoundParameters).clone()
-    $testResult = $true
-    $testTargetResource = $true
-
-    #Compare Cim instances
-    foreach ($key in $PSBoundParameters.Keys)
-    {
-        $source = $PSBoundParameters.$key
-        $target = $CurrentValues.$key
-        if ($source.getType().Name -like '*CimInstance*')
-        {
-            $source = Get-M365DSCDRGComplexTypeToHashtable -ComplexObject $source
-
-            $testResult = Compare-M365DSCComplexObject `
-                -Source ($source) `
-                -Target ($target)
-
-            if (-Not $testResult)
-            {
-                Write-Verbose -Message "Difference found for $key"
-                $testTargetResource = $false
-                break
-            }
-
-            $ValuesToCheck.Remove($key) | Out-Null
-
-        }
-    }
-
-    Write-Verbose -Message "Current Values: $(Convert-M365DscHashtableToString -Hashtable $CurrentValues)"
-    Write-Verbose -Message "Target Values: $(Convert-M365DscHashtableToString -Hashtable $ValuesToCheck)"
-    $testResult = Test-M365DSCParameterState -CurrentValues $CurrentValues `
-        -Source $($MyInvocation.MyCommand.Source) `
-        -DesiredValues $PSBoundParameters `
-        -ValuesToCheck $ValuesToCheck.Keys
-
-    if (-not $TestResult)
-    {
-        $testTargetResource = $false
-    }
-    Write-Verbose -Message "Test-TargetResource returned $testTargetResource"
-    return $testTargetResource
+    $result = Test-M365DSCTargetResource -DesiredValues $PSBoundParameters `
+                                         -ResourceName $($MyInvocation.MyCommand.Source).Replace('MSFT_', '')
+    return $result
 }
 
 function Export-TargetResource

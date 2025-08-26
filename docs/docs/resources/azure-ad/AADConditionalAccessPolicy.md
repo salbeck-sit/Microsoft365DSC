@@ -55,6 +55,7 @@
 | **TransferMethods** | Write | String | Names of the associated authentication flow transfer methods. Possible values are '', 'deviceCodeFlow', 'authenticationTransfer', or 'deviceCodeFlow,authenticationTransfer'. | |
 | **AuthenticationContexts** | Write | StringArray[] | Authentication context class references. | |
 | **InsiderRiskLevels** | Write | StringArray[] | Insider risk levels conditions. | `minor`, `moderate`, `elevated`, `unknownFutureValue` |
+| **ServicePrincipalRiskLevels** | Write | StringArray[] | Service principal risk levels included in the policy. | `low`, `medium`, `high`, `none`, `unknownFutureValue` |
 | **Ensure** | Write | String | Specify if the Azure AD CA Policy should exist or not. | `Present`, `Absent` |
 | **Credential** | Write | PSCredential | Credentials for the Microsoft Graph delegated permissions. | |
 | **ApplicationId** | Write | String | Id of the Azure Active Directory application to authenticate with. | |
@@ -195,8 +196,56 @@ Configuration Example
     }
 }
 ```
-
 ### Example 3
+
+This example is used to test new resources and showcase the usage of new resources being worked on.
+It is not meant to use as a production baseline.
+
+```powershell
+{
+    param(
+        [Parameter()]
+        [System.String]
+        $ApplicationId,
+
+        [Parameter()]
+        [System.String]
+        $TenantId,
+
+        [Parameter()]
+        [System.String]
+        $CertificateThumbprint
+    )
+
+    Import-DscResource -ModuleName 'Microsoft365DSC'
+
+    Node localhost
+    {
+        AADConditionalAccessPolicy "ConditionalAccessPolicy"
+        {
+            TenantId                                 = $tenantID;
+            ApplicationId                            = $ApplicationId;
+            CertificateThumbprint                    = $CertificateThumbprint;
+            BuiltInControls                          = @("block");
+            GrantControlOperator                     = "OR";
+            ClientAppTypes                           = @("all");
+            DisplayName                              = "Example CAP";
+            Ensure                                   = "Present";
+            IncludeApplications                      = @("All");
+            ExcludeApplications                      = @();
+            IncludeServicePrincipals                 = @();
+            ExcludeServicePrincipals                 = @();
+            IncludeUsers                             = @("None");
+            ExcludeUsers                             = @();
+            ServicePrincipalFilterMode               = "include";
+            ServicePrincipalFilterRule               = "CustomSecurityAttribute.custsecattr_apiPermLevel -eq `"high`"";
+	        ServicePrincipalRiskLevels               = @("high","medium");
+            State                                    = "disabled";
+        }
+    }
+}
+```
+### Example 4
 
 This example is used to test new resources and showcase the usage of new resources being worked on.
 It is not meant to use as a production baseline.

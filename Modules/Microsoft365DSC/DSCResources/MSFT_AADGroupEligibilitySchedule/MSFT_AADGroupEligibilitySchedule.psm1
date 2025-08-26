@@ -1,3 +1,5 @@
+Confirm-M365DSCModuleDependency -ModuleName 'MSFT_AADGroupEligibilitySchedule'
+
 function Get-TargetResource
 {
     [CmdletBinding()]
@@ -83,46 +85,54 @@ function Get-TargetResource
 
     try
     {
-        $ConnectionMode = New-M365DSCConnection -Workload 'MicrosoftGraph' `
-            -InboundParameters $PSBoundParameters
-
-        #Ensure the proper dependencies are installed in the current environment.
-        Confirm-M365DSCDependencies
-
-        #region Telemetry
-        $ResourceName = $MyInvocation.MyCommand.ModuleName.Replace('MSFT_', '')
-        $CommandName = $MyInvocation.MyCommand
-        $data = Format-M365DSCTelemetryParameters -ResourceName $ResourceName `
-            -CommandName $CommandName `
-            -Parameters $PSBoundParameters
-        Add-M365DSCTelemetryEvent -Data $data
-        #endregion
-
-        $nullResult = $PSBoundParameters
-        $nullResult.Ensure = 'Absent'
-
-        $getValue = $null
-        if($GroupId.Length -eq 0){
-            $Filter = "DisplayName eq '" + $GroupDisplayName + "'"
-            $GroupId = (Get-MgGroup -Filter $Filter).Id
-        }
-        if ($Id -notmatch '^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}_member_[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$') {
-            $getId = Get-MgBetaIdentityGovernancePrivilegedAccessGroupEligibilitySchedule `
-                -Filter "Groupid eq '$GroupId'" `
-                -ErrorAction SilentlyContinue
-                $Id = $getId.Id
-        }
-
-        $uri = "$((Get-MSCloudLoginConnectionProfile -Workload MicrosoftGraph).ResourceUrl)v1.0/identityGovernance/privilegedAccess/group/eligibilitySchedules/" + $Id
-        $getvalue = Invoke-GraphRequest -Uri $uri -Method Get -ErrorAction SilentlyContinue
-
-        #endregion
-        if ($null -eq $getValue)
+        if (-not $Script:exportedInstance)
         {
-            Write-Verbose -Message "Could not find an Azure AD Group Eligibility Schedule with {$GroupDisplayName}."
-            return $nullResult
+
+            $ConnectionMode = New-M365DSCConnection -Workload 'MicrosoftGraph' `
+                -InboundParameters $PSBoundParameters
+
+            #Ensure the proper dependencies are installed in the current environment.
+            Confirm-M365DSCDependencies
+
+            #region Telemetry
+            $ResourceName = $MyInvocation.MyCommand.ModuleName.Replace('MSFT_', '')
+            $CommandName = $MyInvocation.MyCommand
+            $data = Format-M365DSCTelemetryParameters -ResourceName $ResourceName `
+                -CommandName $CommandName `
+                -Parameters $PSBoundParameters
+            Add-M365DSCTelemetryEvent -Data $data
+            #endregion
+
+            $nullResult = $PSBoundParameters
+            $nullResult.Ensure = 'Absent'
+
+            $getValue = $null
+            if ([System.String]::IsNullOrEmpty($GroupId))
+            {
+                $Filter = "DisplayName eq '" + $GroupDisplayName + "'"
+                $Script:CurrentGroup = Get-MgGroup -Filter $Filter
+                $GroupId = $Script:CurrentGroup.Id
+            }
+            if ($Id -notmatch '^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}_member_[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$')
+            {
+                $getValue = Get-MgBetaIdentityGovernancePrivilegedAccessGroupEligibilitySchedule `
+                    -Filter "Groupid eq '$GroupId'" `
+                    -ErrorAction SilentlyContinue
+            }
+
+            #endregion
+            if ($null -eq $getValue)
+            {
+                Write-Verbose -Message "Could not find an Azure AD Group Eligibility Schedule with {$GroupDisplayName}."
+                return $nullResult
+            }
+        }
+        else
+        {
+            $getValue = $Script:exportedInstance
         }
         $Id = $getValue.Id
+
         Write-Verbose -Message "An Azure AD Group Eligibility Schedule with Id {$Id} and DisplayName {$GroupDisplayName} was found"
 
         #region resource generator code
@@ -225,10 +235,10 @@ function Get-TargetResource
        	switch ($getValue.PrincipalType)
        	{
        	    'group' {
-		$PrincipalDisplayName = (Get-MgGroup -GroupId $getvalue.PrincipalId).DisplayName
+		        $PrincipalDisplayName = (Get-MgGroup -GroupId $getvalue.PrincipalId).DisplayName
             }
        	    'user' {
-		$PrincipalDisplayName = (Get-MgUser -UserId $getvalue.PrincipalId).DisplayName
+		        $PrincipalDisplayName = (Get-MgUser -UserId $getvalue.PrincipalId).DisplayName
        	    }
        	    'unknown' {
 		        $objectInfo = Get-MgBetaDirectoryObjectById -Ids $getvalue.PrincipalId -ErrorAction SilentlyContinue
@@ -237,13 +247,11 @@ function Get-TargetResource
        	    }
        	}
 
-	$GroupDisplayName = (Get-MgGroup -GroupId $getvalue.GroupId).DisplayName
-
         $results = @{
             #region resource generator code
             AccessId              = $enumAccessId
             GroupId               = $getValue.groupId
-            GroupDisplayName      = $GroupDisplayName
+            GroupDisplayName      = $Script:CurrentGroup.DisplayName
             MemberType            = $enumMemberType
             PrincipalType         = $getValue.PrincipalType
             PrincipalDisplayname  = $PrincipalDisplayName
@@ -549,7 +557,7 @@ function Set-TargetResource
         $keys = (([Hashtable]$updateParameters).Clone()).Keys
         foreach ($key in $keys)
         {
-            if ($null -ne $pdateParameters.$key -and $updateParameters.$key.GetType().Name -like '*CimInstance*')
+            if ($null -ne $updateParameters.$key -and $updateParameters.$key.GetType().Name -like '*CimInstance*')
             {
                 $updateParameters.$key = Convert-M365DSCDRGComplexTypeToHashtable -ComplexObject $updateParameters.PrivilegedAccessGroupEligibilityScheduleId
             }
@@ -587,7 +595,7 @@ function Set-TargetResource
         $keys = (([Hashtable]$updateParameters).Clone()).Keys
         foreach ($key in $keys)
         {
-            if ($null -ne $pdateParameters.$key -and $updateParameters.$key.GetType().Name -like '*CimInstance*')
+            if ($null -ne $updateParameters.$key -and $updateParameters.$key.GetType().Name -like '*CimInstance*')
             {
                 $updateParameters.$key = Convert-M365DSCDRGComplexTypeToHashtable -ComplexObject $updateParameters.PrivilegedAccessGroupEligibilityScheduleId
             }
@@ -680,9 +688,6 @@ function Test-TargetResource
         $AccessTokens
     )
 
-    #Ensure the proper dependencies are installed in the current environment.
-    Confirm-M365DSCDependencies
-
     #region Telemetry
     $ResourceName = $MyInvocation.MyCommand.ModuleName.Replace('MSFT_', '')
     $CommandName = $MyInvocation.MyCommand
@@ -692,49 +697,9 @@ function Test-TargetResource
     Add-M365DSCTelemetryEvent -Data $data
     #endregion
 
-    Write-Verbose -Message "Testing configuration of the Azure AD Group Eligibility Schedule for Group {$GroupId} and DisplayName {$GroupDisplayName}"
-
-    $CurrentValues = Get-TargetResource @PSBoundParameters
-    $ValuesToCheck = ([Hashtable]$PSBoundParameters).clone()
-    $testResult = $true
-
-    #Compare Cim instances
-    foreach ($key in $PSBoundParameters.Keys)
-    {
-        $source = $PSBoundParameters.$key
-        $target = $CurrentValues.$key
-        if ($null -ne $source -and $source.GetType().Name -like '*CimInstance*')
-        {
-            $testResult = Compare-M365DSCComplexObject `
-                -Source ($source) `
-                -Target ($target)
-
-            if (-not $testResult)
-            {
-                break
-            }
-
-            $ValuesToCheck.Remove($key) | Out-Null
-        }
-    }
-
-    $ValuesToCheck.Remove('Id') | Out-Null
-    $ValuesToCheck = Remove-M365DSCAuthenticationParameter -BoundParameters $ValuesToCheck
-
-    Write-Verbose -Message "Current Values: $(Convert-M365DscHashtableToString -Hashtable $CurrentValues)"
-    Write-Verbose -Message "Target Values: $(Convert-M365DscHashtableToString -Hashtable $ValuesToCheck)"
-
-    if ($testResult)
-    {
-        $testResult = Test-M365DSCParameterState -CurrentValues $CurrentValues `
-            -Source $($MyInvocation.MyCommand.Source) `
-            -DesiredValues $PSBoundParameters `
-            -ValuesToCheck $ValuesToCheck.Keys
-    }
-
-    Write-Verbose -Message "Test-TargetResource returned $testResult"
-
-    return $testResult
+    $result = Test-M365DSCTargetResource -DesiredValues $PSBoundParameters `
+                                         -ResourceName $($MyInvocation.MyCommand.Source).Replace('MSFT_', '')
+    return $result
 }
 
 function Export-TargetResource
@@ -793,7 +758,6 @@ function Export-TargetResource
 
     try
     {
-
         $groups = Get-MgGroup -Filter "MailEnabled eq false and NOT(groupTypes/any(x:x eq 'DynamicMembership'))" -Property "displayname,Id" -CountVariable CountVar -All -ConsistencyLevel eventual -ErrorAction Stop
         $j = 1
         if ($groups.Length -eq 0)
@@ -806,15 +770,29 @@ function Export-TargetResource
         }
 
         $dscContent = ''
+        $batchRequests = @()
+        foreach ($group in $groups)
+        {
+            $batchRequests += @{
+                id = $group.Id
+                method = 'GET'
+                url = "/identityGovernance/privilegedAccess/group/eligibilitySchedules?`$filter=groupId eq '$($group.Id)'"
+            }
+        }
+
+        $batchResponses = @()
+        for ($i = 0; $i -lt $batchRequests.Count; $i += 20)
+        {
+            $batchRequestSized = $batchRequests[$i..([Math]::Min($i + 19, $batchRequests.Count - 1))]
+            $batchResponses += Invoke-M365DSCGraphBatchRequest -Requests $batchRequestSized
+        }
 
         foreach ($group in $groups)
         {
             Write-M365DSCHost -Message  "    |---[$j/$($groups.Count)] $($group.DisplayName)" -DeferWrite
             #region resource generator code
-            $getValue = Get-MgBetaIdentityGovernancePrivilegedAccessGroupEligibilitySchedule `
-                -Filter "groupId eq '$($group.Id)'" `
-                -All `
-                -ErrorAction SilentlyContinue
+            $getValue = ($batchResponses | Where-Object { $_.id -eq $group.Id }).body.value
+            $Script:CurrentGroup = $group
 
             $i = 1
 
@@ -835,6 +813,7 @@ function Export-TargetResource
                 Write-M365DSCHost -Message "        |---[$i/$($getValue.Count)] $($config.Id)" -DeferWrite
                 $params = @{
                     Id                    = $config.Id
+                    GroupId               = $group.Id
                     GroupDisplayName      = $group.DisplayName
                     Ensure                = 'Present'
                     Credential            = $Credential
@@ -846,6 +825,7 @@ function Export-TargetResource
                     AccessTokens          = $AccessTokens
                 }
 
+                $Script:exportedInstance = $config
                 $Results = Get-TargetResource @Params
 
                 if ($null -ne $Results.ScheduleInfo)
@@ -924,3 +904,4 @@ function Export-TargetResource
 }
 
 Export-ModuleMember -Function *-TargetResource
+

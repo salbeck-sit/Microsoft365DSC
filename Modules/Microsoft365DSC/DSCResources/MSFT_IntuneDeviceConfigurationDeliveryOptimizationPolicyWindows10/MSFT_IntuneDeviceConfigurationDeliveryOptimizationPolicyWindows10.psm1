@@ -1,3 +1,5 @@
+Confirm-M365DSCModuleDependency -ModuleName 'MSFT_IntuneDeviceConfigurationDeliveryOptimizationPolicyWindows10'
+
 function Get-TargetResource
 {
     [CmdletBinding()]
@@ -134,6 +136,8 @@ function Get-TargetResource
         [System.String[]]
         $AccessTokens
     )
+
+    Write-Warning -Message "This resource is deprecated and will be removed in a future release. Please use the IntuneDeviceConfigurationDeliveryOptimizationPolicyWindows10V2 resource instead."
 
     Write-Verbose -Message "Getting configuration of the Intune Device Configuration Delivery Optimization Policy for Windows10 with Id {$Id} and DisplayName {$DisplayName}"
 
@@ -475,6 +479,8 @@ function Set-TargetResource
         $AccessTokens
     )
 
+    Write-Warning -Message "This resource is deprecated and will be removed in a future release. Please use the IntuneDeviceConfigurationDeliveryOptimizationPolicyWindows10V2 resource instead."
+
     #Ensure the proper dependencies are installed in the current environment.
     Confirm-M365DSCDependencies
 
@@ -694,6 +700,8 @@ function Test-TargetResource
         [System.String[]]
         $AccessTokens
     )
+
+    Write-Warning -Message "This resource is deprecated and will be removed in a future release. Please use the IntuneDeviceConfigurationDeliveryOptimizationPolicyWindows10V2 resource instead."
 
     #Ensure the proper dependencies are installed in the current environment.
     Confirm-M365DSCDependencies

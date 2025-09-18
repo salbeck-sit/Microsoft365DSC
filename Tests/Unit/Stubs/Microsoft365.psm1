@@ -82939,7 +82939,10 @@ function Set-ProtectionAlert
         $PrivacyManagementScopedSensitiveInformationTypesThreshold
     )
 }
-function Set-RetentionCompliancePolicy
+
+#endregion
+#region MgDeviceManagementDeviceConfigurationAssignment
+function Get-MgDeviceManagementDeviceConfigurationAssignment
 {
     [CmdletBinding()]
     param(
@@ -83183,7 +83186,7 @@ function Set-RoleGroup
     param(
         [Parameter()]
         [System.String]
-        $Description,
+        $ComplianceManagementPartnerId,
 
         [Parameter()]
         [System.Management.Automation.SwitchParameter]
@@ -83243,7 +83246,8 @@ function Set-SupervisoryReviewPolicy
         $SamplingRate
     )
 }
-function Set-InsiderRiskEntityList
+
+function New-MgBetaDeviceManagementComplianceManagementPartner
 {
     [CmdletBinding()]
     param(
@@ -83252,12 +83256,20 @@ function Set-InsiderRiskEntityList
         $Identity,
 
         [Parameter()]
-        [System.Object[]]
-        $Entities,
+        [System.String]
+        $ResponseHeadersVariable,
 
         [Parameter()]
-        [System.String]
-        $Name,
+        [System.Collections.Hashtable]
+        $AdditionalProperties,
+
+        [Parameter()]
+        [PSObject[]]
+        $AndroidEnrollmentAssignments,
+
+        [Parameter()]
+        [switch]
+        $AndroidOnboarded,
 
         [Parameter()]
         [System.String]
@@ -83265,55 +83277,31 @@ function Set-InsiderRiskEntityList
 
         [Parameter()]
         [System.String]
-        $Description,
+        $Id,
 
         [Parameter()]
-        [System.Object[]]
-        $AddEntities,
+        [PSObject[]]
+        $IosEnrollmentAssignments,
 
         [Parameter()]
-        [System.Object[]]
-        $RemoveEntities
-    )
-}
-
-function New-InsiderRiskEntityList
-{
-    [CmdletBinding()]
-    param(
-        [Parameter()]
-        [System.String]
-        $Identity,
+        [switch]
+        $IosOnboarded,
 
         [Parameter()]
-        [System.Object[]]
-        $Entities,
+        [System.Datetime]
+        $LastHeartbeatDateTime,
 
         [Parameter()]
-        [System.String]
-        $Name,
+        [PSObject[]]
+        $MacOsEnrollmentAssignments,
 
         [Parameter()]
-        [System.String]
-        $DisplayName,
+        [switch]
+        $MacOsOnboarded,
 
         [Parameter()]
-        [System.String]
-        $Description,
-
-        [Parameter()]
-        [System.String]
-        $Type
-    )
-}
-
-function Remove-InsiderRiskEntityList
-{
-    [CmdletBinding()]
-    param(
-        [Parameter()]
-        [System.String]
-        $Identity,
+        [System.string]
+        $PartnerState,
 
         [Parameter()]
         [System.Management.Automation.SwitchParameter]
@@ -83327,57 +83315,55 @@ function Get-InsiderRiskEntityList
     param(
         [Parameter()]
         [System.String]
-        $Identity,
+        $ComplianceManagementPartnerId,
 
         [Parameter()]
         [System.String]
-        $Type
-    )
-}
-
-function Set-SupervisoryReviewPolicyV2
-{
-    [CmdletBinding()]
-    param(
-        [Parameter()]
-        [System.String[]]
-        $AddReviewers,
+        $IfMatch,
 
         [Parameter()]
-        [System.Int32]
-        $RetentionPeriodInDays,
-
-        [Parameter()]
-        [System.Management.Automation.SwitchParameter]
-        $Confirm,
-
-        [Parameter()]
-        [System.String]
-        $Comment,
-
-        [Parameter()]
-        [System.String[]]
-        $UserReportingWorkloads,
-
-        [Parameter()]
-        [System.String[]]
-        $RemoveReviewers,
-
-        [Parameter()]
-        [System.Object]
-        $Identity,
+        [PSObject]
+        $InputObject,
 
         [Parameter()]
         [System.Boolean]
         $Enabled,
 
         [Parameter()]
-        [System.String[]]
-        $Reviewers,
+        [System.Management.Automation.SwitchParameter]
+        $Break,
+
+        [Parameter()]
+        [System.Collections.IDictionary]
+        $Headers,
+
+        [Parameter()]
+        [PSObject[]]
+        $HttpPipelineAppend,
+
+        [Parameter()]
+        [PSObject[]]
+        $HttpPipelinePrepend,
 
         [Parameter()]
         [System.Management.Automation.SwitchParameter]
-        $Force
+        $PassThru,
+
+        [Parameter()]
+        [System.Uri]
+        $Proxy,
+
+        [Parameter()]
+        [System.Management.Automation.PSCredential]
+        $ProxyCredential,
+
+        [Parameter()]
+        [System.Management.Automation.SwitchParameter]
+        $ProxyUseDefaultCredentials,
+
+        [Parameter()]
+        [System.Management.Automation.SwitchParameter]
+        $Confirm
     )
 }
 function Set-SupervisoryReviewRule

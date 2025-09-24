@@ -1489,12 +1489,6 @@
           "False",
           "Null"
         ]
-      },
-      {
-        "CIMType": "String",
-        "Description": "DEPRECATED",
-        "Name": "RequireClientServicePrincipal",
-        "Option": "Write"
       }
     ],
     "Description": "This resource configures an Azure Active Directory Application."
@@ -1668,12 +1662,6 @@
         "CIMType": "String",
         "Description": "AppId for the app.",
         "Name": "AppId",
-        "Option": "Write"
-      },
-      {
-        "CIMType": "Boolean",
-        "Description": "DEPRECATED: Indicates whether this application is available in other tenants.",
-        "Name": "AvailableToOtherTenants",
         "Option": "Write"
       },
       {
@@ -2576,24 +2564,6 @@
       },
       {
         "CIMType": "String",
-        "Description": "The state of migration of the authentication methods policy from the legacy multifactor authentication and self-service password reset (SSPR) policies. The possible values are: premigration - means the authentication methods policy is used for authentication only, legacy policies are respected. migrationInProgress - means the authentication methods policy is used for both authentication and SSPR, legacy policies are respected. migrationComplete - means the authentication methods policy is used for authentication and SSPR, legacy policies are ignored. unknownFutureValue - Evolvable enumeration sentinel value. Do not use.",
-        "Name": "PolicyMigrationState",
-        "Option": "Write",
-        "ValueMap": [
-          "preMigration",
-          "migrationInProgress",
-          "migrationComplete",
-          "unknownFutureValue"
-        ],
-        "Values": [
-          "preMigration",
-          "migrationInProgress",
-          "migrationComplete",
-          "unknownFutureValue"
-        ]
-      },
-      {
-        "CIMType": "String",
         "Description": "The version of the policy in use.",
         "Name": "PolicyVersion",
         "Option": "Write"
@@ -2704,12 +2674,6 @@
         "CIMType": "MSFT_MicrosoftGraphAuthenticationMethodFeatureConfiguration",
         "Description": "Determines whether the user's Authenticator app will show them the geographic location of where the authentication request originated from.",
         "Name": "DisplayLocationInformationRequiredState",
-        "Option": "Write"
-      },
-      {
-        "CIMType": "MSFT_MicrosoftGraphAuthenticationMethodFeatureConfiguration",
-        "Description": "Specifies whether the user needs to enter a number in the Authenticator app from the login screen to complete their login. Value is ignored for phone sign-in notifications.",
-        "Name": "NumberMatchingRequiredState",
         "Option": "Write"
       }
     ],
@@ -6612,7 +6576,15 @@
         "CIMType": "String",
         "Description": "Specifies whether the custom security attribute is active or deactivated. Acceptable values are Available and Deprecated. Can be changed later.",
         "Name": "Status",
-        "Option": "Write"
+        "Option": "Write",
+        "ValueMap": [
+          "Available",
+          "Deprecated"
+        ],
+        "Values": [
+          "Available",
+          "Deprecated"
+        ]
       },
       {
         "CIMType": "String",
@@ -6952,84 +6924,6 @@
       }
     ],
     "Description": "Configures custom domain names in Entra Id."
-  },
-  {
-    "ClassName": "MSFT_AADEnrichedAuditLogs",
-    "Parameters": [
-      {
-        "CIMType": "String",
-        "Description": "Only valid value is 'Yes'.",
-        "Name": "IsSingleInstance",
-        "Option": "Key",
-        "ValueMap": [
-          "Yes"
-        ],
-        "Values": [
-          "Yes"
-        ]
-      },
-      {
-        "CIMType": "String",
-        "Description": "Accepted values are enabled or disabled.",
-        "Name": "Exchange",
-        "Option": "Write"
-      },
-      {
-        "CIMType": "String",
-        "Description": "Accepted values are enabled or disabled.",
-        "Name": "SharePoint",
-        "Option": "Write"
-      },
-      {
-        "CIMType": "String",
-        "Description": "Accepted values are enabled or disabled.",
-        "Name": "Teams",
-        "Option": "Write"
-      },
-      {
-        "CIMType": "MSFT_Credential",
-        "Description": "Credentials of the workload's Admin",
-        "Name": "Credential",
-        "Option": "Write"
-      },
-      {
-        "CIMType": "String",
-        "Description": "Id of the Azure Active Directory application to authenticate with.",
-        "Name": "ApplicationId",
-        "Option": "Write"
-      },
-      {
-        "CIMType": "String",
-        "Description": "Id of the Azure Active Directory tenant used for authentication.",
-        "Name": "TenantId",
-        "Option": "Write"
-      },
-      {
-        "CIMType": "MSFT_Credential",
-        "Description": "Secret of the Azure Active Directory tenant used for authentication.",
-        "Name": "ApplicationSecret",
-        "Option": "Write"
-      },
-      {
-        "CIMType": "String",
-        "Description": "Thumbprint of the Azure Active Directory application's authentication certificate to use for authentication.",
-        "Name": "CertificateThumbprint",
-        "Option": "Write"
-      },
-      {
-        "CIMType": "Boolean",
-        "Description": "Managed ID being used for authentication.",
-        "Name": "ManagedIdentity",
-        "Option": "Write"
-      },
-      {
-        "CIMType": "String[]",
-        "Description": "Access token used for authentication.",
-        "Name": "AccessTokens",
-        "Option": "Write"
-      }
-    ],
-    "Description": "DEPRECATED - This resource has been deprecated and is no longer supported."
   },
   {
     "ClassName": "MSFT_AccessPackageResourceRoleScope",
@@ -22008,12 +21902,6 @@
         "Option": "Write"
       },
       {
-        "CIMType": "DateTime",
-        "Description": "Gets the last updated time on focused inbox",
-        "Name": "FocusedInboxOnLastUpdateTime",
-        "Option": "Write"
-      },
-      {
         "CIMType": "String",
         "Description": "Specify if the AcceptedDomain should exist or not.",
         "Name": "Ensure",
@@ -22855,12 +22743,6 @@
       },
       {
         "CIMType": "Boolean",
-        "Description": "The EnableEndUserSpamNotification parameter enables for disables sending end-user spam quarantine notification messages. Valid input for this parameter is $true or $false. The default value is $false.",
-        "Name": "EnableEndUserSpamNotifications",
-        "Option": "Write"
-      },
-      {
-        "CIMType": "Boolean",
         "Description": "The EnableLanguageBlockList parameter enables or disables blocking email messages that are written in specific languages, regardless of the message contents. Valid input for this parameter is $true or $false. The default value is $false.",
         "Name": "EnableLanguageBlockList",
         "Option": "Write"
@@ -22870,150 +22752,6 @@
         "Description": "The EnableRegionBlockList parameter enables or disables blocking email messages that are sent from specific countries or regions, regardless of the message contents. Valid input for this parameter is $true or $false. The default value is $false.",
         "Name": "EnableRegionBlockList",
         "Option": "Write"
-      },
-      {
-        "CIMType": "String",
-        "Description": "The EndUserSpamNotificationCustomSubject parameter specifies a custom subject for end-user spam notification messages.",
-        "Name": "EndUserSpamNotificationCustomSubject",
-        "Option": "Write"
-      },
-      {
-        "CIMType": "UInt32",
-        "Description": "The EndUserSpamNotificationFrequency parameter specifies the repeat interval in days that end-user spam notification messages are sent. Valid input for this parameter is an integer between 1 and 15. The default value is 3.",
-        "Name": "EndUserSpamNotificationFrequency",
-        "Option": "Write"
-      },
-      {
-        "CIMType": "String",
-        "Description": "The EndUserSpamNotificationLanguage parameter specifies the language of end-user spam notification messages. The default value is Default. This means the default language of end-user spam notification messages is the default language of the cloud-based organization.",
-        "Name": "EndUserSpamNotificationLanguage",
-        "Option": "Write",
-        "ValueMap": [
-          "Default",
-          "English",
-          "French",
-          "German",
-          "Italian",
-          "Japanese",
-          "Spanish",
-          "Korean",
-          "Portuguese",
-          "Russian",
-          "ChineseSimplified",
-          "ChineseTraditional",
-          "Amharic",
-          "Arabic",
-          "Bulgarian",
-          "BengaliIndia",
-          "Catalan",
-          "Czech",
-          "Cyrillic",
-          "Danish",
-          "Greek",
-          "Estonian",
-          "Basque",
-          "Farsi",
-          "Finnish",
-          "Filipino",
-          "Galician",
-          "Gujarati",
-          "Hebrew",
-          "Hindi",
-          "Croatian",
-          "Hungarian",
-          "Indonesian",
-          "Icelandic",
-          "Kazakh",
-          "Kannada",
-          "Lithuanian",
-          "Latvian",
-          "Malayalam",
-          "Marathi",
-          "Malay",
-          "Dutch",
-          "NorwegianNynorsk",
-          "Norwegian",
-          "Oriya",
-          "Polish",
-          "PortuguesePortugal",
-          "Romanian",
-          "Slovak",
-          "Slovenian",
-          "SerbianCyrillic",
-          "Serbian",
-          "Swedish",
-          "Swahili",
-          "Tamil",
-          "Telugu",
-          "Thai",
-          "Turkish",
-          "Ukrainian",
-          "Urdu",
-          "Vietnamese"
-        ],
-        "Values": [
-          "Default",
-          "English",
-          "French",
-          "German",
-          "Italian",
-          "Japanese",
-          "Spanish",
-          "Korean",
-          "Portuguese",
-          "Russian",
-          "ChineseSimplified",
-          "ChineseTraditional",
-          "Amharic",
-          "Arabic",
-          "Bulgarian",
-          "BengaliIndia",
-          "Catalan",
-          "Czech",
-          "Cyrillic",
-          "Danish",
-          "Greek",
-          "Estonian",
-          "Basque",
-          "Farsi",
-          "Finnish",
-          "Filipino",
-          "Galician",
-          "Gujarati",
-          "Hebrew",
-          "Hindi",
-          "Croatian",
-          "Hungarian",
-          "Indonesian",
-          "Icelandic",
-          "Kazakh",
-          "Kannada",
-          "Lithuanian",
-          "Latvian",
-          "Malayalam",
-          "Marathi",
-          "Malay",
-          "Dutch",
-          "NorwegianNynorsk",
-          "Norwegian",
-          "Oriya",
-          "Polish",
-          "PortuguesePortugal",
-          "Romanian",
-          "Slovak",
-          "Slovenian",
-          "SerbianCyrillic",
-          "Serbian",
-          "Swedish",
-          "Swahili",
-          "Tamil",
-          "Telugu",
-          "Thai",
-          "Turkish",
-          "Ukrainian",
-          "Urdu",
-          "Vietnamese"
-        ]
       },
       {
         "CIMType": "String",
@@ -31784,12 +31522,6 @@
         ]
       },
       {
-        "CIMType": "Boolean",
-        "Description": "The ActionOnError parameter specifies the error handling option for Safe Attachments scanning (what to do if scanning times out or an error occurs). Valid values are: $true: The action specified by the Action parameter is applied to messages even when the attachments aren't successfully scanned. $false: The action specified by the Action parameter isn't applied to messages when the attachments aren't successfully scanned. This is the default value.",
-        "Name": "ActionOnError",
-        "Option": "Write"
-      },
-      {
         "CIMType": "String",
         "Description": "The AdminDisplayName parameter specifies a description for the policy.",
         "Name": "AdminDisplayName",
@@ -33542,12 +33274,6 @@
         "Option": "Write"
       },
       {
-        "CIMType": "Boolean",
-        "Description": "The ApplyOME parameter specifies an action that encrypts messages and their attachments by using Office 365 Message Encryption.",
-        "Name": "ApplyOME",
-        "Option": "Write"
-      },
-      {
         "CIMType": "String",
         "Description": "The ApplyRightsProtectionCustomizationTemplate parameter specifies an action that applies a custom branding template for OME encrypted messages.",
         "Name": "ApplyRightsProtectionCustomizationTemplate",
@@ -33870,12 +33596,6 @@
         "Option": "Write"
       },
       {
-        "CIMType": "Boolean",
-        "Description": "DEPRECATED",
-        "Name": "ExceptIfHasSenderOverride",
-        "Option": "Write"
-      },
-      {
         "CIMType": "String",
         "Description": "The ExceptIfHeaderContainsMessageHeader parameter specifies the name of header field in the message header when searching for the words specified by the ExceptIfHeaderContainsWords parameter.",
         "Name": "ExceptIfHeaderContainsMessageHeader",
@@ -33938,12 +33658,6 @@
           "ApprovalRequest",
           "ReadReceipt"
         ]
-      },
-      {
-        "CIMType": "String[]",
-        "Description": "DEPRECATED",
-        "Name": "ExceptIfMessageContainsDataClassifications",
-        "Option": "Write"
       },
       {
         "CIMType": "String",
@@ -34176,12 +33890,6 @@
         "Option": "Write"
       },
       {
-        "CIMType": "Boolean",
-        "Description": "DEPRECATED",
-        "Name": "HasSenderOverride",
-        "Option": "Write"
-      },
-      {
         "CIMType": "String",
         "Description": "The HeaderContainsMessageHeader parameter specifies the name of header field in the message header when searching for the words specified by the HeaderContainsWords parameter.",
         "Name": "HeaderContainsMessageHeader",
@@ -34230,12 +33938,6 @@
           "Recipient",
           "Sender"
         ]
-      },
-      {
-        "CIMType": "String[]",
-        "Description": "DEPRECATED",
-        "Name": "MessageContainsDataClassifications",
-        "Option": "Write"
       },
       {
         "CIMType": "String",
@@ -34298,26 +34000,6 @@
         "Description": "The ModerateMessageByUser parameter specifies an action that forwards messages for approval to the specified users.",
         "Name": "ModerateMessageByUser",
         "Option": "Write"
-      },
-      {
-        "CIMType": "String",
-        "Description": "DEPRECATED",
-        "Name": "NotifySender",
-        "Option": "Write",
-        "ValueMap": [
-          "NotifyOnly",
-          "RejectMessage",
-          "RejectUnlessFalsePositiveOverride",
-          "RejectUnlessSilentOverride",
-          "RejectUnlessExplicitOverride"
-        ],
-        "Values": [
-          "NotifyOnly",
-          "RejectMessage",
-          "RejectUnlessFalsePositiveOverride",
-          "RejectUnlessSilentOverride",
-          "RejectUnlessExplicitOverride"
-        ]
       },
       {
         "CIMType": "String",
@@ -34409,12 +34091,6 @@
         "CIMType": "String",
         "Description": "The RemoveHeader parameter specifies an action that removes a header field from the message header.",
         "Name": "RemoveHeader",
-        "Option": "Write"
-      },
-      {
-        "CIMType": "Boolean",
-        "Description": "The RemoveOME parameter specifies an action that removes the previous version of Office 365 Message Encryption from messages and their attachments.",
-        "Name": "RemoveOME",
         "Option": "Write"
       },
       {
@@ -36241,318 +35917,6 @@
       }
     ],
     "Description": "This resource configures a Intune Account Protection Local User Group Membership policy."
-  },
-  {
-    "ClassName": "MSFT_IntuneAccountProtectionPolicyAssignments",
-    "Parameters": [
-      {
-        "CIMType": "String",
-        "Description": "The type of the target assignment.",
-        "Name": "dataType",
-        "Option": "Write",
-        "ValueMap": [
-          "#microsoft.graph.groupAssignmentTarget",
-          "#microsoft.graph.allLicensedUsersAssignmentTarget",
-          "#microsoft.graph.allDevicesAssignmentTarget",
-          "#microsoft.graph.exclusionGroupAssignmentTarget",
-          "#microsoft.graph.configurationManagerCollectionAssignmentTarget"
-        ],
-        "Values": [
-          "#microsoft.graph.groupAssignmentTarget",
-          "#microsoft.graph.allLicensedUsersAssignmentTarget",
-          "#microsoft.graph.allDevicesAssignmentTarget",
-          "#microsoft.graph.exclusionGroupAssignmentTarget",
-          "#microsoft.graph.configurationManagerCollectionAssignmentTarget"
-        ]
-      },
-      {
-        "CIMType": "String",
-        "Description": "The type of filter of the target assignment i.e. Exclude or Include. Possible values are:none, include, exclude.",
-        "Name": "deviceAndAppManagementAssignmentFilterType",
-        "Option": "Write",
-        "ValueMap": [
-          "none",
-          "include",
-          "exclude"
-        ],
-        "Values": [
-          "none",
-          "include",
-          "exclude"
-        ]
-      },
-      {
-        "CIMType": "String",
-        "Description": "The Id of the filter for the target assignment.",
-        "Name": "deviceAndAppManagementAssignmentFilterId",
-        "Option": "Write"
-      },
-      {
-        "CIMType": "String",
-        "Description": "The display name of the filter for the target assignment.",
-        "Name": "deviceAndAppManagementAssignmentFilterDisplayName",
-        "Option": "Write"
-      },
-      {
-        "CIMType": "String",
-        "Description": "The group Id that is the target of the assignment.",
-        "Name": "groupId",
-        "Option": "Write"
-      },
-      {
-        "CIMType": "String",
-        "Description": "The group Display Name that is the target of the assignment.",
-        "Name": "groupDisplayName",
-        "Option": "Write"
-      },
-      {
-        "CIMType": "String",
-        "Description": "The collection Id that is the target of the assignment.(ConfigMgr)",
-        "Name": "collectionId",
-        "Option": "Write"
-      }
-    ],
-    "Description": "This resource configures a Intune Account Protection policy."
-  },
-  {
-    "ClassName": "MSFT_IntuneAccountProtectionPolicy",
-    "Parameters": [
-      {
-        "CIMType": "String",
-        "Description": "Identity of the account protection policy.",
-        "Name": "Identity",
-        "Option": "Write"
-      },
-      {
-        "CIMType": "String",
-        "Description": "Display name of the account protection rules policy.",
-        "Name": "DisplayName",
-        "Option": "Key"
-      },
-      {
-        "CIMType": "String",
-        "Description": "Description of the account protection rules policy.",
-        "Name": "Description",
-        "Option": "Write"
-      },
-      {
-        "CIMType": "String[]",
-        "Description": "List of Scope Tags for this Entity instance.",
-        "Name": "RoleScopeTagIds",
-        "Option": "Write"
-      },
-      {
-        "CIMType": "MSFT_IntuneAccountProtectionPolicyAssignments[]",
-        "Description": "Assignments of the Intune Policy.",
-        "Name": "Assignments",
-        "Option": "Write"
-      },
-      {
-        "CIMType": "String",
-        "Description": "Block Windows Hello for Business.",
-        "Name": "WindowsHelloForBusinessBlocked",
-        "Option": "Write",
-        "ValueMap": [
-          "notConfigured",
-          "true",
-          "false"
-        ],
-        "Values": [
-          "notConfigured",
-          "true",
-          "false"
-        ]
-      },
-      {
-        "CIMType": "UInt32",
-        "Description": "Minimum PIN length must be between 4 and 127. (4-127)",
-        "Name": "PinMinimumLength",
-        "Option": "Write"
-      },
-      {
-        "CIMType": "UInt32",
-        "Description": "Maximum PIN length must be between 4 and 127. (4-127)",
-        "Name": "PinMaximumLength",
-        "Option": "Write"
-      },
-      {
-        "CIMType": "String",
-        "Description": "If required, user PIN must include at least one lowercase letter.",
-        "Name": "PinLowercaseCharactersUsage",
-        "Option": "Write",
-        "ValueMap": [
-          "notConfigured",
-          "blocked",
-          "required",
-          "allowed"
-        ],
-        "Values": [
-          "notConfigured",
-          "blocked",
-          "required",
-          "allowed"
-        ]
-      },
-      {
-        "CIMType": "String",
-        "Description": "If required, user PIN must include at least one uppercase letter.",
-        "Name": "PinUppercaseCharactersUsage",
-        "Option": "Write",
-        "ValueMap": [
-          "notConfigured",
-          "blocked",
-          "required",
-          "allowed"
-        ],
-        "Values": [
-          "notConfigured",
-          "blocked",
-          "required",
-          "allowed"
-        ]
-      },
-      {
-        "CIMType": "String",
-        "Description": "If required, user PIN must include at least one special character.",
-        "Name": "PinSpecialCharactersUsage",
-        "Option": "Write",
-        "ValueMap": [
-          "notConfigured",
-          "blocked",
-          "required",
-          "allowed"
-        ],
-        "Values": [
-          "notConfigured",
-          "blocked",
-          "required",
-          "allowed"
-        ]
-      },
-      {
-        "CIMType": "UInt32",
-        "Description": "If configured, the user will be forced to change their PIN after the set number of days. (0, 730), 0 = Never",
-        "Name": "PinExpirationInDays",
-        "Option": "Write"
-      },
-      {
-        "CIMType": "UInt32",
-        "Description": "If configured, the user will not be able to reuse this number of previous PINs. (0, 50), 0 = Do not remember.",
-        "Name": "PinPreviousBlockCount",
-        "Option": "Write"
-      },
-      {
-        "CIMType": "Boolean",
-        "Description": "If enabled, the PIN recovery secret will be stored on the device and the user can change their PIN if needed. If disabled or not configured, the recovery secret will not be created or stored.",
-        "Name": "PinRecoveryEnabled",
-        "Option": "Write"
-      },
-      {
-        "CIMType": "Boolean",
-        "Description": "If you enable this policy setting, only devices with a usable TPM provision Windows Hello for Business. If you disable or do not configure this policy setting, the TPM is still preferred, but all devices provision Windows Hello for Business.",
-        "Name": "SecurityDeviceRequired",
-        "Option": "Write"
-      },
-      {
-        "CIMType": "Boolean",
-        "Description": "If allowed, Windows Hello for Business can authenticate using gestures, such as face and fingerprint. Users must still configure a PIN in case of failure.",
-        "Name": "UnlockWithBiometricsEnabled",
-        "Option": "Write"
-      },
-      {
-        "CIMType": "Boolean",
-        "Description": "If enabled, devices will use enhanced anti-spoofing, when available. If not configured, the client configuration for anti-spoofing will be honored.",
-        "Name": "EnhancedAntiSpoofingForFacialFeaturesEnabled",
-        "Option": "Write"
-      },
-      {
-        "CIMType": "Boolean",
-        "Description": "If configured, Windows Hello for Business can use certificates to authenticate to on-premise resources.",
-        "Name": "UseCertificatesForOnPremisesAuthEnabled",
-        "Option": "Write"
-      },
-      {
-        "CIMType": "Boolean",
-        "Description": "Enable Windows Hello security key as a logon credential for all PCs in the tenant.",
-        "Name": "UseSecurityKeyForSignin",
-        "Option": "Write"
-      },
-      {
-        "CIMType": "String",
-        "Description": "Setting this Disable will disable the use of Credential Guard, which is the Windows default. Setting this to Enable with UEFI lock will enable Credential Guard and not allow it to be disabled remotely, as the UEFI persisted configuration must be manually cleared. Setting this to Enable without UEFI lock will enable Credential Guard and allow it to be turned off without physical access to the machine.",
-        "Name": "DeviceGuardLocalSystemAuthorityCredentialGuardSettings",
-        "Option": "Write",
-        "ValueMap": [
-          "notConfigured",
-          "disable",
-          "enableWithUEFILock",
-          "enableWithoutUEFILock"
-        ],
-        "Values": [
-          "notConfigured",
-          "disable",
-          "enableWithUEFILock",
-          "enableWithoutUEFILock"
-        ]
-      },
-      {
-        "CIMType": "string",
-        "Description": "Present ensures the site collection exists, absent ensures it is removed",
-        "Name": "Ensure",
-        "Option": "Write",
-        "ValueMap": [
-          "Present",
-          "Absent"
-        ],
-        "Values": [
-          "Present",
-          "Absent"
-        ]
-      },
-      {
-        "CIMType": "MSFT_Credential",
-        "Description": "Credentials of the Intune Admin",
-        "Name": "Credential",
-        "Option": "Write"
-      },
-      {
-        "CIMType": "String",
-        "Description": "Id of the Azure Active Directory application to authenticate with.",
-        "Name": "ApplicationId",
-        "Option": "Write"
-      },
-      {
-        "CIMType": "String",
-        "Description": "Name of the Azure Active Directory tenant used for authentication. Format contoso.onmicrosoft.com",
-        "Name": "TenantId",
-        "Option": "Write"
-      },
-      {
-        "CIMType": "MSFT_Credential",
-        "Description": "Secret of the Azure Active Directory tenant used for authentication.",
-        "Name": "ApplicationSecret",
-        "Option": "Write"
-      },
-      {
-        "CIMType": "String",
-        "Description": "Thumbprint of the Azure Active Directory application's authentication certificate to use for authentication.",
-        "Name": "CertificateThumbprint",
-        "Option": "Write"
-      },
-      {
-        "CIMType": "Boolean",
-        "Description": "Managed ID being used for authentication.",
-        "Name": "ManagedIdentity",
-        "Option": "Write"
-      },
-      {
-        "CIMType": "String[]",
-        "Description": "Access token used for authentication.",
-        "Name": "AccessTokens",
-        "Option": "Write"
-      }
-    ],
-    "Description": "This resource configures a Intune Account Protection policy."
   },
   {
     "ClassName": "MSFT_DeviceManagementConfigurationPolicyAssignments",
@@ -44445,92 +43809,6 @@
       }
     ],
     "Description": "This resource configures the Intune device categories."
-  },
-  {
-    "ClassName": "MSFT_IntuneDeviceCleanupRule",
-    "Parameters": [
-      {
-        "CIMType": "String",
-        "Description": "Only valid value is 'Yes'.",
-        "Name": "IsSingleInstance",
-        "Option": "Key",
-        "ValueMap": [
-          "Yes"
-        ],
-        "Values": [
-          "Yes"
-        ]
-      },
-      {
-        "CIMType": "Boolean",
-        "Description": "Indicates whether the cleanup rule is enabled.",
-        "Name": "Enabled",
-        "Option": "Key"
-      },
-      {
-        "CIMType": "UInt32",
-        "Description": "Number of days until Intune devices are deleted. Minimum: 30, Maximum: 270.",
-        "Name": "DeviceInactivityBeforeRetirementInDays",
-        "Option": "Write"
-      },
-      {
-        "CIMType": "string",
-        "Description": "Present ensures the category exists, absent ensures it is removed.",
-        "Name": "Ensure",
-        "Option": "Write",
-        "ValueMap": [
-          "Present",
-          "Absent"
-        ],
-        "Values": [
-          "Present",
-          "Absent"
-        ]
-      },
-      {
-        "CIMType": "MSFT_Credential",
-        "Description": "Credentials of the Intune Admin",
-        "Name": "Credential",
-        "Option": "Write"
-      },
-      {
-        "CIMType": "String",
-        "Description": "Id of the Azure Active Directory application to authenticate with.",
-        "Name": "ApplicationId",
-        "Option": "Write"
-      },
-      {
-        "CIMType": "String",
-        "Description": "Id of the Azure Active Directory tenant used for authentication.",
-        "Name": "TenantId",
-        "Option": "Write"
-      },
-      {
-        "CIMType": "MSFT_Credential",
-        "Description": "Secret of the Azure Active Directory tenant used for authentication.",
-        "Name": "ApplicationSecret",
-        "Option": "Write"
-      },
-      {
-        "CIMType": "String",
-        "Description": "Thumbprint of the Azure Active Directory application's authentication certificate to use for authentication.",
-        "Name": "CertificateThumbprint",
-        "Option": "Write"
-      },
-      {
-        "CIMType": "Boolean",
-        "Description": "Managed ID being used for authentication.",
-        "Name": "ManagedIdentity",
-        "Option": "Write"
-      },
-      {
-        "CIMType": "String[]",
-        "Description": "Access token used for authentication.",
-        "Name": "AccessTokens",
-        "Option": "Write"
-      }
-    ],
-    "Description": "This resource configures the Intune device cleanup rule."
   },
   {
     "ClassName": "MSFT_IntuneDeviceCleanupRuleV2",
@@ -62655,7 +61933,7 @@
     "Description": "Intune Device Configuration Policy for Windows10"
   },
   {
-    "ClassName": "MSFT_IntuneDeviceConfigurationScepCertificatePolicyWindows10",
+    "ClassName": "MSFT_IntuneDeviceConfigurationSCEPCertificatePolicyWindows10",
     "Parameters": [
       {
         "CIMType": "String",
@@ -104307,6 +103585,82 @@
     "Description": "Intune Windows Autopilot Deployment Profile Azure AD Joined"
   },
   {
+    "ClassName": "MSFT_IntuneWindowsBackupForOrganizationConfiguration",
+    "Parameters": [
+      {
+        "CIMType": "String",
+        "Description": "Only valid value is 'Yes'.",
+        "Name": "IsSingleInstance",
+        "Option": "Key",
+        "ValueMap": [
+          "Yes"
+        ],
+        "Values": [
+          "Yes"
+        ]
+      },
+      {
+        "CIMType": "String",
+        "Description": "Indicates the configuration state of the Windows Restore setting. Possible values are 'notConfigured', 'enabled', and 'disabled'. Default is: notConfigured. This is a tenant level default setting that is not targetable. This property's value is applied during Enrollment. Possible values are: notConfigured, enabled, disabled.",
+        "Name": "State",
+        "Option": "Write",
+        "ValueMap": [
+          "notConfigured",
+          "enabled",
+          "disabled"
+        ],
+        "Values": [
+          "notConfigured",
+          "enabled",
+          "disabled"
+        ]
+      },
+      {
+        "CIMType": "MSFT_Credential",
+        "Description": "Credentials of the Admin",
+        "Name": "Credential",
+        "Option": "Write"
+      },
+      {
+        "CIMType": "String",
+        "Description": "Id of the Azure Active Directory application to authenticate with.",
+        "Name": "ApplicationId",
+        "Option": "Write"
+      },
+      {
+        "CIMType": "String",
+        "Description": "Id of the Azure Active Directory tenant used for authentication.",
+        "Name": "TenantId",
+        "Option": "Write"
+      },
+      {
+        "CIMType": "MSFT_Credential",
+        "Description": "Secret of the Azure Active Directory tenant used for authentication.",
+        "Name": "ApplicationSecret",
+        "Option": "Write"
+      },
+      {
+        "CIMType": "String",
+        "Description": "Thumbprint of the Azure Active Directory application's authentication certificate to use for authentication.",
+        "Name": "CertificateThumbprint",
+        "Option": "Write"
+      },
+      {
+        "CIMType": "Boolean",
+        "Description": "Managed ID being used for authentication.",
+        "Name": "ManagedIdentity",
+        "Option": "Write"
+      },
+      {
+        "CIMType": "String[]",
+        "Description": "Access token used for authentication.",
+        "Name": "AccessTokens",
+        "Option": "Write"
+      }
+    ],
+    "Description": "Intune Windows Backup For Organization Configuration\n\n**Attention**: Can only be updated using the delegated `Credentials` authentication method."
+  },
+  {
     "ClassName": "MSFT_IntuneWindowsHelloForBusinessGlobalPolicy",
     "Parameters": [
       {
@@ -106581,12 +105935,6 @@
       },
       {
         "CIMType": "Boolean",
-        "Description": "Specifies whether or not to let people in your organization receive Briefing email from Microsoft Viva.",
-        "Name": "MicrosoftVivaBriefingEmail",
-        "Option": "Write"
-      },
-      {
-        "CIMType": "Boolean",
         "Description": "Specifies whether or not to allow users to have access to use the Viva Insights web experience.",
         "Name": "VivaInsightsWebExperience",
         "Option": "Write"
@@ -106859,12 +106207,6 @@
         "CIMType": "Boolean",
         "Description": "Enable guest acess for OneDrive",
         "Name": "OneDriveForGuestsEnabled",
-        "Option": "Write"
-      },
-      {
-        "CIMType": "Boolean",
-        "Description": "DEPRECATED",
-        "Name": "NotifyOwnersWhenInvitationsAccepted",
         "Option": "Write"
       },
       {
@@ -118634,12 +117976,6 @@
         ]
       },
       {
-        "CIMType": "boolean",
-        "Description": "DEPRECATED",
-        "Name": "RequireAcceptingAccountMatchInvitedAccount",
-        "Option": "Write"
-      },
-      {
         "CIMType": "String",
         "Description": "Only accepted value is 'Present'.",
         "Name": "Ensure",
@@ -119911,12 +119247,6 @@
         "CIMType": "boolean",
         "Description": "Lets SharePoint issue a special cookie that will allow this feature to work even when Keep Me Signed In is not selected.",
         "Name": "UsePersistentCookiesForExplorerView",
-        "Option": "Write"
-      },
-      {
-        "CIMType": "boolean",
-        "Description": "Allow feedback via UserVoice.",
-        "Name": "UserVoiceForFeedbackEnabled",
         "Option": "Write"
       },
       {
@@ -123063,12 +122393,6 @@
       },
       {
         "CIMType": "Boolean",
-        "Description": "DEPRECATED",
-        "Name": "AllowPublicUsers",
-        "Option": "Write"
-      },
-      {
-        "CIMType": "Boolean",
         "Description": "Allows federation with people using Teams with an account that's not managed by an organization.",
         "Name": "AllowTeamsConsumer",
         "Option": "Write"
@@ -125095,12 +124419,6 @@
       },
       {
         "CIMType": "String",
-        "Description": "DEPRECATED",
-        "Name": "ForceStreamingAttendeeMode",
-        "Option": "Write"
-      },
-      {
-        "CIMType": "String",
         "Description": "Present ensures the policy exists, absent ensures it is removed.",
         "Name": "Ensure",
         "Option": "Write",
@@ -126150,12 +125468,6 @@
         "Option": "Write"
       },
       {
-        "CIMType": "Boolean",
-        "Description": "Determines whether a user is given shift-based presence (On shift, Off shift, or Busy). This must be set in order to have any off shift warning message-specific settings.",
-        "Name": "EnableShiftPresence",
-        "Option": "Write"
-      },
-      {
         "CIMType": "String",
         "Description": "Determines the frequency of warning dialog displayed when user opens Teams.",
         "Name": "ShiftNoticeFrequency",
@@ -126579,7 +125891,7 @@
       },
       {
         "CIMType": "Boolean",
-        "Description": "If True, the result of applying this rule will be a number internal to the organization. If False, applying the rule results in an external number. This value is ignored if the value of the OptimizeDeviceDialing property of the associated dial plan is set to False.",
+        "Description": "If True, the result of applying this rule will be a number internal to the organization. If False, applying the rule results in an external number.",
         "Name": "IsInternalExtension",
         "Option": "Write"
       }
@@ -126605,18 +125917,6 @@
         "CIMType": "MSFT_TeamsVoiceNormalizationRule[]",
         "Description": "List of normalization rules that are applied to this dial plan.",
         "Name": "NormalizationRules",
-        "Option": "Write"
-      },
-      {
-        "CIMType": "String",
-        "Description": "The ExternalAccessPrefix parameter is a number (or set of numbers) that designates the call as external to the organization. (For example, to tenant-dial an outside line, first press 9.) This prefix is ignored by the normalization rules, although these rules are applied to the remainder of the number. The OptimizeDeviceDialing parameter must be set to True for this value to take effect. This parameter must match the regular expression [0-9]{1,4}: that is, it must be a value 0 through 9 and one to four digits in length. The default value is 9.",
-        "Name": "ExternalAccessPrefix",
-        "Option": "Write"
-      },
-      {
-        "CIMType": "Boolean",
-        "Description": "Specifies if the dial plan should optimize device dialing or not.",
-        "Name": "OptimizeDeviceDialing",
         "Option": "Write"
       },
       {

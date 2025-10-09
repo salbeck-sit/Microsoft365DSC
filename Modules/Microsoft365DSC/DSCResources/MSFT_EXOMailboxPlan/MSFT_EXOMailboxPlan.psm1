@@ -6,11 +6,11 @@ function Get-TargetResource
     [OutputType([System.Collections.Hashtable])]
     param
     (
-        [Parameter(Mandatory = $true)]
+        [Parameter()]
         [System.String]
         $Identity,
 
-        [Parameter()]
+        [Parameter(Mandatory = $true)]
         [System.String]
         $DisplayName,
 
@@ -138,7 +138,7 @@ function Get-TargetResource
 
         $result = @{
             Ensure                   = 'Present'
-            Identity                 = $Identity
+            Identity                 = $MailboxPlan.Identity
             DisplayName              = $MailboxPlan.DisplayName
             IssueWarningQuota        = $MailboxPlan.IssueWarningQuota
             MaxReceiveSize           = $MailboxPlan.MaxReceiveSize
@@ -179,11 +179,11 @@ function Set-TargetResource
     [CmdletBinding()]
     param
     (
-        [Parameter(Mandatory = $true)]
+        [Parameter()]
         [System.String]
         $Identity,
 
-        [Parameter()]
+        [Parameter(Mandatory = $true)]
         [System.String]
         $DisplayName,
 
@@ -277,11 +277,20 @@ function Set-TargetResource
     $updateParameters = Remove-M365DSCAuthenticationParameter -BoundParameters $PSBoundParameters
     $updateParameters.Remove('DisplayName') | Out-Null
 
-    $MailboxPlan = Get-MailboxPlan -Identity $Identity
+    if (-not [string]::IsNullOrEmpty($DisplayName))
+    {
+        $getId = $DisplayName
+    }
+    else
+    {
+        $getId = $Identity
+    }
+    $MailboxPlan = Get-MailboxPlan -Identity $getId
+    if (-not $MailboxPlan)
 
     if ($null -ne $MailboxPlan)
     {
-        Write-Verbose -Message "Setting MailboxPlan $Identity with values: $(Convert-M365DscHashtableToString -Hashtable $updateParameters)"
+        Write-Verbose -Message "Setting MailboxPlan $getId with values: $(Convert-M365DscHashtableToString -Hashtable $updateParameters)"
         Set-MailboxPlan @updateParameters
     }
     else
@@ -296,11 +305,11 @@ function Test-TargetResource
     [OutputType([System.Boolean])]
     param
     (
-        [Parameter(Mandatory = $true)]
+        [Parameter()]
         [System.String]
         $Identity,
 
-        [Parameter()]
+        [Parameter(Mandatory = $true)]
         [System.String]
         $DisplayName,
 

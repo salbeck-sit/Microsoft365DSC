@@ -35,5 +35,17 @@
   ],
   "supportedEnvironments": [
     "Global"
+  ],
+  "mode": "Configuration",
+  "commands": [
+    {
+      "module": "Microsoft.Graph.Beta.Identity.Governance",
+      "cmdlets": [
+        "Get-MgBetaProgram",
+        "New-MgBetaProgram",
+        "Remove-MgBetaProgram",
+        "Update-MgBetaProgram"
+      ]
+    }
   ]
 }

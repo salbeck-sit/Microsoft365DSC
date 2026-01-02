@@ -8,7 +8,7 @@ function Get-TargetResource
     (
         [Parameter(Mandatory = $true)]
         [ValidateSet('Yes')]
-        [String]
+        [System.String]
         $IsSingleInstance,
 
         [Parameter()]
@@ -16,21 +16,16 @@ function Get-TargetResource
         $Identity = 'Default',
 
         [Parameter()]
-        [Boolean]
+        [System.Boolean]
         $AllowSafeDocsOpen = $false,
 
         [Parameter()]
-        [Boolean]
+        [System.Boolean]
         $EnableATPForSPOTeamsODB = $false,
 
         [Parameter()]
-        [Boolean]
+        [System.Boolean]
         $EnableSafeDocs = $false,
-
-        [Parameter()]
-        [ValidateSet('Present')]
-        [System.String]
-        $Ensure = 'Present',
 
         [Parameter()]
         [System.Management.Automation.PSCredential]
@@ -67,65 +62,59 @@ function Get-TargetResource
 
     Write-Verbose -Message "Getting configuration of AtpPolicyForO365 for $Identity"
 
-    if ($Global:CurrentModeIsExport)
-    {
-        $null = New-M365DSCConnection -Workload 'ExchangeOnline' `
-            -InboundParameters $PSBoundParameters `
-            -SkipModuleReload $true
-    }
-    else
-    {
-        $null = New-M365DSCConnection -Workload 'ExchangeOnline' `
-            -InboundParameters $PSBoundParameters
-    }
-
-    #Ensure the proper dependencies are installed in the current environment.
-    Confirm-M365DSCDependencies
-
-    #region Telemetry
-    $ResourceName = $MyInvocation.MyCommand.ModuleName -replace 'MSFT_', ''
-    $CommandName = $MyInvocation.MyCommand
-    $data = Format-M365DSCTelemetryParameters -ResourceName $ResourceName `
-        -CommandName $CommandName `
-        -Parameters $PSBoundParameters
-    Add-M365DSCTelemetryEvent -Data $data
-    #endregion
-
-    $nullReturn = @{
-        IsSingleInstance = 'Yes'
-    }
-
     try
     {
-        $AtpPolicies = Get-AtpPolicyForO365 -ErrorAction Stop
-
-        $AtpPolicyForO365 = $AtpPolicies | Where-Object -FilterScript { $_.Identity -eq $Identity }
-        if (-not $AtpPolicyForO365)
+        if (-not $Script:exportedInstance)
         {
-            Write-Verbose -Message "AtpPolicyForO365 $($Identity) does not exist."
-            return $nullReturn
+            $null = New-M365DSCConnection -Workload 'ExchangeOnline' `
+                -InboundParameters $PSBoundParameters
+
+            #Ensure the proper dependencies are installed in the current environment.
+            Confirm-M365DSCDependencies
+
+            #region Telemetry
+            $ResourceName = $MyInvocation.MyCommand.ModuleName -replace 'MSFT_', ''
+            $CommandName = $MyInvocation.MyCommand
+            $data = Format-M365DSCTelemetryParameters -ResourceName $ResourceName `
+                -CommandName $CommandName `
+                -Parameters $PSBoundParameters
+            Add-M365DSCTelemetryEvent -Data $data
+            #endregion
+
+            $nullReturn = @{
+                IsSingleInstance = 'Yes'
+            }
+
+            $AtpPolicyForO365 = Get-AtpPolicyForO365 -Identity $Identity -ErrorAction SilentlyContinue
+            if (-not $AtpPolicyForO365)
+            {
+                Write-Verbose -Message "AtpPolicyForO365 $($Identity) does not exist."
+                return $nullReturn
+            }
         }
         else
         {
-            $result = @{
-                IsSingleInstance        = 'Yes'
-                Identity                = $AtpPolicyForO365.Identity
-                AllowSafeDocsOpen       = $AtpPolicyForO365.AllowSafeDocsOpen
-                EnableATPForSPOTeamsODB = $AtpPolicyForO365.EnableATPForSPOTeamsODB
-                EnableSafeDocs          = $AtpPolicyForO365.EnableSafeDocs
-                ApplicationId           = $ApplicationId
-                CertificateThumbprint   = $CertificateThumbprint
-                CertificatePath         = $CertificatePath
-                CertificatePassword     = $CertificatePassword
-                ManagedIdentity         = $ManagedIdentity.IsPresent
-                TenantId                = $TenantId
-                AccessTokens            = $AccessTokens
-            }
-
-            Write-Verbose -Message "Found AtpPolicyForO365 $($Identity)"
-            Write-Verbose -Message "Get-TargetResource Result: `n $(Convert-M365DscHashtableToString -Hashtable $result)"
-            return $result
+            $AtpPolicyForO365 = $Script:exportedInstance
         }
+
+        Write-Verbose -Message "Found AtpPolicyForO365 $($Identity)"
+
+        $result = @{
+            IsSingleInstance        = 'Yes'
+            Identity                = $AtpPolicyForO365.Identity
+            AllowSafeDocsOpen       = $AtpPolicyForO365.AllowSafeDocsOpen
+            EnableATPForSPOTeamsODB = $AtpPolicyForO365.EnableATPForSPOTeamsODB
+            EnableSafeDocs          = $AtpPolicyForO365.EnableSafeDocs
+            ApplicationId           = $ApplicationId
+            CertificateThumbprint   = $CertificateThumbprint
+            CertificatePath         = $CertificatePath
+            CertificatePassword     = $CertificatePassword
+            ManagedIdentity         = $ManagedIdentity.IsPresent
+            TenantId                = $TenantId
+            AccessTokens            = $AccessTokens
+        }
+
+        return $result
     }
     catch
     {
@@ -146,7 +135,7 @@ function Set-TargetResource
     (
         [Parameter(Mandatory = $true)]
         [ValidateSet('Yes')]
-        [String]
+        [System.String]
         $IsSingleInstance,
 
         [Parameter()]
@@ -154,21 +143,16 @@ function Set-TargetResource
         $Identity = 'Default',
 
         [Parameter()]
-        [Boolean]
+        [System.Boolean]
         $AllowSafeDocsOpen = $false,
 
         [Parameter()]
-        [Boolean]
+        [System.Boolean]
         $EnableATPForSPOTeamsODB = $false,
 
         [Parameter()]
-        [Boolean]
+        [System.Boolean]
         $EnableSafeDocs = $false,
-
-        [Parameter()]
-        [ValidateSet('Present')]
-        [System.String]
-        $Ensure = 'Present',
 
         [Parameter()]
         [System.Management.Automation.PSCredential]
@@ -240,7 +224,7 @@ function Test-TargetResource
     (
         [Parameter(Mandatory = $true)]
         [ValidateSet('Yes')]
-        [String]
+        [System.String]
         $IsSingleInstance,
 
         [Parameter()]
@@ -248,21 +232,16 @@ function Test-TargetResource
         $Identity = 'Default',
 
         [Parameter()]
-        [Boolean]
+        [System.Boolean]
         $AllowSafeDocsOpen = $false,
 
         [Parameter()]
-        [Boolean]
+        [System.Boolean]
         $EnableATPForSPOTeamsODB = $false,
 
         [Parameter()]
-        [Boolean]
+        [System.Boolean]
         $EnableSafeDocs = $false,
-
-        [Parameter()]
-        [ValidateSet('Present')]
-        [System.String]
-        $Ensure = 'Present',
 
         [Parameter()]
         [System.Management.Automation.PSCredential]
@@ -296,11 +275,9 @@ function Test-TargetResource
         [System.String[]]
         $AccessTokens
     )
-    #Ensure the proper dependencies are installed in the current environment.
-    Confirm-M365DSCDependencies
 
     #region Telemetry
-    $ResourceName = $MyInvocation.MyCommand.ModuleName -replace 'MSFT_', ''
+    $ResourceName = $MyInvocation.MyCommand.ModuleName.Replace('MSFT_', '')
     $CommandName = $MyInvocation.MyCommand
     $data = Format-M365DSCTelemetryParameters -ResourceName $ResourceName `
         -CommandName $CommandName `
@@ -308,24 +285,9 @@ function Test-TargetResource
     Add-M365DSCTelemetryEvent -Data $data
     #endregion
 
-    Write-Verbose -Message "Testing configuration of AtpPolicyForO365 for $Identity"
-
-    $CurrentValues = Get-TargetResource @PSBoundParameters
-
-    Write-Verbose -Message "Current Values: $(Convert-M365DscHashtableToString -Hashtable $CurrentValues)"
-    Write-Verbose -Message "Target Values: $(Convert-M365DscHashtableToString -Hashtable $PSBoundParameters)"
-
-    $ValuesToCheck = $PSBoundParameters
-    $ValuesToCheck.Remove('Ensure') | Out-Null
-
-    $TestResult = Test-M365DSCParameterState -CurrentValues $CurrentValues `
-        -Source $($MyInvocation.MyCommand.Source) `
-        -DesiredValues $PSBoundParameters `
-        -ValuesToCheck $ValuesToCheck.Keys
-
-    Write-Verbose -Message "Test-TargetResource returned $TestResult"
-
-    return $TestResult
+    $result = Test-M365DSCTargetResource -DesiredValues $PSBoundParameters `
+                                         -ResourceName $($MyInvocation.MyCommand.Source).Replace('MSFT_', '')
+    return $result
 }
 
 function Export-TargetResource
@@ -420,6 +382,7 @@ function Export-TargetResource
                     CertificatePath       = $CertificatePath
                     AccessTokens          = $AccessTokens
                 }
+                $Script:exportedInstance = $atpPolicy
                 $Results = Get-TargetResource @Params
                 if ($Results -is [System.Collections.Hashtable] -and $Results.Count -gt 1)
                 {

@@ -39,5 +39,15 @@
   ],
   "supportedEnvironments": [
     "Global"
+  ],
+  "mode": "Configuration",
+  "commands": [
+    {
+      "module": "Microsoft.Graph.Beta.NetworkAccess",
+      "cmdlets": [
+        "Get-MgBetaNetworkAccessSettingConditionalAccess",
+        "Update-MgBetaNetworkAccessSettingConditionalAccess"
+      ]
+    }
   ]
 }

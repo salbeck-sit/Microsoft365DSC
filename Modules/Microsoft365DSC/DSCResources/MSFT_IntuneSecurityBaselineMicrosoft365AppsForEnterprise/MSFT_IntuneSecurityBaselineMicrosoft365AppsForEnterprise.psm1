@@ -138,7 +138,7 @@ function Get-TargetResource
         $policySettings = Export-IntuneSettingCatalogPolicySettings -Settings $settings -ReturnHashtable $policySettings -ContainsDeviceAndUserSettings
 
         #region resource generator code
-        $complexDeviceSettings = @{}
+        $complexDeviceSettings = [ordered]@{}
         $complexDeviceSettings.Add('Pol_SecGuide_A001_Block_Flash', $policySettings.DeviceSettings.pol_SecGuide_A001_Block_Flash)
         $complexDeviceSettings.Add('Pol_SecGuide_Block_Flash', $policySettings.DeviceSettings.pol_SecGuide_Block_Flash)
         $complexDeviceSettings.Add('Pol_SecGuide_Legacy_JScript', $policySettings.DeviceSettings.pol_SecGuide_Legacy_JScript)
@@ -354,7 +354,7 @@ function Get-TargetResource
         }
         $policySettings.Remove('DeviceSettings') | Out-Null
 
-        $complexUserSettings = @{}
+        $complexUserSettings = [ordered]@{}
         $complexUserSettings.Add('MicrosoftAccess_Security_TrustCenter_L_BlockMacroExecutionFromInternet', $policySettings.UserSettings.microsoftAccess_Security_TrustCenter_L_BlockMacroExecutionFromInternet)
         $complexUserSettings.Add('MicrosoftAccess_Security_TrustCenter_L_DisableTrustBarNotificationforunsigned', $policySettings.UserSettings.microsoftAccess_Security_TrustCenter_L_DisableTrustBarNotificationforunsigned)
         $complexUserSettings.Add('MicrosoftAccess_Security_TrustCenter_L_RequirethatApplicationExtensionsaresigned', $policySettings.UserSettings.microsoftAccess_Security_TrustCenter_L_RequirethatApplicationExtensionsaresigned)
@@ -859,9 +859,6 @@ function Test-TargetResource
         $AccessTokens
     )
 
-    #Ensure the proper dependencies are installed in the current environment.
-    Confirm-M365DSCDependencies
-
     #region Telemetry
     $ResourceName = $MyInvocation.MyCommand.ModuleName.Replace('MSFT_', '')
     $CommandName = $MyInvocation.MyCommand
@@ -871,63 +868,30 @@ function Test-TargetResource
     Add-M365DSCTelemetryEvent -Data $data
     #endregion
 
-    Write-Verbose -Message "Testing configuration of the Intune Security Baseline Microsoft365 Apps For Enterprise with Id {$Id} and Name {$DisplayName}"
-
-    $CurrentValues = Get-TargetResource @PSBoundParameters
-    [Hashtable]$ValuesToCheck = @{}
-    $MyInvocation.MyCommand.Parameters.GetEnumerator() | ForEach-Object {
-        if ($_.Key -notlike '*Variable' -or $_.Key -notin @('Verbose', 'Debug', 'ErrorAction', 'WarningAction', 'InformationAction'))
-        {
-            if ($null -ne $CurrentValues[$_.Key] -or $null -ne $PSBoundParameters[$_.Key])
+    $postProcessingScript = {
+        param($DesiredValues, $CurrentValues, $ValuesToCheck, $PostProcessingArgs)
+        $PostProcessingArgs[0] | ForEach-Object {
+            if ($_.Key -notlike '*Variable' -or $_.Key -notin @('Verbose', 'Debug', 'ErrorAction', 'WarningAction', 'InformationAction'))
             {
-                $ValuesToCheck.Add($_.Key, $null)
-                if (-not $PSBoundParameters.ContainsKey($_.Key))
+                if ($null -ne $CurrentValues[$_.Key] -or $null -ne $DesiredValues[$_.Key])
                 {
-                    $PSBoundParameters.Add($_.Key, $null)
+                    $ValuesToCheck[$_.Key] = $null
+                    if (-not $DesiredValues.ContainsKey($_.Key))
+                    {
+                        $DesiredValues.Add($_.Key, $null)
+                    }
                 }
             }
         }
-    }
-    $testResult = $true
 
-    #Compare Cim instances
-    foreach ($key in $PSBoundParameters.Keys)
-    {
-        $source = $PSBoundParameters.$key
-        $target = $CurrentValues.$key
-        if ($null -ne $source -and $source.GetType().Name -like '*CimInstance*')
-        {
-            $testResult = Compare-M365DSCComplexObject `
-                -Source ($source) `
-                -Target ($target)
-
-            if (-not $testResult)
-            {
-                Write-Verbose "$key is different"
-                break
-            }
-
-            $ValuesToCheck.Remove($key) | Out-Null
-        }
+        return [System.Tuple[Hashtable, Hashtable, Hashtable]]::new($DesiredValues, $CurrentValues, $ValuesToCheck)
     }
 
-    $ValuesToCheck.Remove('Id') | Out-Null
-    $ValuesToCheck = Remove-M365DSCAuthenticationParameter -BoundParameters $ValuesToCheck
-
-    Write-Verbose -Message "Current Values: $(Convert-M365DscHashtableToString -Hashtable $CurrentValues)"
-    Write-Verbose -Message "Target Values: $(Convert-M365DscHashtableToString -Hashtable $PSBoundParameters)"
-
-    if ($testResult)
-    {
-        $testResult = Test-M365DSCParameterState -CurrentValues $CurrentValues `
-            -Source $($MyInvocation.MyCommand.Source) `
-            -DesiredValues $PSBoundParameters `
-            -ValuesToCheck $ValuesToCheck.Keys
-    }
-
-    Write-Verbose -Message "Test-TargetResource returned $testResult"
-
-    return $testResult
+    $result = Test-M365DSCTargetResource -DesiredValues $PSBoundParameters `
+                                         -ResourceName $($MyInvocation.MyCommand.Source).Replace('MSFT_', '') `
+                                         -PostProcessing $postProcessingScript `
+                                         -PostProcessingArgs $MyInvocation.MyCommand.Parameters.GetEnumerator()
+    return $result
 }
 
 function Export-TargetResource

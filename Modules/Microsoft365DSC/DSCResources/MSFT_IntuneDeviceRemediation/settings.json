@@ -49,5 +49,25 @@
   "supportedEnvironments": [
     "Global",
     "USGov"
+  ],
+  "mode": "Configuration",
+  "commands": [
+    {
+      "module": "Microsoft.Graph.Beta.DeviceManagement",
+      "cmdlets": [
+        "Get-MgBetaDeviceManagementAssignmentFilter",
+        "Get-MgBetaDeviceManagementDeviceHealthScript",
+        "Get-MgBetaDeviceManagementDeviceHealthScriptAssignment",
+        "New-MgBetaDeviceManagementDeviceHealthScript",
+        "Remove-MgBetaDeviceManagementDeviceHealthScript",
+        "Update-MgBetaDeviceManagementDeviceHealthScript"
+      ]
+    },
+    {
+      "module": "Microsoft.Graph.Groups",
+      "cmdlets": [
+        "Get-MgGroup"
+      ]
+    }
   ]
 }

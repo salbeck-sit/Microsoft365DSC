@@ -137,7 +137,7 @@ function Get-TargetResource
         Write-Verbose -Message "An Intune Windows Update For Business Feature Update Profile for Windows10 with Id {$Id} and DisplayName {$DisplayName} was found."
 
         #region resource generator code
-        $complexRolloutSettings = @{}
+        $complexRolloutSettings = [ordered]@{}
         if ($null -ne $getValue.RolloutSettings.offerEndDateTimeInUTC)
         {
             $complexRolloutSettings.Add('OfferEndDateTimeInUTC', ([DateTimeOffset]$getValue.RolloutSettings.offerEndDateTimeInUTC).ToString('o'))
@@ -147,7 +147,7 @@ function Get-TargetResource
         {
             $complexRolloutSettings.Add('OfferStartDateTimeInUTC', ([DateTimeOffset]$getValue.RolloutSettings.offerStartDateTimeInUTC).ToString('o'))
         }
-        if ($complexRolloutSettings.values.Where({ $null -ne $_ }).count -eq 0)
+        if ($complexRolloutSettings.values.Where({ $null -ne $_ }).Count -eq 0)
         {
             $complexRolloutSettings = $null
         }
@@ -597,7 +597,8 @@ function Test-TargetResource
         {
             $testResult = Compare-M365DSCComplexObject `
                 -Source ($source) `
-                -Target ($target)
+                -Target ($target) `
+                -PropertyName $key
 
             if (-not $testResult)
             {

@@ -204,6 +204,10 @@ function Get-TargetResource
 
         [Parameter()]
         [System.Boolean]
+        $DelayedDelicensingEnabled,
+
+        [Parameter()]
+        [System.Boolean]
         $DirectReportsGroupAutoCreationEnabled,
 
         [Parameter()]
@@ -229,6 +233,10 @@ function Get-TargetResource
         [Parameter()]
         [System.Boolean]
         $EndUserDLUpgradeFlowsDisabled,
+
+        [Parameter()]
+        [System.Boolean]
+        $EndUserMailNotificationForDelayedDelicensingEnabled,
 
         [Parameter()]
         [System.Boolean]
@@ -433,6 +441,10 @@ function Get-TargetResource
         $SmtpActionableMessagesEnabled,
 
         [Parameter()]
+        [System.Boolean]
+        $TenantAdminNotificationForDelayedDelicensingEnabled,
+
+        [Parameter()]
         [System.String]
         $VisibleMeetingUpdateProperties,
 
@@ -483,40 +495,75 @@ function Get-TargetResource
 
     Write-Verbose -Message 'Getting EXOOrganizationConfig'
 
-    if ($Global:CurrentModeIsExport)
-    {
-        $null = New-M365DSCConnection -Workload 'ExchangeOnline' `
-            -InboundParameters $PSBoundParameters `
-            -SkipModuleReload $true
-    }
-    else
-    {
-        $null = New-M365DSCConnection -Workload 'ExchangeOnline' `
-            -InboundParameters $PSBoundParameters
-    }
-
-    #Ensure the proper dependencies are installed in the current environment.
-    Confirm-M365DSCDependencies
-
-    #region Telemetry
-    $ResourceName = $MyInvocation.MyCommand.ModuleName -replace 'MSFT_', ''
-    $CommandName = $MyInvocation.MyCommand
-    $data = Format-M365DSCTelemetryParameters -ResourceName $ResourceName `
-        -CommandName $CommandName `
-        -Parameters $PSBoundParameters
-    Add-M365DSCTelemetryEvent -Data $data
-    #endregion
-
-    $nullReturn = @{
-        IsSingleInstance = 'Yes'
-    }
-
     try
     {
-        $ConfigSettings = Get-OrganizationConfig -ErrorAction Stop
-        if ($null -eq $ConfigSettings)
+        if (-not $Script:exportedInstance)
         {
-            throw 'There was an error retrieving values from the Get function in EXOOrganizationConfig.'
+            $null = New-M365DSCConnection -Workload 'ExchangeOnline' `
+                -InboundParameters $PSBoundParameters
+
+            #Ensure the proper dependencies are installed in the current environment.
+            Confirm-M365DSCDependencies
+
+            #region Telemetry
+            $ResourceName = $MyInvocation.MyCommand.ModuleName -replace 'MSFT_', ''
+            $CommandName = $MyInvocation.MyCommand
+            $data = Format-M365DSCTelemetryParameters -ResourceName $ResourceName `
+                -CommandName $CommandName `
+                -Parameters $PSBoundParameters
+            Add-M365DSCTelemetryEvent -Data $data
+            #endregion
+
+            $nullReturn = @{
+                IsSingleInstance = 'Yes'
+                Ensure = 'Absent'
+            }
+
+            $ConfigSettings = Get-OrganizationConfig -ErrorAction SilentlyContinue
+            if ($null -eq $ConfigSettings)
+            {
+                throw 'There was an error retrieving values from the Get function in EXOOrganizationConfig.'
+            }
+        }
+        else
+        {
+            $ConfigSettings = $Script:exportedInstance
+        }
+
+        # DelayedDelicensingEnabledState
+        $DelayedDelicensingEnabledStateParsed = $configSettings.DelayedDelicensingEnabledState.ToString().Split(';')[0].Replace('Enabled: ','')
+        $DelayedDelicensingEnabledStateValue = $false
+        if ($DelayedDelicensingEnabledStateParsed -eq 'True')
+        {
+            $DelayedDelicensingEnabledStateValue = $true
+        }
+        else
+        {
+            $DelayedDelicensingEnabledStateValue = $false
+        }
+
+        # EndUserMailNotificationForDelayedDelicensingEnabled
+        $EndUserMailNotificationForDelayedDelicensingEnabledParsed = $configSettings.EndUserMailNotificationForDelayedDelicensingState.ToString().Split(';')[0].Replace('Enabled: ','')
+        $EndUserMailNotificationForDelayedDelicensingEnabledValue = $false
+        if ($EndUserMailNotificationForDelayedDelicensingEnabledParsed -eq 'True')
+        {
+            $EndUserMailNotificationForDelayedDelicensingEnabledValue = $true
+        }
+        else
+        {
+            $EndUserMailNotificationForDelayedDelicensingEnabledValue = $false
+        }
+
+        # TenantAdminNotificationForDelayedDelicensingEnabled
+        $TenantAdminNotificationForDelayedDelicensingEnabledParsed = $configSettings.TenantAdminNotificationForDelayedDelicensingState.ToString().Split(';')[0].Replace('Enabled: ','')
+        $TenantAdminNotificationForDelayedDelicensingEnabledValue = $false
+        if ($TenantAdminNotificationForDelayedDelicensingEnabledParsed -eq 'True')
+        {
+            $TenantAdminNotificationForDelayedDelicensingEnabledValue = $true
+        }
+        else
+        {
+            $TenantAdminNotificationForDelayedDelicensingEnabledValue = $false
         }
 
         $results = @{
@@ -567,6 +614,7 @@ function Get-TargetResource
             DefaultPublicFolderMaxItemSize                            = $ConfigSettings.DefaultPublicFolderMaxItemSize
             DefaultPublicFolderMovedItemRetention                     = $ConfigSettings.DefaultPublicFolderMovedItemRetention
             DefaultPublicFolderProhibitPostQuota                      = $ConfigSettings.DefaultPublicFolderProhibitPostQuota
+            DelayedDelicensingEnabled                                 = $DelayedDelicensingEnabledStateValue
             DirectReportsGroupAutoCreationEnabled                     = $ConfigSettings.DirectReportsGroupAutoCreationEnabled
             DisablePlusAddressInRecipients                            = $ConfigSettings.DisablePlusAddressInRecipients
             DistributionGroupDefaultOU                                = $ConfigSettings.DistributionGroupDefaultOU
@@ -575,6 +623,7 @@ function Get-TargetResource
             ElcProcessingDisabled                                     = $ConfigSettings.ElcProcessingDisabled
             EnableOutlookEvents                                       = $ConfigSettings.EnableOutlookEvents
             EndUserDLUpgradeFlowsDisabled                             = $ConfigSettings.EndUserDLUpgradeFlowsDisabled
+            EndUserMailNotificationForDelayedDelicensingEnabled       = $EndUserMailNotificationForDelayedDelicensingEnabledValue
             EwsAllowEntourage                                         = $ConfigSettings.EwsAllowEntourage
             EwsAllowList                                              = $ConfigSettings.EwsAllowList
             EwsAllowMacOutlook                                        = $ConfigSettings.EwsAllowMacOutlook
@@ -624,6 +673,7 @@ function Get-TargetResource
             ShortenEventScopeDefault                                  = $ConfigSettings.ShortenEventScopeDefault
             SiteMailboxCreationURL                                    = $ConfigSettings.SiteMailboxCreationURL
             SmtpActionableMessagesEnabled                             = $ConfigSettings.SmtpActionableMessagesEnabled
+            TenantAdminNotificationForDelayedDelicensingEnabled       = $TenantAdminNotificationForDelayedDelicensingEnabledValue
             VisibleMeetingUpdateProperties                            = $ConfigSettings.VisibleMeetingUpdateProperties
             WebPushNotificationsDisabled                              = $ConfigSettings.WebPushNotificationsDisabled
             WebSuggestedRepliesDisabled                               = $ConfigSettings.WebSuggestedRepliesDisabled
@@ -875,6 +925,10 @@ function Set-TargetResource
 
         [Parameter()]
         [System.Boolean]
+        $DelayedDelicensingEnabled,
+
+        [Parameter()]
+        [System.Boolean]
         $DirectReportsGroupAutoCreationEnabled,
 
         [Parameter()]
@@ -900,6 +954,10 @@ function Set-TargetResource
         [Parameter()]
         [System.Boolean]
         $EndUserDLUpgradeFlowsDisabled,
+
+        [Parameter()]
+        [System.Boolean]
+        $EndUserMailNotificationForDelayedDelicensingEnabled,
 
         [Parameter()]
         [System.Boolean]
@@ -1102,6 +1160,10 @@ function Set-TargetResource
         [Parameter()]
         [System.Boolean]
         $SmtpActionableMessagesEnabled,
+
+        [Parameter()]
+        [System.Boolean]
+        $TenantAdminNotificationForDelayedDelicensingEnabled,
 
         [Parameter()]
         [System.String]
@@ -1392,6 +1454,10 @@ function Test-TargetResource
 
         [Parameter()]
         [System.Boolean]
+        $DelayedDelicensingEnabled,
+
+        [Parameter()]
+        [System.Boolean]
         $DirectReportsGroupAutoCreationEnabled,
 
         [Parameter()]
@@ -1417,6 +1483,10 @@ function Test-TargetResource
         [Parameter()]
         [System.Boolean]
         $EndUserDLUpgradeFlowsDisabled,
+
+        [Parameter()]
+        [System.Boolean]
+        $EndUserMailNotificationForDelayedDelicensingEnabled,
 
         [Parameter()]
         [System.Boolean]
@@ -1621,6 +1691,10 @@ function Test-TargetResource
         $SmtpActionableMessagesEnabled,
 
         [Parameter()]
+        [System.Boolean]
+        $TenantAdminNotificationForDelayedDelicensingEnabled,
+
+        [Parameter()]
         [System.String]
         $VisibleMeetingUpdateProperties,
 
@@ -1668,11 +1742,9 @@ function Test-TargetResource
         [System.String[]]
         $AccessTokens
     )
-    #Ensure the proper dependencies are installed in the current environment.
-    Confirm-M365DSCDependencies
 
     #region Telemetry
-    $ResourceName = $MyInvocation.MyCommand.ModuleName -replace 'MSFT_', ''
+    $ResourceName = $MyInvocation.MyCommand.ModuleName.Replace('MSFT_', '')
     $CommandName = $MyInvocation.MyCommand
     $data = Format-M365DSCTelemetryParameters -ResourceName $ResourceName `
         -CommandName $CommandName `
@@ -1680,23 +1752,9 @@ function Test-TargetResource
     Add-M365DSCTelemetryEvent -Data $data
     #endregion
 
-    Write-Verbose -Message 'Testing configuration of EXOOrganizationConfig'
-
-    $CurrentValues = Get-TargetResource @PSBoundParameters
-
-    Write-Verbose -Message "Current Values: $(Convert-M365DscHashtableToString -Hashtable $CurrentValues)"
-    Write-Verbose -Message "Target Values: $(Convert-M365DscHashtableToString -Hashtable $PSBoundParameters)"
-
-    $ValuesToCheck = $PSBoundParameters
-
-    $TestResult = Test-M365DSCParameterState -CurrentValues $CurrentValues `
-        -Source $($MyInvocation.MyCommand.Source) `
-        -DesiredValues $PSBoundParameters `
-        -ValuesToCheck $ValuesToCheck.Keys
-
-    Write-Verbose -Message "Test-TargetResource returned $TestResult"
-
-    return $TestResult
+    $result = Test-M365DSCTargetResource -DesiredValues $PSBoundParameters `
+                                         -ResourceName $($MyInvocation.MyCommand.Source).Replace('MSFT_', '')
+    return $result
 }
 
 function Export-TargetResource
@@ -1756,6 +1814,7 @@ function Export-TargetResource
 
     try
     {
+        $organizationConfig = Get-OrganizationConfig -ErrorAction Stop
         if ($null -ne $Global:M365DSCExportResourceInstancesCount)
         {
             $Global:M365DSCExportResourceInstancesCount++

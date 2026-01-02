@@ -49,5 +49,31 @@
   "supportedEnvironments": [
     "Global",
     "USGov"
+  ],
+  "mode": "Configuration",
+  "commands": [
+    {
+      "module": "Microsoft.Graph.Beta.DeviceManagement",
+      "cmdlets": [
+        "Get-MgBetaDeviceManagementAssignmentFilter"
+      ]
+    },
+    {
+      "module": "Microsoft.Graph.Beta.Devices.CorporateManagement",
+      "cmdlets": [
+        "Get-MgBetaDeviceAppManagementMobileApp",
+        "Get-MgBetaDeviceAppManagementMobileAppConfiguration",
+        "Get-MgBetaDeviceAppManagementMobileAppConfigurationAssignment",
+        "New-MgBetaDeviceAppManagementMobileAppConfiguration",
+        "Remove-MgBetaDeviceAppManagementMobileAppConfiguration",
+        "Update-MgBetaDeviceAppManagementMobileAppConfiguration"
+      ]
+    },
+    {
+      "module": "Microsoft.Graph.Groups",
+      "cmdlets": [
+        "Get-MgGroup"
+      ]
+    }
   ]
 }

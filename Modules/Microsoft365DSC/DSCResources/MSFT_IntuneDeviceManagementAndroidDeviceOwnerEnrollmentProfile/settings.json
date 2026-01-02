@@ -36,5 +36,16 @@
   "supportedEnvironments": [
     "Global",
     "USGov"
+  ],
+  "mode": "Configuration",
+  "commands": [
+    {
+      "module": "Microsoft.Graph.Beta.DeviceManagement.Enrollment",
+      "cmdlets": [
+        "Get-MgBetaDeviceManagementAndroidDeviceOwnerEnrollmentProfile",
+        "New-MgBetaDeviceManagementAndroidDeviceOwnerEnrollmentProfile",
+        "Remove-MgBetaDeviceManagementAndroidDeviceOwnerEnrollmentProfile"
+      ]
+    }
   ]
 }

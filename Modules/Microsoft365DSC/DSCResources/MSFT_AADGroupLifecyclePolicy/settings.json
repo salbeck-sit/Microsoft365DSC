@@ -42,5 +42,17 @@
   "supportedEnvironments": [
     "Global",
     "USGov"
+  ],
+  "mode": "Configuration",
+  "commands": [
+    {
+      "module": "Microsoft.Graph.Groups",
+      "cmdlets": [
+        "Get-MgGroupLifecyclePolicy",
+        "New-MgGroupLifecyclePolicy",
+        "Remove-MgGroupLifecyclePolicy",
+        "Update-MgGroupLifecyclePolicy"
+      ]
+    }
   ]
 }

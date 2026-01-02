@@ -92,7 +92,7 @@ function Get-TargetResource
             $nullReturn = $PSBoundParameters
             $nullReturn.Ensure = 'Absent'
 
-            $DataClassification = Get-DataClassification -Identity $Identity -ErrorAction Stop
+            $DataClassification = Get-DataClassification -Identity $Identity -ErrorAction SilentlyContinue
             if ($null -eq $DataClassification)
             {
                 if (-not [System.String]::IsNullOrEmpty($Name))
@@ -236,16 +236,14 @@ function Set-TargetResource
     Add-M365DSCTelemetryEvent -Data $data
     #endregion
 
-    $DataClassifications = Get-DataClassification -ErrorAction Stop
-    $DataClassification = $DataClassifications | Where-Object `
-        -FilterScript { $_.Identity -eq $Identity }
+    $DataClassification = Get-DataClassification -Identity $Identity -ErrorAction SilentlyContinue
     $DataClassificationParams = Remove-M365DSCAuthenticationParameter -BoundParameters $PSBoundParameters
 
     if (('Present' -eq $Ensure ) -and ($null -eq $DataClassification))
     {
         Write-Verbose -Message 'Data Classification in Exchange Online are now deprecated in favor of Sensitive Information Types in Purview.'
     }
-    elseif (('Present' -eq $Ensure ) -and ($Null -ne $DataClassification))
+    elseif (('Present' -eq $Ensure ) -and ($null -ne $DataClassification))
     {
         $verboseMessage = "Setting Data classification policy $($Identity) with values:" + `
             " $(Convert-M365DscHashtableToString -Hashtable $DataClassificationParams)"
@@ -337,11 +335,9 @@ function Test-TargetResource
         [System.String[]]
         $AccessTokens
     )
-    #Ensure the proper dependencies are installed in the current environment.
-    Confirm-M365DSCDependencies
 
     #region Telemetry
-    $ResourceName = $MyInvocation.MyCommand.ModuleName -replace 'MSFT_', ''
+    $ResourceName = $MyInvocation.MyCommand.ModuleName.Replace('MSFT_', '')
     $CommandName = $MyInvocation.MyCommand
     $data = Format-M365DSCTelemetryParameters -ResourceName $ResourceName `
         -CommandName $CommandName `
@@ -349,23 +345,9 @@ function Test-TargetResource
     Add-M365DSCTelemetryEvent -Data $data
     #endregion
 
-    Write-Verbose -Message "Testing configuration of Data classification policy for $($Identity)"
-
-    $CurrentValues = Get-TargetResource @PSBoundParameters
-
-    Write-Verbose -Message "Current Values: $(Convert-M365DscHashtableToString -Hashtable $CurrentValues)"
-    Write-Verbose -Message "Target Values: $(Convert-M365DscHashtableToString -Hashtable $PSBoundParameters)"
-
-    $ValuesToCheck = $PSBoundParameters
-
-    $TestResult = Test-M365DSCParameterState -CurrentValues $CurrentValues `
-        -Source $($MyInvocation.MyCommand.Source) `
-        -DesiredValues $PSBoundParameters `
-        -ValuesToCheck $ValuesToCheck.Keys
-
-    Write-Verbose -Message "Test-TargetResource returned $($TestResult)"
-
-    return $TestResult
+    $result = Test-M365DSCTargetResource -DesiredValues $PSBoundParameters `
+                                         -ResourceName $($MyInvocation.MyCommand.Source).Replace('MSFT_', '')
+    return $result
 }
 
 function Export-TargetResource

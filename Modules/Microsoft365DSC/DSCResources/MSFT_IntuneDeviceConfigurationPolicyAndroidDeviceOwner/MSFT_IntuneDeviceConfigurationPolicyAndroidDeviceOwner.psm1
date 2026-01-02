@@ -677,7 +677,7 @@ function Get-TargetResource
 
         $complexAzureAdSharedDeviceDataClearApps = @()
         $currentValueArray = $getValue.AdditionalProperties.azureAdSharedDeviceDataClearApps
-        if ($null -ne $currentValueArray -and $currentValueArray.count -gt 0)
+        if ($null -ne $currentValueArray -and $currentValueArray.Count -gt 0)
         {
             foreach ($currentValue in $currentValueArray)
             {
@@ -692,14 +692,14 @@ function Get-TargetResource
             }
         }
 
-        $complexDetailedHelpText = @{}
+        $complexDetailedHelpText = [ordered]@{}
         $currentValue = $getValue.AdditionalProperties.detailedHelpText
         if ($null -ne $currentValue)
         {
             $complexDetailedHelpText.Add('DefaultMessage', $currentValue.defaultMessage)
             $complexLocalizedMessages = @()
             $currentValueArray = $currentValue.localizedMessages
-            if ($null -ne $currentValueArray -and $currentValueArray.count -gt 0)
+            if ($null -ne $currentValueArray -and $currentValueArray.Count -gt 0)
             {
                 foreach ($currentChildValue in $currentValueArray)
                 {
@@ -717,14 +717,14 @@ function Get-TargetResource
             $complexDetailedHelpText = $null
         }
 
-        $complexDeviceOwnerLockScreenMessage = @{}
+        $complexDeviceOwnerLockScreenMessage = [ordered]@{}
         $currentValue = $getValue.AdditionalProperties.deviceOwnerLockScreenMessage
         if ($null -ne $currentValue)
         {
             $complexDeviceOwnerLockScreenMessage.Add('DefaultMessage', $currentValue.defaultMessage)
             $complexLocalizedMessages = @()
             $currentValueArray = $currentValue.localizedMessages
-            if ($null -ne $currentValueArray -and $currentValueArray.count -gt 0)
+            if ($null -ne $currentValueArray -and $currentValueArray.Count -gt 0)
             {
                 foreach ($currentChildValue in $currentValueArray)
                 {
@@ -742,7 +742,7 @@ function Get-TargetResource
             $complexDeviceOwnerLockScreenMessage = $null
         }
 
-        $complexGlobalProxy = @{}
+        $complexGlobalProxy = [ordered]@{}
         $currentValue = $getValue.AdditionalProperties.globalProxy
         if ($null -ne $currentValue)
         {
@@ -759,11 +759,11 @@ function Get-TargetResource
 
         $complexKioskModeApps = @()
         $currentValueArray = $getValue.AdditionalProperties.kioskModeApps
-        if ($null -ne $currentValueArray -and $currentValueArray.count -gt 0)
+        if ($null -ne $currentValueArray -and $currentValueArray.Count -gt 0)
         {
             foreach ($currentValue in $currentValueArray)
             {
-                $currentHash = @{}
+                $currentHash = [ordered]@{}
                 $currentHash.Add('AppId', $currentValue.appid)
                 $currentHash.Add('Publisher', $currentValue.publisher)
                 $currentHash.Add('AppStoreUrl', $currentValue.appStoreUrl)
@@ -775,11 +775,11 @@ function Get-TargetResource
 
         $complexPersonalProfilePersonalApplications = @()
         $currentValueArray = $getValue.AdditionalProperties.personalProfilePersonalApplications
-        if ($null -ne $currentValueArray -and $currentValueArray.count -gt 0)
+        if ($null -ne $currentValueArray -and $currentValueArray.Count -gt 0)
         {
             foreach ($currentValue in $currentValueArray)
             {
-                $currentHash = @{}
+                $currentHash = [ordered]@{}
                 $currentHash.Add('AppId', $currentValue.appid)
                 $currentHash.Add('Publisher', $currentValue.publisher)
                 $currentHash.Add('AppStoreUrl', $currentValue.appStoreUrl)
@@ -789,14 +789,14 @@ function Get-TargetResource
             }
         }
 
-        $complexShortHelpText = @{}
+        $complexShortHelpText = [ordered]@{}
         $currentValue = $getValue.AdditionalProperties.shortHelpText
         if ($null -ne $currentValue)
         {
             $complexShortHelpText.Add('DefaultMessage', $currentValue.defaultMessage)
             $complexLocalizedMessages = @()
             $currentValueArray = $currentValue.localizedMessages
-            if ($null -ne $currentValueArray -and $currentValueArray.count -gt 0)
+            if ($null -ne $currentValueArray -and $currentValueArray.Count -gt 0)
             {
                 foreach ($currentChildValue in $currentValueArray)
                 {
@@ -816,7 +816,7 @@ function Get-TargetResource
 
         $complexSystemUpdateFreezePeriods = @()
         $currentValueArray = $getValue.AdditionalProperties.systemUpdateFreezePeriods
-        if ($null -ne $currentValueArray -and $currentValueArray.count -gt 0)
+        if ($null -ne $currentValueArray -and $currentValueArray.Count -gt 0)
         {
             foreach ($currentValue in $currentValueArray)
             {
@@ -1676,7 +1676,7 @@ function Set-TargetResource
 
             if ($key -ne '@odata.type')
             {
-                $keyName = $key.Substring(0, 1).ToLower() + $key.Substring(1, $key.length - 1)
+                $keyName = $key.Substring(0, 1).ToLower() + $key.Substring(1, $key.Length - 1)
                 $keyValue = $CreateParameters.$key
                 $CreateParameters.Remove($key) | Out-Null
                 $CreateParameters.Add($keyName, $keyValue) | Out-Null
@@ -1729,7 +1729,7 @@ function Set-TargetResource
 
             if ($key -ne '@odata.type')
             {
-                $keyName = $key.Substring(0, 1).ToLower() + $key.Substring(1, $key.length - 1)
+                $keyName = $key.Substring(0, 1).ToLower() + $key.Substring(1, $key.Length - 1)
                 $keyValue = $UpdateParameters.$key
                 $UpdateParameters.Remove($key)
                 $UpdateParameters.Add($keyName, $keyValue)
@@ -2377,9 +2377,6 @@ function Test-TargetResource
         $AccessTokens
     )
 
-    #Ensure the proper dependencies are installed in the current environment.
-    Confirm-M365DSCDependencies
-
     #region Telemetry
     $ResourceName = $MyInvocation.MyCommand.ModuleName.Replace('MSFT_', '')
     $CommandName = $MyInvocation.MyCommand
@@ -2389,50 +2386,9 @@ function Test-TargetResource
     Add-M365DSCTelemetryEvent -Data $data
     #endregion
 
-    Write-Verbose -Message "Testing configuration of {$id}"
-
-    $CurrentValues = Get-TargetResource @PSBoundParameters
-    $ValuesToCheck = Remove-M365DSCAuthenticationParameter -BoundParameters $PSBoundParameters
-    $testResult = $true
-
-    #Compare Cim instances
-    foreach ($key in $PSBoundParameters.Keys)
-    {
-        $source = $PSBoundParameters.$key
-        $target = $CurrentValues.$key
-        if ($source.GetType().Name -like '*CimInstance*')
-        {
-            $testResult = Compare-M365DSCComplexObject `
-                -Source ($source) `
-                -Target ($target)
-
-            if (-Not $testResult)
-            {
-                Write-Verbose -Message "Drift detected for the complex object key: $key"
-                $testResult = $false
-                break
-            }
-
-            $ValuesToCheck.Remove($key) | Out-Null
-        }
-    }
-
-    if ($testResult)
-    {
-        $ValuesToCheck = Remove-M365DSCAuthenticationParameter -BoundParameters $ValuesToCheck
-        $ValuesToCheck.Remove('Id') | Out-Null
-
-        Write-Verbose -Message "Current Values: $(Convert-M365DscHashtableToString -Hashtable $CurrentValues)"
-        Write-Verbose -Message "Target Values: $(Convert-M365DscHashtableToString -Hashtable $ValuesToCheck)"
-
-        $testResult = Test-M365DSCParameterState -CurrentValues $CurrentValues `
-            -Source $($MyInvocation.MyCommand.Source) `
-            -DesiredValues $PSBoundParameters `
-            -ValuesToCheck $ValuesToCheck.Keys
-    }
-    Write-Verbose -Message "Test-TargetResource returned $testResult"
-
-    return $testResult
+    $result = Test-M365DSCTargetResource -DesiredValues $PSBoundParameters `
+                                         -ResourceName $($MyInvocation.MyCommand.Source).Replace('MSFT_', '')
+    return $result
 }
 
 function Export-TargetResource

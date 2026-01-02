@@ -35,5 +35,18 @@
   ],
   "supportedEnvironments": [
     "Global"
+  ],
+  "mode": "Configuration",
+  "commands": [
+    {
+      "module": "Microsoft.Graph.Beta.Identity.SignIns",
+      "cmdlets": [
+        "Get-MgBetaIdentityApiConnector",
+        "Invoke-MgBetaUploadIdentityApiConnectorClientCertificate",
+        "New-MgBetaIdentityApiConnector",
+        "Remove-MgBetaIdentityApiConnector",
+        "Update-MgBetaIdentityApiConnector"
+      ]
+    }
   ]
 }

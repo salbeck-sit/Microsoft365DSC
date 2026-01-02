@@ -15,6 +15,11 @@ function Get-TargetResource
         $Description,
 
         [Parameter()]
+        [ValidateSet('91382d07-8b89-444c-bbcb-cfe43133af33', 'edf2633e-9827-44de-b34c-8b8b9717e84c')]
+        [System.String[]]
+        $DisabledInProductMessages,
+
+        [Parameter()]
         [System.Boolean]
         $AllowManagedUpdates,
 
@@ -26,6 +31,10 @@ function Get-TargetResource
         [System.String]
         [ValidateSet('Disabled', 'Enabled', 'Forced', 'FollowOfficePreview')]
         $AllowPublicPreview,
+
+        [Parameter()]
+        [System.Boolean]
+        $BlockLegacyAuthorization,
 
         [Parameter()]
         [System.UInt32]
@@ -118,10 +127,12 @@ function Get-TargetResource
         Write-Verbose -Message "Found Teams Update Management Policy with Identity {$Identity}"
         $results = @{
             Identity              = $policy.Identity
+            DisabledInProductMessages = $policy.DisabledInProductMessages
             Description           = $policy.Description
             AllowManagedUpdates   = $policy.AllowManagedUpdates
             AllowPreview          = $policy.AllowPreview
             AllowPublicPreview    = $policy.AllowPublicPreview
+            BlockLegacyAuthorization = $policy.BlockLegacyAuthorization
             UpdateDayOfWeek       = $policy.UpdateDayOfWeek
             UpdateTime            = $policy.UpdateTime
             UseNewTeamsClient     = $policy.UseNewTeamsClient
@@ -166,6 +177,11 @@ function Set-TargetResource
         $Description,
 
         [Parameter()]
+        [ValidateSet('91382d07-8b89-444c-bbcb-cfe43133af33', 'edf2633e-9827-44de-b34c-8b8b9717e84c')]
+        [System.String[]]
+        $DisabledInProductMessages,
+
+        [Parameter()]
         [System.Boolean]
         $AllowManagedUpdates,
 
@@ -177,6 +193,10 @@ function Set-TargetResource
         [System.String]
         [ValidateSet('Disabled', 'Enabled', 'Forced', 'FollowOfficePreview')]
         $AllowPublicPreview,
+
+        [Parameter()]
+        [System.Boolean]
+        $BlockLegacyAuthorization,
 
         [Parameter()]
         [System.UInt32]
@@ -239,27 +259,23 @@ function Set-TargetResource
         -Parameters $PSBoundParameters
     Add-M365DSCTelemetryEvent -Data $data
     #endregion
-    Write-Verbose -Message "Updating Teams Update Management Policy {$Identity}"
 
     $CurrentValues = Get-TargetResource @PSBoundParameters
-    $PSBoundParameters = Remove-M365DSCAuthenticationParameter -BoundParameters $PSBoundParameters
+    $boundParameters = Remove-M365DSCAuthenticationParameter -BoundParameters $PSBoundParameters
 
     if ($CurrentValues.Ensure -eq 'Absent' -and $Ensure -eq 'Present')
     {
         Write-Verbose "Creating new Teams Update Management Policy {$Identity}"
-
-        New-CsTeamsUpdateManagementPolicy @PSBoundParameters | Out-Null
+        New-CsTeamsUpdateManagementPolicy @boundParameters | Out-Null
     }
     elseif ($CurrentValues.Ensure -eq 'Present' -and $Ensure -eq 'Present')
     {
         Write-Verbose "Updating existing Teams Update Management Policy {$Identity}"
-
-        Set-CsTeamsUpdateManagementPolicy @PSBoundParameters | Out-Null
+        Set-CsTeamsUpdateManagementPolicy @boundParameters | Out-Null
     }
     elseif ($CurrentValues.Ensure -eq 'Present' -and $Ensure -eq 'Absent')
     {
         Write-Verbose "Removing existing Teams Update Management Policy {$Identity}"
-
         Remove-CsTeamsUpdateManagementPolicy -Identity $Identity | Out-Null
     }
 }
@@ -279,6 +295,11 @@ function Test-TargetResource
         $Description,
 
         [Parameter()]
+        [ValidateSet('91382d07-8b89-444c-bbcb-cfe43133af33', 'edf2633e-9827-44de-b34c-8b8b9717e84c')]
+        [System.String[]]
+        $DisabledInProductMessages,
+
+        [Parameter()]
         [System.Boolean]
         $AllowManagedUpdates,
 
@@ -290,6 +311,10 @@ function Test-TargetResource
         [System.String]
         [ValidateSet('Disabled', 'Enabled', 'Forced', 'FollowOfficePreview')]
         $AllowPublicPreview,
+
+        [Parameter()]
+        [System.Boolean]
+        $BlockLegacyAuthorization,
 
         [Parameter()]
         [System.UInt32]
@@ -338,45 +363,29 @@ function Test-TargetResource
         [System.String[]]
         $AccessTokens
     )
-    #Ensure the proper dependencies are installed in the current environment.
-    Confirm-M365DSCDependencies
 
     #region Telemetry
-    $ResourceName = $MyInvocation.MyCommand.ModuleName -replace 'MSFT_', ''
+    $ResourceName = $MyInvocation.MyCommand.ModuleName.Replace('MSFT_', '')
     $CommandName = $MyInvocation.MyCommand
     $data = Format-M365DSCTelemetryParameters -ResourceName $ResourceName `
         -CommandName $CommandName `
         -Parameters $PSBoundParameters
     Add-M365DSCTelemetryEvent -Data $data
     #endregion
-    Write-Verbose -Message "Testing configuration of Team Update Management Policy {$Identity}"
-
-    $CurrentValues = Get-TargetResource @PSBoundParameters
-    $ValuesToCheck = Remove-M365DSCAuthenticationParameter -BoundParameters $PSBoundParameters
-    $testResult = $true
 
     if ($PSBoundParameters.ContainsKey('UpdateTimeOfDay'))
     {
-        Write-Verbose -Message "Converting UpdateTimeOfDay ($UpdateTimeOfDay) to the current culture format"
+        Write-Verbose -Message "Converting UpdateTimeOfDay [$UpdateTimeOfDay] to the current culture format"
         $dtUpdateTimeOfDay = [datetime]::Parse($PSBoundParameters.UpdateTimeOfDay)
         $PSBoundParameters.UpdateTimeOfDay = $dtUpdateTimeOfDay.ToShortTimeString()
-        Write-Verbose -Message "  Converted value $($PSBoundParameters.UpdateTimeOfDay))"
+        Write-Verbose -Message "Converted value [$($PSBoundParameters.UpdateTimeOfDay)]"
     }
 
-    Write-Verbose -Message "Current Values: $(Convert-M365DscHashtableToString -Hashtable $CurrentValues)"
-    Write-Verbose -Message "Target Values: $(Convert-M365DscHashtableToString -Hashtable $PSBoundParameters)"
+    $result = Test-M365DSCTargetResource -DesiredValues $PSBoundParameters `
+                                         -ResourceName $($MyInvocation.MyCommand.Source).Replace('MSFT_', '')
+    return $result
 
-    if ($testResult)
-    {
-        $TestResult = Test-M365DSCParameterState -CurrentValues $CurrentValues `
-            -Source $($MyInvocation.MyCommand.Source) `
-            -DesiredValues $PSBoundParameters `
-            -ValuesToCheck $ValuesToCheck.Keys
-    }
 
-    Write-Verbose -Message "Test-TargetResource returned $TestResult"
-
-    return $TestResult
 }
 
 function Export-TargetResource

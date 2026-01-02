@@ -206,7 +206,7 @@ function Get-TargetResource
         Write-Verbose -Message "An Intune Windows Information Protection Policy for Windows10 Mdm Enrolled with Id {$Id} and DisplayName {$DisplayName} was found."
 
         #region resource generator code
-        $complexDataRecoveryCertificate = @{}
+        $complexDataRecoveryCertificate = [ordered]@{}
         $complexDataRecoveryCertificate.Add('Certificate', $getValue.DataRecoveryCertificate.certificate)
         $complexDataRecoveryCertificate.Add('Description', $getValue.DataRecoveryCertificate.description)
         if ($null -ne $getValue.DataRecoveryCertificate.expirationDateTime)
@@ -214,7 +214,7 @@ function Get-TargetResource
             $complexDataRecoveryCertificate.Add('ExpirationDateTime', ([DateTimeOffset]$getValue.DataRecoveryCertificate.expirationDateTime).ToString('o'))
         }
         $complexDataRecoveryCertificate.Add('SubjectName', $getValue.DataRecoveryCertificate.subjectName)
-        if ($complexDataRecoveryCertificate.values.Where({ $null -ne $_ }).count -eq 0)
+        if ($complexDataRecoveryCertificate.values.Where({ $null -ne $_ }).Count -eq 0)
         {
             $complexDataRecoveryCertificate = $null
         }
@@ -222,10 +222,10 @@ function Get-TargetResource
         $complexEnterpriseInternalProxyServers = @()
         foreach ($currentEnterpriseInternalProxyServers in $getValue.enterpriseInternalProxyServers)
         {
-            $myEnterpriseInternalProxyServers = @{}
+            $myEnterpriseInternalProxyServers = [ordered]@{}
             $myEnterpriseInternalProxyServers.Add('DisplayName', $currentEnterpriseInternalProxyServers.displayName)
             $myEnterpriseInternalProxyServers.Add('Resources', $currentEnterpriseInternalProxyServers.resources)
-            if ($myEnterpriseInternalProxyServers.values.Where({ $null -ne $_ }).count -gt 0)
+            if ($myEnterpriseInternalProxyServers.values.Where({ $null -ne $_ }).Count -gt 0)
             {
                 $complexEnterpriseInternalProxyServers += $myEnterpriseInternalProxyServers
             }
@@ -234,12 +234,12 @@ function Get-TargetResource
         $complexEnterpriseIPRanges = @()
         foreach ($currentEnterpriseIPRanges in $getValue.enterpriseIPRanges)
         {
-            $myEnterpriseIPRanges = @{}
+            $myEnterpriseIPRanges = [ordered]@{}
             $myEnterpriseIPRanges.Add('DisplayName', $currentEnterpriseIPRanges.displayName)
             $complexRanges = @()
             foreach ($currentRanges in $currentEnterpriseIPRanges.ranges)
             {
-                $myRanges = @{}
+                $myRanges = [ordered]@{}
                 $myRanges.Add('CidrAddress', $currentRanges.AdditionalProperties.cidrAddress)
                 $myRanges.Add('LowerAddress', $currentRanges.AdditionalProperties.lowerAddress)
                 $myRanges.Add('UpperAddress', $currentRanges.AdditionalProperties.upperAddress)
@@ -247,13 +247,13 @@ function Get-TargetResource
                 {
                     $myRanges.Add('odataType', $currentRanges.AdditionalProperties.'@odata.type'.ToString())
                 }
-                if ($myRanges.values.Where({ $null -ne $_ }).count -gt 0)
+                if ($myRanges.values.Where({ $null -ne $_ }).Count -gt 0)
                 {
                     $complexRanges += $myRanges
                 }
             }
             $myEnterpriseIPRanges.Add('Ranges', $complexRanges)
-            if ($myEnterpriseIPRanges.values.Where({ $null -ne $_ }).count -gt 0)
+            if ($myEnterpriseIPRanges.values.Where({ $null -ne $_ }).Count -gt 0)
             {
                 $complexEnterpriseIPRanges += $myEnterpriseIPRanges
             }
@@ -262,10 +262,10 @@ function Get-TargetResource
         $complexEnterpriseNetworkDomainNames = @()
         foreach ($currentEnterpriseNetworkDomainNames in $getValue.enterpriseNetworkDomainNames)
         {
-            $myEnterpriseNetworkDomainNames = @{}
+            $myEnterpriseNetworkDomainNames = [ordered]@{}
             $myEnterpriseNetworkDomainNames.Add('DisplayName', $currentEnterpriseNetworkDomainNames.displayName)
             $myEnterpriseNetworkDomainNames.Add('Resources', $currentEnterpriseNetworkDomainNames.resources)
-            if ($myEnterpriseNetworkDomainNames.values.Where({ $null -ne $_ }).count -gt 0)
+            if ($myEnterpriseNetworkDomainNames.values.Where({ $null -ne $_ }).Count -gt 0)
             {
                 $complexEnterpriseNetworkDomainNames += $myEnterpriseNetworkDomainNames
             }
@@ -274,10 +274,10 @@ function Get-TargetResource
         $complexEnterpriseProtectedDomainNames = @()
         foreach ($currentEnterpriseProtectedDomainNames in $getValue.enterpriseProtectedDomainNames)
         {
-            $myEnterpriseProtectedDomainNames = @{}
+            $myEnterpriseProtectedDomainNames = [ordered]@{}
             $myEnterpriseProtectedDomainNames.Add('DisplayName', $currentEnterpriseProtectedDomainNames.displayName)
             $myEnterpriseProtectedDomainNames.Add('Resources', $currentEnterpriseProtectedDomainNames.resources)
-            if ($myEnterpriseProtectedDomainNames.values.Where({ $null -ne $_ }).count -gt 0)
+            if ($myEnterpriseProtectedDomainNames.values.Where({ $null -ne $_ }).Count -gt 0)
             {
                 $complexEnterpriseProtectedDomainNames += $myEnterpriseProtectedDomainNames
             }
@@ -286,21 +286,21 @@ function Get-TargetResource
         $complexEnterpriseProxiedDomains = @()
         foreach ($currentEnterpriseProxiedDomains in $getValue.enterpriseProxiedDomains)
         {
-            $myEnterpriseProxiedDomains = @{}
+            $myEnterpriseProxiedDomains = [ordered]@{}
             $myEnterpriseProxiedDomains.Add('DisplayName', $currentEnterpriseProxiedDomains.displayName)
             $complexProxiedDomains = @()
             foreach ($currentProxiedDomains in $currentEnterpriseProxiedDomains.proxiedDomains)
             {
-                $myProxiedDomains = @{}
+                $myProxiedDomains = [ordered]@{}
                 $myProxiedDomains.Add('IpAddressOrFQDN', $currentProxiedDomains.ipAddressOrFQDN)
                 $myProxiedDomains.Add('Proxy', $currentProxiedDomains.proxy)
-                if ($myProxiedDomains.values.Where({ $null -ne $_ }).count -gt 0)
+                if ($myProxiedDomains.values.Where({ $null -ne $_ }).Count -gt 0)
                 {
                     $complexProxiedDomains += $myProxiedDomains
                 }
             }
             $myEnterpriseProxiedDomains.Add('ProxiedDomains', $complexProxiedDomains)
-            if ($myEnterpriseProxiedDomains.values.Where({ $null -ne $_ }).count -gt 0)
+            if ($myEnterpriseProxiedDomains.values.Where({ $null -ne $_ }).Count -gt 0)
             {
                 $complexEnterpriseProxiedDomains += $myEnterpriseProxiedDomains
             }
@@ -309,10 +309,10 @@ function Get-TargetResource
         $complexEnterpriseProxyServers = @()
         foreach ($currentEnterpriseProxyServers in $getValue.enterpriseProxyServers)
         {
-            $myEnterpriseProxyServers = @{}
+            $myEnterpriseProxyServers = [ordered]@{}
             $myEnterpriseProxyServers.Add('DisplayName', $currentEnterpriseProxyServers.displayName)
             $myEnterpriseProxyServers.Add('Resources', $currentEnterpriseProxyServers.resources)
-            if ($myEnterpriseProxyServers.values.Where({ $null -ne $_ }).count -gt 0)
+            if ($myEnterpriseProxyServers.values.Where({ $null -ne $_ }).Count -gt 0)
             {
                 $complexEnterpriseProxyServers += $myEnterpriseProxyServers
             }
@@ -321,7 +321,7 @@ function Get-TargetResource
         $complexExemptApps = @()
         foreach ($currentExemptApps in $getValue.exemptApps)
         {
-            $myExemptApps = @{}
+            $myExemptApps = [ordered]@{}
             $myExemptApps.Add('Denied', $currentExemptApps.denied)
             $myExemptApps.Add('Description', $currentExemptApps.description)
             $myExemptApps.Add('DisplayName', $currentExemptApps.displayName)
@@ -334,7 +334,7 @@ function Get-TargetResource
             {
                 $myExemptApps.Add('odataType', $currentExemptApps.AdditionalProperties.'@odata.type'.ToString())
             }
-            if ($myExemptApps.values.Where({ $null -ne $_ }).count -gt 0)
+            if ($myExemptApps.values.Where({ $null -ne $_ }).Count -gt 0)
             {
                 $complexExemptApps += $myExemptApps
             }
@@ -343,10 +343,10 @@ function Get-TargetResource
         $complexNeutralDomainResources = @()
         foreach ($currentNeutralDomainResources in $getValue.neutralDomainResources)
         {
-            $myNeutralDomainResources = @{}
+            $myNeutralDomainResources = [ordered]@{}
             $myNeutralDomainResources.Add('DisplayName', $currentNeutralDomainResources.displayName)
             $myNeutralDomainResources.Add('Resources', $currentNeutralDomainResources.resources)
-            if ($myNeutralDomainResources.values.Where({ $null -ne $_ }).count -gt 0)
+            if ($myNeutralDomainResources.values.Where({ $null -ne $_ }).Count -gt 0)
             {
                 $complexNeutralDomainResources += $myNeutralDomainResources
             }
@@ -355,7 +355,7 @@ function Get-TargetResource
         $complexProtectedApps = @()
         foreach ($currentProtectedApps in $getValue.protectedApps)
         {
-            $myProtectedApps = @{}
+            $myProtectedApps = [ordered]@{}
             $myProtectedApps.Add('Denied', $currentProtectedApps.denied)
             $myProtectedApps.Add('Description', $currentProtectedApps.description)
             $myProtectedApps.Add('DisplayName', $currentProtectedApps.displayName)
@@ -368,7 +368,7 @@ function Get-TargetResource
             {
                 $myProtectedApps.Add('odataType', $currentProtectedApps.AdditionalProperties.'@odata.type'.ToString())
             }
-            if ($myProtectedApps.values.Where({ $null -ne $_ }).count -gt 0)
+            if ($myProtectedApps.values.Where({ $null -ne $_ }).Count -gt 0)
             {
                 $complexProtectedApps += $myProtectedApps
             }
@@ -377,10 +377,10 @@ function Get-TargetResource
         $complexSmbAutoEncryptedFileExtensions = @()
         foreach ($currentSmbAutoEncryptedFileExtensions in $getValue.smbAutoEncryptedFileExtensions)
         {
-            $mySmbAutoEncryptedFileExtensions = @{}
+            $mySmbAutoEncryptedFileExtensions = [ordered]@{}
             $mySmbAutoEncryptedFileExtensions.Add('DisplayName', $currentSmbAutoEncryptedFileExtensions.displayName)
             $mySmbAutoEncryptedFileExtensions.Add('Resources', $currentSmbAutoEncryptedFileExtensions.resources)
-            if ($mySmbAutoEncryptedFileExtensions.values.Where({ $null -ne $_ }).count -gt 0)
+            if ($mySmbAutoEncryptedFileExtensions.values.Where({ $null -ne $_ }).Count -gt 0)
             {
                 $complexSmbAutoEncryptedFileExtensions += $mySmbAutoEncryptedFileExtensions
             }
@@ -432,7 +432,7 @@ function Get-TargetResource
             AccessTokens                           = $AccessTokens
             #endregion
         }
-        if ($getValue.assignments.count -gt 0)
+        if ($getValue.assignments.Count -gt 0)
         {
             $results.Add('Assignments', (ConvertFrom-IntunePolicyAssignment -Assignments $getValue.assignments -IncludeDeviceFilter $false))
         }
@@ -615,7 +615,7 @@ function Set-TargetResource
     {
         Write-Verbose -Message "Creating an Intune Windows Information Protection Policy for Windows10 Mdm Enrolled with DisplayName {$DisplayName}"
 
-        $PSBoundParameters.remove('Assignments') | Out-Null
+        $PSBoundParameters.Remove('Assignments') | Out-Null
         $CreateParameters = Remove-M365DSCAuthenticationParameter -BoundParameters $PSBoundParameters
         $CreateParameters = Rename-M365DSCCimInstanceParameter -Properties $CreateParameters
         $CreateParameters.Remove('Id') | Out-Null
@@ -623,7 +623,7 @@ function Set-TargetResource
         $keys = (([Hashtable]$CreateParameters).Clone()).Keys
         foreach ($key in $keys)
         {
-            if ($null -ne $CreateParameters.$key -and $CreateParameters.$key.getType().Name -like '*cimInstance*')
+            if ($null -ne $CreateParameters.$key -and $CreateParameters.$key.GetType().Name -like '*cimInstance*')
             {
                 $CreateParameters.$key = Convert-M365DSCDRGComplexTypeToHashtable -ComplexObject $CreateParameters.$key
             }
@@ -646,7 +646,7 @@ function Set-TargetResource
     {
         Write-Verbose -Message "Updating the Intune Windows Information Protection Policy for Windows10 Mdm Enrolled with Id {$($currentInstance.Id)}"
 
-        $PSBoundParameters.remove('Assignments') | Out-Null
+        $PSBoundParameters.Remove('Assignments') | Out-Null
         $UpdateParameters = Remove-M365DSCAuthenticationParameter -BoundParameters $PSBoundParameters
         $UpdateParameters = Rename-M365DSCCimInstanceParameter -Properties $UpdateParameters
 
@@ -655,7 +655,7 @@ function Set-TargetResource
         $keys = (([Hashtable]$UpdateParameters).Clone()).Keys
         foreach ($key in $keys)
         {
-            if ($null -ne $UpdateParameters.$key -and $UpdateParameters.$key.getType().Name -like '*cimInstance*')
+            if ($null -ne $UpdateParameters.$key -and $UpdateParameters.$key.GetType().Name -like '*cimInstance*')
             {
                 $UpdateParameters.$key = Convert-M365DSCDRGComplexTypeToHashtable -ComplexObject $UpdateParameters.$key
             }
@@ -829,9 +829,6 @@ function Test-TargetResource
         $AccessTokens
     )
 
-    #Ensure the proper dependencies are installed in the current environment.
-    Confirm-M365DSCDependencies
-
     #region Telemetry
     $ResourceName = $MyInvocation.MyCommand.ModuleName.Replace('MSFT_', '')
     $CommandName = $MyInvocation.MyCommand
@@ -841,54 +838,9 @@ function Test-TargetResource
     Add-M365DSCTelemetryEvent -Data $data
     #endregion
 
-    Write-Verbose -Message "Testing configuration of the Intune Windows Information Protection Policy for Windows10 Mdm Enrolled with Id {$Id} and DisplayName {$DisplayName}"
-
-    $CurrentValues = Get-TargetResource @PSBoundParameters
-    $ValuesToCheck = Remove-M365DSCAuthenticationParameter -BoundParameters $PSBoundParameters
-    $testResult = $true
-
-    #Compare Cim instances
-    foreach ($key in $PSBoundParameters.Keys)
-    {
-        $source = $PSBoundParameters.$key
-        $target = $CurrentValues.$key
-        if ($source.getType().Name -like '*CimInstance*')
-        {
-            $testResult = Compare-M365DSCComplexObject `
-                -Source ($source) `
-                -Target ($target)
-
-            if ($key -eq 'Assignments')
-            {
-                $testResult = Compare-M365DSCIntunePolicyAssignment -Source $source -Target $target
-            }
-
-            if (-Not $testResult)
-            {
-                $testResult = $false
-                break
-            }
-
-            $ValuesToCheck.Remove($key) | Out-Null
-
-        }
-    }
-    $ValuesToCheck.Remove('Id') | Out-Null
-
-    Write-Verbose -Message "Current Values: $(Convert-M365DscHashtableToString -Hashtable $CurrentValues)"
-    Write-Verbose -Message "Target Values: $(Convert-M365DscHashtableToString -Hashtable $ValuesToCheck)"
-
-    if ($testResult)
-    {
-        $testResult = Test-M365DSCParameterState -CurrentValues $CurrentValues `
-            -Source $($MyInvocation.MyCommand.Source) `
-            -DesiredValues $PSBoundParameters `
-            -ValuesToCheck $ValuesToCheck.Keys
-    }
-
-    Write-Verbose -Message "Test-TargetResource returned $testResult"
-
-    return $testResult
+    $result = Test-M365DSCTargetResource -DesiredValues $PSBoundParameters `
+                                         -ResourceName $($MyInvocation.MyCommand.Source).Replace('MSFT_', '')
+    return $result
 }
 
 function Export-TargetResource

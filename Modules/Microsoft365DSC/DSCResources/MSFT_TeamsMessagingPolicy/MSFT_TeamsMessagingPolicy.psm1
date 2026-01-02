@@ -20,6 +20,10 @@ function Get-TargetResource
 
         [Parameter()]
         [System.Boolean]
+        $AllowExtendedWorkInfoInSearch,
+
+        [Parameter()]
+        [System.Boolean]
         $AllowFullChatPermissionUserToDeleteAnyMessage,
 
         [Parameter()]
@@ -33,6 +37,11 @@ function Get-TargetResource
         [Parameter()]
         [System.Boolean]
         $AllowPasteInternetImage,
+
+        [Parameter()]
+        [ValidateSet('Enabled', 'Disabled')]
+        [System.String]
+        $AutoShareFilesInExternalChats,
 
         [Parameter()]
         [ValidateSet('Full', 'Limited', 'Restricted')]
@@ -156,6 +165,11 @@ function Get-TargetResource
         [System.String]
         [ValidateSet('UserPreference', 'Everyone', 'None')]
         $ReadReceiptsEnabledType,
+
+        [Parameter()]
+        [ValidateSet('Enabled', 'Disabled')]
+        [System.String]
+        $UseB2BInvitesToAddExternalUsers,
 
         [Parameter()]
         [System.String]
@@ -239,14 +253,18 @@ function Get-TargetResource
             {
                 $currentPolicy = $currentPolicy.Split(':')[1]
             }
+
+            $useB2BInvitesToAddExternalUsersValue = if ($policy.UseB2BInvitesToAddExternalUsers) { 'Enabled' } else { 'Disabled' }
             return @{
                 Identity                                      = $currentPolicy
                 AllowChatWithGroup                            = $policy.AllowChatWithGroup
                 AllowCustomGroupChatAvatars                   = $policy.AllowCustomGroupChatAvatars
+                AllowExtendedWorkInfoInSearch                 = $policy.AllowExtendedWorkInfoInSearch
                 AllowFullChatPermissionUserToDeleteAnyMessage = $policy.AllowFullChatPermissionUserToDeleteAnyMessage
                 AllowGiphyDisplay                             = $policy.AllowGiphyDisplay
                 AllowGroupChatJoinLinks                       = $policy.AllowGroupChatJoinLinks
                 AllowPasteInternetImage                       = $policy.AllowPasteInternetImage
+                AutoShareFilesInExternalChats                 = $policy.AutoShareFilesInExternalChats
                 ChatPermissionRole                            = $policy.ChatPermissionRole
                 CreateCustomEmojis                            = $policy.CreateCustomEmojis
                 DeleteCustomEmojis                            = $policy.DeleteCustomEmojis
@@ -276,6 +294,7 @@ function Get-TargetResource
                 AllowVideoMessages                            = $policy.AllowVideoMessages
                 ChannelsInChatListEnabledType                 = $policy.ChannelsInChatListEnabledType
                 AudioMessageEnabledType                       = $policy.AudioMessageEnabledType
+                UseB2BInvitesToAddExternalUsers               = $useB2BInvitesToAddExternalUsersValue
                 Description                                   = $policy.Description
                 Tenant                                        = $policy.Tenant
                 Ensure                                        = 'Present'
@@ -319,6 +338,10 @@ function Set-TargetResource
 
         [Parameter()]
         [System.Boolean]
+        $AllowExtendedWorkInfoInSearch,
+
+        [Parameter()]
+        [System.Boolean]
         $AllowFullChatPermissionUserToDeleteAnyMessage,
 
         [Parameter()]
@@ -332,6 +355,11 @@ function Set-TargetResource
         [Parameter()]
         [System.Boolean]
         $AllowPasteInternetImage,
+
+        [Parameter()]
+        [ValidateSet('Enabled', 'Disabled')]
+        [System.String]
+        $AutoShareFilesInExternalChats,
 
         [Parameter()]
         [ValidateSet('Full', 'Limited', 'Restricted')]
@@ -455,6 +483,11 @@ function Set-TargetResource
         [System.String]
         [ValidateSet('UserPreference', 'Everyone', 'None')]
         $ReadReceiptsEnabledType,
+
+        [Parameter()]
+        [ValidateSet('Enabled', 'Disabled')]
+        [System.String]
+        $UseB2BInvitesToAddExternalUsers,
 
         [Parameter()]
         [System.String]
@@ -511,6 +544,12 @@ function Set-TargetResource
     $curPolicy = Get-TargetResource @PSBoundParameters
     $SetParams = Remove-M365DSCAuthenticationParameter -BoundParameters $PSBoundParameters
 
+    # TODO: Review during next breaking change for updated documentation - Refactor if necessary
+    if ($SetParams.ContainsKey('UseB2BInvitesToAddExternalUsers'))
+    {
+        $SetParams.UseB2BInvitesToAddExternalUsers = if ($UseB2BInvitesToAddExternalUsers -eq 'Enabled') { $true } else { $false }
+    }
+
     if ($curPolicy.Ensure -eq 'Absent' -and 'Present' -eq $Ensure )
     {
         New-CsTeamsMessagingPolicy @SetParams
@@ -545,6 +584,10 @@ function Test-TargetResource
 
         [Parameter()]
         [System.Boolean]
+        $AllowExtendedWorkInfoInSearch,
+
+        [Parameter()]
+        [System.Boolean]
         $AllowFullChatPermissionUserToDeleteAnyMessage,
 
         [Parameter()]
@@ -558,6 +601,11 @@ function Test-TargetResource
         [Parameter()]
         [System.Boolean]
         $AllowPasteInternetImage,
+
+        [Parameter()]
+        [ValidateSet('Enabled', 'Disabled')]
+        [System.String]
+        $AutoShareFilesInExternalChats,
 
         [Parameter()]
         [ValidateSet('Full', 'Limited', 'Restricted')]
@@ -683,6 +731,11 @@ function Test-TargetResource
         $ReadReceiptsEnabledType,
 
         [Parameter()]
+        [ValidateSet('Enabled', 'Disabled')]
+        [System.String]
+        $UseB2BInvitesToAddExternalUsers,
+
+        [Parameter()]
         [System.String]
         $Description,
 
@@ -720,11 +773,8 @@ function Test-TargetResource
         $AccessTokens
     )
 
-    # Ensure the proper dependencies are installed in the current environment.
-    Confirm-M365DSCDependencies
-
     #region Telemetry
-    $ResourceName = $MyInvocation.MyCommand.ModuleName -replace 'MSFT_', ''
+    $ResourceName = $MyInvocation.MyCommand.ModuleName.Replace('MSFT_', '')
     $CommandName = $MyInvocation.MyCommand
     $data = Format-M365DSCTelemetryParameters -ResourceName $ResourceName `
         -CommandName $CommandName `
@@ -732,25 +782,9 @@ function Test-TargetResource
     Add-M365DSCTelemetryEvent -Data $data
     #endregion
 
-    Write-Verbose -Message 'Testing configuration of Teams messaging policy'
-
-    $CurrentValues = Get-TargetResource @PSBoundParameters
-
-    Write-Verbose -Message "Current Values: $(Convert-M365DscHashtableToString -Hashtable $CurrentValues)"
-    Write-Verbose -Message "Target Values: $(Convert-M365DscHashtableToString -Hashtable $PSBoundParameters)"
-
-    $ValuesToCheck = $PSBoundParameters
-
-    $ValuesToCheck.Remove('Tenant') | Out-Null
-    $TestResult = Test-M365DSCParameterState `
-        -CurrentValues $CurrentValues `
-        -Source $($MyInvocation.MyCommand.Source) `
-        -DesiredValues $PSBoundParameters `
-        -ValuesToCheck $ValuesToCheck.Keys
-
-    Write-Verbose -Message "Test-TargetResource returned $TestResult"
-
-    return $TestResult
+    $result = Test-M365DSCTargetResource -DesiredValues $PSBoundParameters `
+                                         -ResourceName $($MyInvocation.MyCommand.Source).Replace('MSFT_', '')
+    return $result
 }
 
 function Export-TargetResource

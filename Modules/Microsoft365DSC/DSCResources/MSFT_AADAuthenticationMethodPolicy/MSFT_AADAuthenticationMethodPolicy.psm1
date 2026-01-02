@@ -134,18 +134,18 @@ function Get-TargetResource
         Write-Verbose -Message "An Azure AD Authentication Method Policy with Id {$Id} and DisplayName {$DisplayName} was found."
 
         #region resource generator code
-        $complexRegistrationEnforcement = @{}
-        $complexAuthenticationMethodsRegistrationCampaign = @{}
+        $complexRegistrationEnforcement = [ordered]@{}
+        $complexAuthenticationMethodsRegistrationCampaign = [ordered]@{}
         $complexExcludeTargets = @()
         foreach ($currentExcludeTargets in $getValue.registrationEnforcement.authenticationMethodsRegistrationCampaign.excludeTargets)
         {
-            $myExcludeTargets = @{}
+            $myExcludeTargets = [ordered]@{}
             $myExcludeTargets.Add('Id', $currentExcludeTargets.id)
             if ($null -ne $currentExcludeTargets.targetType)
             {
                 $myExcludeTargets.Add('TargetType', $currentExcludeTargets.targetType.ToString())
             }
-            if ($myExcludeTargets.values.Where({ $null -ne $_ }).count -gt 0)
+            if ($myExcludeTargets.values.Where({ $null -ne $_ }).Count -gt 0)
             {
                 $complexExcludeTargets += $myExcludeTargets
             }
@@ -154,14 +154,14 @@ function Get-TargetResource
         $complexIncludeTargets = @()
         foreach ($currentIncludeTargets in $getValue.registrationEnforcement.authenticationMethodsRegistrationCampaign.includeTargets)
         {
-            $myIncludeTargets = @{}
+            $myIncludeTargets = [ordered]@{}
             $myIncludeTargets.Add('Id', $currentIncludeTargets.id)
             $myIncludeTargets.Add('TargetedAuthenticationMethod', $currentIncludeTargets.targetedAuthenticationMethod)
             if ($null -ne $currentIncludeTargets.targetType)
             {
                 $myIncludeTargets.Add('TargetType', $currentIncludeTargets.targetType.ToString())
             }
-            if ($myIncludeTargets.values.Where({ $null -ne $_ }).count -gt 0)
+            if ($myIncludeTargets.values.Where({ $null -ne $_ }).Count -gt 0)
             {
                 $complexIncludeTargets += $myIncludeTargets
             }
@@ -172,18 +172,18 @@ function Get-TargetResource
         {
             $complexAuthenticationMethodsRegistrationCampaign.Add('State', $getValue.registrationEnforcement.authenticationMethodsRegistrationCampaign.state.ToString())
         }
-        if ($complexAuthenticationMethodsRegistrationCampaign.values.Where({ $null -ne $_ }).count -eq 0)
+        if ($complexAuthenticationMethodsRegistrationCampaign.values.Where({ $null -ne $_ }).Count -eq 0)
         {
             $complexAuthenticationMethodsRegistrationCampaign = $null
         }
         $complexRegistrationEnforcement.Add('AuthenticationMethodsRegistrationCampaign', $complexAuthenticationMethodsRegistrationCampaign)
-        if ($complexRegistrationEnforcement.values.Where({ $null -ne $_ }).count -eq 0)
+        if ($complexRegistrationEnforcement.values.Where({ $null -ne $_ }).Count -eq 0)
         {
             $complexRegistrationEnforcement = $null
         }
 
-        $complexReportSuspiciousActivitySettings = @{}
-        $newComplexIncludeTarget = @{}
+        $complexReportSuspiciousActivitySettings = [ordered]@{}
+        $newComplexIncludeTarget = [ordered]@{}
         $newComplexIncludeTarget.Add('Id', $getValue.ReportSuspiciousActivitySettings.IncludeTarget.id)
         if ($null -ne $getValue.ReportSuspiciousActivitySettings.IncludeTarget.targetType)
         {
@@ -199,22 +199,22 @@ function Get-TargetResource
         {
             $complexReportSuspiciousActivitySettings.Add('VoiceReportingCode', $getValue.ReportSuspiciousActivitySettings.VoiceReportingCode)
         }
-        if ($complexReportSuspiciousActivitySettings.values.Where({ $null -ne $_ }).count -eq 0)
+        if ($complexReportSuspiciousActivitySettings.values.Where({ $null -ne $_ }).Count -eq 0)
         {
             $complexReportSuspiciousActivitySettings = $null
         }
 
-        $complexSystemCredentialPreferences = @{}
+        $complexSystemCredentialPreferences = [ordered]@{}
         $complexExcludeTargets = @()
         foreach ($currentExcludeTargets in $getValue.SystemCredentialPreferences.excludeTargets)
         {
-            $myExcludeTargets = @{}
+            $myExcludeTargets = [ordered]@{}
             $myExcludeTargets.Add('Id', $currentExcludeTargets.id)
             if ($null -ne $currentExcludeTargets.targetType)
             {
                 $myExcludeTargets.Add('TargetType', $currentExcludeTargets.targetType.ToString())
             }
-            if ($myExcludeTargets.values.Where({ $null -ne $_ }).count -gt 0)
+            if ($myExcludeTargets.values.Where({ $null -ne $_ }).Count -gt 0)
             {
                 $complexExcludeTargets += $myExcludeTargets
             }
@@ -223,13 +223,13 @@ function Get-TargetResource
         $complexIncludeTargets = @()
         foreach ($currentIncludeTargets in $getValue.SystemCredentialPreferences.includeTargets)
         {
-            $myIncludeTargets = @{}
+            $myIncludeTargets = [ordered]@{}
             $myIncludeTargets.Add('Id', $currentIncludeTargets.id)
             if ($null -ne $currentIncludeTargets.targetType)
             {
                 $myIncludeTargets.Add('TargetType', $currentIncludeTargets.targetType.ToString())
             }
-            if ($myIncludeTargets.values.Where({ $null -ne $_ }).count -gt 0)
+            if ($myIncludeTargets.values.Where({ $null -ne $_ }).Count -gt 0)
             {
                 $complexIncludeTargets += $myIncludeTargets
             }
@@ -239,7 +239,7 @@ function Get-TargetResource
         {
             $complexSystemCredentialPreferences.Add('State', $getValue.SystemCredentialPreferences.state.ToString())
         }
-        if ($complexSystemCredentialPreferences.values.Where({ $null -ne $_ }).count -eq 0)
+        if ($complexSystemCredentialPreferences.values.Where({ $null -ne $_ }).Count -eq 0)
         {
             $complexSystemCredentialPreferences = $null
         }
@@ -387,7 +387,7 @@ function Set-TargetResource
         $keys = (([Hashtable]$UpdateParameters).Clone()).Keys
         foreach ($key in $keys)
         {
-            if ($null -ne $UpdateParameters.$key -and $UpdateParameters.$key.getType().Name -like '*cimInstance*')
+            if ($null -ne $UpdateParameters.$key -and $UpdateParameters.$key.GetType().Name -like '*cimInstance*')
             {
                 $UpdateParameters.$key = Convert-M365DSCDRGComplexTypeToHashtable -ComplexObject $UpdateParameters.$key
             }

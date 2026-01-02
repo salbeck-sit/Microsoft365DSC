@@ -7,7 +7,7 @@ function Get-TargetResource
     param
     (
         [Parameter()]
-        [ValidateSet('#microsoft.graph.countryNamedLocation', '#microsoft.graph.ipNamedLocation', '#microsoft.graph.compliantNetworkNamedLocation')]
+        [ValidateSet('#microsoft.graph.CountryNamedLocation', '#microsoft.graph.ipNamedLocation', '#microsoft.graph.compliantNetworkNamedLocation')]
         [System.String]
         $OdataType,
 
@@ -95,19 +95,13 @@ function Get-TargetResource
             Add-M365DSCTelemetryEvent -Data $data
             #endregion
 
-
             $nullReturn = $PSBoundParameters
             $nullReturn.Ensure = 'Absent'
-            try
+
+            $NamedLocation = $null
+            if (-not [System.String]::IsNullOrEmpty($Id))
             {
-                if ($Id)
-                {
-                    $NamedLocation = Get-MgBetaIdentityConditionalAccessNamedLocation -NamedLocationId $Id -ErrorAction Stop
-                }
-            }
-            catch
-            {
-                Write-Verbose -Message "Could not retrieve AAD Named Location by ID {$Id}"
+                $NamedLocation = Get-MgBetaIdentityConditionalAccessNamedLocation -NamedLocationId $Id -ErrorAction SilentlyContinue
             }
 
             if ($null -eq $NamedLocation)
@@ -182,7 +176,7 @@ function Set-TargetResource
     param
     (
         [Parameter()]
-        [ValidateSet('#microsoft.graph.countryNamedLocation', '#microsoft.graph.ipNamedLocation', '#microsoft.graph.compliantNetworkNamedLocation')]
+        [ValidateSet('#microsoft.graph.CountryNamedLocation', '#microsoft.graph.ipNamedLocation', '#microsoft.graph.compliantNetworkNamedLocation')]
         [System.String]
         $OdataType,
 
@@ -310,7 +304,7 @@ function Set-TargetResource
             $desiredValues.Add('ipRanges', $IpRangesValue)
         }
     }
-    elseif ($OdataType -eq '#microsoft.graph.countryNamedLocation')
+    elseif ($OdataType -eq '#microsoft.graph.CountryNamedLocation')
     {
         $desiredValues.Add('includeUnknownCountriesAndRegions', $IncludeUnknownCountriesAndRegions)
         $desiredValues.Add('countriesAndRegions', $CountriesAndRegions)
@@ -360,7 +354,7 @@ function Test-TargetResource
     param
     (
         [Parameter()]
-        [ValidateSet('#microsoft.graph.countryNamedLocation', '#microsoft.graph.ipNamedLocation', '#microsoft.graph.compliantNetworkNamedLocation')]
+        [ValidateSet('#microsoft.graph.CountryNamedLocation', '#microsoft.graph.ipNamedLocation', '#microsoft.graph.compliantNetworkNamedLocation')]
         [System.String]
         $OdataType,
 

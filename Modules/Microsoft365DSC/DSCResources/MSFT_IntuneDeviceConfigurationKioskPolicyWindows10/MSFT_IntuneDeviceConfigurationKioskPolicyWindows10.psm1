@@ -166,13 +166,13 @@ function Get-TargetResource
         $complexKioskProfiles = @()
         foreach ($currentkioskProfiles in $getValue.AdditionalProperties.kioskProfiles)
         {
-            $mykioskProfiles = @{}
-            $complexAppConfiguration = @{}
+            $mykioskProfiles = [ordered]@{}
+            $complexAppConfiguration = [ordered]@{}
             $complexAppConfiguration.Add('AllowAccessToDownloadsFolder', $currentkioskProfiles.appConfiguration.allowAccessToDownloadsFolder)
             $complexApps = @()
             foreach ($currentApps in $currentkioskProfiles.appConfiguration.apps)
             {
-                $myApps = @{}
+                $myApps = [ordered]@{}
                 if ($null -ne $currentApps.appType)
                 {
                     $myApps.Add('AppType', $currentApps.appType.ToString())
@@ -201,7 +201,7 @@ function Get-TargetResource
                 {
                     $myApps.Add('odataType', $currentApps.'@odata.type'.ToString())
                 }
-                if ($myApps.values.Where({ $null -ne $_ }).count -gt 0)
+                if ($myApps.values.Where({ $null -ne $_ }).Count -gt 0)
                 {
                     $complexApps += $myApps
                 }
@@ -210,7 +210,7 @@ function Get-TargetResource
             $complexAppConfiguration.Add('DisallowDesktopApps', $currentkioskProfiles.appConfiguration.disallowDesktopApps)
             $complexAppConfiguration.Add('ShowTaskBar', $currentkioskProfiles.appConfiguration.showTaskBar)
             $complexAppConfiguration.Add('StartMenuLayoutXml', $currentkioskProfiles.appConfiguration.startMenuLayoutXml)
-            $complexUwpApp = @{}
+            $complexUwpApp = [ordered]@{}
             $complexUwpApp.Add('AppId', $currentkioskProfiles.appConfiguration.uwpApp.appId)
             $complexUwpApp.Add('AppUserModelId', $currentkioskProfiles.appConfiguration.uwpApp.appUserModelId)
             $complexUwpApp.Add('ContainedAppId', $currentkioskProfiles.appConfiguration.uwpApp.containedAppId)
@@ -239,12 +239,12 @@ function Get-TargetResource
             {
                 $complexUwpApp.Add('odataType', $currentkioskProfiles.appConfiguration.uwpApp.'@odata.type'.ToString())
             }
-            if ($complexUwpApp.values.Where({ $null -ne $_ }).count -eq 0)
+            if ($complexUwpApp.values.Where({ $null -ne $_ }).Count -eq 0)
             {
                 $complexUwpApp = $null
             }
             $complexAppConfiguration.Add('UwpApp', $complexUwpApp)
-            $complexWin32App = @{}
+            $complexWin32App = [ordered]@{}
             $complexWin32App.Add('ClassicAppPath', $currentkioskProfiles.appConfiguration.win32App.classicAppPath)
             $complexWin32App.Add('EdgeKiosk', $currentkioskProfiles.appConfiguration.win32App.edgeKiosk)
             $complexWin32App.Add('EdgeKioskIdleTimeoutMinutes', $currentkioskProfiles.appConfiguration.win32App.edgeKioskIdleTimeoutMinutes)
@@ -273,7 +273,7 @@ function Get-TargetResource
             {
                 $complexWin32App.Add('odataType', $currentkioskProfiles.appConfiguration.win32App.'@odata.type'.ToString())
             }
-            if ($complexWin32App.values.Where({ $null -ne $_ }).count -eq 0)
+            if ($complexWin32App.values.Where({ $null -ne $_ }).Count -eq 0)
             {
                 $complexWin32App = $null
             }
@@ -282,7 +282,7 @@ function Get-TargetResource
             {
                 $complexAppConfiguration.Add('odataType', $currentkioskProfiles.appConfiguration.'@odata.type'.ToString())
             }
-            if ($complexAppConfiguration.values.Where({ $null -ne $_ }).count -eq 0)
+            if ($complexAppConfiguration.values.Where({ $null -ne $_ }).Count -eq 0)
             {
                 $complexAppConfiguration = $null
             }
@@ -292,7 +292,7 @@ function Get-TargetResource
             $complexUserAccountsConfiguration = @()
             foreach ($currentUserAccountsConfiguration in $currentkioskProfiles.userAccountsConfiguration)
             {
-                $myUserAccountsConfiguration = @{}
+                $myUserAccountsConfiguration = [ordered]@{}
                 $myUserAccountsConfiguration.Add('GroupName', $currentUserAccountsConfiguration.groupName)
                 $myUserAccountsConfiguration.Add('DisplayName', $currentUserAccountsConfiguration.displayName)
                 $myUserAccountsConfiguration.Add('GroupId', $currentUserAccountsConfiguration.groupId)
@@ -303,19 +303,19 @@ function Get-TargetResource
                 {
                     $myUserAccountsConfiguration.Add('odataType', $currentUserAccountsConfiguration.'@odata.type'.ToString())
                 }
-                if ($myUserAccountsConfiguration.values.Where({ $null -ne $_ }).count -gt 0)
+                if ($myUserAccountsConfiguration.values.Where({ $null -ne $_ }).Count -gt 0)
                 {
                     $complexUserAccountsConfiguration += $myUserAccountsConfiguration
                 }
             }
             $mykioskProfiles.Add('UserAccountsConfiguration', $complexUserAccountsConfiguration)
-            if ($mykioskProfiles.values.Where({ $null -ne $_ }).count -gt 0)
+            if ($mykioskProfiles.values.Where({ $null -ne $_ }).Count -gt 0)
             {
                 $complexKioskProfiles += $mykioskProfiles
             }
         }
 
-        $complexWindowsKioskForceUpdateSchedule = @{}
+        $complexWindowsKioskForceUpdateSchedule = [ordered]@{}
         $complexWindowsKioskForceUpdateSchedule.Add('DayofMonth', $getValue.AdditionalProperties.windowsKioskForceUpdateSchedule.dayofMonth)
         if ($null -ne $getValue.AdditionalProperties.windowsKioskForceUpdateSchedule.dayofWeek)
         {
@@ -330,7 +330,7 @@ function Get-TargetResource
         {
             $complexWindowsKioskForceUpdateSchedule.Add('StartDateTime', ([DateTimeOffset]$getValue.AdditionalProperties.windowsKioskForceUpdateSchedule.startDateTime).ToString('o'))
         }
-        if ($complexWindowsKioskForceUpdateSchedule.values.Where({ $null -ne $_ }).count -eq 0)
+        if ($complexWindowsKioskForceUpdateSchedule.values.Where({ $null -ne $_ }).Count -eq 0)
         {
             $complexWindowsKioskForceUpdateSchedule = $null
         }
@@ -515,7 +515,7 @@ function Set-TargetResource
         $keys = (([Hashtable]$CreateParameters).Clone()).Keys
         foreach ($key in $keys)
         {
-            if ($null -ne $CreateParameters.$key -and $CreateParameters.$key.getType().Name -like '*cimInstance*')
+            if ($null -ne $CreateParameters.$key -and $CreateParameters.$key.GetType().Name -like '*cimInstance*')
             {
                 $CreateParameters.$key = Convert-M365DSCDRGComplexTypeToHashtable -ComplexObject $CreateParameters.$key
             }
@@ -546,7 +546,7 @@ function Set-TargetResource
         $keys = (([Hashtable]$UpdateParameters).Clone()).Keys
         foreach ($key in $keys)
         {
-            if ($null -ne $UpdateParameters.$key -and $UpdateParameters.$key.getType().Name -like '*cimInstance*')
+            if ($null -ne $UpdateParameters.$key -and $UpdateParameters.$key.GetType().Name -like '*cimInstance*')
             {
                 $UpdateParameters.$key = Convert-M365DSCDRGComplexTypeToHashtable -ComplexObject $UpdateParameters.$key
             }
@@ -674,9 +674,6 @@ function Test-TargetResource
         $AccessTokens
     )
 
-    #Ensure the proper dependencies are installed in the current environment.
-    Confirm-M365DSCDependencies
-
     #region Telemetry
     $ResourceName = $MyInvocation.MyCommand.ModuleName.Replace('MSFT_', '')
     $CommandName = $MyInvocation.MyCommand
@@ -686,49 +683,9 @@ function Test-TargetResource
     Add-M365DSCTelemetryEvent -Data $data
     #endregion
 
-    Write-Verbose -Message "Testing configuration of the Intune Device Configuration Kiosk Policy for Windows10 with Id {$Id} and DisplayName {$DisplayName}"
-
-    $CurrentValues = Get-TargetResource @PSBoundParameters
-    $ValuesToCheck = Remove-M365DSCAuthenticationParameter -BoundParameters $PSBoundParameters
-    $testResult = $true
-
-    #Compare Cim instances
-    foreach ($key in $PSBoundParameters.Keys)
-    {
-        $source = $PSBoundParameters.$key
-        $target = $CurrentValues.$key
-        if ($source.getType().Name -like '*CimInstance*')
-        {
-            $testResult = Compare-M365DSCComplexObject `
-                -Source ($source) `
-                -Target ($target)
-
-            if (-Not $testResult)
-            {
-                $testResult = $false
-                break
-            }
-
-            $ValuesToCheck.Remove($key) | Out-Null
-        }
-    }
-
-    $ValuesToCheck.remove('Id') | Out-Null
-
-    Write-Verbose -Message "Current Values: $(Convert-M365DscHashtableToString -Hashtable $CurrentValues)"
-    Write-Verbose -Message "Target Values: $(Convert-M365DscHashtableToString -Hashtable $ValuesToCheck)"
-
-    if ($testResult)
-    {
-        $testResult = Test-M365DSCParameterState -CurrentValues $CurrentValues `
-            -Source $($MyInvocation.MyCommand.Source) `
-            -DesiredValues $PSBoundParameters `
-            -ValuesToCheck $ValuesToCheck.Keys
-    }
-
-    Write-Verbose -Message "Test-TargetResource returned $testResult"
-
-    return $testResult
+    $result = Test-M365DSCTargetResource -DesiredValues $PSBoundParameters `
+                                         -ResourceName $($MyInvocation.MyCommand.Source).Replace('MSFT_', '')
+    return $result
 }
 
 function Export-TargetResource

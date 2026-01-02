@@ -24,7 +24,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             $secpasswd = ConvertTo-SecureString (New-Guid | Out-String) -AsPlainText -Force
             $Credential = New-Object System.Management.Automation.PSCredential ('tenantadmin@mydomain.com', $secpasswd)
 
-            Mock -CommandName Confirm-M365DSCDependencies -MockWith {
+            Mock -ModuleName M365DSCUtil -CommandName Confirm-M365DSCDependencies -MockWith {
             }
 
             Mock -CommandName New-M365DSCConnection -MockWith {
@@ -68,13 +68,17 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
         Context -Name 'Address Book Policy should exist. Address Book Policy is missing. Test should fail.' -Fixture {
             BeforeAll {
                 $testParams = @{
-                    Name               = 'Contoso Different ABP' # Drift
-                    AddressLists       = '\All Contoso'
+                    Name               = 'Contoso ABP'
+                    AddressLists       = '\All Contoso Other'
                     GlobalAddressList  = '\All Contoso'
                     OfflineAddressBook = '\Contoso-All-OAB'
                     RoomList           = '\All Contoso-Rooms'
                     Ensure             = 'Present'
                     Credential         = $Credential
+                }
+
+                Mock -CommandName Get-AddressBookPolicy -MockWith {
+                    return $null
                 }
             }
 
@@ -155,4 +159,3 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
 }
 
 Invoke-Command -ScriptBlock $Global:DscHelper.CleanupScript -NoNewScope
-

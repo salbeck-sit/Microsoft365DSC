@@ -237,19 +237,19 @@ function Get-TargetResource
         $complexAssociatedApps = @()
         foreach ($currentassociatedApps in $getValue.AdditionalProperties.associatedApps)
         {
-            $myassociatedApps = @{}
+            $myassociatedApps = [ordered]@{}
             if ($null -ne $currentassociatedApps.appType)
             {
                 $myassociatedApps.Add('AppType', $currentassociatedApps.appType.ToString())
             }
             $myassociatedApps.Add('Identifier', $currentassociatedApps.identifier)
-            if ($myassociatedApps.values.Where({ $null -ne $_ }).count -gt 0)
+            if ($myassociatedApps.values.Where({ $null -ne $_ }).Count -gt 0)
             {
                 $complexAssociatedApps += $myassociatedApps
             }
         }
 
-        $complexCryptographySuite = @{}
+        $complexCryptographySuite = [ordered]@{}
         if ($null -ne $getValue.AdditionalProperties.cryptographySuite.authenticationTransformConstants)
         {
             $complexCryptographySuite.Add('AuthenticationTransformConstants', $getValue.AdditionalProperties.cryptographySuite.authenticationTransformConstants.ToString())
@@ -274,7 +274,7 @@ function Get-TargetResource
         {
             $complexCryptographySuite.Add('PfsGroup', $getValue.AdditionalProperties.cryptographySuite.pfsGroup.ToString())
         }
-        if ($complexCryptographySuite.values.Where({ $null -ne $_ }).count -eq 0)
+        if ($complexCryptographySuite.values.Where({ $null -ne $_ }).Count -eq 0)
         {
             $complexCryptographySuite = $null
         }
@@ -282,19 +282,19 @@ function Get-TargetResource
         $complexDnsRules = @()
         foreach ($currentdnsRules in $getValue.AdditionalProperties.dnsRules)
         {
-            $mydnsRules = @{}
+            $mydnsRules = [ordered]@{}
             $mydnsRules.Add('AutoTrigger', $currentdnsRules.autoTrigger)
             $mydnsRules.Add('Name', $currentdnsRules.name)
             $mydnsRules.Add('Persistent', $currentdnsRules.persistent)
             $mydnsRules.Add('ProxyServerUri', $currentdnsRules.proxyServerUri)
             $mydnsRules.Add('Servers', $currentdnsRules.servers)
-            if ($mydnsRules.values.Where({ $null -ne $_ }).count -gt 0)
+            if ($mydnsRules.values.Where({ $null -ne $_ }).Count -gt 0)
             {
                 $complexDnsRules += $mydnsRules
             }
         }
 
-        $complexProxyServer = @{}
+        $complexProxyServer = [ordered]@{}
         $complexProxyServer.Add('BypassProxyServerForLocalAddress', $getValue.AdditionalProperties.proxyServer.bypassProxyServerForLocalAddress)
         $complexProxyServer.Add('Address', $getValue.AdditionalProperties.proxyServer.address)
         $complexProxyServer.Add('AutomaticConfigurationScriptUrl', $getValue.AdditionalProperties.proxyServer.automaticConfigurationScriptUrl)
@@ -304,7 +304,7 @@ function Get-TargetResource
         {
             $complexProxyServer.Add('odataType', $getValue.AdditionalProperties.proxyServer.'@odata.type'.ToString())
         }
-        if ($complexProxyServer.values.Where({ $null -ne $_ }).count -eq 0)
+        if ($complexProxyServer.values.Where({ $null -ne $_ }).Count -eq 0)
         {
             $complexProxyServer = $null
         }
@@ -312,19 +312,19 @@ function Get-TargetResource
         $complexRoutes = @()
         foreach ($currentroutes in $getValue.AdditionalProperties.routes)
         {
-            $myroutes = @{}
+            $myroutes = [ordered]@{}
             $myroutes.Add('DestinationPrefix', $currentroutes.destinationPrefix)
             $myroutes.Add('PrefixSize', $currentroutes.prefixSize)
-            if ($myroutes.values.Where({ $null -ne $_ }).count -gt 0)
+            if ($myroutes.values.Where({ $null -ne $_ }).Count -gt 0)
             {
                 $complexRoutes += $myroutes
             }
         }
 
-        $complexSingleSignOnEku = @{}
+        $complexSingleSignOnEku = [ordered]@{}
         $complexSingleSignOnEku.Add('Name', $getValue.AdditionalProperties.singleSignOnEku.name)
         $complexSingleSignOnEku.Add('ObjectIdentifier', $getValue.AdditionalProperties.singleSignOnEku.objectIdentifier)
-        if ($complexSingleSignOnEku.values.Where({ $null -ne $_ }).count -eq 0)
+        if ($complexSingleSignOnEku.values.Where({ $null -ne $_ }).Count -eq 0)
         {
             $complexSingleSignOnEku = $null
         }
@@ -332,7 +332,7 @@ function Get-TargetResource
         $complexTrafficRules = @()
         foreach ($currenttrafficRules in $getValue.AdditionalProperties.trafficRules)
         {
-            $mytrafficRules = @{}
+            $mytrafficRules = [ordered]@{}
             $mytrafficRules.Add('AppId', $currenttrafficRules.appId)
             if ($null -ne $currenttrafficRules.appType)
             {
@@ -342,7 +342,7 @@ function Get-TargetResource
             $complexLocalAddressRanges = @()
             foreach ($currentLocalAddressRanges in $currenttrafficRules.localAddressRanges)
             {
-                $myLocalAddressRanges = @{}
+                $myLocalAddressRanges = [ordered]@{}
                 $myLocalAddressRanges.Add('LowerAddress', $currentLocalAddressRanges.lowerAddress)
                 $myLocalAddressRanges.Add('UpperAddress', $currentLocalAddressRanges.upperAddress)
                 $myLocalAddressRanges.Add('CidrAddress', $currentLocalAddressRanges.cidrAddress)
@@ -350,7 +350,7 @@ function Get-TargetResource
                 {
                     $myLocalAddressRanges.Add('odataType', $currentLocalAddressRanges.'@odata.type'.ToString())
                 }
-                if ($myLocalAddressRanges.values.Where({ $null -ne $_ }).count -gt 0)
+                if ($myLocalAddressRanges.values.Where({ $null -ne $_ }).Count -gt 0)
                 {
                     $complexLocalAddressRanges += $myLocalAddressRanges
                 }
@@ -359,10 +359,10 @@ function Get-TargetResource
             $complexLocalPortRanges = @()
             foreach ($currentLocalPortRanges in $currenttrafficRules.localPortRanges)
             {
-                $myLocalPortRanges = @{}
+                $myLocalPortRanges = [ordered]@{}
                 $myLocalPortRanges.Add('LowerNumber', $currentLocalPortRanges.lowerNumber)
                 $myLocalPortRanges.Add('UpperNumber', $currentLocalPortRanges.upperNumber)
-                if ($myLocalPortRanges.values.Where({ $null -ne $_ }).count -gt 0)
+                if ($myLocalPortRanges.values.Where({ $null -ne $_ }).Count -gt 0)
                 {
                     $complexLocalPortRanges += $myLocalPortRanges
                 }
@@ -373,7 +373,7 @@ function Get-TargetResource
             $complexRemoteAddressRanges = @()
             foreach ($currentRemoteAddressRanges in $currenttrafficRules.remoteAddressRanges)
             {
-                $myRemoteAddressRanges = @{}
+                $myRemoteAddressRanges = [ordered]@{}
                 $myRemoteAddressRanges.Add('LowerAddress', $currentRemoteAddressRanges.lowerAddress)
                 $myRemoteAddressRanges.Add('UpperAddress', $currentRemoteAddressRanges.upperAddress)
                 $myRemoteAddressRanges.Add('CidrAddress', $currentRemoteAddressRanges.cidrAddress)
@@ -381,7 +381,7 @@ function Get-TargetResource
                 {
                     $myRemoteAddressRanges.Add('odataType', $currentRemoteAddressRanges.'@odata.type'.ToString())
                 }
-                if ($myRemoteAddressRanges.values.Where({ $null -ne $_ }).count -gt 0)
+                if ($myRemoteAddressRanges.values.Where({ $null -ne $_ }).Count -gt 0)
                 {
                     $complexRemoteAddressRanges += $myRemoteAddressRanges
                 }
@@ -390,10 +390,10 @@ function Get-TargetResource
             $complexRemotePortRanges = @()
             foreach ($currentRemotePortRanges in $currenttrafficRules.remotePortRanges)
             {
-                $myRemotePortRanges = @{}
+                $myRemotePortRanges = [ordered]@{}
                 $myRemotePortRanges.Add('LowerNumber', $currentRemotePortRanges.lowerNumber)
                 $myRemotePortRanges.Add('UpperNumber', $currentRemotePortRanges.upperNumber)
-                if ($myRemotePortRanges.values.Where({ $null -ne $_ }).count -gt 0)
+                if ($myRemotePortRanges.values.Where({ $null -ne $_ }).Count -gt 0)
                 {
                     $complexRemotePortRanges += $myRemotePortRanges
                 }
@@ -407,7 +407,7 @@ function Get-TargetResource
             {
                 $mytrafficRules.Add('VpnTrafficDirection', $currenttrafficRules.vpnTrafficDirection.ToString())
             }
-            if ($mytrafficRules.values.Where({ $null -ne $_ }).count -gt 0)
+            if ($mytrafficRules.values.Where({ $null -ne $_ }).Count -gt 0)
             {
                 $complexTrafficRules += $mytrafficRules
             }
@@ -416,11 +416,11 @@ function Get-TargetResource
         $complexServers = @()
         foreach ($currentservers in $getValue.AdditionalProperties.servers)
         {
-            $myservers = @{}
+            $myservers = [ordered]@{}
             $myservers.Add('Address', $currentservers.address)
             $myservers.Add('Description', $currentservers.description)
             $myservers.Add('IsDefaultServer', $currentservers.isDefaultServer)
-            if ($myservers.values.Where({ $null -ne $_ }).count -gt 0)
+            if ($myservers.values.Where({ $null -ne $_ }).Count -gt 0)
             {
                 $complexServers += $myservers
             }
@@ -718,7 +718,7 @@ function Set-TargetResource
         $keys = (([Hashtable]$CreateParameters).Clone()).Keys
         foreach ($key in $keys)
         {
-            if ($null -ne $CreateParameters.$key -and $CreateParameters.$key.getType().Name -like '*cimInstance*')
+            if ($null -ne $CreateParameters.$key -and $CreateParameters.$key.GetType().Name -like '*cimInstance*')
             {
                 $CreateParameters.$key = Convert-M365DSCDRGComplexTypeToHashtable -ComplexObject $CreateParameters.$key
             }
@@ -749,7 +749,7 @@ function Set-TargetResource
         $keys = (([Hashtable]$UpdateParameters).Clone()).Keys
         foreach ($key in $keys)
         {
-            if ($null -ne $UpdateParameters.$key -and $UpdateParameters.$key.getType().Name -like '*cimInstance*')
+            if ($null -ne $UpdateParameters.$key -and $UpdateParameters.$key.GetType().Name -like '*cimInstance*')
             {
                 $UpdateParameters.$key = Convert-M365DSCDRGComplexTypeToHashtable -ComplexObject $UpdateParameters.$key
             }
@@ -948,9 +948,6 @@ function Test-TargetResource
         $AccessTokens
     )
 
-    #Ensure the proper dependencies are installed in the current environment.
-    Confirm-M365DSCDependencies
-
     #region Telemetry
     $ResourceName = $MyInvocation.MyCommand.ModuleName.Replace('MSFT_', '')
     $CommandName = $MyInvocation.MyCommand
@@ -960,49 +957,9 @@ function Test-TargetResource
     Add-M365DSCTelemetryEvent -Data $data
     #endregion
 
-    Write-Verbose -Message "Testing configuration of the Intune Device Configuration Vpn Policy for Windows10 with Id {$Id} and DisplayName {$DisplayName}"
-
-    $CurrentValues = Get-TargetResource @PSBoundParameters
-    $ValuesToCheck = Remove-M365DSCAuthenticationParameter -BoundParameters $PSBoundParameters
-    $testResult = $true
-
-    #Compare Cim instances
-    foreach ($key in $PSBoundParameters.Keys)
-    {
-        $source = $PSBoundParameters.$key
-        $target = $CurrentValues.$key
-        if ($source.getType().Name -like '*CimInstance*')
-        {
-            $testResult = Compare-M365DSCComplexObject `
-                -Source ($source) `
-                -Target ($target)
-
-            if (-Not $testResult)
-            {
-                $testResult = $false
-                break
-            }
-
-            $ValuesToCheck.Remove($key) | Out-Null
-        }
-    }
-
-    $ValuesToCheck.remove('Id') | Out-Null
-
-    Write-Verbose -Message "Current Values: $(Convert-M365DscHashtableToString -Hashtable $CurrentValues)"
-    Write-Verbose -Message "Target Values: $(Convert-M365DscHashtableToString -Hashtable $ValuesToCheck)"
-
-    if ($testResult)
-    {
-        $testResult = Test-M365DSCParameterState -CurrentValues $CurrentValues `
-            -Source $($MyInvocation.MyCommand.Source) `
-            -DesiredValues $PSBoundParameters `
-            -ValuesToCheck $ValuesToCheck.Keys
-    }
-
-    Write-Verbose -Message "Test-TargetResource returned $testResult"
-
-    return $testResult
+    $result = Test-M365DSCTargetResource -DesiredValues $PSBoundParameters `
+                                         -ResourceName $($MyInvocation.MyCommand.Source).Replace('MSFT_', '')
+    return $result
 }
 
 function Export-TargetResource

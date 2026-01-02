@@ -45,5 +45,22 @@
   "supportedEnvironments": [
     "Global",
     "USGov"
+  ],
+  "mode": "Configuration",
+  "commands": [
+    {
+      "module": "Microsoft.Graph.Beta.Identity.Governance",
+      "cmdlets": [
+        "Get-MgBetaEntitlementManagementAccessPackageCatalog",
+        "Get-MgBetaEntitlementManagementAccessPackageCatalogAccessPackageResource",
+        "New-MgBetaEntitlementManagementAccessPackageResourceRequest"
+      ]
+    },
+    {
+      "module": "Microsoft.Graph.Groups",
+      "cmdlets": [
+        "Get-MgGroup"
+      ]
+    }
   ]
 }

@@ -36,5 +36,22 @@
   ],
   "supportedEnvironments": [
     "Global"
+  ],
+  "mode": "Configuration",
+  "commands": [
+    {
+      "module": "Microsoft.Graph.Authentication",
+      "cmdlets": [
+        "Invoke-MgGraphRequest"
+      ]
+    },
+    {
+      "module": "Microsoft.Graph.Beta.NetworkAccess",
+      "cmdlets": [
+        "Get-MgBetaNetworkAccessForwardingPolicy",
+        "New-MgBetaNetworkAccessForwardingPolicyRule",
+        "Remove-MgBetaNetworkAccessForwardingPolicyRule"
+      ]
+    }
   ]
 }

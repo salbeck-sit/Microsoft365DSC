@@ -35,5 +35,17 @@
   ],
   "supportedEnvironments": [
     "Global"
+  ],
+  "mode": "Configuration",
+  "commands": [
+    {
+      "module": "Microsoft.Graph.Beta.DeviceManagement",
+      "cmdlets": [
+        "Get-MgBetaDeviceManagementManagedDeviceCleanupRule",
+        "New-MgBetaDeviceManagementManagedDeviceCleanupRule",
+        "Remove-MgBetaDeviceManagementManagedDeviceCleanupRule",
+        "Update-MgBetaDeviceManagementManagedDeviceCleanupRule"
+      ]
+    }
   ]
 }

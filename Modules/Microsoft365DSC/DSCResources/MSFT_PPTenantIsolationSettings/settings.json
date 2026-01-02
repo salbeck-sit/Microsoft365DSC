@@ -37,5 +37,14 @@
   "requiredModules": [
     "Microsoft.Graph.Authentication",
     "MSCloudLoginAssistant"
+  ],
+  "mode": "Configuration",
+  "commands": [
+    {
+      "module": "Microsoft.Graph.Authentication",
+      "cmdlets": [
+        "Get-MgContext"
+      ]
+    }
   ]
 }

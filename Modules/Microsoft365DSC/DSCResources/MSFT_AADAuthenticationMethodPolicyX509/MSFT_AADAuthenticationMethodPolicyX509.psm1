@@ -108,13 +108,13 @@ function Get-TargetResource
         Write-Verbose -Message "An Azure AD Authentication Method Policy X509 with Id {$Id} was found."
 
         #region resource generator code
-        $complexAuthenticationModeConfiguration = @{}
+        $complexAuthenticationModeConfiguration = [ordered]@{}
         $complexRules = @()
-        if ($getValue.AdditionalProperties.authenticationModeConfiguration.rules.length -ne 0)
+        if ($getValue.AdditionalProperties.authenticationModeConfiguration.rules.Length -ne 0)
         {
             foreach ($currentRules in $getValue.AdditionalProperties.authenticationModeConfiguration.rules)
             {
-                $myRules = @{}
+                $myRules = [ordered]@{}
                 $myRules.Add('Identifier', $currentRules.identifier)
                 if ($null -ne $currentRules.x509CertificateAuthenticationMode)
                 {
@@ -124,7 +124,7 @@ function Get-TargetResource
                 {
                     $myRules.Add('X509CertificateRuleType', $currentRules.x509CertificateRuleType.ToString())
                 }
-                if ($myRules.values.Where({ $null -ne $_ }).count -gt 0 -and $myRules.Keys.Length -gt 0)
+                if ($myRules.values.Where({ $null -ne $_ }).Count -gt 0 -and $myRules.Keys.Length -gt 0)
                 {
                     $complexRules += $myRules
                 }
@@ -144,7 +144,7 @@ function Get-TargetResource
         {
             $complexAuthenticationModeConfiguration.Add('X509CertificateAuthenticationDefaultMode', $getValue.AdditionalProperties.authenticationModeConfiguration.x509CertificateAuthenticationDefaultMode.ToString())
         }
-        if ($complexAuthenticationModeConfiguration.values.Where({ $null -ne $_ }).count -eq 0)
+        if ($complexAuthenticationModeConfiguration.values.Where({ $null -ne $_ }).Count -eq 0)
         {
             $complexAuthenticationModeConfiguration = $null
         }
@@ -152,11 +152,11 @@ function Get-TargetResource
         $complexCertificateUserBindings = @()
         foreach ($currentcertificateUserBindings in $getValue.AdditionalProperties.certificateUserBindings)
         {
-            $mycertificateUserBindings = @{}
+            $mycertificateUserBindings = [ordered]@{}
             $mycertificateUserBindings.Add('Priority', $currentcertificateUserBindings.priority)
             $mycertificateUserBindings.Add('UserProperty', $currentcertificateUserBindings.userProperty)
             $mycertificateUserBindings.Add('X509CertificateField', $currentcertificateUserBindings.x509CertificateField)
-            if ($mycertificateUserBindings.values.Where({ $null -ne $_ }).count -gt 0)
+            if ($mycertificateUserBindings.values.Where({ $null -ne $_ }).Count -gt 0)
             {
                 $complexCertificateUserBindings += $mycertificateUserBindings
             }
@@ -166,7 +166,7 @@ function Get-TargetResource
         $complexExcludeTargets = @()
         foreach ($currentExcludeTargets in $getValue.excludeTargets)
         {
-            $myExcludeTargets = @{}
+            $myExcludeTargets = [ordered]@{}
             if ($currentExcludeTargets.id -ne 'all_users')
             {
                 try
@@ -195,7 +195,7 @@ function Get-TargetResource
                 $myExcludeTargets.Add('TargetType', $currentExcludeTargets.targetType.ToString())
             }
 
-            if ($myExcludeTargets.values.Where({ $null -ne $_ }).count -gt 0)
+            if ($myExcludeTargets.values.Where({ $null -ne $_ }).Count -gt 0)
             {
                 $complexExcludeTargets += $myExcludeTargets
             }
@@ -206,7 +206,7 @@ function Get-TargetResource
         $complexIncludeTargets = @()
         foreach ($currentIncludeTargets in $getValue.AdditionalProperties.includeTargets)
         {
-            $myIncludeTargets = @{}
+            $myIncludeTargets = [ordered]@{}
             if ($currentIncludeTargets.id -ne 'all_users')
             {
                 try
@@ -240,7 +240,7 @@ function Get-TargetResource
                 $myIncludeTargets.Add('isRegistrationRequired', [Boolean]$currentIncludeTargets.isRegistrationRequired)
             }
 
-            if ($myIncludeTargets.values.Where({ $null -ne $_ }).count -gt 0)
+            if ($myIncludeTargets.values.Where({ $null -ne $_ }).Count -gt 0)
             {
                 $complexIncludeTargets += $myIncludeTargets
             }
@@ -382,7 +382,7 @@ function Set-TargetResource
         $keys = (([Hashtable]$UpdateParameters).Clone()).Keys
         foreach ($key in $keys)
         {
-            if ($null -ne $UpdateParameters.$key -and $UpdateParameters.$key.getType().Name -like '*cimInstance*')
+            if ($null -ne $UpdateParameters.$key -and $UpdateParameters.$key.GetType().Name -like '*cimInstance*')
             {
                 $UpdateParameters.$key = Convert-M365DSCDRGComplexTypeToHashtable -ComplexObject $UpdateParameters.$key
             }

@@ -19,6 +19,10 @@ function Get-TargetResource
         $EnhancedEmergencyServiceDisclaimer,
 
         [Parameter()]
+        [Microsoft.Management.Infrastructure.CimInstance[]]
+        $ExtendedNotifications,
+
+        [Parameter()]
         [System.String]
         [ValidateSet('Enabled', 'Disabled')]
         $ExternalLocationLookupMode,
@@ -105,11 +109,33 @@ function Get-TargetResource
             return $nullReturn
         }
 
+        $complexExtendedNotifications = @()
+        foreach ($notification in $policy.ExtendedNotifications)
+        {
+            $complexExtendedNotification = @{
+                EmergencyDialString = $notification.EmergencyDialString
+            }
+            if ($null -ne $notification.NotificationGroup)
+            {
+                $complexExtendedNotification.Add('NotificationGroup', $notification.NotificationGroup.Split(";"))
+            }
+            if ($null -ne $notification.NotificationDialOutNumber)
+            {
+                $complexExtendedNotification.Add('NotificationDialOutNumber', $notification.NotificationDialOutNumber)
+            }
+            if ($null -ne $notification.NotificationMode)
+            {
+                $complexExtendedNotification.Add('NotificationMode', $notification.NotificationMode)
+            }
+            $complexExtendedNotifications += $complexExtendedNotification
+        }
+
         Write-Verbose -Message "Found Teams Emergency Calling Policy {$Identity}"
         $result = @{
             Identity                           = $Identity
             Description                        = $policy.Description
             EnhancedEmergencyServiceDisclaimer = $policy.EnhancedEmergencyServiceDisclaimer
+            ExtendedNotifications              = $complexExtendedNotifications
             ExternalLocationLookupMode         = $policy.ExternalLocationLookupMode
             NotificationDialOutNumber          = $policy.NotificationDialOutNumber
             NotificationGroup                  = $policy.NotificationGroup
@@ -158,6 +184,10 @@ function Set-TargetResource
         [Parameter()]
         [System.String]
         $EnhancedEmergencyServiceDisclaimer,
+
+        [Parameter()]
+        [Microsoft.Management.Infrastructure.CimInstance[]]
+        $ExtendedNotifications,
 
         [Parameter()]
         [System.String]
@@ -240,8 +270,18 @@ function Set-TargetResource
     #endregion
 
     $CurrentValues = Get-TargetResource @PSBoundParameters
-
     $SetParameters = Remove-M365DSCAuthenticationParameter -BoundParameters $PSBoundParameters
+    if ($PSBoundParameters.ContainsKey('ExtendedNotifications'))
+    {
+        if ($SetParameters.ExtendedNotifications.Count -gt 0)
+        {
+            $SetParameters.ExtendedNotifications = Convert-M365DSCDRGComplexTypeToHashtable -ComplexObject $SetParameters.ExtendedNotifications
+            for ($i = 0; $i -lt $SetParameters.ExtendedNotifications.Count; $i++)
+            {
+                $SetParameters.ExtendedNotifications[$i].NotificationGroup -join ";"
+            }
+        }
+    }
 
     if ($Ensure -eq 'Present' -and $CurrentValues.Ensure -eq 'Absent')
     {
@@ -279,6 +319,10 @@ function Test-TargetResource
         [Parameter()]
         [System.String]
         $EnhancedEmergencyServiceDisclaimer,
+
+        [Parameter()]
+        [Microsoft.Management.Infrastructure.CimInstance[]]
+        $ExtendedNotifications,
 
         [Parameter()]
         [System.String]
@@ -328,11 +372,9 @@ function Test-TargetResource
         [System.String[]]
         $AccessTokens
     )
-    #Ensure the proper dependencies are installed in the current environment.
-    Confirm-M365DSCDependencies
 
     #region Telemetry
-    $ResourceName = $MyInvocation.MyCommand.ModuleName -replace 'MSFT_', ''
+    $ResourceName = $MyInvocation.MyCommand.ModuleName.Replace('MSFT_', '')
     $CommandName = $MyInvocation.MyCommand
     $data = Format-M365DSCTelemetryParameters -ResourceName $ResourceName `
         -CommandName $CommandName `
@@ -340,23 +382,9 @@ function Test-TargetResource
     Add-M365DSCTelemetryEvent -Data $data
     #endregion
 
-    Write-Verbose -Message "Testing configuration of Team Emergency Calling Policy {$Identity}"
-
-    $CurrentValues = Get-TargetResource @PSBoundParameters
-
-    Write-Verbose -Message "Current Values: $(Convert-M365DscHashtableToString -Hashtable $CurrentValues)"
-    Write-Verbose -Message "Target Values: $(Convert-M365DscHashtableToString -Hashtable $PSBoundParameters)"
-
-    $ValuesToCheck = $PSBoundParameters
-
-    $TestResult = Test-M365DSCParameterState -CurrentValues $CurrentValues `
-        -Source $($MyInvocation.MyCommand.Source) `
-        -DesiredValues $PSBoundParameters `
-        -ValuesToCheck $ValuesToCheck.Keys
-
-    Write-Verbose -Message "Test-TargetResource returned $TestResult"
-
-    return $TestResult
+    $result = Test-M365DSCTargetResource -DesiredValues $PSBoundParameters `
+                                         -ResourceName $($MyInvocation.MyCommand.Source).Replace('MSFT_', '')
+    return $result
 }
 
 function Export-TargetResource
@@ -407,12 +435,6 @@ function Export-TargetResource
 
     try
     {
-        $organization = ''
-        if ($null -ne $Credential -and $Credential.UserName.Contains('@'))
-        {
-            $organization = $Credential.UserName.Split('@')[1]
-        }
-
         $i = 1
         [array]$policies = Get-CsTeamsEmergencyCallingPolicy -ErrorAction Stop
         $dscContent = ''
@@ -437,11 +459,28 @@ function Export-TargetResource
 
             $Script:exportedInstance = $policy
             $Results = Get-TargetResource @Params
+
+            if ($null -ne $Results.ExtendedNotifications)
+            {
+                $complexTypeStringResult = Get-M365DSCDRGComplexTypeToString `
+                    -ComplexObject $Results.ExtendedNotifications `
+                    -CIMInstanceName 'TeamsEmergencyCallingExtendedNotification'
+                if (-not [String]::IsNullOrWhiteSpace($complexTypeStringResult))
+                {
+                    $Results.ExtendedNotifications = $complexTypeStringResult
+                }
+                else
+                {
+                    $Results.Remove('ExtendedNotifications') | Out-Null
+                }
+            }
+
             $currentDSCBlock = Get-M365DSCExportContentForResource -ResourceName $ResourceName `
                 -ConnectionMode $ConnectionMode `
                 -ModulePath $PSScriptRoot `
                 -Results $Results `
-                -Credential $Credential
+                -Credential $Credential `
+                -NoEscape @('ExtendedNotifications')
             $dscContent += $currentDSCBlock
             Save-M365DSCPartialExport -Content $currentDSCBlock `
                 -FileName $Global:PartialExportFileName

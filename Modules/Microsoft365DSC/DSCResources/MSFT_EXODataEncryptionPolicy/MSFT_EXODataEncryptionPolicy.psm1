@@ -74,68 +74,64 @@ function Get-TargetResource
 
     Write-Verbose -Message "Getting Data encryption policy for $($Identity)"
 
-    if ($Global:CurrentModeIsExport)
-    {
-        $null = New-M365DSCConnection -Workload 'ExchangeOnline' `
-            -InboundParameters $PSBoundParameters `
-            -SkipModuleReload $true
-    }
-    else
-    {
-        $null = New-M365DSCConnection -Workload 'ExchangeOnline' `
-            -InboundParameters $PSBoundParameters
-    }
-
-    #Ensure the proper dependencies are installed in the current environment.
-    Confirm-M365DSCDependencies
-
-    #region Telemetry
-    $ResourceName = $MyInvocation.MyCommand.ModuleName -replace 'MSFT_', ''
-    $CommandName = $MyInvocation.MyCommand
-    $data = Format-M365DSCTelemetryParameters -ResourceName $ResourceName `
-        -CommandName $CommandName `
-        -Parameters $PSBoundParameters
-    Add-M365DSCTelemetryEvent -Data $data
-    #endregion
-
-    $nullReturn = $PSBoundParameters
-    $nullReturn.Ensure = 'Absent'
-
     try
     {
-        $DataEncryptionPolicy = Get-DataEncryptionPolicy -Identity $Identity -ErrorAction Stop
-
-        if ($null -eq $DataEncryptionPolicy)
+        if (-not $Script:exportedInstance -or $Script:exportedInstance.Identity -ne $Identity)
         {
-            Write-Verbose -Message "Data encryption policy $($Identity) does not exist."
-            $nullReturn.Identity = $null
-            return $nullReturn
+            $null = New-M365DSCConnection -Workload 'ExchangeOnline' `
+                -InboundParameters $PSBoundParameters
+
+            #Ensure the proper dependencies are installed in the current environment.
+            Confirm-M365DSCDependencies
+
+            #region Telemetry
+            $ResourceName = $MyInvocation.MyCommand.ModuleName -replace 'MSFT_', ''
+            $CommandName = $MyInvocation.MyCommand
+            $data = Format-M365DSCTelemetryParameters -ResourceName $ResourceName `
+                -CommandName $CommandName `
+                -Parameters $PSBoundParameters
+            Add-M365DSCTelemetryEvent -Data $data
+            #endregion
+
+            $nullReturn = $PSBoundParameters
+            $nullReturn.Ensure = 'Absent'
+
+            $DataEncryptionPolicy = Get-DataEncryptionPolicy -Identity $Identity -ErrorAction SilentlyContinue
+
+            if ($null -eq $DataEncryptionPolicy)
+            {
+                Write-Verbose -Message "Data encryption policy $($Identity) does not exist."
+                $nullReturn.Identity = $null
+                return $nullReturn
+            }
         }
         else
         {
-            $result = @{
-                Identity                  = $Identity
-                AzureKeyIDs               = $DataEncryptionPolicy.AzureKeyIDs
-                Description               = $DataEncryptionPolicy.Description
-                Enabled                   = $DataEncryptionPolicy.Enabled
-                Name                      = $DataEncryptionPolicy.Name
-                PermanentDataPurgeContact = $DataEncryptionPolicy.PermanentDataPurgeContact
-                PermanentDataPurgeReason  = $DataEncryptionPolicy.PermanentDataPurgeReason
-                Credential                = $Credential
-                Ensure                    = 'Present'
-                ApplicationId             = $ApplicationId
-                CertificateThumbprint     = $CertificateThumbprint
-                CertificatePath           = $CertificatePath
-                CertificatePassword       = $CertificatePassword
-                ManagedIdentity           = $ManagedIdentity.IsPresent
-                TenantId                  = $TenantId
-                AccessTokens              = $AccessTokens
-            }
-
-            Write-Verbose -Message "Found Data encryption policy $($Identity)"
-            Write-Verbose -Message "Get-TargetResource Result: `n $(Convert-M365DscHashtableToString -Hashtable $result)"
-            return $result
+            $DataEncryptionPolicy = $Script:exportedInstance
         }
+
+        Write-Verbose -Message "Found Data encryption policy $($Identity)"
+
+        $result = @{
+            Identity                  = $Identity
+            AzureKeyIDs               = $DataEncryptionPolicy.AzureKeyIDs
+            Description               = $DataEncryptionPolicy.Description
+            Enabled                   = $DataEncryptionPolicy.Enabled
+            Name                      = $DataEncryptionPolicy.Name
+            PermanentDataPurgeContact = $DataEncryptionPolicy.PermanentDataPurgeContact
+            PermanentDataPurgeReason  = $DataEncryptionPolicy.PermanentDataPurgeReason
+            Credential                = $Credential
+            Ensure                    = 'Present'
+            ApplicationId             = $ApplicationId
+            CertificateThumbprint     = $CertificateThumbprint
+            CertificatePath           = $CertificatePath
+            CertificatePassword       = $CertificatePassword
+            ManagedIdentity           = $ManagedIdentity.IsPresent
+            TenantId                  = $TenantId
+            AccessTokens              = $AccessTokens
+        }
+
+        return $result
     }
     catch
     {
@@ -332,11 +328,9 @@ function Test-TargetResource
         [System.String[]]
         $AccessTokens
     )
-    #Ensure the proper dependencies are installed in the current environment.
-    Confirm-M365DSCDependencies
 
     #region Telemetry
-    $ResourceName = $MyInvocation.MyCommand.ModuleName -replace 'MSFT_', ''
+    $ResourceName = $MyInvocation.MyCommand.ModuleName.Replace('MSFT_', '')
     $CommandName = $MyInvocation.MyCommand
     $data = Format-M365DSCTelemetryParameters -ResourceName $ResourceName `
         -CommandName $CommandName `
@@ -344,23 +338,9 @@ function Test-TargetResource
     Add-M365DSCTelemetryEvent -Data $data
     #endregion
 
-    Write-Verbose -Message "Testing configuration of Data encryption policy for $($Identity)"
-
-    $CurrentValues = Get-TargetResource @PSBoundParameters
-
-    Write-Verbose -Message "Current Values: $(Convert-M365DscHashtableToString -Hashtable $CurrentValues)"
-    Write-Verbose -Message "Target Values: $(Convert-M365DscHashtableToString -Hashtable $PSBoundParameters)"
-
-    $ValuesToCheck = $PSBoundParameters
-
-    $TestResult = Test-M365DSCParameterState -CurrentValues $CurrentValues `
-        -Source $($MyInvocation.MyCommand.Source) `
-        -DesiredValues $PSBoundParameters `
-        -ValuesToCheck $ValuesToCheck.Keys
-
-    Write-Verbose -Message "Test-TargetResource returned $($TestResult)"
-
-    return $TestResult
+    $result = Test-M365DSCTargetResource -DesiredValues $PSBoundParameters `
+                                         -ResourceName $($MyInvocation.MyCommand.Source).Replace('MSFT_', '')
+    return $result
 }
 
 function Export-TargetResource
@@ -421,10 +401,9 @@ function Export-TargetResource
     try
     {
         [Array]$DataEncryptionPolicies = Get-DataEncryptionPolicy -ErrorAction Stop
-
         $dscContent = ''
 
-        if ($DataEncryptionPolicies.Length -eq 0)
+        if ($DataEncryptionPolicies.Count -eq 0)
         {
             Write-M365DSCHost -Message $Global:M365DSCEmojiGreenCheckMark -CommitWrite
         }
@@ -440,7 +419,7 @@ function Export-TargetResource
                 $Global:M365DSCExportResourceInstancesCount++
             }
 
-            Write-M365DSCHost -Message "    |---[$i/$($DataEncryptionPolicies.Length)] $($DataEncryptionPolicy.Identity)" -DeferWrite
+            Write-M365DSCHost -Message "    |---[$i/$($DataEncryptionPolicies.Count)] $($DataEncryptionPolicy.Identity)" -DeferWrite
 
             $Params = @{
                 Identity              = $DataEncryptionPolicy.Identity
@@ -453,7 +432,7 @@ function Export-TargetResource
                 CertificatePath       = $CertificatePath
                 AccessTokens          = $AccessTokens
             }
-
+            $Script:exportedInstance = $DataEncryptionPolicy
             $Results = Get-TargetResource @Params
             $currentDSCBlock = Get-M365DSCExportContentForResource -ResourceName $ResourceName `
                 -ConnectionMode $ConnectionMode `

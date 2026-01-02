@@ -158,13 +158,13 @@ function Get-TargetResource
         $complexPermissionActions = @()
         foreach ($currentpermissionActions in $getValue.AdditionalProperties.permissionActions)
         {
-            $mypermissionActions = @{}
+            $mypermissionActions = [ordered]@{}
             if ($null -ne $currentpermissionActions.action)
             {
                 $mypermissionActions.Add('Action', $currentpermissionActions.action.ToString())
             }
             $mypermissionActions.Add('Permission', $currentpermissionActions.permission)
-            if ($mypermissionActions.values.Where({ $null -ne $_ }).count -gt 0)
+            if ($mypermissionActions.values.Where({ $null -ne $_ }).Count -gt 0)
             {
                 $complexPermissionActions += $mypermissionActions
             }
@@ -173,14 +173,14 @@ function Get-TargetResource
         $complexSettings = @()
         foreach ($currentsettings in $getValue.AdditionalProperties.settings)
         {
-            $mysettings = @{}
+            $mysettings = [ordered]@{}
             $mysettings.Add('AppConfigKey', $currentsettings.appConfigKey)
             if ($null -ne $currentsettings.appConfigKeyType)
             {
                 $mysettings.Add('AppConfigKeyType', $currentsettings.appConfigKeyType.ToString())
             }
             $mysettings.Add('AppConfigKeyValue', $currentsettings.appConfigKeyValue)
-            if ($mysettings.values.Where({ $null -ne $_ }).count -gt 0)
+            if ($mysettings.values.Where({ $null -ne $_ }).Count -gt 0)
             {
                 $complexSettings += $mysettings
             }
@@ -426,7 +426,7 @@ function Set-TargetResource
         $keys = (([Hashtable]$CreateParameters).Clone()).Keys
         foreach ($key in $keys)
         {
-            if ($null -ne $CreateParameters.$key -and $CreateParameters.$key.getType().Name -like '*cimInstance*')
+            if ($null -ne $CreateParameters.$key -and $CreateParameters.$key.GetType().Name -like '*cimInstance*')
             {
                 $CreateParameters.$key = Convert-M365DSCDRGComplexTypeToHashtable -ComplexObject $CreateParameters.$key
             }
@@ -465,7 +465,7 @@ function Set-TargetResource
         $keys = (([Hashtable]$UpdateParameters).Clone()).Keys
         foreach ($key in $keys)
         {
-            if ($null -ne $UpdateParameters.$key -and $UpdateParameters.$key.getType().Name -like '*cimInstance*')
+            if ($null -ne $UpdateParameters.$key -and $UpdateParameters.$key.GetType().Name -like '*cimInstance*')
             {
                 $UpdateParameters.$key = Convert-M365DSCDRGComplexTypeToHashtable -ComplexObject $UpdateParameters.$key
             }
@@ -588,9 +588,6 @@ function Test-TargetResource
         $AccessTokens
     )
 
-    #Ensure the proper dependencies are installed in the current environment.
-    Confirm-M365DSCDependencies
-
     #region Telemetry
     $ResourceName = $MyInvocation.MyCommand.ModuleName.Replace('MSFT_', '')
     $CommandName = $MyInvocation.MyCommand
@@ -600,48 +597,9 @@ function Test-TargetResource
     Add-M365DSCTelemetryEvent -Data $data
     #endregion
 
-    Write-Verbose -Message "Testing configuration of the Intune App Configuration Device Policy with Id {$Id} and DisplayName {$DisplayName}"
-
-    $CurrentValues = Get-TargetResource @PSBoundParameters
-    $ValuesToCheck = Remove-M365DSCAuthenticationParameter -BoundParameters $PSBoundParameters
-    $testResult = $true
-
-    #Compare Cim instances
-    foreach ($key in $PSBoundParameters.Keys)
-    {
-        $source = $PSBoundParameters.$key
-        $target = $CurrentValues.$key
-        if ($source.GetType().Name -like '*CimInstance*')
-        {
-            $testResult = Compare-M365DSCComplexObject `
-                -Source ($source) `
-                -Target ($target)
-
-            if (-not $testResult)
-            {
-                break
-            }
-
-            $ValuesToCheck.Remove($key) | Out-Null
-        }
-    }
-
-    $ValuesToCheck.Remove('Id') | Out-Null
-
-    Write-Verbose -Message "Current Values: $(Convert-M365DscHashtableToString -Hashtable $CurrentValues)"
-    Write-Verbose -Message "Target Values: $(Convert-M365DscHashtableToString -Hashtable $ValuesToCheck)"
-
-    if ($testResult)
-    {
-        $testResult = Test-M365DSCParameterState -CurrentValues $CurrentValues `
-            -Source $($MyInvocation.MyCommand.Source) `
-            -DesiredValues $PSBoundParameters `
-            -ValuesToCheck $ValuesToCheck.Keys
-    }
-
-    Write-Verbose -Message "Test-TargetResource returned $testResult"
-
-    return $testResult
+    $result = Test-M365DSCTargetResource -DesiredValues $PSBoundParameters `
+                                         -ResourceName $($MyInvocation.MyCommand.Source).Replace('MSFT_', '')
+    return $result
 }
 
 function Export-TargetResource

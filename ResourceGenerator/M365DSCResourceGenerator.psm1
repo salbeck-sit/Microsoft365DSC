@@ -24,6 +24,10 @@ function New-M365DSCResource
         [System.String]
         $CmdLetVerb = 'New',
 
+        [Parameter()]
+        [switch]
+        $IsSingleInstance,
+
         # Path to the new Resource
         [Parameter()]
         [System.String]
@@ -64,6 +68,10 @@ function New-M365DSCResource
         [Parameter(ParameterSetName = 'SettingsCatalog')]
         [switch]
         $SkipPlatformsAndTechnologies,
+
+        [Parameter()]
+        [System.String]
+        $FixActualType,
 
         # Use this switch with caution.
         # Navigation Properties could cause the DRG to enter an infinite loop
@@ -136,7 +144,14 @@ function New-M365DSCResource
             $outputType = $outputType -replace '.$'
         }
 
-        $actualType = $outputType.Replace('IMicrosoftGraph', '')
+        if (-not $PSBoundParameters.ContainsKey('FixActualType'))
+        {
+            $actualType = $outputType.Replace('IMicrosoftGraph', '')
+        }
+        else
+        {
+            $actualType = $FixActualType
+        }
 
         $cmdletDefinition = Get-CmdletDefinition -APIVersion $ApiVersion
 
@@ -261,7 +276,6 @@ function New-M365DSCResource
                 throw "SettingsCatalogSettingTemplates is required for DeviceManagementConfigurationPolicy resources"
             }
 
-            $templateSettings = @()
             $deviceSettingsCatalogTemplates = $SettingsCatalogSettingTemplates | Where-Object -FilterScript { $_.SettingInstanceTemplate.SettingDefinitionId.StartsWith("device_") }
             $deviceSettingDefinitions = $deviceSettingsCatalogTemplates.SettingDefinitions
 
@@ -603,10 +617,12 @@ $($userDefinitionSettings.MOF -join "`r`n")
         }
         Write-TokenReplacement -Token '<TimeTypeConstructor>' -Value $timeTypeConstructor -FilePath $moduleFilePath
 
-        $newCmdlet = Get-Command -Name "New-$($CmdLetNoun)"
-        $newDefaultParameterSet = $newCmdlet.ParameterSets | Where-Object -FilterScript { $_.Name -eq 'Create' }
-        [Array]$newKeyIdentifier = ($newDefaultParameterSet.Parameters | Where-Object -FilterScript { $_.IsMandatory }).Name
-        $defaultCreateParameters = @"
+        if (-not $IsSingleInstance)
+        {
+            $newCmdlet = Get-Command -Name "New-$($CmdLetNoun)"
+            $newDefaultParameterSet = $newCmdlet.ParameterSets | Where-Object -FilterScript { $_.Name -eq 'Create' }
+            [Array]$newKeyIdentifier = ($newDefaultParameterSet.Parameters | Where-Object -FilterScript { $_.IsMandatory }).Name
+            $defaultCreateParameters = @"
         `$createParameters = ([Hashtable]`$boundParameters).Clone()
         `$createParameters = Rename-M365DSCCimInstanceParameter -Properties `$createParameters
         `$createParameters.Remove('Id') | Out-Null
@@ -620,6 +636,7 @@ $($userDefinitionSettings.MOF -join "`r`n")
             }
         }
 "@
+        }
         $defaultUpdateParameters = @"
         `$updateParameters = ([Hashtable]`$boundParameters).Clone()
         `$updateParameters = Rename-M365DSCCimInstanceParameter -Properties `$updateParameters
@@ -818,7 +835,8 @@ $($userDefinitionSettings.MOF -join "`r`n")
             -TemplateReferenceId `$templateReferenceId ``
             -Platforms `$platforms ``
             -Technologies `$technologies ``
-            -Settings `$settings`r`n
+            -Settings `$settings`r`n ``
+            -RoleScopeTagIds `$RoleScopeTagIds`r`n
 "@
         }
         Write-TokenReplacement -Token '<#DefaultUpdateParameters#>' -Value $defaultUpdateParameters -FilePath $moduleFilePath
@@ -887,10 +905,10 @@ $($userDefinitionSettings.MOF -join "`r`n")
             $AssignmentsUpdate += "            -Repository '$repository'"
 
             $AssignmentsCIM = @'
-[ClassVersion("1.0.0.1")]
+[ClassVersion("1.0.0.2")]
 class MSFT_DeviceManagementConfigurationPolicyAssignments
 {
-    [Write, Description("The type of the target assignment."), ValueMap{"#microsoft.graph.groupAssignmentTarget","#microsoft.graph.allLicensedUsersAssignmentTarget","#microsoft.graph.allDevicesAssignmentTarget","#microsoft.graph.exclusionGroupAssignmentTarget","#microsoft.graph.configurationManagerCollectionAssignmentTarget"}, Values{"#microsoft.graph.groupAssignmentTarget","#microsoft.graph.allLicensedUsersAssignmentTarget","#microsoft.graph.allDevicesAssignmentTarget","#microsoft.graph.exclusionGroupAssignmentTarget","#microsoft.graph.configurationManagerCollectionAssignmentTarget"}] String dataType;
+    [Write, Description("The type of the target assignment."), ValueMap{"#microsoft.graph.cloudPcManagementGroupAssignmentTarget","#microsoft.graph.groupAssignmentTarget","#microsoft.graph.allLicensedUsersAssignmentTarget","#microsoft.graph.allDevicesAssignmentTarget","#microsoft.graph.exclusionGroupAssignmentTarget","#microsoft.graph.configurationManagerCollectionAssignmentTarget"}, Values{"#microsoft.graph.cloudPcManagementGroupAssignmentTarget","#microsoft.graph.groupAssignmentTarget","#microsoft.graph.allLicensedUsersAssignmentTarget","#microsoft.graph.allDevicesAssignmentTarget","#microsoft.graph.exclusionGroupAssignmentTarget","#microsoft.graph.configurationManagerCollectionAssignmentTarget"}] String dataType;
     [Write, Description("The type of filter of the target assignment i.e. Exclude or Include. Possible values are:none, include, exclude."), ValueMap{"none","include","exclude"}, Values{"none","include","exclude"}] String deviceAndAppManagementAssignmentFilterType;
     [Write, Description("The Id of the filter for the target assignment.")] String deviceAndAppManagementAssignmentFilterId;
     [Write, Description("The display name of the filter for the target assignment.")] String deviceAndAppManagementAssignmentFilterDisplayName;
@@ -1251,7 +1269,14 @@ class MSFT_DeviceManagementConfigurationPolicyAssignments
         Write-TokenReplacement -Token '<CIMInstances>' -Value '' -FilePath $schemaFilePath
 
         #region Readme & Settings
-        $cmdName = "New-$cmdletNoun"
+        if ($IsSingleInstance)
+        {
+            $cmdName = "Set-$cmdletNoun"
+        }
+        else
+        {
+            $cmdName = "New-$cmdletNoun"
+        }
         $cmdletInfo = & $cmdName -?
         $synopsis = $cmdletInfo.Synopsis.Replace('cmdlet', 'resource')
         Write-TokenReplacement -Token '<ResourceFriendlyName>' -Value $ResourceName -FilePath $readmeFilePath
@@ -1262,10 +1287,9 @@ class MSFT_DeviceManagementConfigurationPolicyAssignments
         #endregion
 
         #region UnitTests
-        $fakeValuesString = [System.Text.StringBuilder]::New()
-        $fakeValuesDriftString = [System.Text.StringBuilder]::New()
+        $fakeValuesString = [System.Text.StringBuilder]::new()
+        $fakeValuesDriftString = [System.Text.StringBuilder]::new()
 
-        $numberOfProperties = $fakeValues.Keys.Count
         $currentKeyIndex = 1
         foreach ($key in $fakeValues.Keys)
         {
@@ -1859,7 +1883,7 @@ function Get-Microsoft365DSCModuleCimClass
                 $class = $line.Replace("class ","").Replace("Class ","")
                 if ($line -like "*:*")
                 {
-                    $class = $class.Split(":")[0].trim()
+                    $class = $class.Split(":")[0].Trim()
                 }
                 if ($class -notin $cimClasses)
                 {
@@ -1985,7 +2009,7 @@ function Get-ComplexTypeConstructorToString
         $spacing = $indent * $IndentCount
     }
 
-    $complexString.AppendLine($spacing + "`$$tempPropertyName" + " = @{}") | Out-Null
+    $complexString.AppendLine($spacing + "`$$tempPropertyName" + " = [ordered]@{}") | Out-Null
 
     foreach ($nestedProperty in $property.Properties)
     {
@@ -2032,7 +2056,7 @@ function Get-ComplexTypeConstructorToString
             $AssignedPropertyName = Get-StringFirstCharacterToLower -Value $nestedProperty.Name
         }
 
-        if ($AssignedPropertyName.contains("@"))
+        if ($AssignedPropertyName.Contains("@"))
         {
             $AssignedPropertyName = "'$AssignedPropertyName'"
         }
@@ -2599,7 +2623,8 @@ function New-M365CmdLetHelper
 function Get-M365DSCDRGFakeValueForParameter
 {
     [CmdletBinding()]
-    [OutputType([System.Object])]
+    [OutputType([System.String])]
+    [OutputType([System.Int32])]
     param(
         [Parameter(Mandatory = $true)]
         [System.String]
@@ -2939,7 +2964,7 @@ function Get-M365DSCHashAsString
                     $propLine = ''
                     foreach ($prop in $Values.$Key.Properties)
                     {
-                        if ($isCmdletCall -and $prop.contains('odataType'))
+                        if ($isCmdletCall -and $prop.Contains('odataType'))
                         {
                             $prop.Add('@odata.type', $prop.odataType)
                             $prop.Remove('odataType')
@@ -3247,12 +3272,7 @@ function New-M365DSCResourceFolder
         # Parameter help description
         [Parameter()]
         [System.String]
-        $Path,
-
-        # Parameter help description
-        [Parameter()]
-        [Object[]]
-        $Properties
+        $Path
     )
 
     $directoryPath = "$Path\MSFT_$ResourceName"
@@ -3853,7 +3873,7 @@ function Get-SettingsCatalogSettingDefinitionValueOption {
     foreach ($option in $SettingDefinition.AdditionalProperties.options) {
         $options += @{
             Name        = $option.name
-            Id          = $option.itemId.Split("_")[-1]
+            Id          = $option.optionValue.value
             Type        = $option.optionValue.'@odata.type'.Replace($SettingDefinitionOdataTypeBase, "").Replace("SettingValue", "")
             DisplayName = $option.displayName
         }

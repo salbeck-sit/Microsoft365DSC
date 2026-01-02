@@ -1060,16 +1060,16 @@ function Get-TargetResource
 
         $complexAppsSingleAppModeList = @()
         $currentValueArray = $getValue.AdditionalProperties.appsSingleAppModeList
-        if ($null -ne $currentValueArray -and $currentValueArray.count -gt 0)
+        if ($null -ne $currentValueArray -and $currentValueArray.Count -gt 0)
         {
             foreach ($currentValue in $currentValueArray)
             {
                 $currentHash = @{}
-                $currentHash.add('AppId', $currentValue.appId)
-                $currentHash.add('Publisher', $currentValue.publisher)
-                $currentHash.add('AppStoreUrl', $currentValue.appStoreUrl)
-                $currentHash.add('Name', $currentValue.name)
-                $currentHash.add('oDataType', $currentValue.'@odata.type')
+                $currentHash.Add('AppId', $currentValue.appId)
+                $currentHash.Add('Publisher', $currentValue.publisher)
+                $currentHash.Add('AppStoreUrl', $currentValue.appStoreUrl)
+                $currentHash.Add('Name', $currentValue.name)
+                $currentHash.Add('oDataType', $currentValue.'@odata.type')
                 $complexAppsSingleAppModeList += $currentHash
             }
         }
@@ -1077,16 +1077,16 @@ function Get-TargetResource
 
         $complexAppsVisibilityList = @()
         $currentValueArray = $getValue.AdditionalProperties.appsVisibilityList
-        if ($null -ne $currentValueArray -and $currentValueArray.count -gt 0)
+        if ($null -ne $currentValueArray -and $currentValueArray.Count -gt 0)
         {
             foreach ($currentValue in $currentValueArray)
             {
                 $currentHash = @{}
-                $currentHash.add('AppId', $currentValue.appId)
-                $currentHash.add('Publisher', $currentValue.publisher)
-                $currentHash.add('AppStoreUrl', $currentValue.appStoreUrl)
-                $currentHash.add('Name', $currentValue.name)
-                $currentHash.add('oDataType', $currentValue.'@odata.type')
+                $currentHash.Add('AppId', $currentValue.appId)
+                $currentHash.Add('Publisher', $currentValue.publisher)
+                $currentHash.Add('AppStoreUrl', $currentValue.appStoreUrl)
+                $currentHash.Add('Name', $currentValue.name)
+                $currentHash.Add('oDataType', $currentValue.'@odata.type')
                 $complexAppsVisibilityList += $currentHash
             }
         }
@@ -1094,16 +1094,16 @@ function Get-TargetResource
 
         $complexCompliantAppsList = @()
         $currentValueArray = $getValue.AdditionalProperties.compliantAppsList
-        if ($null -ne $currentValueArray -and $currentValueArray.count -gt 0)
+        if ($null -ne $currentValueArray -and $currentValueArray.Count -gt 0)
         {
             foreach ($currentValue in $currentValueArray)
             {
                 $currentHash = @{}
-                $currentHash.add('AppId', $currentValue.appId)
-                $currentHash.add('Publisher', $currentValue.publisher)
-                $currentHash.add('AppStoreUrl', $currentValue.appStoreUrl)
-                $currentHash.add('Name', $currentValue.name)
-                $currentHash.add('oDataType', $currentValue.'@odata.type')
+                $currentHash.Add('AppId', $currentValue.appId)
+                $currentHash.Add('Publisher', $currentValue.publisher)
+                $currentHash.Add('AppStoreUrl', $currentValue.appStoreUrl)
+                $currentHash.Add('Name', $currentValue.name)
+                $currentHash.Add('oDataType', $currentValue.'@odata.type')
                 $complexCompliantAppsList += $currentHash
             }
         }
@@ -1122,7 +1122,7 @@ function Get-TargetResource
         )
         foreach ($country in $ratingCountries)
         {
-            $complexMediaContentRating = @{}
+            $complexMediaContentRating = [ordered]@{}
             $currentValue = $getValue.AdditionalProperties."mediaContentRating$country"
             if ($null -ne $currentValue)
             {
@@ -1142,7 +1142,7 @@ function Get-TargetResource
 
         $complexNetworkUsageRules = @()
         $currentValueArray = $getValue.AdditionalProperties.networkUsageRules
-        if ($null -ne $currentValueArray -and $currentValueArray.count -gt 0)
+        if ($null -ne $currentValueArray -and $currentValueArray.Count -gt 0)
         {
             foreach ($currentValue in $currentValueArray)
             {
@@ -1151,16 +1151,16 @@ function Get-TargetResource
                 $currentValueHash.Add('CellularDataBlockWhenRoaming', $currentValue.cellularDataBlockWhenRoaming)
                 $complexManagedApps = @()
                 $currentValueChildArray = $currentValue.managedApps
-                if ($null -ne $currentValueChildArray -and $currentValueChildArray.count -gt 0)
+                if ($null -ne $currentValueChildArray -and $currentValueChildArray.Count -gt 0)
                 {
                     foreach ($currentChildValue in $currentValueChildArray)
                     {
                         $currentHash = @{}
-                        $currentHash.add('AppId', $currentValue.appId)
-                        $currentHash.add('Publisher', $currentValue.publisher)
-                        $currentHash.add('AppStoreUrl', $currentValue.appStoreUrl)
-                        $currentHash.add('Name', $currentValue.name)
-                        $currentHash.add('oDataType', $currentValue.'@odata.type')
+                        $currentHash.Add('AppId', $currentValue.appId)
+                        $currentHash.Add('Publisher', $currentValue.publisher)
+                        $currentHash.Add('AppStoreUrl', $currentValue.appStoreUrl)
+                        $currentHash.Add('Name', $currentValue.name)
+                        $currentHash.Add('oDataType', $currentValue.'@odata.type')
                         $complexManagedApps += $currentHash
                     }
                 }
@@ -2032,28 +2032,25 @@ function Set-TargetResource
 
         $CreateParameters = Remove-M365DSCAuthenticationParameter -BoundParameters $PSBoundParameters
         $CreateParameters = Rename-M365DSCCimInstanceParameter -Properties $CreateParameters
-
-        #$AdditionalProperties = Get-M365DSCAdditionalProperties -Properties ($CreateParameters)
-
         $CreateParameters.Remove('Id') | Out-Null
         $CreateParameters.Remove('Verbose') | Out-Null
 
         foreach ($key in ($CreateParameters.Clone()).Keys)
         {
-            if ($CreateParameters[$key].getType().Fullname -like '*CimInstance*')
+            if ($CreateParameters[$key].GetType().Fullname -like '*CimInstance*')
             {
                 $CreateParameters[$key] = Convert-M365DSCDRGComplexTypeToHashtable -ComplexObject $CreateParameters[$key]
             }
 
             if ($key -ne '@odata.type')
             {
-                $keyName = $key.substring(0, 1).ToLower() + $key.substring(1, $key.length - 1)
+                $keyName = $key.Substring(0, 1).ToLower() + $key.Substring(1, $key.Length - 1)
                 $keyValue = $CreateParameters.$key
-                $CreateParameters.remove($key) | Out-Null
-                $CreateParameters.add($keyName, $keyValue) | Out-Null
+                $CreateParameters.Remove($key) | Out-Null
+                $CreateParameters.Add($keyName, $keyValue) | Out-Null
             }
         }
-        $CreateParameters.add('@odata.type', '#microsoft.graph.iosGeneralDeviceConfiguration')
+        $CreateParameters.Add('@odata.type', '#microsoft.graph.iosGeneralDeviceConfiguration')
 
         #region resource generator code
         $policy = New-MgBetaDeviceManagementDeviceConfiguration -BodyParameter $CreateParameters
@@ -2080,20 +2077,20 @@ function Set-TargetResource
 
         foreach ($key in (($UpdateParameters.Clone()).Keys | Sort-Object))
         {
-            if ($UpdateParameters.$key.getType().Fullname -like '*CimInstance*')
+            if ($UpdateParameters.$key.GetType().Fullname -like '*CimInstance*')
             {
                 $UpdateParameters.$key = Convert-M365DSCDRGComplexTypeToHashtable -ComplexObject $UpdateParameters.$key
             }
 
             if ($key -ne '@odata.type')
             {
-                $keyName = $key.substring(0, 1).ToLower() + $key.substring(1, $key.length - 1)
+                $keyName = $key.Substring(0, 1).ToLower() + $key.Substring(1, $key.Length - 1)
                 $keyValue = $UpdateParameters.$key
-                $UpdateParameters.remove($key)
-                $UpdateParameters.add($keyName, $keyValue)
+                $UpdateParameters.Remove($key)
+                $UpdateParameters.Add($keyName, $keyValue)
             }
         }
-        $UpdateParameters.add('@odata.type', '#microsoft.graph.iosGeneralDeviceConfiguration')
+        $UpdateParameters.Add('@odata.type', '#microsoft.graph.iosGeneralDeviceConfiguration')
 
         #region resource generator code
         Update-MgBetaDeviceManagementDeviceConfiguration -BodyParameter $UpdateParameters `
@@ -2931,9 +2928,6 @@ function Test-TargetResource
         $AccessTokens
     )
 
-    #Ensure the proper dependencies are installed in the current environment.
-    Confirm-M365DSCDependencies
-
     #region Telemetry
     $ResourceName = $MyInvocation.MyCommand.ModuleName.Replace('MSFT_', '')
     $CommandName = $MyInvocation.MyCommand
@@ -2943,50 +2937,9 @@ function Test-TargetResource
     Add-M365DSCTelemetryEvent -Data $data
     #endregion
 
-    Write-Verbose -Message "Testing configuration of {$id}"
-
-    $CurrentValues = Get-TargetResource @PSBoundParameters
-    $ValuesToCheck = Remove-M365DSCAuthenticationParameter -BoundParameters $PSBoundParameters
-    $testResult = $true
-
-    #Compare Cim instances
-    foreach ($key in $PSBoundParameters.Keys)
-    {
-        $source = $PSBoundParameters.$key
-        $target = $CurrentValues.$key
-        if ($source.getType().Name -like '*CimInstance*')
-        {
-            $testResult = Compare-M365DSCComplexObject `
-                -Source ($source) `
-                -Target ($target)
-
-            if (-Not $testResult)
-            {
-                Write-Verbose -Message "Drift detected for the complex object key: $key"
-                $testResult = $false
-                break
-            }
-
-            $ValuesToCheck.Remove($key) | Out-Null
-        }
-    }
-
-    if ($testResult)
-    {
-        $ValuesToCheck = Remove-M365DSCAuthenticationParameter -BoundParameters $ValuesToCheck
-        $ValuesToCheck.Remove('Id') | Out-Null
-
-        Write-Verbose -Message "Current Values: $(Convert-M365DscHashtableToString -Hashtable $CurrentValues)"
-        Write-Verbose -Message "Target Values: $(Convert-M365DscHashtableToString -Hashtable $ValuesToCheck)"
-
-        $testResult = Test-M365DSCParameterState -CurrentValues $CurrentValues `
-            -Source $($MyInvocation.MyCommand.Source) `
-            -DesiredValues $PSBoundParameters `
-            -ValuesToCheck $ValuesToCheck.Keys
-    }
-    Write-Verbose -Message "Test-TargetResource returned $testResult"
-
-    return $testResult
+    $result = Test-M365DSCTargetResource -DesiredValues $PSBoundParameters `
+                                         -ResourceName $($MyInvocation.MyCommand.Source).Replace('MSFT_', '')
+    return $result
 }
 
 function Export-TargetResource

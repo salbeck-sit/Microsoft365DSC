@@ -11,6 +11,8 @@ function Start-M365DSCConfigurationExtract
     [CmdletBinding()]
     [OutputType([System.Collections.Hashtable])]
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSAvoidUsingConvertToSecureStringWithPlainText', '', Justification = 'Conversion for credential creation')]
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSReviewUnusedParameter', 'GenerateInfo', Justification = 'Using statement not detected')]
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSReviewUnusedParameter', 'Filters', Justification = 'Using statement not detected')]
     param(
         [Parameter()]
         [System.Management.Automation.PSCredential]
@@ -46,7 +48,7 @@ function Start-M365DSCConfigurationExtract
         $Workloads,
 
         [Parameter()]
-        [ValidateSet('Lite', 'Default', 'Full')]
+        [ValidateSet('Default', 'Full')]
         [System.String]
         $Mode = 'Default',
 
@@ -187,15 +189,25 @@ function Start-M365DSCConfigurationExtract
         $ComponentsToSkip = @()
         if ($Mode -eq 'Default' -and $null -eq $Components)
         {
-            $ComponentsToSkip = $Global:FullComponents
-        }
-        elseif ($Mode -eq 'Lite' -and $null -eq $Components)
-        {
-            $ComponentsToSkip = $Global:DefaultComponents + $Global:FullComponents
+            $ComponentsToSkip = Get-M365DSCResourcesByExportMode -Mode 'Full' -ExcludeConfigurationResources
         }
 
-        if( $null -ne $ExcludeComponents ) {
+        if ($null -ne $ExcludeComponents)
+        {
             $ComponentsToSkip += $ExcludeComponents
+        }
+
+        if ($null -ne $Components)
+        {
+            $resourcesInBothIncludeAndExclude = Compare-Object -ReferenceObject $Components `
+                -DifferenceObject $ComponentsToSkip -ExcludeDifferent -IncludeEqual
+        }
+        if ($resourcesInBothIncludeAndExclude.Count -gt 0)
+        {
+            foreach ($resource in $resourcesInBothIncludeAndExclude)
+            {
+                Write-Warning -Message "The component '$($resource.InputObject)' was specified in both -Components and -ExcludeComponents parameters. It will be excluded from the export."
+            }
         }
 
         # Check to validate that based on the received authentication parameters
@@ -258,10 +270,10 @@ function Start-M365DSCConfigurationExtract
         # If some resources are not supported based on the Authentication parameters
         # received, write a warning.
         $Components = $Components | Select-Object -Unique
+        $allResourcesInModule = Get-M365DSCAllResources
         if ($Components.Length -eq 0)
         {
             Write-Verbose -Message 'Retrieving all resources'
-            $allResourcesInModule = Get-M365DSCAllResources
             $selectedItems = Compare-Object -ReferenceObject $allResourcesInModule `
                 -DifferenceObject $ComponentsToSkip | Where-Object -FilterScript { $_.SideIndicator -eq '<=' }
             $selectedResources = @()
@@ -272,6 +284,14 @@ function Start-M365DSCConfigurationExtract
         }
         else
         {
+            foreach ($component in $Components)
+            {
+                if ($allResourcesInModule -notcontains $component)
+                {
+                    Write-Warning -Message "The component '$component' is not a valid Microsoft365DSC resource and will be ignored."
+                    $ComponentsToSkip += $component
+                }
+            }
             $selectedResources = $Components
         }
 
@@ -299,7 +319,7 @@ function Start-M365DSCConfigurationExtract
 
         if ($null -ne $compareResourcesResult)
         {
-            # The client is trying to extract act least one resource which is not supported
+            # The client is trying to extract at least one resource which is not supported
             # using only the provided authentication parameters;
             $resourcesNotSupported = @()
             foreach ($resource in $compareResourcesResult)
@@ -650,6 +670,7 @@ function Start-M365DSCConfigurationExtract
         })
         $resourceDictionary = Get-M365DSCAllResourcesDictionary
         $exportScriptBlock = {
+            $Global:MaximumFunctionCount = 32768
             $Global:PartialExportFileName = $using:partialExportName
             $Global:M365DSCSkipDependenciesValidation = $true
             $resource = $_
@@ -745,10 +766,26 @@ function Start-M365DSCConfigurationExtract
                         Write-M365DSCHost -Message "    `r`n$($Global:M365DSCEmojiYellowCircle) You specified a filter for resource {$resourceName} but it doesn't support filters. Filter will be ignored and all instances of the resource will be captured."
                     }
                 }
+
+                # Check for ErrorAction Preference
+                $parameters.Add('ErrorAction', $using:ErrorActionPreference)
                 $Global:M365DSCExportResourceTypes += $resourceName
-                $exportString.Append((Export-TargetResource @parameters)) | Out-Null
+
+                try
+                {
+                    $exportOutput = Export-TargetResource @parameters
+                    $exportString.Append($exportOutput) | Out-Null
+                    ($using:synchronizedHashtable).ResourcesResult.Add($resourceName, $exportString.ToString())
+                }
+                catch
+                {
+                    Write-M365DSCHost -Message "    `r`n$($Global:M365DSCEmojiRedX) An error occurred while exporting resource {$resourceName}: $($_.Exception.Message)" -CommitWrite
+                    if ($ErrorActionPreference -eq 'Stop')
+                    {
+                        throw $_
+                    }
+                }
             }
-            ($using:synchronizedHashtable).ResourcesResult.Add($resourceName, $exportString.ToString())
         }
 
         if ($Parallel)
@@ -763,7 +800,7 @@ function Start-M365DSCConfigurationExtract
                 $requiredModules = [System.Collections.Generic.List[System.String]]::new(25)
                 foreach ($resource in $($ResourcesToExport | Where-Object { $_.Name -like "$workload*" }))
                 {
-                    foreach ($module in $resourceSettings[$resource.Name])
+                    foreach ($module in $resourceSettings[$resource.Name].requiredModules)
                     {
                         if (-not $requiredModules.Contains($module))
                         {
@@ -784,6 +821,14 @@ function Start-M365DSCConfigurationExtract
         foreach ($resource in $($synchronizedHashtable.ResourcesResult.Keys | Sort-Object))
         {
             $DSCContent.Append($synchronizedHashtable.ResourcesResult.$resource) | Out-Null
+        }
+
+        foreach ($pair in (Get-M365DSCStringReplacementMap).GetEnumerator())
+        {
+            Add-ConfigurationDataEntry -Node 'NonNodeData' `
+                -Key $pair.Value `
+                -Value $pair.Key `
+                -Description "Placeholder for sensitive data - $($pair.Value)"
         }
 
         # Close the Node and Configuration declarations
@@ -918,11 +963,11 @@ function Start-M365DSCConfigurationExtract
 
         if (-not [System.String]::IsNullOrEmpty($FileName))
         {
-            $outputDSCFile = $OutputDSCPath + $FileName
+            $outputDSCFile = $FileName
         }
         else
         {
-            $outputDSCFile = $OutputDSCPath + 'M365TenantConfig.ps1'
+            $outputDSCFile = 'M365TenantConfig.ps1'
         }
 
         # Clean empty lines with semi-colons, normally generated from CIMInstances convertions to String.
@@ -938,7 +983,7 @@ function Start-M365DSCConfigurationExtract
             Write-Verbose -Message $_
         }
 
-        if (!$AzureAutomation -and !$ManagedIdentity.IsPresent)
+        if (-not $AzureAutomation -and -not $ManagedIdentity.IsPresent)
         {
             try
             {
@@ -985,7 +1030,7 @@ function Start-M365DSCConfigurationExtract
                 Write-Verbose -Message "Could not retrieve current Windows Principal. This may be due to the fact that the current OS is not Windows."
             }
         }
-        $outputConfigurationData = $OutputDSCPath + 'ConfigurationData.psd1'
+        $outputConfigurationData = '.\ConfigurationData.psd1'
         New-ConfigurationDataDocument -Path $outputConfigurationData
         if ($shouldOpenOutputDirectory)
         {
@@ -1028,7 +1073,7 @@ function Get-M365DSCResourcesByWorkloads
         $Workloads,
 
         [Parameter()]
-        [ValidateSet('Lite', 'Default', 'Full')]
+        [ValidateSet('Default', 'Full')]
         [System.String]
         $Mode = 'Default'
     )
@@ -1039,14 +1084,14 @@ function Get-M365DSCResourcesByWorkloads
     {
         Write-M365DSCHost -Message "Finding all resources for workload {$Workload} and Mode {$Mode}" -ForegroundColor Gray
 
+        $fullComponents = Get-M365DSCResourcesByExportMode -Mode 'Full' -ExcludeConfigurationResources
         foreach ($resource in $modules)
         {
             $ResourceName = $resource.Name -replace 'MSFT_', '' -replace '.psm1', ''
 
             if ($ResourceName.StartsWith($Workload, 'CurrentCultureIgnoreCase') -and
                 ($Mode -eq 'Full' -or `
-                ($Mode -eq 'Default' -and -not $Global:FullComponents.Contains($ResourceName)) -or `
-                ($Mode -eq 'Lite' -and -not $Global:FullComponents.Contains($ResourceName) -and -not $Global:DefaultComponents.Contains($ResourceName))))
+                ($Mode -eq 'Default' -and -not $fullComponents.Contains($ResourceName))))
             {
                 $Components += $ResourceName
             }

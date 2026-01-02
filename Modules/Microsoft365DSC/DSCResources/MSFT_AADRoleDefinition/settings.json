@@ -42,5 +42,17 @@
   "supportedEnvironments": [
     "Global",
     "USGov"
+  ],
+  "mode": "Data",
+  "commands": [
+    {
+      "module": "Microsoft.Graph.Beta.Identity.Governance",
+      "cmdlets": [
+        "Get-MgBetaRoleManagementDirectoryRoleDefinition",
+        "New-MgBetaRoleManagementDirectoryRoleDefinition",
+        "Remove-MgBetaRoleManagementDirectoryRoleDefinition",
+        "Update-MgBetaRoleManagementDirectoryRoleDefinition"
+      ]
+    }
   ]
 }

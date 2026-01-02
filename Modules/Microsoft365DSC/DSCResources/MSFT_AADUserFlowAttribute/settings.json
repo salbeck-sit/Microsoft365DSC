@@ -41,5 +41,17 @@
   ],
   "supportedEnvironments": [
     "Global"
+  ],
+  "mode": "Configuration",
+  "commands": [
+    {
+      "module": "Microsoft.Graph.Beta.Identity.SignIns",
+      "cmdlets": [
+        "Get-MgBetaIdentityUserFlowAttribute",
+        "New-MgBetaIdentityUserFlowAttribute",
+        "Remove-MgBetaIdentityUserFlowAttribute",
+        "Update-MgBetaIdentityUserFlowAttribute"
+      ]
+    }
   ]
 }

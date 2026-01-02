@@ -33,7 +33,20 @@ function Get-TargetResource
 
         [Parameter()]
         [System.Boolean]
+        $DisableAppInteractionForAnonymousUsers,
+
+        [Parameter()]
+        [System.Boolean]
         $EnableQoS,
+
+        [Parameter()]
+        [ValidateSet('Disabled', 'Enabled')]
+        [System.String]
+        $FeedbackSurveyForAnonymousUsers,
+
+        [Parameter()]
+        [System.Boolean]
+        $LimitPresenterRolePermissions,
 
         [Parameter()]
         [System.UInt32]
@@ -117,26 +130,29 @@ function Get-TargetResource
         $config = Get-CsTeamsMeetingConfiguration -ErrorAction Stop
 
         return @{
-            Identity                    = $Identity
-            LogoURL                     = $config.LogoURL
-            LegalURL                    = $config.LegalURL
-            HelpURL                     = $config.HelpURL
-            CustomFooterText            = $config.CustomFooterText
-            DisableAnonymousJoin        = $config.DisableAnonymousJoin
-            EnableQoS                   = $config.EnableQoS
-            ClientAudioPort             = $config.ClientAudioPort
-            ClientAudioPortRange        = $config.ClientAudioPortRange
-            ClientVideoPort             = $config.ClientVideoPort
-            ClientVideoPortRange        = $config.ClientVideoPortRange
-            ClientAppSharingPort        = $config.ClientAppSharingPort
-            ClientAppSharingPortRange   = $config.ClientAppSharingPortRange
-            ClientMediaPortRangeEnabled = $config.ClientMediaPortRangeEnabled
-            Credential                  = $Credential
-            ApplicationId               = $ApplicationId
-            TenantId                    = $TenantId
-            CertificateThumbprint       = $CertificateThumbprint
-            ManagedIdentity             = $ManagedIdentity.IsPresent
-            AccessTokens                = $AccessTokens
+            Identity                               = $Identity
+            LogoURL                                = $config.LogoURL
+            LegalURL                               = $config.LegalURL
+            HelpURL                                = $config.HelpURL
+            CustomFooterText                       = $config.CustomFooterText
+            DisableAnonymousJoin                   = $config.DisableAnonymousJoin
+            EnableQoS                              = $config.EnableQoS
+            ClientAudioPort                        = $config.ClientAudioPort
+            ClientAudioPortRange                   = $config.ClientAudioPortRange
+            ClientVideoPort                        = $config.ClientVideoPort
+            ClientVideoPortRange                   = $config.ClientVideoPortRange
+            ClientAppSharingPort                   = $config.ClientAppSharingPort
+            ClientAppSharingPortRange              = $config.ClientAppSharingPortRange
+            ClientMediaPortRangeEnabled            = $config.ClientMediaPortRangeEnabled
+            DisableAppInteractionForAnonymousUsers = $config.DisableAppInteractionForAnonymousUsers
+            FeedbackSurveyForAnonymousUsers        = $config.FeedbackSurveyForAnonymousUsers
+            LimitPresenterRolePermissions          = $config.LimitPresenterRolePermissions
+            Credential                             = $Credential
+            ApplicationId                          = $ApplicationId
+            TenantId                               = $TenantId
+            CertificateThumbprint                  = $CertificateThumbprint
+            ManagedIdentity                        = $ManagedIdentity.IsPresent
+            AccessTokens                           = $AccessTokens
         }
     }
     catch
@@ -183,7 +199,20 @@ function Set-TargetResource
 
         [Parameter()]
         [System.Boolean]
+        $DisableAppInteractionForAnonymousUsers,
+
+        [Parameter()]
+        [System.Boolean]
         $EnableQoS,
+
+        [Parameter()]
+        [ValidateSet('Disabled', 'Enabled')]
+        [System.String]
+        $FeedbackSurveyForAnonymousUsers,
+
+        [Parameter()]
+        [System.Boolean]
+        $LimitPresenterRolePermissions,
 
         [Parameter()]
         [System.UInt32]
@@ -295,7 +324,20 @@ function Test-TargetResource
 
         [Parameter()]
         [System.Boolean]
+        $DisableAppInteractionForAnonymousUsers,
+
+        [Parameter()]
+        [System.Boolean]
         $EnableQoS,
+
+        [Parameter()]
+        [ValidateSet('Disabled', 'Enabled')]
+        [System.String]
+        $FeedbackSurveyForAnonymousUsers,
+
+        [Parameter()]
+        [System.Boolean]
+        $LimitPresenterRolePermissions,
 
         [Parameter()]
         [System.UInt32]
@@ -352,11 +394,9 @@ function Test-TargetResource
         [System.String[]]
         $AccessTokens
     )
-    #Ensure the proper dependencies are installed in the current environment.
-    Confirm-M365DSCDependencies
 
     #region Telemetry
-    $ResourceName = $MyInvocation.MyCommand.ModuleName -replace 'MSFT_', ''
+    $ResourceName = $MyInvocation.MyCommand.ModuleName.Replace('MSFT_', '')
     $CommandName = $MyInvocation.MyCommand
     $data = Format-M365DSCTelemetryParameters -ResourceName $ResourceName `
         -CommandName $CommandName `
@@ -364,23 +404,9 @@ function Test-TargetResource
     Add-M365DSCTelemetryEvent -Data $data
     #endregion
 
-    Write-Verbose -Message 'Testing configuration of Teams Client'
-
-    $CurrentValues = Get-TargetResource @PSBoundParameters
-
-    Write-Verbose -Message "Current Values: $(Convert-M365DscHashtableToString -Hashtable $CurrentValues)"
-    Write-Verbose -Message "Target Values: $(Convert-M365DscHashtableToString -Hashtable $PSBoundParameters)"
-
-    $ValuesToCheck = $PSBoundParameters
-
-    $TestResult = Test-M365DSCParameterState -CurrentValues $CurrentValues `
-        -Source $($MyInvocation.MyCommand.Source) `
-        -DesiredValues $PSBoundParameters `
-        -ValuesToCheck $ValuesToCheck.Keys
-
-    Write-Verbose -Message "Test-TargetResource returned $TestResult"
-
-    return $TestResult
+    $result = Test-M365DSCTargetResource -DesiredValues $PSBoundParameters `
+                                         -ResourceName $($MyInvocation.MyCommand.Source).Replace('MSFT_', '')
+    return $result
 }
 
 function Export-TargetResource

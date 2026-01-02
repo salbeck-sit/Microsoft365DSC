@@ -299,14 +299,14 @@ function Get-TargetResource
             try
             {
                 $Policy = Get-MgBetaIdentityConditionalAccessPolicy -ConditionalAccessPolicyId $Id -ErrorAction Stop
-                $jsonPolicy = ConvertTo-Json $Policy -ErrorAction SilentlyContinue
+                $jsonPolicy = ConvertTo-Json $Policy -Depth 10 -ErrorAction SilentlyContinue
                 Write-Verbose -Message "Retrieved policy:`r`n$($jsonPolicy)"
             }
             catch
             {
                 Write-Verbose -Message "Couldn't find existing policy by ID {$Id}"
                 $Policy = Get-MgBetaIdentityConditionalAccessPolicy -Filter "DisplayName eq '$($DisplayName -replace "'", "''")'"
-                $jsonPolicy = ConvertTo-Json $Policy -ErrorAction SilentlyContinue
+                $jsonPolicy = ConvertTo-Json -Depth 10 $Policy -ErrorAction SilentlyContinue
                 Write-Verbose -Message "Retrieved policy:`r`n$($jsonPolicy)"
 
                 if ($Policy.Length -gt 1)
@@ -320,7 +320,7 @@ function Get-TargetResource
             Write-Verbose -Message 'Id was NOT specified'
             ## Can retreive multiple CA Policies since displayname is not unique
             $Policy = Get-MgBetaIdentityConditionalAccessPolicy -Filter "DisplayName eq '$($DisplayName -replace "'", "''")'"
-            $jsonPolicy = ConvertTo-Json $Policy -ErrorAction SilentlyContinue
+            $jsonPolicy = ConvertTo-Json -Depth 10 $Policy -ErrorAction SilentlyContinue
             Write-Verbose -Message "Retrieved policy:`r`n$($jsonPolicy)"
 
             if ($Policy.Length -gt 1)
@@ -634,7 +634,7 @@ function Get-TargetResource
         [Array]$ExcludeGuestOrExternalUserTypes = ($Policy.Conditions.Users.ExcludeGuestsOrExternalUsers.GuestOrExternalUserTypes).Split(',')
     }
 
-    $termsOfUseName = $null
+    $termOfUseName = $null
     if ($Policy.GrantControls.TermsOfUse)
     {
         $termofUse = Get-MgBetaAgreement | Where-Object -FilterScript { $_.Id -eq $Policy.GrantControls.TermsOfUse }
@@ -1950,7 +1950,7 @@ function Set-TargetResource
         Write-Verbose -Message 'Create Parameters:'
         Write-Verbose -Message (Convert-M365DscHashtableToString $NewParameters)
 
-        if ($newparameters.Conditions.applications.count -gt 0 -and ($newparameters.Conditions.Users.count -gt 0 -or $newparameters.Conditions.ClientApplications.count -gt 0) -and ($newparameters.GrantControls.count -gt 0 -or $newparameters.SessionControls.count -gt 0))
+        if ($newparameters.Conditions.applications.Count -gt 0 -and ($newparameters.Conditions.Users.Count -gt 0 -or $newparameters.Conditions.ClientApplications.Count -gt 0) -and ($newparameters.GrantControls.Count -gt 0 -or $newparameters.SessionControls.Count -gt 0))
         {
             try
             {

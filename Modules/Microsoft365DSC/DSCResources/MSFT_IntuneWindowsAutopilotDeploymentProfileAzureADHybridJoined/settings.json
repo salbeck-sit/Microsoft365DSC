@@ -49,5 +49,32 @@
   "supportedEnvironments": [
     "Global",
     "USGov"
+  ],
+  "mode": "Configuration",
+  "commands": [
+    {
+      "module": "Microsoft.Graph.Beta.DeviceManagement",
+      "cmdlets": [
+        "Get-MgBetaDeviceManagementAssignmentFilter"
+      ]
+    },
+    {
+      "module": "Microsoft.Graph.Beta.DeviceManagement.Enrollment",
+      "cmdlets": [
+        "Get-MgBetaDeviceManagementWindowsAutopilotDeploymentProfile",
+        "Get-MgBetaDeviceManagementWindowsAutopilotDeploymentProfileAssignment",
+        "New-MgBetaDeviceManagementWindowsAutopilotDeploymentProfile",
+        "New-MgBetaDeviceManagementWindowsAutopilotDeploymentProfileAssignment",
+        "Remove-MgBetaDeviceManagementWindowsAutopilotDeploymentProfile",
+        "Remove-MgBetaDeviceManagementWindowsAutopilotDeploymentProfileAssignment",
+        "Update-MgBetaDeviceManagementWindowsAutopilotDeploymentProfile"
+      ]
+    },
+    {
+      "module": "Microsoft.Graph.Groups",
+      "cmdlets": [
+        "Get-MgGroup"
+      ]
+    }
   ]
 }

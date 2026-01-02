@@ -24,7 +24,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             $secpasswd = ConvertTo-SecureString (New-Guid | Out-String) -AsPlainText -Force
             $Credential = New-Object System.Management.Automation.PSCredential ('tenantadmin@mydomain.com', $secpasswd)
 
-            Mock -CommandName Confirm-M365DSCDependencies -MockWith {
+            Mock -ModuleName M365DSCUtil -CommandName Confirm-M365DSCDependencies -MockWith {
             }
 
             Mock -CommandName New-M365DSCConnection -MockWith {
@@ -64,13 +64,17 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
         Context -Name 'Address List should exist. Address List is missing. Test should fail.' -Fixture {
             BeforeAll {
                 $testParams = @{
-                    Name                       = 'Contoso Different Address List' # Drift
+                    Name                       = 'Contoso Address List'
                     ConditionalCompany         = 'Contoso'
                     ConditionalDepartment      = 'HR'
                     ConditionalStateOrProvince = 'US'
                     IncludedRecipients         = 'AllRecipients'
                     Ensure                     = 'Present'
                     Credential                 = $Credential
+                }
+
+                Mock -CommandName Get-AddressList -MockWith {
+                    return $null
                 }
             }
 

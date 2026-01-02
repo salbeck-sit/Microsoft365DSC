@@ -59,83 +59,43 @@ function Get-TargetResource
 
     Write-Verbose -Message "Getting configuration of Office 365 Recipient permission $Identity"
 
-    if ($Script:ExportMode)
-    {
-        $null = New-M365DSCConnection -Workload 'ExchangeOnline' `
-            -InboundParameters $PSBoundParameters `
-            -SkipModuleReload $true
-    }
-    else
-    {
-        $null = New-M365DSCConnection -Workload 'ExchangeOnline' `
-            -InboundParameters $PSBoundParameters
-    }
-
-    #Ensure the proper dependencies are installed in the current environment.
-    Confirm-M365DSCDependencies
-
-    #region Telemetry
-    $ResourceName = $MyInvocation.MyCommand.ModuleName -replace 'MSFT_', ''
-    $CommandName = $MyInvocation.MyCommand
-    $data = Format-M365DSCTelemetryParameters -ResourceName $ResourceName `
-        -CommandName $CommandName `
-        -Parameters $PSBoundParameters
-    Add-M365DSCTelemetryEvent -Data $data
-    #endregion
-
-    $nullReturn = $PSBoundParameters
-    $nullReturn.Ensure = 'Absent'
-
     try
     {
-        if ($null -ne $Script:recipientPermissions -and $Script:ExportMode)
+        if (-not $Script:exportedInstance -or $Script:exportedInstance.Identity -ne $Identity)
         {
-            $recipientPermission = $Script:recipientPermissions | Where-Object -FilterScript {
-                $_.Identity -eq $Identity -and $_.Trustee -eq $Trustee -and $_.AccessRights -eq $AccessRights
-            }
+            $null = New-M365DSCConnection -Workload 'ExchangeOnline' `
+                -InboundParameters $PSBoundParameters
+
+            #Ensure the proper dependencies are installed in the current environment.
+            Confirm-M365DSCDependencies
+
+            #region Telemetry
+            $ResourceName = $MyInvocation.MyCommand.ModuleName -replace 'MSFT_', ''
+            $CommandName = $MyInvocation.MyCommand
+            $data = Format-M365DSCTelemetryParameters -ResourceName $ResourceName `
+                -CommandName $CommandName `
+                -Parameters $PSBoundParameters
+            Add-M365DSCTelemetryEvent -Data $data
+            #endregion
+
+            $nullReturn = $PSBoundParameters
+            $nullReturn.Ensure = 'Absent'
+
+            Write-Verbose -Message "Retrieving Recipient Permissions by Identity {$Identity}, Trustee {$Trustee} and AccessRights {$AccessRights}"
+            $recipientPermission = Get-RecipientPermission -Identity $Identity -Trustee $Trustee -AccessRights $AccessRights -ErrorAction SilentlyContinue
 
             if ($null -eq $recipientPermission)
             {
-                try
-                {
-                    $userValue = $Script:UsersCache[$Identity]
-                    if ($null -eq $userValue)
-                    {
-                        $userValue = Get-User -Identity $Identity
-                    }
-                    $recipientPermission = $Script:recipientPermissions | Where-Object -FilterScript {
-                        $_.Identity -eq $userValue.Identity -and $_.Trustee -eq $Trustee -and $_.AccessRights -eq $AccessRights
-                    }
-                }
-                catch
-                {
-                    Write-Verbose -Message $_
-                }
+                Write-Verbose -Message "The specified Recipient Permission doesn't exist."
+                return $nullReturn
             }
         }
         else
         {
-            Write-Verbose -Message "Retrieving Recipient Permissions by Identity {$Identity}, Trustee {$Trustee} and AccessRights {$AccessRights}"
-            $recipientPermission = Get-RecipientPermission -Identity $Identity -Trustee $Trustee -AccessRights $AccessRights -ErrorAction Stop
-            $recipientPermissionValue = $recipientPermission | Where-Object -FilterScript {$_.Identity -eq $Identity}
-
-            if ($null -eq $recipientPermissionValue)
-            {
-                $userValue = Get-User -Identity $Identity
-                $recipientPermissionValue = $recipientPermission | Where-Object -FilterScript {
-                    $_.Identity -eq $userValue.Identity -and $_.Trustee -eq $Trustee -and $_.AccessRights -eq $AccessRights
-                }
-            }
-            $recipientPermission = $recipientPermissionValue
+            $recipientPermission = $Script:exportedInstance
         }
 
-        if ($null -eq $recipientPermission)
-        {
-            Write-Verbose -Message "The specified Recipient Permission doesn't exist."
-            return $nullReturn
-        }
-
-        #endregion
+        Write-Verbose -Message "Found Recipient Permission for Identity {$Identity}, Trustee {$Trustee} and AccessRights {$AccessRights}"
 
         [Array]$trustee = $recipientPermission.Trustee
 
@@ -154,7 +114,6 @@ function Get-TargetResource
             AccessTokens          = $AccessTokens
         }
 
-        Write-Verbose -Message "Found an existing instance of Recipient permissions '$($DisplayName)'"
         return $result
     }
     catch
@@ -322,35 +281,18 @@ function Test-TargetResource
         $AccessTokens
     )
 
-    #Ensure the proper dependencies are installed in the current environment.
-    Confirm-M365DSCDependencies
-
-    $param = $PSBoundParameters
-
     #region Telemetry
-    $ResourceName = $MyInvocation.MyCommand.ModuleName -replace 'MSFT_', ''
+    $ResourceName = $MyInvocation.MyCommand.ModuleName.Replace('MSFT_', '')
     $CommandName = $MyInvocation.MyCommand
     $data = Format-M365DSCTelemetryParameters -ResourceName $ResourceName `
         -CommandName $CommandName `
-        -Parameters $param
+        -Parameters $PSBoundParameters
     Add-M365DSCTelemetryEvent -Data $data
     #endregion
 
-    Write-Verbose -Message "Testing configuration of Office 365 Recipient permissions $DisplayName"
-
-    $currentValues = Get-TargetResource @param
-
-    Write-Verbose -Message "Current Values: $(Convert-M365DscHashtableToString -Hashtable $currentValues)"
-    Write-Verbose -Message "Target Values: $(Convert-M365DscHashtableToString -Hashtable $param)"
-
-    $testResult = Test-M365DSCParameterState -CurrentValues $currentValues `
-        -Source $($MyInvocation.MyCommand.Source) `
-        -DesiredValues $param `
-        -ValuesToCheck Ensure, Identity, Trustee, AccessRights
-
-    Write-Verbose -Message "Test-TargetResource returned $testResult"
-
-    return $testResult
+    $result = Test-M365DSCTargetResource -DesiredValues $PSBoundParameters `
+                                         -ResourceName $($MyInvocation.MyCommand.Source).Replace('MSFT_', '')
+    return $result
 }
 
 function Export-TargetResource
@@ -429,13 +371,11 @@ function Export-TargetResource
 
     try
     {
-        $Script:ExportMode = $true
-
-        [array]$Script:recipientPermissions = Get-RecipientPermission -ResultSize Unlimited
+        [array]$recipientPermissions = Get-RecipientPermission -ResultSize Unlimited
 
         $dscContent = ''
         $i = 1
-        if ($recipientPermissions.Length -eq 0)
+        if ($recipientPermissions.Count -eq 0)
         {
             Write-M365DSCHost -Message $Global:M365DSCEmojiGreenCheckMark -CommitWrite
         }
@@ -481,7 +421,7 @@ function Export-TargetResource
                 CertificatePath       = $CertificatePath
                 AccessTokens          = $AccessTokens
             }
-
+            $Script:exportedInstance = $recipientPermission
             $Results = Get-TargetResource @Params
             if ($Results -is [System.Collections.Hashtable] -and $Results.Count -gt 1)
             {

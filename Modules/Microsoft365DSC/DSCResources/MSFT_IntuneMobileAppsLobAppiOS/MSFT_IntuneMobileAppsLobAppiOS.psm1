@@ -1,3 +1,5 @@
+Confirm-M365DSCModuleDependency -ModuleName 'MSFT_IntuneMobileAppsLobAppiOS'
+
 function Get-TargetResource
 {
     [CmdletBinding()]
@@ -87,8 +89,8 @@ function Get-TargetResource
         #endregion
 
         [Parameter()]
+        [ValidateSet('Present', 'Absent')]
         [System.String]
-        [ValidateSet('Absent', 'Present')]
         $Ensure = 'Present',
 
         [Parameter()]
@@ -126,8 +128,7 @@ function Get-TargetResource
     {
         if (-not $Script:exportedInstance -or $Script:exportedInstance.DisplayName -ne $DisplayName)
         {
-
-            $ConnectionMode = New-M365DSCConnection -Workload 'MicrosoftGraph' `
+            $null = New-M365DSCConnection -Workload 'MicrosoftGraph' `
                 -InboundParameters $PSBoundParameters
 
             #Ensure the proper dependencies are installed in the current environment.
@@ -181,7 +182,7 @@ function Get-TargetResource
         Write-Verbose -Message "An Intune Mobile Apps Lob App iOS with Id {$Id} and DisplayName {$DisplayName} was found"
 
         #region resource generator code
-        $complexApplicableDeviceType = @{}
+        $complexApplicableDeviceType = [ordered]@{}
         $complexApplicableDeviceType.Add('IPad', $getValue.AdditionalProperties.applicableDeviceType.iPad)
         $complexApplicableDeviceType.Add('IPhoneAndIPod', $getValue.AdditionalProperties.applicableDeviceType.iPhoneAndIPod)
         if ($complexApplicableDeviceType.Values.Where({ $null -ne $_ }).Count -eq 0)
@@ -192,7 +193,7 @@ function Get-TargetResource
         $complexCategories = @()
         foreach ($category in $getValue.Categories)
         {
-            $myCategory = @{}
+            $myCategory = [ordered]@{}
             $myCategory.Add('Id', $category.id)
             $myCategory.Add('DisplayName', $category.displayName)
             $complexCategories += $myCategory
@@ -218,7 +219,7 @@ function Get-TargetResource
         $complexLargeIcon = $null
         if ($null -ne $getValue.LargeIcon.Value)
         {
-            $complexLargeIcon = @{}
+            $complexLargeIcon = [ordered]@{}
             $complexLargeIcon.Add('Type', $getValue.LargeIcon.Type)
             $complexLargeIcon.Add('Value', [System.Convert]::ToBase64String($getValue.LargeIcon.Value))
         }
@@ -260,9 +261,20 @@ function Get-TargetResource
         {
             $assignmentResult += ConvertFrom-IntuneMobileAppAssignment -Assignments $assignmentsValues -IncludeDeviceFilter $true
         }
+        foreach ($assignment in $assignmentResult)
+        {
+            if ($null -ne $assignment.assignmentSettings -and $null -ne $assignment.assignmentSettings.vpnConfigurationId)
+            {
+                $vpnConfiguration = Get-MgBetaDeviceManagementDeviceConfiguration -DeviceConfigurationId $assignment.assignmentSettings.vpnConfigurationId -Property 'DisplayName' -ErrorAction SilentlyContinue
+                if ($null -ne $vpnConfiguration)
+                {
+                    $assignment.assignmentSettings.vpnConfigurationId = $vpnConfiguration.DisplayName
+                }
+            }
+        }
         $results.Add('Assignments', $assignmentResult)
 
-        return [System.Collections.Hashtable] $results
+        return $results
     }
     catch
     {
@@ -272,7 +284,7 @@ function Get-TargetResource
             -TenantId $TenantId `
             -Credential $Credential
 
-        return $nullResult
+        throw
     }
 }
 
@@ -364,8 +376,8 @@ function Set-TargetResource
         #endregion
 
         [Parameter()]
+        [ValidateSet('Present', 'Absent')]
         [System.String]
-        [ValidateSet('Absent', 'Present')]
         $Ensure = 'Present',
 
         [Parameter()]
@@ -413,31 +425,42 @@ function Set-TargetResource
 
     $currentInstance = Get-TargetResource @PSBoundParameters
 
+    foreach ($assignment in $Assignments)
+    {
+        if ($null -ne $assignment.assignmentSettings -and -not [System.String]::IsNullOrEmpty($assignment.assignmentSettings.vpnConfigurationId))
+        {
+            $guid = [System.Guid]::Empty
+            if (-not [System.Guid]::TryParse($assignment.assignmentSettings.vpnConfigurationId, [ref]$guid))
+            {
+                $vpnConfiguration = Get-MgBetaDeviceManagementDeviceConfiguration -All -Filter "displayName eq '$($assignment.assignmentSettings.vpnConfigurationId)'" | Where-Object -FilterScript {
+                    $_.AdditionalProperties.'@odata.type' -like '#microsoft.graph.*VpnConfiguration'
+                }
+                if ($null -eq $vpnConfiguration)
+                {
+                    throw "Could not find a VPN Configuration Policy with DisplayName '$($assignment.assignmentSettings.vpnConfigurationId)'."
+                }
+                $assignment.assignmentSettings.vpnConfigurationId = $vpnConfiguration.Id
+            }
+        }
+    }
+
     $boundParameters = Remove-M365DSCAuthenticationParameter -BoundParameters $PSBoundParameters
     $boundParameters.Remove('Categories') | Out-Null
 
     if ($Ensure -eq 'Present' -and $currentInstance.Ensure -eq 'Absent')
     {
         Write-Verbose -Message "Creating an Intune Mobile Apps Lob App iOS with DisplayName {$DisplayName}"
-        $boundParameters.Remove("Assignments") | Out-Null
+        $boundParameters.Remove('Assignments') | Out-Null
 
         $createParameters = ([Hashtable]$boundParameters).Clone()
         $createParameters = Rename-M365DSCCimInstanceParameter -Properties $createParameters
         $createParameters.Remove('Id') | Out-Null
 
-        $keys = (([Hashtable]$createParameters).Clone()).Keys
-        foreach ($key in $keys)
-        {
-            if ($null -ne $createParameters.$key -and $createParameters.$key.GetType().Name -like '*CimInstance*')
-            {
-                $createParameters.$key = Convert-M365DSCDRGComplexTypeToHashtable -ComplexObject $createParameters.$key
-            }
-        }
         #region resource generator code
-        $createParameters.Add("@odata.type", "#microsoft.graph.iosLobApp")
-        $policy = Invoke-MgGraphRequest -Method POST -Uri "/beta/deviceAppManagement/mobileApps" -Body ($createParameters | ConvertTo-Json -Depth 10)
+        $createParameters.Add('@odata.type', '#microsoft.graph.iosLobApp')
+        $policy = Invoke-MgGraphRequest -Method POST -Uri '/beta/deviceAppManagement/mobileApps' -Body ($createParameters | ConvertTo-Json -Depth 10)
 
-        Invoke-M365DSCIntuneMobileAppInitialUpload -AppId $policy.Id -OdataType "#microsoft.graph.iosLobApp" -FileExtension "ipa"
+        Invoke-M365DSCIntuneMobileAppInitialUpload -AppId $policy.Id -OdataType '#microsoft.graph.iosLobApp' -FileExtension 'ipa'
 
         if ($PSBoundParameters.ContainsKey('Categories'))
         {
@@ -456,24 +479,15 @@ function Set-TargetResource
     elseif ($Ensure -eq 'Present' -and $currentInstance.Ensure -eq 'Present')
     {
         Write-Verbose -Message "Updating the Intune Mobile Apps Lob App iOS with Id {$($currentInstance.Id)}"
-        $boundParameters.Remove("Assignments") | Out-Null
+        $boundParameters.Remove('Assignments') | Out-Null
 
         $updateParameters = ([Hashtable]$boundParameters).Clone()
         $updateParameters = Rename-M365DSCCimInstanceParameter -Properties $updateParameters
-
         $updateParameters.Remove('Id') | Out-Null
 
-        $keys = (([Hashtable]$updateParameters).Clone()).Keys
-        foreach ($key in $keys)
-        {
-            if ($null -ne $updateParameters.$key -and $updateParameters.$key.GetType().Name -like '*CimInstance*')
-            {
-                $updateParameters.$key = Convert-M365DSCDRGComplexTypeToHashtable -ComplexObject $updateParameters.$key
-            }
-        }
 
         #region resource generator code
-        $updateParameters.Add("@odata.type", "#microsoft.graph.iosLobApp")
+        $updateParameters.Add('@odata.type', '#microsoft.graph.iosLobApp')
         Invoke-MgGraphRequest -Method PATCH -Uri "/beta/deviceAppManagement/mobileApps/$($currentInstance.Id)" -Body ($updateParameters | ConvertTo-Json -Depth 10)
 
         if ($PSBoundParameters.ContainsKey('Categories'))
@@ -585,8 +599,8 @@ function Test-TargetResource
         #endregion
 
         [Parameter()]
+        [ValidateSet('Present', 'Absent')]
         [System.String]
-        [ValidateSet('Absent', 'Present')]
         $Ensure = 'Present',
 
         [Parameter()]
@@ -618,9 +632,6 @@ function Test-TargetResource
         $AccessTokens
     )
 
-    #Ensure the proper dependencies are installed in the current environment.
-    Confirm-M365DSCDependencies
-
     #region Telemetry
     $ResourceName = $MyInvocation.MyCommand.ModuleName.Replace('MSFT_', '')
     $CommandName = $MyInvocation.MyCommand
@@ -630,49 +641,9 @@ function Test-TargetResource
     Add-M365DSCTelemetryEvent -Data $data
     #endregion
 
-    Write-Verbose -Message "Testing configuration of the Intune Mobile Apps Lob App iOS with Id {$Id} and DisplayName {$DisplayName}"
-
-    $CurrentValues = Get-TargetResource @PSBoundParameters
-    $ValuesToCheck = ([hashtable]$PSBoundParameters).Clone()
-    $testResult = $true
-
-    #Compare Cim instances
-    foreach ($key in $PSBoundParameters.Keys)
-    {
-        $source = $PSBoundParameters.$key
-        $target = $CurrentValues.$key
-        if ($null -ne $source -and $source.GetType().Name -like '*CimInstance*')
-        {
-            $testResult = Compare-M365DSCComplexObject `
-                -Source ($source) `
-                -Target ($target)
-
-            if (-not $testResult)
-            {
-                break
-            }
-
-            $ValuesToCheck.Remove($key) | Out-Null
-        }
-    }
-
-    $ValuesToCheck.Remove('Id') | Out-Null
-    $ValuesToCheck = Remove-M365DSCAuthenticationParameter -BoundParameters $ValuesToCheck
-
-    Write-Verbose -Message "Current Values: $(Convert-M365DscHashtableToString -Hashtable $CurrentValues)"
-    Write-Verbose -Message "Target Values: $(Convert-M365DscHashtableToString -Hashtable $ValuesToCheck)"
-
-    if ($testResult)
-    {
-        $testResult = Test-M365DSCParameterState -CurrentValues $CurrentValues `
-            -Source $($MyInvocation.MyCommand.Source) `
-            -DesiredValues $PSBoundParameters `
-            -ValuesToCheck $ValuesToCheck.Keys
-    }
-
-    Write-Verbose -Message "Test-TargetResource returned $testResult"
-
-    return $testResult
+    $result = Test-M365DSCTargetResource -DesiredValues $PSBoundParameters `
+        -ResourceName $($MyInvocation.MyCommand.Source).Replace('MSFT_', '')
+    return $result
 }
 
 function Export-TargetResource
@@ -829,7 +800,17 @@ function Export-TargetResource
 
             if ($Results.Assignments)
             {
-                $complexTypeStringResult = Get-M365DSCDRGComplexTypeToString -ComplexObject $Results.Assignments -CIMInstanceName DeviceManagementMobileAppAssignment
+                $complexMapping = @(
+                    @{
+                        Name            = 'AssignmentSettings'
+                        CIMInstanceName = 'DeviceManagementLobAppiOSAssignmentSettings'
+                        IsRequired      = $false
+                    }
+                )
+                $complexTypeStringResult = Get-M365DSCDRGComplexTypeToString `
+                    -ComplexObject $Results.Assignments `
+                    -CIMInstanceName DeviceManagementLobAppiOSAssignment `
+                    -ComplexTypeMapping $complexMapping
                 if ($complexTypeStringResult)
                 {
                     $Results.Assignments = $complexTypeStringResult
@@ -856,15 +837,13 @@ function Export-TargetResource
     }
     catch
     {
-        Write-M365DSCHost -Message $Global:M365DSCEmojiRedX -CommitWrite
-
         New-M365DSCLogEntry -Message 'Error during Export:' `
             -Exception $_ `
             -Source $($MyInvocation.MyCommand.Source) `
             -TenantId $TenantId `
             -Credential $Credential
 
-        return ''
+        throw
     }
 }
 

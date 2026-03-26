@@ -19,8 +19,8 @@ function Get-TargetResource
         $Id,
 
         [Parameter()]
+        [ValidateSet('Present', 'Absent')]
         [System.String]
-        [ValidateSet('Absent', 'Present')]
         $Ensure = 'Present',
 
         [Parameter()]
@@ -52,11 +52,13 @@ function Get-TargetResource
         $AccessTokens
     )
 
+    Write-Verbose -Message "Getting configuration for the Azure AD Identity Governance Program with Id {$Id} and DisplayName {$DisplayName}"
+
     try
     {
         if (-not $Script:exportedInstance -or $Script:exportedInstance.Id -ne $Id)
         {
-            $ConnectionMode = New-M365DSCConnection -Workload 'MicrosoftGraph' `
+            $null = New-M365DSCConnection -Workload 'MicrosoftGraph' `
                 -InboundParameters $PSBoundParameters
 
             #Ensure the proper dependencies are installed in the current environment.
@@ -93,7 +95,7 @@ function Get-TargetResource
 
                     if ($null -ne $getValue -and $getValue.Count -gt 1)
                     {
-                        Throw "Multiple AAD Identity Governance Programs with the Displayname $($DisplayName) exist in the tenant."
+                        throw "Multiple AAD Identity Governance Programs with the Displayname $($DisplayName) exist in the tenant."
                     }
                 }
             }
@@ -124,7 +126,7 @@ function Get-TargetResource
             ManagedIdentity       = $ManagedIdentity.IsPresent
         }
 
-        return [System.Collections.Hashtable] $results
+        return $results
     }
     catch
     {
@@ -134,7 +136,7 @@ function Get-TargetResource
             -TenantId $TenantId `
             -Credential $Credential
 
-        return $nullResult
+        throw
     }
 }
 
@@ -156,8 +158,8 @@ function Set-TargetResource
         $Id,
 
         [Parameter()]
+        [ValidateSet('Present', 'Absent')]
         [System.String]
-        [ValidateSet('Absent', 'Present')]
         $Ensure = 'Present',
 
         [Parameter()]
@@ -202,7 +204,6 @@ function Set-TargetResource
     #endregion
 
     $currentInstance = Get-TargetResource @PSBoundParameters
-
     $BoundParameters = Remove-M365DSCAuthenticationParameter -BoundParameters $PSBoundParameters
 
 
@@ -253,8 +254,8 @@ function Test-TargetResource
         $Id,
 
         [Parameter()]
+        [ValidateSet('Present', 'Absent')]
         [System.String]
-        [ValidateSet('Absent', 'Present')]
         $Ensure = 'Present',
 
         [Parameter()]
@@ -296,7 +297,7 @@ function Test-TargetResource
     #endregion
 
     $result = Test-M365DSCTargetResource -DesiredValues $PSBoundParameters `
-                                         -ResourceName $($MyInvocation.MyCommand.Source).Replace('MSFT_', '')
+        -ResourceName $($MyInvocation.MyCommand.Source).Replace('MSFT_', '')
     return $result
 }
 
@@ -413,17 +414,14 @@ function Export-TargetResource
     }
     catch
     {
-        Write-M365DSCHost -Message $Global:M365DSCEmojiRedX -CommitWrite
-
         New-M365DSCLogEntry -Message 'Error during Export:' `
             -Exception $_ `
             -Source $($MyInvocation.MyCommand.Source) `
             -TenantId $TenantId `
             -Credential $Credential
 
-        return ''
+        throw
     }
 }
 
 Export-ModuleMember -Function *-TargetResource
-

@@ -131,8 +131,8 @@ function Get-TargetResource
         $RoleScopeTagIds,
 
         [Parameter()]
+        [ValidateSet('Present', 'Absent')]
         [System.String]
-        [ValidateSet('Absent', 'Present')]
         $Ensure = 'Present',
 
         [Parameter()]
@@ -170,7 +170,7 @@ function Get-TargetResource
     {
         if (-not $Script:exportedInstance -or $Script:exportedInstance.DisplayName -ne $DisplayName)
         {
-            $ConnectionMode = New-M365DSCConnection -Workload 'MicrosoftGraph' `
+            $null = New-M365DSCConnection -Workload 'MicrosoftGraph' `
                 -InboundParameters $PSBoundParameters
 
             #Ensure the proper dependencies are installed in the current environment.
@@ -197,7 +197,7 @@ function Get-TargetResource
                     $_.displayName -eq $($DisplayName)
             }
 
-            if (([array]$devicePolicy).count -gt 1)
+            if (([array]$devicePolicy).Count -gt 1)
             {
                 throw "A policy with a duplicated displayName {'$DisplayName'} was found - Ensure displayName is unique"
             }
@@ -215,7 +215,7 @@ function Get-TargetResource
         Write-Verbose -Message "Found Intune Android Device Owner Device Compliance Policy with displayName {$DisplayName}"
 
         #scheduledActionsForRule needs processing before we can interact with it
-        $psCustomObject = $devicePolicy.ScheduledActionsForRule | convertTo-JSON | ConvertFrom-JSON
+        $psCustomObject = $devicePolicy.ScheduledActionsForRule | ConvertTo-Json -Depth 10 | ConvertFrom-Json
         $scheduledActionsForRuleHashTable = @{}
         $psCustomObject.PsObject.Properties | ForEach-Object {
             $scheduledActionsForRuleHashTable[$_.Name] = $_.Value
@@ -224,16 +224,17 @@ function Get-TargetResource
         $hashtable = @{}
         $complexScheduledActionsForRule = @()
         $scheduledActionsForRuleHashTable.ScheduledActionConfigurations.PsObject.Properties | ForEach-Object {
-            if($_.Value -match "ActionType")
+            if ($_.Value -match 'ActionType')
             {
-                foreach($item in $_.Value){
-                        $hashtable = @{}
-                        $hashtable.Add('actionType', $item.ActionType)
-                        $hashtable.Add('gracePeriodHours', $item.GracePeriodHours)
-                        $hashtable.Add('notificationMessageCcList', ([Array]$item.NotificationMessageCcList -split " ") )
-                        $hashtable.Add('notificationTemplateId', $item.NotificationTemplateId)
-                        $complexScheduledActionsForRule += $hashtable
-                 }
+                foreach ($item in $_.Value)
+                {
+                    $hashtable = @{}
+                    $hashtable.Add('actionType', $item.ActionType)
+                    $hashtable.Add('gracePeriodHours', $item.GracePeriodHours)
+                    $hashtable.Add('notificationMessageCcList', ([Array]$item.NotificationMessageCcList -split ' ') )
+                    $hashtable.Add('notificationTemplateId', $item.NotificationTemplateId)
+                    $complexScheduledActionsForRule += $hashtable
+                }
             }
         }
 
@@ -279,7 +280,7 @@ function Get-TargetResource
 
         $returnAssignments = @()
         $graphAssignments = Get-MgBetaDeviceManagementDeviceCompliancePolicyAssignment -DeviceCompliancePolicyId $devicePolicy.Id
-        if ($graphAssignments.count -gt 0)
+        if ($graphAssignments.Count -gt 0)
         {
             $returnAssignments += ConvertFrom-IntunePolicyAssignment `
                 -IncludeDeviceFilter:$true `
@@ -287,7 +288,7 @@ function Get-TargetResource
         }
         $results.Add('Assignments', $returnAssignments)
 
-        return [System.Collections.Hashtable] $results
+        return $results
     }
     catch
     {
@@ -297,7 +298,7 @@ function Get-TargetResource
             -TenantId $TenantId `
             -Credential $Credential
 
-        return $nullResult
+        throw
     }
 }
 
@@ -431,8 +432,8 @@ function Set-TargetResource
         $RoleScopeTagIds,
 
         [Parameter()]
+        [ValidateSet('Present', 'Absent')]
         [System.String]
-        [ValidateSet('Absent', 'Present')]
         $Ensure = 'Present',
 
         [Parameter()]
@@ -466,7 +467,7 @@ function Set-TargetResource
 
     Write-Verbose -Message "Intune Android Device Owner Device Compliance Policy {$DisplayName}"
 
-    $ConnectionMode = New-M365DSCConnection -Workload 'MicrosoftGraph' `
+    $null = New-M365DSCConnection -Workload 'MicrosoftGraph' `
         -InboundParameters $PSBoundParameters
 
     #Ensure the proper dependencies are installed in the current environment.
@@ -482,11 +483,7 @@ function Set-TargetResource
     #endregion
 
     $currentDeviceAndroidPolicy = Get-TargetResource @PSBoundParameters
-
-    $PSBoundParameters = Remove-M365DSCAuthenticationParameter -BoundParameters $PSBoundParameters
-
-
-    #$allTargetValues = Convert-M365DscHashtableToString -Hashtable $PSBoundParameters
+    $boundParameters = Remove-M365DSCAuthenticationParameter -BoundParameters $PSBoundParameters
 
     #reconstruct scheduled action configurations for use with New/Update-MgBetaDeviceManagementDeviceCompliancePolicy
     $hashtable = Convert-M365DSCDRGComplexTypeToHashtable -ComplexObject $PSBoundParameters.ScheduledActionsForRule
@@ -503,11 +500,11 @@ function Set-TargetResource
     if ($Ensure -eq 'Present' -and $currentDeviceAndroidPolicy.Ensure -eq 'Absent')
     {
         Write-Verbose -Message "Creating new Intune Android Work Profile Device Compliance Policy {$DisplayName}"
-        $PSBoundParameters.Remove('DisplayName') | Out-Null
-        $PSBoundParameters.Remove('Description') | Out-Null
-        $PSBoundParameters.Remove('Assignments') | Out-Null
+        $boundParameters.Remove('DisplayName') | Out-Null
+        $boundParameters.Remove('Description') | Out-Null
+        $boundParameters.Remove('Assignments') | Out-Null
 
-        $AdditionalProperties = Get-M365DSCIntuneDeviceCompliancePolicyAndroidDeviceOwnerAdditionalProperties -Properties ([System.Collections.Hashtable]$PSBoundParameters)
+        $AdditionalProperties = Get-M365DSCIntuneDeviceCompliancePolicyAndroidDeviceOwnerAdditionalProperties -Properties ([System.Collections.Hashtable]$boundParameters)
         $policy = New-MgBetaDeviceManagementDeviceCompliancePolicy -DisplayName $DisplayName `
             -Description $Description `
             -AdditionalProperties $AdditionalProperties `
@@ -534,17 +531,17 @@ function Set-TargetResource
                 $_.displayName -eq $($DisplayName)
         }
 
-        $PSBoundParameters.Remove('DisplayName') | Out-Null
-        $PSBoundParameters.Remove('Description') | Out-Null
-        $PSBoundParameters.Remove('Assignments') | Out-Null
+        $boundParameters.Remove('DisplayName') | Out-Null
+        $boundParameters.Remove('Description') | Out-Null
+        $boundParameters.Remove('Assignments') | Out-Null
 
-        $AdditionalProperties = Get-M365DSCIntuneDeviceCompliancePolicyAndroidDeviceOwnerAdditionalProperties -Properties ([System.Collections.Hashtable]$PSBoundParameters)
+        $AdditionalProperties = Get-M365DSCIntuneDeviceCompliancePolicyAndroidDeviceOwnerAdditionalProperties -Properties ([System.Collections.Hashtable]$boundParameters)
         Update-MgBetaDeviceManagementDeviceCompliancePolicy -AdditionalProperties $AdditionalProperties `
             -Description $Description `
             -DeviceCompliancePolicyId $configDeviceAndroidPolicy.Id#`
             #-ScheduledActionsForRule $myScheduledActionsForRule #This does not work even though it is a valid parameter
 
-        #handle ScheduledActionsForRule separately with Invoke-MgGraph
+        #handle ScheduledActionsForRule separately with Invoke-MgGraphRequest
         $Uri = (Get-MSCloudLoginConnectionProfile -Workload MicrosoftGraph).ResourceUrl + "beta/deviceManagement/deviceCompliancePolicies/$($configDeviceAndroidPolicy.Id)/scheduleActionsForRules"
         $mgGraphScheduledActionForRules = @{
             deviceComplianceScheduledActionForRules = @( $myScheduledActionsForRule )
@@ -703,8 +700,8 @@ function Test-TargetResource
         $RoleScopeTagIds,
 
         [Parameter()]
+        [ValidateSet('Present', 'Absent')]
         [System.String]
-        [ValidateSet('Absent', 'Present')]
         $Ensure = 'Present',
 
         [Parameter()]
@@ -736,9 +733,6 @@ function Test-TargetResource
         $AccessTokens
     )
 
-    #Ensure the proper dependencies are installed in the current environment.
-    Confirm-M365DSCDependencies
-
     #region Telemetry
     $ResourceName = $MyInvocation.MyCommand.ModuleName.Replace('MSFT_', '')
     $CommandName = $MyInvocation.MyCommand
@@ -748,56 +742,9 @@ function Test-TargetResource
     Add-M365DSCTelemetryEvent -Data $data
     #endregion
 
-    Write-Verbose -Message "Testing configuration of {$Id}"
-
-    $CurrentValues = Get-TargetResource @PSBoundParameters
-    $ValuesToCheck = ([Hashtable]$PSBoundParameters).clone()
-    $testResult = $true
-
-    #Compare Cim instances
-    foreach ($key in $PSBoundParameters.Keys)
-    {
-        $source = $PSBoundParameters.$key
-        $target = $CurrentValues.$key
-        if ($source.GetType().Name -like '*CimInstance*')
-        {
-            $testResult = Compare-M365DSCComplexObject `
-                -Source ($source) `
-                -Target ($target)
-
-            if (-not $testResult) { break }
-
-            $ValuesToCheck.Remove($key) | Out-Null
-        }
-    }
-
-    $ValuesToCheck.Remove('Id') | Out-Null
-    $ValuesToCheck = Remove-M365DSCAuthenticationParameter -BoundParameters $ValuesToCheck
-
-    Write-Verbose -Message "Current Values: $(Convert-M365DscHashtableToString -Hashtable $CurrentValues)"
-    Write-Verbose -Message "Target Values: $(Convert-M365DscHashtableToString -Hashtable $ValuesToCheck)"
-
-    #Convert any DateTime to String
-    foreach ($key in $ValuesToCheck.Keys)
-    {
-        if (($null -ne $CurrentValues[$key]) `
-                -and ($CurrentValues[$key].getType().Name -eq 'DateTime'))
-        {
-            $CurrentValues[$key] = $CurrentValues[$key].toString()
-        }
-    }
-
-    if ($testResult)
-    {
-        $testResult = Test-M365DSCParameterState -CurrentValues $CurrentValues `
-            -Source $($MyInvocation.MyCommand.Source) `
-            -DesiredValues $PSBoundParameters `
-            -ValuesToCheck $ValuesToCheck.Keys
-    }
-
-    Write-Verbose -Message "Test-TargetResource returned $testResult"
-
-    return $testResult
+    $result = Test-M365DSCTargetResource -DesiredValues $PSBoundParameters `
+        -ResourceName $($MyInvocation.MyCommand.Source).Replace('MSFT_', '')
+    return $result
 }
 
 function Export-TargetResource
@@ -956,16 +903,14 @@ function Export-TargetResource
         }
         else
         {
-            Write-M365DSCHost -Message $Global:M365DSCEmojiRedX -CommitWrite
-
             New-M365DSCLogEntry -Message 'Error during Export:' `
                 -Exception $_ `
                 -Source $($MyInvocation.MyCommand.Source) `
                 -TenantId $TenantId `
                 -Credential $Credential
-        }
 
-        return ''
+            throw
+        }
     }
 }
 
@@ -994,4 +939,3 @@ function Get-M365DSCIntuneDeviceCompliancePolicyAndroidDeviceOwnerAdditionalProp
 }
 
 Export-ModuleMember -Function *-TargetResource
-

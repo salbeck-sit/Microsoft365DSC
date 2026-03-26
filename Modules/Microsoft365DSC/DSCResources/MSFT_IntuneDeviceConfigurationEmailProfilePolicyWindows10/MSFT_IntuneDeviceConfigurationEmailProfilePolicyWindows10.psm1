@@ -87,8 +87,8 @@ function Get-TargetResource
         #endregion
 
         [Parameter()]
+        [ValidateSet('Present', 'Absent')]
         [System.String]
-        [ValidateSet('Absent', 'Present')]
         $Ensure = 'Present',
 
         [Parameter()]
@@ -126,7 +126,7 @@ function Get-TargetResource
     {
         if (-not $Script:exportedInstance -or $Script:exportedInstance.DisplayName -ne $DisplayName)
         {
-            $ConnectionMode = New-M365DSCConnection -Workload 'MicrosoftGraph' `
+            $null = New-M365DSCConnection -Workload 'MicrosoftGraph' `
                 -InboundParameters $PSBoundParameters
 
             #Ensure the proper dependencies are installed in the current environment.
@@ -155,7 +155,7 @@ function Get-TargetResource
             {
                 Write-Verbose -Message "Could not find an Intune Device Configuration Email Profile Policy for Windows10 with Id {$Id}"
 
-                if (-Not [string]::IsNullOrEmpty($DisplayName))
+                if (-not [string]::IsNullOrEmpty($DisplayName))
                 {
                     $getValue = Get-MgBetaDeviceManagementDeviceConfiguration `
                         -All `
@@ -170,7 +170,7 @@ function Get-TargetResource
                         Write-Verbose -Message "Could not find an Intune Device Configuration Email Profile Policy for Windows10 with DisplayName {$DisplayName}"
                         return $nullResult
                     }
-                    if (([array]$getValue).count -gt 1)
+                    if (([array]$getValue).Count -gt 1)
                     {
                         throw "A policy with a duplicated displayName {'$DisplayName'} was found - Ensure displayName is unique"
                     }
@@ -249,14 +249,14 @@ function Get-TargetResource
             TenantId              = $TenantId
             ApplicationSecret     = $ApplicationSecret
             CertificateThumbprint = $CertificateThumbprint
-            Managedidentity       = $ManagedIdentity.IsPresent
+            ManagedIdentity       = $ManagedIdentity.IsPresent
             AccessTokens          = $AccessTokens
             #endregion
         }
 
         $returnAssignments = @()
         $graphAssignments = Get-MgBetaDeviceManagementDeviceConfigurationAssignment -DeviceConfigurationId $Id
-        if ($graphAssignments.count -gt 0)
+        if ($graphAssignments.Count -gt 0)
         {
             $returnAssignments += ConvertFrom-IntunePolicyAssignment `
                 -IncludeDeviceFilter:$true `
@@ -264,7 +264,7 @@ function Get-TargetResource
         }
         $results.Add('Assignments', $returnAssignments)
 
-        return [System.Collections.Hashtable] $results
+        return $results
     }
     catch
     {
@@ -274,7 +274,7 @@ function Get-TargetResource
             -TenantId $TenantId `
             -Credential $Credential
 
-        return $nullResult
+        throw
     }
 }
 
@@ -363,8 +363,8 @@ function Set-TargetResource
         $Assignments,
         #endregion
         [Parameter()]
+        [ValidateSet('Present', 'Absent')]
         [System.String]
-        [ValidateSet('Absent', 'Present')]
         $Ensure = 'Present',
 
         [Parameter()]
@@ -409,7 +409,6 @@ function Set-TargetResource
     #endregion
 
     $currentInstance = Get-TargetResource @PSBoundParameters
-
     $BoundParameters = Remove-M365DSCAuthenticationParameter -BoundParameters $PSBoundParameters
 
     if ($Ensure -eq 'Present' -and $currentInstance.Ensure -eq 'Absent')
@@ -418,17 +417,9 @@ function Set-TargetResource
         $BoundParameters.Remove('Assignments') | Out-Null
 
         $CreateParameters = ([Hashtable]$BoundParameters).Clone()
-        $CreateParameters = Rename-M365DSCCimInstanceParameter -Properties $CreateParameters
-        $CreateParameters.Remove('Id') | Out-Null
+        $createParameters = Rename-M365DSCCimInstanceParameter -Properties $createParameters
+        $createParameters.Remove('Id') | Out-Null
 
-        $keys = (([Hashtable]$CreateParameters).Clone()).Keys
-        foreach ($key in $keys)
-        {
-            if ($null -ne $CreateParameters.$key -and $CreateParameters.$key.GetType().Name -like '*cimInstance*')
-            {
-                $CreateParameters.$key = Convert-M365DSCDRGComplexTypeToHashtable -ComplexObject $CreateParameters.$key
-            }
-        }
         #region resource generator code
         $CreateParameters.Add('@odata.type', '#microsoft.graph.windows10EasEmailProfileConfiguration')
         $policy = New-MgBetaDeviceManagementDeviceConfiguration -BodyParameter $CreateParameters
@@ -447,19 +438,10 @@ function Set-TargetResource
         Write-Verbose -Message "Updating the Intune Device Configuration Email Profile Policy for Windows10 with Id {$($currentInstance.Id)}"
         $BoundParameters.Remove('Assignments') | Out-Null
 
-        $UpdateParameters = ([Hashtable]$BoundParameters).Clone()
-        $UpdateParameters = Rename-M365DSCCimInstanceParameter -Properties $UpdateParameters
+        $updateParameters = ([Hashtable]$boundParameters).Clone()
+        $updateParameters = Rename-M365DSCCimInstanceParameter -Properties $updateParameters
+        $updateParameters.Remove('Id') | Out-Null
 
-        $UpdateParameters.Remove('Id') | Out-Null
-
-        $keys = (([Hashtable]$UpdateParameters).Clone()).Keys
-        foreach ($key in $keys)
-        {
-            if ($null -ne $UpdateParameters.$key -and $UpdateParameters.$key.GetType().Name -like '*cimInstance*')
-            {
-                $UpdateParameters.$key = Convert-M365DSCDRGComplexTypeToHashtable -ComplexObject $UpdateParameters.$key
-            }
-        }
         #region resource generator code
         $UpdateParameters.Add('@odata.type', '#microsoft.graph.windows10EasEmailProfileConfiguration')
         Update-MgBetaDeviceManagementDeviceConfiguration  `
@@ -568,8 +550,8 @@ function Test-TargetResource
         #endregion
 
         [Parameter()]
+        [ValidateSet('Present', 'Absent')]
         [System.String]
-        [ValidateSet('Absent', 'Present')]
         $Ensure = 'Present',
 
         [Parameter()]
@@ -601,9 +583,6 @@ function Test-TargetResource
         $AccessTokens
     )
 
-    #Ensure the proper dependencies are installed in the current environment.
-    Confirm-M365DSCDependencies
-
     #region Telemetry
     $ResourceName = $MyInvocation.MyCommand.ModuleName.Replace('MSFT_', '')
     $CommandName = $MyInvocation.MyCommand
@@ -613,50 +592,9 @@ function Test-TargetResource
     Add-M365DSCTelemetryEvent -Data $data
     #endregion
 
-    Write-Verbose -Message "Testing configuration of the Intune Device Configuration Email Profile Policy for Windows10 with Id {$Id} and DisplayName {$DisplayName}"
-
-    $CurrentValues = Get-TargetResource @PSBoundParameters
-
-    $ValuesToCheck = ([Hashtable]$PSBoundParameters).Clone()
-    $testResult = $true
-
-    #Compare Cim instances
-    foreach ($key in $PSBoundParameters.Keys)
-    {
-        $source = $PSBoundParameters.$key
-        $target = $CurrentValues.$key
-        if ($source.GetType().Name -like '*CimInstance*')
-        {
-            $testResult = Compare-M365DSCComplexObject `
-                -Source ($source) `
-                -Target ($target)
-
-            if (-Not $testResult)
-            {
-                $testResult = $false
-                break
-            }
-
-            $ValuesToCheck.Remove($key) | Out-Null
-        }
-    }
-
-    $ValuesToCheck.Remove('Id') | Out-Null
-
-    Write-Verbose -Message "Current Values: $(Convert-M365DscHashtableToString -Hashtable $CurrentValues)"
-    Write-Verbose -Message "Target Values: $(Convert-M365DscHashtableToString -Hashtable $ValuesToCheck)"
-
-    if ($testResult)
-    {
-        $testResult = Test-M365DSCParameterState -CurrentValues $CurrentValues `
-            -Source $($MyInvocation.MyCommand.Source) `
-            -DesiredValues $PSBoundParameters `
-            -ValuesToCheck $ValuesToCheck.Keys
-    }
-
-    Write-Verbose -Message "Test-TargetResource returned $testResult"
-
-    return $testResult
+    $result = Test-M365DSCTargetResource -DesiredValues $PSBoundParameters `
+        -ResourceName $($MyInvocation.MyCommand.Source).Replace('MSFT_', '')
+    return $result
 }
 
 function Export-TargetResource
@@ -755,7 +693,7 @@ function Export-TargetResource
                 TenantId              = $TenantId
                 ApplicationSecret     = $ApplicationSecret
                 CertificateThumbprint = $CertificateThumbprint
-                Managedidentity       = $ManagedIdentity.IsPresent
+                ManagedIdentity       = $ManagedIdentity.IsPresent
                 AccessTokens          = $AccessTokens
             }
 
@@ -798,18 +736,15 @@ function Export-TargetResource
         }
         else
         {
-            Write-M365DSCHost -Message $Global:M365DSCEmojiRedX -CommitWrite
-
             New-M365DSCLogEntry -Message 'Error during Export:' `
                 -Exception $_ `
                 -Source $($MyInvocation.MyCommand.Source) `
                 -TenantId $TenantId `
                 -Credential $Credential
-        }
 
-        return ''
+            throw
+        }
     }
 }
 
 Export-ModuleMember -Function *-TargetResource
-

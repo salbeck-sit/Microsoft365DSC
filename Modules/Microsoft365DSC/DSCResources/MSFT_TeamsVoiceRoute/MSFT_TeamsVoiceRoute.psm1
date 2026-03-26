@@ -12,6 +12,10 @@ function Get-TargetResource
 
         [Parameter()]
         [System.String]
+        $BridgeSourcePhoneNumber,
+
+        [Parameter()]
+        [System.String]
         $Description,
 
         [Parameter()]
@@ -66,7 +70,7 @@ function Get-TargetResource
     {
         if (-not $Script:exportedInstance -or $Script:exportedInstance.Identity -ne $Identity)
         {
-            $ConnectionMode = New-M365DSCConnection -Workload 'MicrosoftTeams' `
+            $null = New-M365DSCConnection -Workload 'MicrosoftTeams' `
                 -InboundParameters $PSBoundParameters
 
             #Ensure the proper dependencies are installed in the current environment.
@@ -107,19 +111,20 @@ function Get-TargetResource
 
         Write-Verbose -Message "Found Voice Route {$Identity}"
         return @{
-            Identity              = $Identity
-            Description           = $route.Description
-            NumberPattern         = $route.NumberPattern
-            OnlinePstnGatewayList = $route.OnlinePstnGatewayList
-            OnlinePstnUsages      = $route.OnlinePstnUsages
-            Priority              = $route.Priority
-            Ensure                = 'Present'
-            Credential            = $Credential
-            ApplicationId         = $ApplicationId
-            TenantId              = $TenantId
-            CertificateThumbprint = $CertificateThumbprint
-            ManagedIdentity       = $ManagedIdentity.IsPresent
-            AccessTokens          = $AccessTokens
+            Identity                = $Identity
+            BridgeSourcePhoneNumber = $route.BridgeSourcePhoneNumber
+            Description             = $route.Description
+            NumberPattern           = $route.NumberPattern
+            OnlinePstnGatewayList   = $route.OnlinePstnGatewayList
+            OnlinePstnUsages        = $route.OnlinePstnUsages
+            Priority                = $route.Priority
+            Ensure                  = 'Present'
+            Credential              = $Credential
+            ApplicationId           = $ApplicationId
+            TenantId                = $TenantId
+            CertificateThumbprint   = $CertificateThumbprint
+            ManagedIdentity         = $ManagedIdentity.IsPresent
+            AccessTokens            = $AccessTokens
         }
     }
     catch
@@ -130,7 +135,7 @@ function Get-TargetResource
             -TenantId $TenantId `
             -Credential $Credential
 
-        return $nullReturn
+        throw
     }
 }
 
@@ -142,6 +147,10 @@ function Set-TargetResource
         [Parameter(Mandatory = $true)]
         [System.String]
         $Identity,
+
+        [Parameter()]
+        [System.String]
+        $BridgeSourcePhoneNumber,
 
         [Parameter()]
         [System.String]
@@ -205,7 +214,7 @@ function Set-TargetResource
     Add-M365DSCTelemetryEvent -Data $data
     #endregion
 
-    $ConnectionMode = New-M365DSCConnection -Workload 'MicrosoftTeams' `
+    $null = New-M365DSCConnection -Workload 'MicrosoftTeams' `
         -InboundParameters $PSBoundParameters
 
     # Validate that the selected PSTN usages exist in the environment
@@ -245,21 +254,17 @@ function Set-TargetResource
     Write-Verbose -Message "Setting Voice Route {$Identity}"
 
     $CurrentValues = Get-TargetResource @PSBoundParameters
-    $PSBoundParameters = Remove-M365DSCAuthenticationParameter -BoundParameters $PSBoundParameters
+    $boundParameters = Remove-M365DSCAuthenticationParameter -BoundParameters $PSBoundParameters
 
     if ($Ensure -eq 'Present' -and $CurrentValues.Ensure -eq 'Absent')
     {
         Write-Verbose -Message "Creating a new Voice Route {$Identity}"
-        New-CsOnlineVoiceRoute @PSBoundParameters
+        New-CsOnlineVoiceRoute @boundParameters
     }
     elseif ($Ensure -eq 'Present' -and $CurrentValues.Ensure -eq 'Present')
     {
-        <#
-            If we get here, it's because the Test-TargetResource detected a drift, therefore we always call
-            into the Set-CsOnlineVoiceRoute cmdlet.
-        #>
         Write-Verbose -Message "Updating settings for Voice Route {$Identity}"
-        Set-CsOnlineVoiceRoute @PSBoundParameters
+        Set-CsOnlineVoiceRoute @boundParameters
     }
     elseif ($Ensure -eq 'Absent' -and $CurrentValues.Ensure -eq 'Present')
     {
@@ -277,6 +282,10 @@ function Test-TargetResource
         [Parameter(Mandatory = $true)]
         [System.String]
         $Identity,
+
+        [Parameter()]
+        [System.String]
+        $BridgeSourcePhoneNumber,
 
         [Parameter()]
         [System.String]
@@ -328,11 +337,8 @@ function Test-TargetResource
         $AccessTokens
     )
 
-    #Ensure the proper dependencies are installed in the current environment.
-    Confirm-M365DSCDependencies
-
     #region Telemetry
-    $ResourceName = $MyInvocation.MyCommand.ModuleName -replace 'MSFT_', ''
+    $ResourceName = $MyInvocation.MyCommand.ModuleName.Replace('MSFT_', '')
     $CommandName = $MyInvocation.MyCommand
     $data = Format-M365DSCTelemetryParameters -ResourceName $ResourceName `
         -CommandName $CommandName `
@@ -340,34 +346,9 @@ function Test-TargetResource
     Add-M365DSCTelemetryEvent -Data $data
     #endregion
 
-    Write-Verbose -Message "Testing configuration of Voice Route {$Identity}"
-
-    $CurrentValues = Get-TargetResource @PSBoundParameters
-    $ValuesToCheck = ([Hashtable]$PSBoundParameters).Clone()
-    $ValuesToCheck = Remove-M365DSCAuthenticationParameter -BoundParameters $ValuesToCheck
-
-
-    if ($CurrentValues.Ensure -eq 'Absent' -and $Ensure -eq 'Absent')
-    {
-        Write-Verbose -Message "Test-TargetResource returned $true"
-        return $true
-    }
-    $TestResult = $true
-
-    Write-Verbose -Message "Current Values: $(Convert-M365DscHashtableToString -Hashtable $CurrentValues)"
-    Write-Verbose -Message "Target Values: $(Convert-M365DscHashtableToString -Hashtable $ValuesToCheck)"
-
-    if ($TestResult)
-    {
-        $TestResult = Test-M365DSCParameterState -CurrentValues $CurrentValues `
-            -Source $($MyInvocation.MyCommand.Source) `
-            -DesiredValues $PSBoundParameters `
-            -ValuesToCheck $ValuesToCheck.Keys
-    }
-
-    Write-Verbose -Message "Test-TargetResource returned $TestResult"
-
-    return $TestResult
+    $result = Test-M365DSCTargetResource -DesiredValues $PSBoundParameters `
+        -ResourceName $($MyInvocation.MyCommand.Source).Replace('MSFT_', '')
+    return $result
 }
 
 function Export-TargetResource
@@ -376,6 +357,10 @@ function Export-TargetResource
     [OutputType([System.String])]
     param
     (
+        [Parameter()]
+        [System.String]
+        $Filter = "*",
+
         [Parameter()]
         [System.Management.Automation.PSCredential]
         $Credential,
@@ -419,7 +404,7 @@ function Export-TargetResource
     try
     {
         $i = 1
-        [array]$routes = Get-CsOnlineVoiceRoute -ErrorAction Stop
+        [array]$routes = Get-CsOnlineVoiceRoute -Filter $Filter -ErrorAction Stop
         $dscContent = ''
         Write-M365DSCHost -Message "`r`n" -DeferWrite
         foreach ($route in $routes)
@@ -458,17 +443,14 @@ function Export-TargetResource
     }
     catch
     {
-        Write-M365DSCHost -Message $Global:M365DSCEmojiRedX -CommitWrite
-
         New-M365DSCLogEntry -Message 'Error during Export:' `
             -Exception $_ `
             -Source $($MyInvocation.MyCommand.Source) `
             -TenantId $TenantId `
             -Credential $Credential
 
-        return ''
+        throw
     }
 }
 
 Export-ModuleMember -Function *-TargetResource
-

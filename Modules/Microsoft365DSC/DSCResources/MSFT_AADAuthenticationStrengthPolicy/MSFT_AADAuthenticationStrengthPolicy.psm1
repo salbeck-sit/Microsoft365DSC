@@ -24,8 +24,8 @@ function Get-TargetResource
         $AllowedCombinations,
 
         [Parameter()]
+        [ValidateSet('Present', 'Absent')]
         [System.String]
-        [ValidateSet('Absent', 'Present')]
         $Ensure = 'Present',
 
         [Parameter()]
@@ -63,7 +63,7 @@ function Get-TargetResource
     {
         if (-not $Script:exportedInstance -or $DisplayName -ne $Script:exportedInstance.DisplayName)
         {
-            $ConnectionMode = New-M365DSCConnection -Workload 'MicrosoftGraph' `
+            $null = New-M365DSCConnection -Workload 'MicrosoftGraph' `
                 -InboundParameters $PSBoundParameters
 
             #Ensure the proper dependencies are installed in the current environment.
@@ -113,11 +113,11 @@ function Get-TargetResource
             TenantId              = $TenantId
             ApplicationSecret     = $ApplicationSecret
             CertificateThumbprint = $CertificateThumbprint
-            Managedidentity       = $ManagedIdentity.IsPresent
+            ManagedIdentity       = $ManagedIdentity.IsPresent
             AccessTokens          = $AccessTokens
         }
 
-        return [System.Collections.Hashtable] $results
+        return $results
     }
     catch
     {
@@ -127,7 +127,7 @@ function Get-TargetResource
             -TenantId $TenantId `
             -Credential $Credential
 
-        return $nullResult
+        throw
     }
 }
 
@@ -154,8 +154,8 @@ function Set-TargetResource
         $AllowedCombinations,
 
         [Parameter()]
+        [ValidateSet('Present', 'Absent')]
         [System.String]
-        [ValidateSet('Absent', 'Present')]
         $Ensure = 'Present',
 
         [Parameter()]
@@ -202,7 +202,6 @@ function Set-TargetResource
     #endregion
 
     $currentInstance = Get-TargetResource @PSBoundParameters
-
     $BoundParameters = Remove-M365DSCAuthenticationParameter -BoundParameters $PSBoundParameters
 
     if ($Ensure -eq 'Present' -and $currentInstance.Ensure -eq 'Absent')
@@ -218,11 +217,21 @@ function Set-TargetResource
         $BoundParameters.Remove('Id') | Out-Null
         $combinations = $BoundParameters.AllowedCombinations
         $BoundParameters.Remove('AllowedCombinations') | Out-Null
-        Update-MgBetaPolicyAuthenticationStrengthPolicy @BoundParameters
 
-        Write-Verbose -Message "Updating the Azure AD Authentication Strength Policy allowed combination with DisplayName {$DisplayName}"
-        Update-MgBetaPolicyAuthenticationStrengthPolicyAllowedCombination -AuthenticationStrengthPolicyId $currentInstance.Id `
-            -AllowedCombinations $AllowedCombinations
+        # Need to retrieve the policy to make sure we are not trying to update a builtIn one.
+        $policyObject = Get-MgBetaPolicyAuthenticationStrengthPolicy -AuthenticationStrengthPolicyId $currentInstance.Id
+        if ($policyObject.PolicyType -eq 'builtIn')
+        {
+            Write-Error -Message "Authentication Strength Policy {$DisplayName} is a built-in and cannot be updated."
+        }
+        else
+        {
+            Update-MgBetaPolicyAuthenticationStrengthPolicy @BoundParameters
+
+            Write-Verbose -Message "Updating the Azure AD Authentication Strength Policy allowed combination with DisplayName {$DisplayName}"
+            Update-MgBetaPolicyAuthenticationStrengthPolicyAllowedCombination -AuthenticationStrengthPolicyId $currentInstance.Id `
+                -AllowedCombinations $combinations
+        }
     }
     elseif ($Ensure -eq 'Absent' -and $currentInstance.Ensure -eq 'Present')
     {
@@ -255,8 +264,8 @@ function Test-TargetResource
         $AllowedCombinations,
 
         [Parameter()]
+        [ValidateSet('Present', 'Absent')]
         [System.String]
-        [ValidateSet('Absent', 'Present')]
         $Ensure = 'Present',
 
         [Parameter()]
@@ -298,7 +307,7 @@ function Test-TargetResource
     #endregion
 
     $result = Test-M365DSCTargetResource -DesiredValues $PSBoundParameters `
-                                         -ResourceName $($MyInvocation.MyCommand.Source).Replace('MSFT_', '')
+        -ResourceName $($MyInvocation.MyCommand.Source).Replace('MSFT_', '')
     return $result
 }
 
@@ -308,6 +317,10 @@ function Export-TargetResource
     [OutputType([System.String])]
     param
     (
+        [Parameter()]
+        [System.String]
+        $Filter,
+
         [Parameter()]
         [System.Management.Automation.PSCredential]
         $Credential,
@@ -355,7 +368,18 @@ function Export-TargetResource
     try
     {
         #region resource generator code
+        $baseFilter = "policyType ne 'builtIn'"
+        if (-not [System.String]::IsNullOrEmpty($Filter))
+        {
+            $Filter = "($baseFilter) and ($Filter)"
+        }
+        else
+        {
+            $Filter = $baseFilter
+        }
         [array]$getValue = Get-MgBetaPolicyAuthenticationStrengthPolicy `
+            -All `
+            -Filter $Filter `
             -ErrorAction Stop
         #endregion
 
@@ -391,7 +415,7 @@ function Export-TargetResource
                 TenantId              = $TenantId
                 ApplicationSecret     = $ApplicationSecret
                 CertificateThumbprint = $CertificateThumbprint
-                Managedidentity       = $ManagedIdentity.IsPresent
+                ManagedIdentity       = $ManagedIdentity.IsPresent
                 AccessTokens          = $AccessTokens
             }
 
@@ -413,17 +437,14 @@ function Export-TargetResource
     }
     catch
     {
-        Write-M365DSCHost -Message $Global:M365DSCEmojiRedX -CommitWrite
-
         New-M365DSCLogEntry -Message 'Error during Export:' `
             -Exception $_ `
             -Source $($MyInvocation.MyCommand.Source) `
             -TenantId $TenantId `
             -Credential $Credential
 
-        return ''
+        throw
     }
 }
 
 Export-ModuleMember -Function *-TargetResource
-

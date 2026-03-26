@@ -39,38 +39,43 @@ function Get-TargetResource
         $AccessTokens
     )
 
-    New-M365DSCConnection -Workload 'ExchangeOnline' `
-        -InboundParameters $PSBoundParameters | Out-Null
+    Write-Verbose -Message "Getting configuration of Mailbox Audit Bypass Association with Identity $Identity"
 
-    #Ensure the proper dependencies are installed in the current environment.
-    Confirm-M365DSCDependencies
-
-    #region Telemetry
-    $ResourceName = $MyInvocation.MyCommand.ModuleName.Replace('MSFT_', '')
-    $CommandName = $MyInvocation.MyCommand
-    $data = Format-M365DSCTelemetryParameters -ResourceName $ResourceName `
-        -CommandName $CommandName `
-        -Parameters $PSBoundParameters
-    Add-M365DSCTelemetryEvent -Data $data
-    #endregion
-
-    $nullResult = $PSBoundParameters
     try
     {
-        if ($null -ne $Script:exportedInstances -and $Script:ExportMode)
+        if (-not $Script:exportedInstance -or $Script:exportedInstance.Identity -ne $Identity)
         {
-            $instance = $Script:exportedInstances | Where-Object -FilterScript { $_.Identity -eq $Identity }
+            $null = New-M365DSCConnection -Workload 'ExchangeOnline' `
+                -InboundParameters $PSBoundParameters
+
+            #Ensure the proper dependencies are installed in the current environment.
+            Confirm-M365DSCDependencies
+
+            #region Telemetry
+            $ResourceName = $MyInvocation.MyCommand.ModuleName.Replace('MSFT_', '')
+            $CommandName = $MyInvocation.MyCommand
+            $data = Format-M365DSCTelemetryParameters -ResourceName $ResourceName `
+                -CommandName $CommandName `
+                -Parameters $PSBoundParameters
+            Add-M365DSCTelemetryEvent -Data $data
+            #endregion
+
+            $nullResult = $PSBoundParameters
+            $nullResult.Ensure = 'Absent'
+
+            # We need the Where-Object clause because calling the cmdlet by Identity only can retrieve similar
+            # patterns.
+            $instance = Get-MailboxAuditBypassAssociation -Identity $Identity.Replace("`r", '') -ErrorAction SilentlyContinue
+            $instance = $instance | Where-Object -FilterScript { $_.Identity -eq $Identity.Replace("`r", '') }
+            if ($null -eq $instance)
+            {
+                Write-Verbose -Message "Mailbox Audit Bypass Association with Identity $Identity not found"
+                return $nullResult
+            }
         }
         else
         {
-            # We need the Where-Object clause because calling the cmdlet by Identity only can retrieve similar
-            # patterns.
-            $instance = Get-MailboxAuditBypassAssociation -Identity $Identity.Replace("`r",'') -ErrorAction SilentlyContinue
-            $instance = $instance | Where-Object -FilterScript {$_.Identity -eq $Identity.Replace("`r",'')}
-        }
-        if ($null -eq $instance)
-        {
-            return $nullResult
+            $instance = $Script:exportedInstance
         }
 
         $results = @{
@@ -83,7 +88,7 @@ function Get-TargetResource
             ManagedIdentity       = $ManagedIdentity.IsPresent
             AccessTokens          = $AccessTokens
         }
-        return [System.Collections.Hashtable] $results
+        return $results
     }
     catch
     {
@@ -93,7 +98,7 @@ function Get-TargetResource
             -TenantId $TenantId `
             -Credential $Credential
 
-        return $nullResult
+        throw
     }
 }
 
@@ -135,6 +140,8 @@ function Set-TargetResource
         $AccessTokens
     )
 
+    Write-Verbose -Message "Setting configuration of Mailbox Audit Bypass Association with Identity $Identity"
+
     #Ensure the proper dependencies are installed in the current environment.
     Confirm-M365DSCDependencies
 
@@ -147,10 +154,8 @@ function Set-TargetResource
     Add-M365DSCTelemetryEvent -Data $data
     #endregion
 
-    $currentInstance = Get-TargetResource @PSBoundParameters
-
+    $null = Get-TargetResource @PSBoundParameters
     $setParameters = Remove-M365DSCAuthenticationParameter -BoundParameters $PSBoundParameters
-
     Set-MailboxAuditBypassAssociation @SetParameters
 }
 
@@ -193,9 +198,6 @@ function Test-TargetResource
         $AccessTokens
     )
 
-    #Ensure the proper dependencies are installed in the current environment.
-    Confirm-M365DSCDependencies
-
     #region Telemetry
     $ResourceName = $MyInvocation.MyCommand.ModuleName.Replace('MSFT_', '')
     $CommandName = $MyInvocation.MyCommand
@@ -205,20 +207,9 @@ function Test-TargetResource
     Add-M365DSCTelemetryEvent -Data $data
     #endregion
 
-    $CurrentValues = Get-TargetResource @PSBoundParameters
-    $ValuesToCheck = ([Hashtable]$PSBoundParameters).Clone()
-
-    Write-Verbose -Message "Current Values: $(Convert-M365DscHashtableToString -Hashtable $CurrentValues)"
-    Write-Verbose -Message "Target Values: $(Convert-M365DscHashtableToString -Hashtable $ValuesToCheck)"
-
-    $testResult = Test-M365DSCParameterState -CurrentValues $CurrentValues `
-        -Source $($MyInvocation.MyCommand.Source) `
-        -DesiredValues $PSBoundParameters `
-        -ValuesToCheck $ValuesToCheck.Keys
-
-    Write-Verbose -Message "Test-TargetResource returned $testResult"
-
-    return $testResult
+    $result = Test-M365DSCTargetResource -DesiredValues $PSBoundParameters `
+        -ResourceName $($MyInvocation.MyCommand.Source).Replace('MSFT_', '')
+    return $result
 }
 
 function Export-TargetResource
@@ -272,12 +263,11 @@ function Export-TargetResource
 
     try
     {
-        $Script:ExportMode = $true
-        [array] $Script:exportedInstances = Get-MailboxAuditBypassAssociation -ErrorAction Stop
+        [array]$associations = Get-MailboxAuditBypassAssociation -ErrorAction Stop | Sort-Object -Property Identity
 
         $i = 1
         $dscContent = ''
-        if ($Script:exportedInstances.Length -eq 0)
+        if ($associations.Length -eq 0)
         {
             Write-M365DSCHost -Message $Global:M365DSCEmojiGreenCheckMark -CommitWrite
         }
@@ -285,12 +275,12 @@ function Export-TargetResource
         {
             Write-M365DSCHost -Message "`r`n" -DeferWrite
         }
-        foreach ($config in $Script:exportedInstances)
+        foreach ($config in $associations)
         {
             $displayedKey = $config.Identity
-            Write-M365DSCHost -Message "    |---[$i/$($Script:exportedInstances.Count)] $displayedKey" -DeferWrite
+            Write-M365DSCHost -Message "    |---[$i/$($associations.Count)] $displayedKey" -DeferWrite
             $params = @{
-                Identity              = $config.Identity.Replace("`r","")
+                Identity              = $config.Identity.Replace("`r", '')
                 Credential            = $Credential
                 ApplicationId         = $ApplicationId
                 TenantId              = $TenantId
@@ -298,7 +288,7 @@ function Export-TargetResource
                 ManagedIdentity       = $ManagedIdentity.IsPresent
                 AccessTokens          = $AccessTokens
             }
-
+            $Script:exportedInstance = $config
             $Results = Get-TargetResource @Params
 
             $currentDSCBlock = Get-M365DSCExportContentForResource -ResourceName $ResourceName `
@@ -316,17 +306,14 @@ function Export-TargetResource
     }
     catch
     {
-        Write-M365DSCHost -Message $Global:M365DSCEmojiRedX -CommitWrite
-
         New-M365DSCLogEntry -Message 'Error during Export:' `
             -Exception $_ `
             -Source $($MyInvocation.MyCommand.Source) `
             -TenantId $TenantId `
             -Credential $Credential
 
-        return ''
+        throw
     }
 }
 
 Export-ModuleMember -Function *-TargetResource
-

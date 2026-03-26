@@ -28,6 +28,10 @@ function Get-TargetResource
 
         [Parameter()]
         [System.Boolean]
+        $RecordReroutedCalls,
+
+        [Parameter()]
+        [System.Boolean]
         $WarnUserOnRemoval,
 
         [Parameter()]
@@ -60,12 +64,14 @@ function Get-TargetResource
         $AccessTokens
     )
 
+    Write-Verbose -Message "Getting configuration for TeamsComplianceRecordingPolicy $Identity"
+
     try
     {
         if (-not $Script:exportedInstance -or $Script:exportedInstance.Identity -ne $Identity)
         {
-            $ConnectionMode = New-M365DSCConnection -Workload 'MicrosoftTeams' `
-                -InboundParameters $PSBoundParameters | Out-Null
+            $null = New-M365DSCConnection -Workload 'MicrosoftTeams' `
+                -InboundParameters $PSBoundParameters
 
             #Ensure the proper dependencies are installed in the current environment.
             Confirm-M365DSCDependencies
@@ -99,7 +105,7 @@ function Get-TargetResource
         {
             foreach ($CurrentComplianceRecordingApplications in $instance.ComplianceRecordingApplications)
             {
-                $MyComplianceRecordingApplications = @{}
+                $MyComplianceRecordingApplications = [ordered]@{}
                 $ComplianceRecordingPairedApplications = @()
                 if ($CurrentComplianceRecordingApplications.ComplianceRecordingPairedApplications.Count -gt 0)
                 {
@@ -116,7 +122,7 @@ function Get-TargetResource
                 $MyComplianceRecordingApplications.Add('RequiredDuringCall', $CurrentComplianceRecordingApplications.RequiredDuringCall)
                 $MyComplianceRecordingApplications.Add('ConcurrentInvitationCount', $CurrentComplianceRecordingApplications.ConcurrentInvitationCount)
 
-                if ($MyComplianceRecordingApplications.values.Where({ $null -ne $_ }).count -gt 0)
+                if ($MyComplianceRecordingApplications.values.Where({ $null -ne $_ }).Count -gt 0)
                 {
                     $ComplexComplianceRecordingApplications += $MyComplianceRecordingApplications
                 }
@@ -130,6 +136,7 @@ function Get-TargetResource
             Description                                         = $instance.Description
             DisableComplianceRecordingAudioNotificationForCalls = $instance.DisableComplianceRecordingAudioNotificationForCalls
             Enabled                                             = $instance.Enabled
+            RecordReroutedCalls                                 = $instance.RecordReroutedCalls
             WarnUserOnRemoval                                   = $instance.WarnUserOnRemoval
             Ensure                                              = 'Present'
             Credential                                          = $Credential
@@ -139,7 +146,7 @@ function Get-TargetResource
             ManagedIdentity                                     = $ManagedIdentity.IsPresent
             AccessTokens                                        = $AccessTokens
         }
-        return [System.Collections.Hashtable] $results
+        return $results
     }
     catch
     {
@@ -149,7 +156,7 @@ function Get-TargetResource
             -TenantId $TenantId `
             -Credential $Credential
 
-        return $nullResult
+        throw
     }
 }
 
@@ -177,6 +184,10 @@ function Set-TargetResource
         [Parameter()]
         [System.Boolean]
         $Enabled,
+
+        [Parameter()]
+        [System.Boolean]
+        $RecordReroutedCalls,
 
         [Parameter()]
         [System.Boolean]
@@ -212,9 +223,6 @@ function Set-TargetResource
         $AccessTokens
     )
 
-    $ConnectionMode = New-M365DSCConnection -Workload 'MicrosoftTeams' `
-        -InboundParameters $PSBoundParameters | Out-Null
-
     #Ensure the proper dependencies are installed in the current environment.
     Confirm-M365DSCDependencies
 
@@ -229,27 +237,16 @@ function Set-TargetResource
 
     $currentInstance = Get-TargetResource @PSBoundParameters
 
-    $PSBoundParameters.Remove('Ensure') | Out-Null
-    $PSBoundParameters.Remove('Credential') | Out-Null
-    $PSBoundParameters.Remove('ApplicationId') | Out-Null
-    $PSBoundParameters.Remove('ApplicationSecret') | Out-Null
-    $PSBoundParameters.Remove('TenantId') | Out-Null
-    $PSBoundParameters.Remove('CertificateThumbprint') | Out-Null
-    $PSBoundParameters.Remove('ManagedIdentity') | Out-Null
-    $PSBoundParameters.Remove('AccessTokens') | Out-Null
-
     if ($Ensure -eq 'Present' -and $currentInstance.Ensure -eq 'Absent')
     {
-        $CreateParameters = ([Hashtable]$PSBoundParameters).Clone()
-
-        $CreateParameters.Remove('Verbose') | Out-Null
+        $CreateParameters = Remove-M365DSCAuthenticationParameter -BoundParameters $PSBoundParameters
 
         $keys = $CreateParameters.Keys
         foreach ($key in $keys)
         {
             if ($null -ne $CreateParameters.$key -and $CreateParameters.$key.GetType().Name -like '*cimInstance*')
             {
-                $keyName = $key.substring(0, 1).ToLower() + $key.substring(1, $key.length - 1)
+                $keyName = $key.Substring(0, 1).ToLower() + $key.Substring(1, $key.Length - 1)
                 $keyValue = Convert-M365DSCDRGComplexTypeToHashtable -ComplexObject $CreateParameters.$key
                 $CreateParameters.Remove($key) | Out-Null
                 $CreateParameters.Add($keyName, $keyValue)
@@ -258,7 +255,7 @@ function Set-TargetResource
 
         # Before calling Set-CsTeamsComplianceRecordingPolicy, convert IDs (strings) to ComplianceRecordingApplication objects
         if ($CreateParameters.ContainsKey('ComplianceRecordingApplications') -and `
-            $null -ne $CreateParameters.ComplianceRecordingApplications)
+                $null -ne $CreateParameters.ComplianceRecordingApplications)
         {
             # Fetch ComplianceRecordingApplication objects based on provided IDs
             $appObjects = @()
@@ -278,7 +275,7 @@ function Set-TargetResource
             $CreateParameters['ComplianceRecordingApplications'] = $appObjects
         }
 
-        Write-Verbose -Message "Creating {$Identity} with Parameters:`r`n$(Convert-M365DscHashtableToString -Hashtable $CreateParameters)"
+        Write-Verbose -Message "Creating a Teams Compliance Recording Policy with Identity {$Identity}"
         New-CsTeamsComplianceRecordingPolicy @CreateParameters | Out-Null
 
         if ($ComplianceRecordingApplications.Count -gt 0)
@@ -329,10 +326,8 @@ function Set-TargetResource
     }
     elseif ($Ensure -eq 'Present' -and $currentInstance.Ensure -eq 'Present')
     {
-        Write-Verbose -Message "Updating {$Identity}"
-
-        $UpdateParameters = ([Hashtable]$PSBoundParameters).Clone()
-        $UpdateParameters.Remove('Verbose') | Out-Null
+        Write-Verbose -Message "Updating the Teams Compliance Recording Policy with Identity {$Identity}"
+        $UpdateParameters = Remove-M365DSCAuthenticationParameter -BoundParameters $PSBoundParameters
 
         $keys = $UpdateParameters.Keys
         foreach ($key in $keys)
@@ -347,7 +342,7 @@ function Set-TargetResource
 
         # Before calling Set-CsTeamsComplianceRecordingPolicy, convert IDs (strings) to ComplianceRecordingApplication objects
         if ($UpdateParameters.ContainsKey('ComplianceRecordingApplications') -and `
-            $null -ne $UpdateParameters.ComplianceRecordingApplications)
+                $null -ne $UpdateParameters.ComplianceRecordingApplications)
         {
             # Fetch ComplianceRecordingApplication objects based on provided IDs
             $appObjects = @()
@@ -417,7 +412,7 @@ function Set-TargetResource
     }
     elseif ($Ensure -eq 'Absent' -and $currentInstance.Ensure -eq 'Present')
     {
-        Write-Verbose -Message "Removing {$Identity}"
+        Write-Verbose -Message "Removing the Teams Compliance Recording Policy with Identity {$Identity}"
         Remove-CsTeamsComplianceRecordingPolicy -Identity $currentInstance.Identity
     }
 }
@@ -447,6 +442,10 @@ function Test-TargetResource
         [Parameter()]
         [System.Boolean]
         $Enabled,
+
+        [Parameter()]
+        [System.Boolean]
+        $RecordReroutedCalls,
 
         [Parameter()]
         [System.Boolean]
@@ -482,9 +481,6 @@ function Test-TargetResource
         $AccessTokens
     )
 
-    #Ensure the proper dependencies are installed in the current environment.
-    Confirm-M365DSCDependencies
-
     #region Telemetry
     $ResourceName = $MyInvocation.MyCommand.ModuleName.Replace('MSFT_', '')
     $CommandName = $MyInvocation.MyCommand
@@ -494,60 +490,9 @@ function Test-TargetResource
     Add-M365DSCTelemetryEvent -Data $data
     #endregion
 
-    Write-Verbose -Message "Testing configuration of {$Identity}"
-
-    $CurrentValues = Get-TargetResource @PSBoundParameters
-    $ValuesToCheck = ([Hashtable]$PSBoundParameters).Clone()
-    $ValuesToCheck.Remove('Identity') | Out-Null
-    $testResult = $true
-
-    #Compare Cim instances
-    foreach ($key in $PSBoundParameters.Keys)
-    {
-        $source = $PSBoundParameters.$key
-        $target = $CurrentValues.$key
-        if ($source.getType().Name -like '*CimInstance*')
-        {
-            $source = Get-M365DSCDRGComplexTypeToHashtable -ComplexObject $source
-
-            $testResult = Compare-M365DSCComplexObject `
-                -Source ($source) `
-                -Target ($target)
-
-            if (-Not $testResult)
-            {
-                $testResult = $false
-                break
-            }
-
-            $ValuesToCheck.Remove($key) | Out-Null
-        }
-    }
-
-    Write-Verbose -Message "Current Values: $(Convert-M365DscHashtableToString -Hashtable $CurrentValues)"
-    Write-Verbose -Message "Target Values: $(Convert-M365DscHashtableToString -Hashtable $ValuesToCheck)"
-
-    #Convert any DateTime to String
-    foreach ($key in $ValuesToCheck.Keys)
-    {
-        if (($null -ne $CurrentValues[$key]) `
-                -and ($CurrentValues[$key].GetType().Name -eq 'DateTime'))
-        {
-            $CurrentValues[$key] = $CurrentValues[$key].toString()
-        }
-    }
-
-    if ($testResult)
-    {
-        $testResult = Test-M365DSCParameterState -CurrentValues $CurrentValues `
-            -Source $($MyInvocation.MyCommand.Source) `
-            -DesiredValues $PSBoundParameters `
-            -ValuesToCheck $ValuesToCheck.Keys
-    }
-
-    Write-Verbose -Message "Test-TargetResource returned $testResult"
-
-    return $testResult
+    $result = Test-M365DSCTargetResource -DesiredValues $PSBoundParameters `
+        -ResourceName $($MyInvocation.MyCommand.Source).Replace('MSFT_', '')
+    return $result
 }
 
 function Export-TargetResource
@@ -556,6 +501,10 @@ function Export-TargetResource
     [OutputType([System.String])]
     param
     (
+        [Parameter()]
+        [System.String]
+        $Filter = "*",
+
         [Parameter()]
         [System.Management.Automation.PSCredential]
         $Credential,
@@ -602,7 +551,7 @@ function Export-TargetResource
 
     try
     {
-        [array]$getValue = Get-CsTeamsComplianceRecordingPolicy -ErrorAction Stop
+        [array]$getValue = Get-CsTeamsComplianceRecordingPolicy -Filter $Filter -ErrorAction Stop
 
         $i = 1
         $dscContent = ''
@@ -655,7 +604,7 @@ function Export-TargetResource
                     -CIMInstanceName 'TeamsComplianceRecordingApplication' `
                     -ComplexTypeMapping $complexMapping
 
-                if (-Not [String]::IsNullOrWhiteSpace($complexTypeStringResult))
+                if (-not [String]::IsNullOrWhiteSpace($complexTypeStringResult))
                 {
                     $Results.ComplianceRecordingApplications = $complexTypeStringResult
                 }
@@ -681,17 +630,14 @@ function Export-TargetResource
     }
     catch
     {
-        Write-M365DSCHost -Message $Global:M365DSCEmojiRedX -CommitWrite
-
         New-M365DSCLogEntry -Message 'Error during Export:' `
             -Exception $_ `
             -Source $($MyInvocation.MyCommand.Source) `
             -TenantId $TenantId `
             -Credential $Credential
 
-        return ''
+        throw
     }
 }
 
 Export-ModuleMember -Function *-TargetResource
-

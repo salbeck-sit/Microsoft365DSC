@@ -121,8 +121,8 @@ function Get-TargetResource
     {
         if (-not $Script:exportedInstance -or $Script:exportedInstance.Id -ne $Id)
         {
-            New-M365DSCConnection -Workload 'MicrosoftGraph' `
-                -InboundParameters $PSBoundParameters | Out-Null
+            $null = New-M365DSCConnection -Workload 'MicrosoftGraph' `
+                -InboundParameters $PSBoundParameters
 
             #Ensure the proper dependencies are installed in the current environment.
             Confirm-M365DSCDependencies
@@ -149,7 +149,7 @@ function Get-TargetResource
         if ($null -eq $instance)
         {
             Write-Verbose -Message "Could not find MobileThreatDefenseConnector by Id: {$Id}."
-            if (-Not [string]::IsNullOrEmpty($DisplayName))
+            if (-not [string]::IsNullOrEmpty($DisplayName))
             {
                 # There is no API which searches MobileThreatDefenseConnector by its DisplayName so the below code is commented out.
                 # $instance = Get-MgBetaDeviceManagementMobileThreatDefenseConnector `
@@ -203,18 +203,17 @@ function Get-TargetResource
             AccessTokens                                        = $AccessTokens
         }
 
-        return [System.Collections.Hashtable] $results
+        return $results
     }
     catch
     {
-        Write-Verbose -Message $_
         New-M365DSCLogEntry -Message 'Error retrieving data:' `
             -Exception $_ `
             -Source $($MyInvocation.MyCommand.Source) `
             -TenantId $TenantId `
             -Credential $Credential
 
-        return $nullResult
+        throw
     }
 }
 
@@ -479,9 +478,6 @@ function Test-TargetResource
         $AccessTokens
     )
 
-    #Ensure the proper dependencies are installed in the current environment.
-    Confirm-M365DSCDependencies
-
     #region Telemetry
     $ResourceName = $MyInvocation.MyCommand.ModuleName.Replace('MSFT_', '')
     $CommandName = $MyInvocation.MyCommand
@@ -491,21 +487,11 @@ function Test-TargetResource
     Add-M365DSCTelemetryEvent -Data $data
     #endregion
 
-    $CurrentValues = Get-TargetResource @PSBoundParameters
-    $ValuesToCheck = ([Hashtable]$PSBoundParameters).Clone()
-    $ValuesToCheck.Remove('LastHeartbeatDateTime') | Out-Null
-
-    Write-Verbose -Message "Current Values: $(Convert-M365DscHashtableToString -Hashtable $CurrentValues)"
-    Write-Verbose -Message "Target Values: $(Convert-M365DscHashtableToString -Hashtable $ValuesToCheck)"
-
-    $testResult = Test-M365DSCParameterState -CurrentValues $CurrentValues `
-        -Source $($MyInvocation.MyCommand.Source) `
-        -DesiredValues $PSBoundParameters `
-        -ValuesToCheck $ValuesToCheck.Keys
-
-    Write-Verbose -Message "Test-TargetResource returned $testResult"
-
-    return $testResult
+    $compareParameters = Get-CompareParameters
+    $result = Test-M365DSCTargetResource -DesiredValues $PSBoundParameters `
+        -ResourceName $($MyInvocation.MyCommand.Source).Replace('MSFT_', '') `
+        @compareParameters
+    return $result
 }
 
 function Export-TargetResource
@@ -514,6 +500,10 @@ function Export-TargetResource
     [OutputType([System.String])]
     param
     (
+        [Parameter()]
+        [System.String]
+        $Filter,
+
         [Parameter()]
         [System.Management.Automation.PSCredential]
         $Credential,
@@ -561,7 +551,7 @@ function Export-TargetResource
     try
     {
         $Script:ExportMode = $true
-        [array] $getValue = Get-MgBetaDeviceManagementMobileThreatDefenseConnector -ErrorAction Stop
+        [array] $getValue = Get-MgBetaDeviceManagementMobileThreatDefenseConnector -Filter $Filter -ErrorAction Stop
 
         $i = 1
         $dscContent = ''
@@ -625,15 +615,13 @@ function Export-TargetResource
     }
     catch
     {
-        Write-M365DSCHost -Message $Global:M365DSCEmojiRedX -CommitWrite
-
         New-M365DSCLogEntry -Message 'Error during Export:' `
             -Exception $_ `
             -Source $($MyInvocation.MyCommand.Source) `
             -TenantId $TenantId `
             -Credential $Credential
 
-        return ''
+        throw
     }
 }
 
@@ -641,7 +629,8 @@ function Export-TargetResource
 
 function Get-MobileThreatDefenseConnectorIdOrDisplayName
 {
-    param (
+    param
+    (
         [Parameter(Mandatory = $false)]
         [string]$Id,
 
@@ -698,5 +687,15 @@ function Get-MobileThreatDefenseConnectorIdOrDisplayName
     }
 }
 
-Export-ModuleMember -Function *-TargetResource
+function Get-CompareParameters
+{
+    [CmdletBinding()]
+    [OutputType([System.Collections.Hashtable])]
+    param()
 
+    return @{
+        ExcludedProperties = @('LastHeartbeatDateTime')
+    }
+}
+
+Export-ModuleMember -Function @('*-TargetResource', 'Get-CompareParameters')

@@ -176,8 +176,6 @@ function Test-TargetResource
     Add-M365DSCTelemetryEvent -Data $data
     #endregion
 
-    Write-Verbose -Message 'Testing configuration of Tenant Details'
-
     $Global:PartialExportFileName = "$((New-Guid).ToString()).partial"
     $module = Join-Path -Path $PSScriptRoot -ChildPath "..\MSFT_$ResourceTypeName\MSFT_$ResourceTypeName.psm1" -Resolve
     if ($null -ne $module)
@@ -201,7 +199,7 @@ function Test-TargetResource
         {
             $params.Add('Filter', $Filter)
         }
-
+        Initialize-M365DSCAllResourcesDictionary
         Write-Verbose -Message "Importing module from Path {$($module)}"
         Import-Module $module -Force -Function 'Export-TargetResource'
         $cmdName = "MSFT_$ResourceTypeName\Export-TargetResource"
@@ -209,8 +207,8 @@ function Test-TargetResource
         # Ensure the referenced resource supports ManagedIdentity before adding the parameter.
         try
         {
-            $exportFunctionInfo = (Get-Command -Module "MSFT_$ResourceTypeName") | Where-Object -FilterScript {$_.Name -eq 'Export-TargetResource'}
-            if ($exportFunctionInfo.Parameters.Name -Contains 'ManagedIdentity')
+            $exportFunctionInfo = (Get-Command -Module "MSFT_$ResourceTypeName") | Where-Object -FilterScript { $_.Name -eq 'Export-TargetResource' }
+            if ($exportFunctionInfo.Parameters.Name -contains 'ManagedIdentity')
             {
                 $params.Add('ManagedIdentity', $PSBoundParameters.ManagedIdentity)
             }
@@ -228,12 +226,14 @@ function Test-TargetResource
         $DSCStringContent = @"
         # Generated with Microsoft365DSC version 1.23.906.1
         # For additional information on how to use Microsoft365DSC, please visit https://aka.ms/M365DSC
-        param (
+        param
+    (
         )
 
         Configuration M365TenantConfig
         {
-            param (
+            param
+    (
             )
 
             `$OrganizationName = `$ConfigurationData.NonNodeData.OrganizationName
@@ -430,4 +430,3 @@ function Export-TargetResource
 }
 
 Export-ModuleMember -Function *-TargetResource
-

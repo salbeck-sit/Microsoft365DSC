@@ -212,10 +212,11 @@ function Get-TargetResource
         $AccessTokens
     )
 
+    Write-Verbose -Message "Getting configuration of the AAD Role Setting with Id {$Id} and DisplayName {$DisplayName}"
+
     if (-not $Script:exportedInstance -or $Script:exportedInstance.DisplayName -ne $DisplayName)
     {
-        Write-Verbose -Message "Getting configuration of Role: $DisplayName"
-        $ConnectionMode = New-M365DSCConnection -Workload 'MicrosoftGraph' `
+        $null = New-M365DSCConnection -Workload 'MicrosoftGraph' `
             -InboundParameters $PSBoundParameters
 
         Write-Verbose -Message 'Getting configuration of Role'
@@ -239,7 +240,7 @@ function Get-TargetResource
             foreach ($roleDefinition in $allRoleDefinitions)
             {
                 $Script:RoleDefinitions[$roleDefinition.Id] = @{
-                    Id = $roleDefinition.Id
+                    Id          = $roleDefinition.Id
                     DisplayName = $roleDefinition.DisplayName
                 }
             }
@@ -299,7 +300,7 @@ function Get-TargetResource
     if ($null -eq $Script:Policies)
     {
         $Script:Policies = [System.Collections.Generic.Dictionary[string, object]]::new()
-        $allPolicies = Get-MgBetaPolicyRoleManagementPolicy -Filter "scopeId eq '/' and scopeType eq 'DirectoryRole'" -ExpandProperty "rules" -Property "Id,rules"
+        $allPolicies = Get-MgBetaPolicyRoleManagementPolicy -Filter "scopeId eq '/' and scopeType eq 'DirectoryRole'" -ExpandProperty 'rules' -Property 'Id,rules'
         foreach ($policy in $allPolicies)
         {
             $Script:Policies[$policy.Id] = $policy
@@ -433,7 +434,6 @@ function Get-TargetResource
             ManagedIdentity                                           = $ManagedIdentity.IsPresent
             AccessTokens                                              = $AccessTokens
         }
-        Write-Verbose -Message "Get-TargetResource Result: `n $(Convert-M365DscHashtableToString -Hashtable $result)"
         return $result
     }
     catch
@@ -444,7 +444,7 @@ function Get-TargetResource
             -TenantId $TenantId `
             -Credential $Credential
 
-        return $nullReturn
+        throw
     }
 }
 
@@ -990,7 +990,7 @@ function Set-TargetResource
             {
                 Write-Verbose -Message 'Handle Activation: Require approval to activate / Approvers'
                 $isApprovalRequired = $ApprovaltoActivate
-                if ($ActivateApprover.count -gt 0)
+                if ($ActivateApprover.Count -gt 0)
                 {
                     $primaryApprovers = @()
                     foreach ($item in $ActivateApprover)
@@ -1406,7 +1406,7 @@ function Test-TargetResource
     #endregion
 
     $result = Test-M365DSCTargetResource -DesiredValues $PSBoundParameters `
-                                         -ResourceName $($MyInvocation.MyCommand.Source).Replace('MSFT_', '')
+        -ResourceName $($MyInvocation.MyCommand.Source).Replace('MSFT_', '')
     return $result
 }
 
@@ -1497,7 +1497,7 @@ function Export-TargetResource
                 ApplicationId         = $ApplicationId
                 TenantId              = $TenantId
                 CertificateThumbprint = $CertificateThumbprint
-                Managedidentity       = $ManagedIdentity.IsPresent
+                ManagedIdentity       = $ManagedIdentity.IsPresent
                 ApplicationSecret     = $ApplicationSecret
                 Credential            = $Credential
                 AccessTokens          = $AccessTokens
@@ -1524,17 +1524,14 @@ function Export-TargetResource
 
     catch
     {
-        Write-M365DSCHost -Message $Global:M365DSCEmojiRedX -CommitWrite
-
         New-M365DSCLogEntry -Message 'Error during Export:' `
             -Exception $_ `
             -Source $($MyInvocation.MyCommand.Source) `
             -TenantId $TenantId `
             -Credential $Credential
 
-        return ''
+        throw
     }
 }
 
 Export-ModuleMember -Function *-TargetResource
-

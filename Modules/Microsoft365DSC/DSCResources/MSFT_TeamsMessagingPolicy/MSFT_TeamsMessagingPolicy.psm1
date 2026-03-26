@@ -12,6 +12,66 @@ function Get-TargetResource
 
         [Parameter()]
         [System.Boolean]
+        $AllowChatWithGroup,
+
+        [Parameter()]
+        [System.Boolean]
+        $AllowCustomGroupChatAvatars,
+
+        [Parameter()]
+        [System.Boolean]
+        $AllowExtendedWorkInfoInSearch,
+
+        [Parameter()]
+        [System.Boolean]
+        $AllowFullChatPermissionUserToDeleteAnyMessage,
+
+        [Parameter()]
+        [System.Boolean]
+        $AllowGiphyDisplay,
+
+        [Parameter()]
+        [System.Boolean]
+        $AllowGroupChatJoinLinks,
+
+        [Parameter()]
+        [System.Boolean]
+        $AllowPasteInternetImage,
+
+        [Parameter()]
+        [ValidateSet('Enabled', 'Disabled')]
+        [System.String]
+        $AutoShareFilesInExternalChats,
+
+        [Parameter()]
+        [ValidateSet('Full', 'Limited', 'Restricted')]
+        [System.String]
+        $ChatPermissionRole,
+
+        [Parameter()]
+        [System.Boolean]
+        $CreateCustomEmojis,
+
+        [Parameter()]
+        [System.Boolean]
+        $DeleteCustomEmojis,
+
+        [Parameter()]
+        [ValidateSet('Enabled', 'Disabled')]
+        [System.String]
+        $DesignerForBackgroundsAndImages,
+
+        [Parameter()]
+        [ValidateSet('BlockingDisallowed', 'BlockingAllowed')]
+        [System.String]
+        $InOrganizationChatControl,
+
+        [Parameter()]
+        [System.Boolean]
+        $UsersCanDeleteBotMessages,
+
+        [Parameter()]
+        [System.Boolean]
         $AllowCommunicationComplianceEndUserReporting,
 
         [Parameter()]
@@ -105,6 +165,11 @@ function Get-TargetResource
         [System.String]
         [ValidateSet('UserPreference', 'Everyone', 'None')]
         $ReadReceiptsEnabledType,
+
+        [Parameter()]
+        [ValidateSet('Enabled', 'Disabled')]
+        [System.String]
+        $UseB2BInvitesToAddExternalUsers,
 
         [Parameter()]
         [System.String]
@@ -150,7 +215,7 @@ function Get-TargetResource
     {
         if (-not $Script:exportedInstance -or $Script:exportedInstance.Identity -ne $Identity)
         {
-            $ConnectionMode = New-M365DSCConnection -Workload 'MicrosoftTeams' `
+            $null = New-M365DSCConnection -Workload 'MicrosoftTeams' `
                 -InboundParameters $PSBoundParameters
 
             #Ensure the proper dependencies are installed in the current environment.
@@ -188,40 +253,64 @@ function Get-TargetResource
             {
                 $currentPolicy = $currentPolicy.Split(':')[1]
             }
+
+            if ($policy.UseB2BInvitesToAddExternalUsers)
+            {
+                $useB2BInvitesToAddExternalUsersValue = 'Enabled'
+            }
+            else
+            {
+                $useB2BInvitesToAddExternalUsersValue = 'Disabled'
+            }
             return @{
-                Identity                                     = $currentPolicy
-                AllowCommunicationComplianceEndUserReporting = $policy.AllowCommunicationComplianceEndUserReporting
-                AllowGiphy                                   = $policy.AllowGiphy
-                AllowFluidCollaborate                        = $policy.AllowFluidCollaborate
-                AllowMemes                                   = $policy.AllowMemes
-                AllowOwnerDeleteMessage                      = $policy.AllowOwnerDeleteMessage
-                AllowSecurityEndUserReporting                = $policy.AllowSecurityEndUserReporting
-                AllowStickers                                = $policy.AllowStickers
-                AllowUrlPreviews                             = $policy.AllowUrlPreviews
-                AllowUserChat                                = $policy.AllowUserChat
-                AllowUserDeleteMessage                       = $policy.AllowUserDeleteMessage
-                AllowUserEditMessage                         = $policy.AllowUserEditMessage
-                AllowSmartCompose                            = $policy.AllowSmartCompose
-                AllowSmartReply                              = $policy.AllowSmartReply
-                AllowUserTranslation                         = $policy.AllowUserTranslation
-                GiphyRatingType                              = $policy.GiphyRatingType
-                ReadReceiptsEnabledType                      = $policy.ReadReceiptsEnabledType
-                AllowImmersiveReader                         = $policy.AllowImmersiveReader
-                AllowRemoveUser                              = $policy.AllowRemoveUser
-                AllowPriorityMessages                        = $policy.AllowPriorityMessages
-                AllowUserDeleteChat                          = $policy.AllowUserDeleteChat
-                AllowVideoMessages                           = $policy.AllowVideoMessages
-                ChannelsInChatListEnabledType                = $policy.ChannelsInChatListEnabledType
-                AudioMessageEnabledType                      = $policy.AudioMessageEnabledType
-                Description                                  = $policy.Description
-                Tenant                                       = $policy.Tenant
-                Ensure                                       = 'Present'
-                Credential                                   = $Credential
-                ApplicationId                                = $ApplicationId
-                TenantId                                     = $TenantId
-                CertificateThumbprint                        = $CertificateThumbprint
-                ManagedIdentity                              = $ManagedIdentity.IsPresent
-                AccessTokens                                 = $AccessTokens
+                Identity                                      = $currentPolicy
+                AllowChatWithGroup                            = $policy.AllowChatWithGroup
+                AllowCustomGroupChatAvatars                   = $policy.AllowCustomGroupChatAvatars
+                AllowExtendedWorkInfoInSearch                 = $policy.AllowExtendedWorkInfoInSearch
+                AllowFullChatPermissionUserToDeleteAnyMessage = $policy.AllowFullChatPermissionUserToDeleteAnyMessage
+                AllowGiphyDisplay                             = $policy.AllowGiphyDisplay
+                AllowGroupChatJoinLinks                       = $policy.AllowGroupChatJoinLinks
+                AllowPasteInternetImage                       = $policy.AllowPasteInternetImage
+                AutoShareFilesInExternalChats                 = $policy.AutoShareFilesInExternalChats
+                ChatPermissionRole                            = $policy.ChatPermissionRole
+                CreateCustomEmojis                            = $policy.CreateCustomEmojis
+                DeleteCustomEmojis                            = $policy.DeleteCustomEmojis
+                DesignerForBackgroundsAndImages               = $policy.DesignerForBackgroundsAndImages
+                InOrganizationChatControl                     = $policy.InOrganizationChatControl
+                UsersCanDeleteBotMessages                     = $policy.UsersCanDeleteBotMessages
+                AllowCommunicationComplianceEndUserReporting  = $policy.AllowCommunicationComplianceEndUserReporting
+                AllowGiphy                                    = $policy.AllowGiphy
+                AllowFluidCollaborate                         = $policy.AllowFluidCollaborate
+                AllowMemes                                    = $policy.AllowMemes
+                AllowOwnerDeleteMessage                       = $policy.AllowOwnerDeleteMessage
+                AllowSecurityEndUserReporting                 = $policy.AllowSecurityEndUserReporting
+                AllowStickers                                 = $policy.AllowStickers
+                AllowUrlPreviews                              = $policy.AllowUrlPreviews
+                AllowUserChat                                 = $policy.AllowUserChat
+                AllowUserDeleteMessage                        = $policy.AllowUserDeleteMessage
+                AllowUserEditMessage                          = $policy.AllowUserEditMessage
+                AllowSmartCompose                             = $policy.AllowSmartCompose
+                AllowSmartReply                               = $policy.AllowSmartReply
+                AllowUserTranslation                          = $policy.AllowUserTranslation
+                GiphyRatingType                               = $policy.GiphyRatingType
+                ReadReceiptsEnabledType                       = $policy.ReadReceiptsEnabledType
+                AllowImmersiveReader                          = $policy.AllowImmersiveReader
+                AllowRemoveUser                               = $policy.AllowRemoveUser
+                AllowPriorityMessages                         = $policy.AllowPriorityMessages
+                AllowUserDeleteChat                           = $policy.AllowUserDeleteChat
+                AllowVideoMessages                            = $policy.AllowVideoMessages
+                ChannelsInChatListEnabledType                 = $policy.ChannelsInChatListEnabledType
+                AudioMessageEnabledType                       = $policy.AudioMessageEnabledType
+                UseB2BInvitesToAddExternalUsers               = $useB2BInvitesToAddExternalUsersValue
+                Description                                   = $policy.Description
+                Tenant                                        = $policy.Tenant
+                Ensure                                        = 'Present'
+                Credential                                    = $Credential
+                ApplicationId                                 = $ApplicationId
+                TenantId                                      = $TenantId
+                CertificateThumbprint                         = $CertificateThumbprint
+                ManagedIdentity                               = $ManagedIdentity.IsPresent
+                AccessTokens                                  = $AccessTokens
             }
         }
     }
@@ -233,7 +322,7 @@ function Get-TargetResource
             -TenantId $TenantId `
             -Credential $Credential
 
-        return $nullReturn
+        throw
     }
 }
 
@@ -245,6 +334,66 @@ function Set-TargetResource
         [Parameter(Mandatory = $true)]
         [System.String]
         $Identity,
+
+        [Parameter()]
+        [System.Boolean]
+        $AllowChatWithGroup,
+
+        [Parameter()]
+        [System.Boolean]
+        $AllowCustomGroupChatAvatars,
+
+        [Parameter()]
+        [System.Boolean]
+        $AllowExtendedWorkInfoInSearch,
+
+        [Parameter()]
+        [System.Boolean]
+        $AllowFullChatPermissionUserToDeleteAnyMessage,
+
+        [Parameter()]
+        [System.Boolean]
+        $AllowGiphyDisplay,
+
+        [Parameter()]
+        [System.Boolean]
+        $AllowGroupChatJoinLinks,
+
+        [Parameter()]
+        [System.Boolean]
+        $AllowPasteInternetImage,
+
+        [Parameter()]
+        [ValidateSet('Enabled', 'Disabled')]
+        [System.String]
+        $AutoShareFilesInExternalChats,
+
+        [Parameter()]
+        [ValidateSet('Full', 'Limited', 'Restricted')]
+        [System.String]
+        $ChatPermissionRole,
+
+        [Parameter()]
+        [System.Boolean]
+        $CreateCustomEmojis,
+
+        [Parameter()]
+        [System.Boolean]
+        $DeleteCustomEmojis,
+
+        [Parameter()]
+        [ValidateSet('Enabled', 'Disabled')]
+        [System.String]
+        $DesignerForBackgroundsAndImages,
+
+        [Parameter()]
+        [ValidateSet('BlockingDisallowed', 'BlockingAllowed')]
+        [System.String]
+        $InOrganizationChatControl,
+
+        [Parameter()]
+        [System.Boolean]
+        $UsersCanDeleteBotMessages,
 
         [Parameter()]
         [System.Boolean]
@@ -341,6 +490,11 @@ function Set-TargetResource
         [System.String]
         [ValidateSet('UserPreference', 'Everyone', 'None')]
         $ReadReceiptsEnabledType,
+
+        [Parameter()]
+        [ValidateSet('Enabled', 'Disabled')]
+        [System.String]
+        $UseB2BInvitesToAddExternalUsers,
 
         [Parameter()]
         [System.String]
@@ -394,19 +548,21 @@ function Set-TargetResource
     Add-M365DSCTelemetryEvent -Data $data
     #endregion
 
-    $ConnectionMode = New-M365DSCConnection -Workload 'MicrosoftTeams' `
-        -InboundParameters $PSBoundParameters
-
     $curPolicy = Get-TargetResource @PSBoundParameters
+    $SetParams = Remove-M365DSCAuthenticationParameter -BoundParameters $PSBoundParameters
 
-    $SetParams = $PSBoundParameters
-    $SetParams.Remove('Credential') | Out-Null
-    $SetParams.Remove('ApplicationId') | Out-Null
-    $SetParams.Remove('TenantId') | Out-Null
-    $SetParams.Remove('CertificateThumbprint') | Out-Null
-    $SetParams.Remove('Ensure') | Out-Null
-    $SetParams.Remove('ManagedIdentity') | Out-Null
-    $SetParams.Remove('AccessTokens') | Out-Null
+    # TODO: Review during next breaking change for updated documentation - Refactor if necessary
+    if ($SetParams.ContainsKey('UseB2BInvitesToAddExternalUsers'))
+    {
+        if ($UseB2BInvitesToAddExternalUsers -eq 'Enabled')
+        {
+           $SetParams.UseB2BInvitesToAddExternalUsers = $true
+        }
+        else
+        {
+            $SetParams.UseB2BInvitesToAddExternalUsers = $false
+        }
+    }
 
     if ($curPolicy.Ensure -eq 'Absent' -and 'Present' -eq $Ensure )
     {
@@ -431,6 +587,66 @@ function Test-TargetResource
         [Parameter(Mandatory = $true)]
         [System.String]
         $Identity,
+
+        [Parameter()]
+        [System.Boolean]
+        $AllowChatWithGroup,
+
+        [Parameter()]
+        [System.Boolean]
+        $AllowCustomGroupChatAvatars,
+
+        [Parameter()]
+        [System.Boolean]
+        $AllowExtendedWorkInfoInSearch,
+
+        [Parameter()]
+        [System.Boolean]
+        $AllowFullChatPermissionUserToDeleteAnyMessage,
+
+        [Parameter()]
+        [System.Boolean]
+        $AllowGiphyDisplay,
+
+        [Parameter()]
+        [System.Boolean]
+        $AllowGroupChatJoinLinks,
+
+        [Parameter()]
+        [System.Boolean]
+        $AllowPasteInternetImage,
+
+        [Parameter()]
+        [ValidateSet('Enabled', 'Disabled')]
+        [System.String]
+        $AutoShareFilesInExternalChats,
+
+        [Parameter()]
+        [ValidateSet('Full', 'Limited', 'Restricted')]
+        [System.String]
+        $ChatPermissionRole,
+
+        [Parameter()]
+        [System.Boolean]
+        $CreateCustomEmojis,
+
+        [Parameter()]
+        [System.Boolean]
+        $DeleteCustomEmojis,
+
+        [Parameter()]
+        [ValidateSet('Enabled', 'Disabled')]
+        [System.String]
+        $DesignerForBackgroundsAndImages,
+
+        [Parameter()]
+        [ValidateSet('BlockingDisallowed', 'BlockingAllowed')]
+        [System.String]
+        $InOrganizationChatControl,
+
+        [Parameter()]
+        [System.Boolean]
+        $UsersCanDeleteBotMessages,
 
         [Parameter()]
         [System.Boolean]
@@ -529,6 +745,11 @@ function Test-TargetResource
         $ReadReceiptsEnabledType,
 
         [Parameter()]
+        [ValidateSet('Enabled', 'Disabled')]
+        [System.String]
+        $UseB2BInvitesToAddExternalUsers,
+
+        [Parameter()]
         [System.String]
         $Description,
 
@@ -565,11 +786,9 @@ function Test-TargetResource
         [System.String[]]
         $AccessTokens
     )
-    #Ensure the proper dependencies are installed in the current environment.
-    Confirm-M365DSCDependencies
 
     #region Telemetry
-    $ResourceName = $MyInvocation.MyCommand.ModuleName -replace 'MSFT_', ''
+    $ResourceName = $MyInvocation.MyCommand.ModuleName.Replace('MSFT_', '')
     $CommandName = $MyInvocation.MyCommand
     $data = Format-M365DSCTelemetryParameters -ResourceName $ResourceName `
         -CommandName $CommandName `
@@ -577,25 +796,9 @@ function Test-TargetResource
     Add-M365DSCTelemetryEvent -Data $data
     #endregion
 
-    Write-Verbose -Message 'Testing configuration of Teams messaging policy'
-
-    $CurrentValues = Get-TargetResource @PSBoundParameters
-
-    Write-Verbose -Message "Current Values: $(Convert-M365DscHashtableToString -Hashtable $CurrentValues)"
-    Write-Verbose -Message "Target Values: $(Convert-M365DscHashtableToString -Hashtable $PSBoundParameters)"
-
-    $ValuesToCheck = $PSBoundParameters
-
-    $ValuesToCheck.Remove('Tenant') | Out-Null
-    $TestResult = Test-M365DSCParameterState `
-        -CurrentValues $CurrentValues `
-        -Source $($MyInvocation.MyCommand.Source) `
-        -DesiredValues $PSBoundParameters `
-        -ValuesToCheck $ValuesToCheck.Keys
-
-    Write-Verbose -Message "Test-TargetResource returned $TestResult"
-
-    return $TestResult
+    $result = Test-M365DSCTargetResource -DesiredValues $PSBoundParameters `
+        -ResourceName $($MyInvocation.MyCommand.Source).Replace('MSFT_', '')
+    return $result
 }
 
 function Export-TargetResource
@@ -604,6 +807,10 @@ function Export-TargetResource
     [OutputType([System.String])]
     param
     (
+        [Parameter()]
+        [System.String]
+        $Filter = "*",
+
         [Parameter()]
         [System.Management.Automation.PSCredential]
         $Credential,
@@ -647,7 +854,7 @@ function Export-TargetResource
     try
     {
         $i = 1
-        [array]$policies = Get-CsTeamsMessagingPolicy -ErrorAction Stop
+        [array]$policies = Get-CsTeamsMessagingPolicy -Filter $Filter -ErrorAction Stop
         $dscContent = ''
         Write-M365DSCHost -Message "`r`n" -DeferWrite
         foreach ($policy in $policies)
@@ -687,17 +894,14 @@ function Export-TargetResource
     }
     catch
     {
-        Write-M365DSCHost -Message $Global:M365DSCEmojiRedX -CommitWrite
-
         New-M365DSCLogEntry -Message 'Error during Export:' `
             -Exception $_ `
             -Source $($MyInvocation.MyCommand.Source) `
             -TenantId $TenantId `
             -Credential $Credential
 
-        return ''
+        throw
     }
 }
 
 Export-ModuleMember -Function *-TargetResource
-

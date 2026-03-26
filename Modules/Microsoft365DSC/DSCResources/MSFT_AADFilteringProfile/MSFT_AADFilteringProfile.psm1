@@ -64,12 +64,14 @@ function Get-TargetResource
         $AccessTokens
     )
 
+    Write-Verbose -Message "Getting configuration for the Azure AD Filtering Profile with Id {$Id} and Name {$Name}"
+
     try
     {
         if (-not $Script:exportedInstance -or $Script:exportedInstance.Id -ne $Id)
         {
-            New-M365DSCConnection -Workload 'MicrosoftGraph' `
-                -InboundParameters $PSBoundParameters | Out-Null
+            $null = New-M365DSCConnection -Workload 'MicrosoftGraph' `
+                -InboundParameters $PSBoundParameters
 
             #Ensure the proper dependencies are installed in the current environment.
             Confirm-M365DSCDependencies
@@ -116,11 +118,11 @@ function Get-TargetResource
                 $policyInfo = Get-MgBetaNetworkAccessFilteringPolicy -FilteringPolicyId $link.Policy.Id
                 if ($null -ne $policyInfo)
                 {
-                    $entry = @{
-                        State        = $link.State
-                        Priority     = $link.AdditionalProperties.priority
-                        LoggingState = $link.AdditionalProperties.loggingState
+                    $entry = [ordered]@{
                         PolicyName   = $policyInfo.Name
+                        LoggingState = $link.AdditionalProperties.loggingState
+                        Priority     = $link.AdditionalProperties.priority
+                        State        = $link.State
                     }
                     $PolicyValue += $entry
                 }
@@ -143,18 +145,17 @@ function Get-TargetResource
             ManagedIdentity       = $ManagedIdentity.IsPresent
             AccessTokens          = $AccessTokens
         }
-        return [System.Collections.Hashtable] $results
+        return $results
     }
     catch
     {
-        Write-Verbose -Message $_
         New-M365DSCLogEntry -Message 'Error retrieving data:' `
             -Exception $_ `
             -Source $($MyInvocation.MyCommand.Source) `
             -TenantId $TenantId `
             -Credential $Credential
 
-        return $nullResult
+        throw
     }
 }
 
@@ -357,7 +358,7 @@ function Test-TargetResource
     #endregion
 
     $result = Test-M365DSCTargetResource -DesiredValues $PSBoundParameters `
-                                         -ResourceName $($MyInvocation.MyCommand.Source).Replace('MSFT_', '')
+        -ResourceName $($MyInvocation.MyCommand.Source).Replace('MSFT_', '')
     return $result
 }
 
@@ -367,6 +368,10 @@ function Export-TargetResource
     [OutputType([System.String])]
     param
     (
+        [Parameter()]
+        [System.String]
+        $Filter,
+
         [Parameter()]
         [System.Management.Automation.PSCredential]
         $Credential,
@@ -413,7 +418,11 @@ function Export-TargetResource
 
     try
     {
-        [array] $Script:exportedInstances = Get-MgBetaNetworkAccessFilteringProfile -ExpandProperty Policies -All -ErrorAction Stop
+        [array] $Script:exportedInstances = Get-MgBetaNetworkAccessFilteringProfile `
+            -All `
+            -ExpandProperty Policies `
+            -Filter $Filter `
+            -ErrorAction Stop
 
         $i = 1
         $dscContent = ''
@@ -478,17 +487,14 @@ function Export-TargetResource
     }
     catch
     {
-        Write-M365DSCHost -Message $Global:M365DSCEmojiRedX -CommitWrite
-
         New-M365DSCLogEntry -Message 'Error during Export:' `
             -Exception $_ `
             -Source $($MyInvocation.MyCommand.Source) `
             -TenantId $TenantId `
             -Credential $Credential
 
-        return ''
+        throw
     }
 }
 
 Export-ModuleMember -Function *-TargetResource
-

@@ -68,13 +68,13 @@ function Get-TargetResource
         $AccessTokens
     )
 
+    Write-Verbose -Message "Getting configuration of SCCaseHoldPolicy for $Name"
+
     try
     {
         if (-not $Script:exportedInstance -or $Script:exportedInstance.Name -ne $Name)
         {
-            Write-Verbose -Message "Getting configuration of SCCaseHoldPolicy for $Name"
-
-            $ConnectionMode = New-M365DSCConnection -Workload 'SecurityComplianceCenter' `
+            $null = New-M365DSCConnection -Workload 'SecurityComplianceCenter' `
                 -InboundParameters $PSBoundParameters
 
             #Ensure the proper dependencies are installed in the current environment.
@@ -123,7 +123,6 @@ function Get-TargetResource
             AccessTokens          = $AccessTokens
         }
 
-        Write-Verbose -Message "Get-TargetResource Result: `n $(Convert-M365DscHashtableToString -Hashtable $result)"
         return $result
     }
     catch
@@ -134,7 +133,7 @@ function Get-TargetResource
             -TenantId $TenantId `
             -Credential $Credential
 
-        return $nullReturn
+        throw
     }
 }
 
@@ -220,46 +219,18 @@ function Set-TargetResource
     Add-M365DSCTelemetryEvent -Data $data
     #endregion
 
-    $ConnectionMode = New-M365DSCConnection -Workload 'SecurityComplianceCenter' `
-        -InboundParameters $PSBoundParameters
-
     $CurrentPolicy = Get-TargetResource @PSBoundParameters
 
     if (('Present' -eq $Ensure) -and ('Absent' -eq $CurrentPolicy.Ensure))
     {
-        $CreationParams = $PSBoundParameters
-        $CreationParams.Remove('Ensure')
-
-        # Remove authentication parameters
-        $CreationParams.Remove('Credential') | Out-Null
-        $CreationParams.Remove('ApplicationId') | Out-Null
-        $CreationParams.Remove('TenantId') | Out-Null
-        $CreationParams.Remove('CertificatePath') | Out-Null
-        $CreationParams.Remove('CertificatePassword') | Out-Null
-        $CreationParams.Remove('CertificateThumbprint') | Out-Null
-        $CreationParams.Remove('ManagedIdentity') | Out-Null
-        $CreationParams.Remove('ApplicationSecret') | Out-Null
-        $CreationParams.Remove('AccessTokens') | Out-Null
-
+        $CreationParams = Remove-M365DSCAuthenticationParameter -BoundParameters $PSBoundParameters
         New-CaseHoldPolicy @CreationParams
     }
     elseif (('Present' -eq $Ensure) -and ('Present' -eq $CurrentPolicy.Ensure))
     {
-        $CreationParams = $PSBoundParameters
-        $CreationParams.Remove('Ensure')
+        $CreationParams = Remove-M365DSCAuthenticationParameter -BoundParameters $PSBoundParameters
         $CreationParams.Remove('Name')
         $CreationParams.Remove('Case')
-
-        # Remove authentication parameters
-        $CreationParams.Remove('Credential') | Out-Null
-        $CreationParams.Remove('ApplicationId') | Out-Null
-        $CreationParams.Remove('TenantId') | Out-Null
-        $CreationParams.Remove('CertificatePath') | Out-Null
-        $CreationParams.Remove('CertificatePassword') | Out-Null
-        $CreationParams.Remove('CertificateThumbprint') | Out-Null
-        $CreationParams.Remove('ManagedIdentity') | Out-Null
-        $CreationParams.Remove('ApplicationSecret') | Out-Null
-        $CreationParams.Remove('AccessTokens') | Out-Null
 
         $policy = Get-CaseHoldPolicy -Identity $Name -Case $Case
         $CreationParams.Add('Identity', $policy.Name)
@@ -270,14 +241,14 @@ function Set-TargetResource
                 $null -ne $SharePointLocation)
         {
             $ToBeRemoved = $CurrentPolicy.SharePointLocation | `
-                    Where-Object { $SharePointLocation -NotContains $_ }
+                    Where-Object { $SharePointLocation -notcontains $_ }
             if ($null -ne $ToBeRemoved)
             {
                 $CreationParams.Add('RemoveSharePointLocation', $ToBeRemoved)
             }
 
             $ToBeAdded = $SharePointLocation | `
-                    Where-Object { $CurrentPolicy.SharePointLocation -NotContains $_ }
+                    Where-Object { $CurrentPolicy.SharePointLocation -notcontains $_ }
             if ($null -ne $ToBeAdded)
             {
                 $CreationParams.Add('AddSharePointLocation', $ToBeAdded)
@@ -292,14 +263,14 @@ function Set-TargetResource
                 $null -ne $ExchangeLocation)
         {
             $ToBeRemoved = $CurrentPolicy.ExchangeLocation | `
-                    Where-Object { $ExchangeLocation -NotContains $_ }
+                    Where-Object { $ExchangeLocation -notcontains $_ }
             if ($null -ne $ToBeRemoved)
             {
                 $CreationParams.Add('RemoveExchangeLocation', $ToBeRemoved)
             }
 
             $ToBeAdded = $ExchangeLocation | `
-                    Where-Object { $CurrentPolicy.ExchangeLocation -NotContains $_ }
+                    Where-Object { $CurrentPolicy.ExchangeLocation -notcontains $_ }
             if ($null -ne $ToBeAdded)
             {
                 $CreationParams.Add('AddExchangeLocation', $ToBeAdded)
@@ -314,14 +285,14 @@ function Set-TargetResource
                 $null -ne $PublicFolderLocation)
         {
             $ToBeRemoved = $CurrentPolicy.PublicFolderLocation | `
-                    Where-Object { $PublicFolderLocation -NotContains $_ }
+                    Where-Object { $PublicFolderLocation -notcontains $_ }
             if ($null -ne $ToBeRemoved)
             {
                 $CreationParams.Add('RemovePublicFolderLocation', $ToBeRemoved)
             }
 
             $ToBeAdded = $PublicFolderLocation | `
-                    Where-Object { $CurrentPolicy.PublicFolderLocation -NotContains $_ }
+                    Where-Object { $CurrentPolicy.PublicFolderLocation -notcontains $_ }
             if ($null -ne $ToBeAdded)
             {
                 $CreationParams.Add('AddPublicFolderLocation', $ToBeAdded)
@@ -407,11 +378,9 @@ function Test-TargetResource
         [System.String[]]
         $AccessTokens
     )
-    #Ensure the proper dependencies are installed in the current environment.
-    Confirm-M365DSCDependencies
 
     #region Telemetry
-    $ResourceName = $MyInvocation.MyCommand.ModuleName -replace 'MSFT_', ''
+    $ResourceName = $MyInvocation.MyCommand.ModuleName.Replace('MSFT_', '')
     $CommandName = $MyInvocation.MyCommand
     $data = Format-M365DSCTelemetryParameters -ResourceName $ResourceName `
         -CommandName $CommandName `
@@ -419,21 +388,9 @@ function Test-TargetResource
     Add-M365DSCTelemetryEvent -Data $data
     #endregion
 
-    Write-Verbose -Message "Testing configuration of SCCaseHoldPolicy for $Name"
-
-    $CurrentValues = Get-TargetResource @PSBoundParameters
-    Write-Verbose -Message "Target Values: $(Convert-M365DscHashtableToString -Hashtable $PSBoundParameters)"
-
-    $ValuesToCheck = $PSBoundParameters
-
-    $TestResult = Test-M365DSCParameterState -CurrentValues $CurrentValues `
-        -Source $($MyInvocation.MyCommand.Source) `
-        -DesiredValues $PSBoundParameters `
-        -ValuesToCheck $ValuesToCheck.Keys
-
-    Write-Verbose -Message "Test-TargetResource returned $TestResult"
-
-    return $TestResult
+    $result = Test-M365DSCTargetResource -DesiredValues $PSBoundParameters `
+        -ResourceName $($MyInvocation.MyCommand.Source).Replace('MSFT_', '')
+    return $result
 }
 
 function Export-TargetResource
@@ -470,6 +427,7 @@ function Export-TargetResource
         [System.String[]]
         $AccessTokens
     )
+
     $ConnectionMode = New-M365DSCConnection -Workload 'SecurityComplianceCenter' `
         -InboundParameters $PSBoundParameters
 
@@ -538,17 +496,14 @@ function Export-TargetResource
     }
     catch
     {
-        Write-M365DSCHost -Message $Global:M365DSCEmojiRedX -CommitWrite
-
         New-M365DSCLogEntry -Message 'Error during Export:' `
             -Exception $_ `
             -Source $($MyInvocation.MyCommand.Source) `
             -TenantId $TenantId `
             -Credential $Credential
 
-        return ''
+        throw
     }
 }
 
 Export-ModuleMember -Function *-TargetResource
-

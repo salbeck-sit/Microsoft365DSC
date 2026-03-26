@@ -75,39 +75,37 @@ function Get-TargetResource
         $AccessTokens
     )
 
-    if ($Global:CurrentModeIsExport)
-    {
-        $ConnectionMode = New-M365DSCConnection -Workload 'ExchangeOnline' `
-            -InboundParameters $PSBoundParameters `
-            -SkipModuleReload $true
-    }
-    else
-    {
-        $ConnectionMode = New-M365DSCConnection -Workload 'ExchangeOnline' `
-            -InboundParameters $PSBoundParameters
-    }
-
-    #Ensure the proper dependencies are installed in the current environment.
-    Confirm-M365DSCDependencies
-
-    #region Telemetry
-    $ResourceName = $MyInvocation.MyCommand.ModuleName -replace 'MSFT_', ''
-    $CommandName = $MyInvocation.MyCommand
-    $data = Format-M365DSCTelemetryParameters -ResourceName $ResourceName `
-        -CommandName $CommandName `
-        -Parameters $PSBoundParameters
-    Add-M365DSCTelemetryEvent -Data $data
-    #endregion
-    Write-Verbose -Message "Getting configuration of Calendar Folder for {$Identity}"
-
-    $nullReturn = $PSBoundParameters
-    $nullReturn.Ensure = 'Absent'
+    Write-Verbose -Message "Getting configuration of Mailbox Calendar Folder with Identity {$Identity}"
 
     try
     {
+        $null = New-M365DSCConnection -Workload 'ExchangeOnline' `
+            -InboundParameters $PSBoundParameters
+
+        #Ensure the proper dependencies are installed in the current environment.
+        Confirm-M365DSCDependencies
+
+        #region Telemetry
+        $ResourceName = $MyInvocation.MyCommand.ModuleName -replace 'MSFT_', ''
+        $CommandName = $MyInvocation.MyCommand
+        $data = Format-M365DSCTelemetryParameters -ResourceName $ResourceName `
+            -CommandName $CommandName `
+            -Parameters $PSBoundParameters
+        Add-M365DSCTelemetryEvent -Data $data
+        #endregion
+
+        $nullReturn = $PSBoundParameters
+        $nullReturn.Ensure = 'Absent'
+
         $IdentityParts = $Identity.Split(':')
-        $userInfo = Get-User -Identity $IdentityParts[0]
-        $IdentityValue = $userInfo.UserPrincipalName + ":" + $IdentityParts[1]
+        $userInfo = @{
+            UserPrincipalName = $IdentityParts[0]
+        }
+        if ($IdentityParts[0] -notlike '*@*')
+        {
+            $userInfo = Get-User -Identity $IdentityParts[0]
+        }
+        $IdentityValue = $userInfo.UserPrincipalName + ':' + $IdentityParts[1]
         $folder = Get-MailboxCalendarFolder -Identity $Identity -ErrorAction SilentlyContinue
 
         if ($null -eq $folder)
@@ -129,7 +127,7 @@ function Get-TargetResource
             CertificateThumbprint       = $CertificateThumbprint
             CertificatePath             = $CertificatePath
             CertificatePassword         = $CertificatePassword
-            Managedidentity             = $ManagedIdentity.IsPresent
+            ManagedIdentity             = $ManagedIdentity.IsPresent
             TenantId                    = $TenantId
             AccessTokens                = $AccessTokens
         }
@@ -145,7 +143,7 @@ function Get-TargetResource
             -TenantId $TenantId `
             -Credential $Credential
 
-        return $nullReturn
+        throw
     }
 }
 
@@ -223,6 +221,8 @@ function Set-TargetResource
         $AccessTokens
     )
 
+    Write-Verbose -Message "Setting configuration of Calendar Folder for {$Identity}"
+
     #Ensure the proper dependencies are installed in the current environment.
     Confirm-M365DSCDependencies
 
@@ -235,24 +235,8 @@ function Set-TargetResource
     Add-M365DSCTelemetryEvent -Data $data
     #endregion
 
-    $currentValues = Get-TargetResource @PSBoundParameters
-
-    Write-Verbose -Message "Setting configuration of Calendar Folder for {$Identity}"
-
-    $ConnectionMode = New-M365DSCConnection -Workload 'ExchangeOnline' `
-        -InboundParameters $PSBoundParameters
-
-    $UpdateParameters = ([Hashtable]$PSBoundParameters).Clone()
-    $UpdateParameters.Remove('Ensure') | Out-Null
-    $UpdateParameters.Remove('Credential') | Out-Null
-    $UpdateParameters.Remove('ApplicationId') | Out-Null
-    $UpdateParameters.Remove('TenantId') | Out-Null
-    $UpdateParameters.Remove('CertificateThumbprint') | Out-Null
-    $UpdateParameters.Remove('ApplicationSecret') | Out-Null
-    $UpdateParameters.Remove('CertificatePath') | Out-Null
-    $UpdateParameters.Remove('CertificatePassword') | Out-Null
-    $UpdateParameters.Remove('ManagedIdentity') | Out-Null
-    $UpdateParameters.Remove('AccessTokens') | Out-Null
+    $null = Get-TargetResource @PSBoundParameters
+    $UpdateParameters = Remove-M365DSCAuthenticationParameter -BoundParameters $PSBoundParameters
 
     # The SharedCalendarSyncStartDate needs to be used by itself in a subsequent call.
     if ($PSBoundParameters.ContainsKey('SharedCalendarSyncStartDate'))
@@ -339,11 +323,9 @@ function Test-TargetResource
         [System.String[]]
         $AccessTokens
     )
-    #Ensure the proper dependencies are installed in the current environment.
-    Confirm-M365DSCDependencies
 
     #region Telemetry
-    $ResourceName = $MyInvocation.MyCommand.ModuleName -replace 'MSFT_', ''
+    $ResourceName = $MyInvocation.MyCommand.ModuleName.Replace('MSFT_', '')
     $CommandName = $MyInvocation.MyCommand
     $data = Format-M365DSCTelemetryParameters -ResourceName $ResourceName `
         -CommandName $CommandName `
@@ -351,24 +333,9 @@ function Test-TargetResource
     Add-M365DSCTelemetryEvent -Data $data
     #endregion
 
-    Write-Verbose -Message "Testing configuration of Calendar Folder for {$Identity}"
-
-    $CurrentValues = Get-TargetResource @PSBoundParameters
-
-    Write-Verbose -Message "Current Values: $(Convert-M365DscHashtableToString -Hashtable $CurrentValues)"
-    Write-Verbose -Message "Target Values: $(Convert-M365DscHashtableToString -Hashtable $PSBoundParameters)"
-
-    $ValuesToCheck = $PSBoundParameters
-    $DesiredValues = $PSBoundParameters
-
-    $TestResult = Test-M365DSCParameterState -CurrentValues $CurrentValues `
-        -Source $($MyInvocation.MyCommand.Source) `
-        -DesiredValues $DesiredValues `
-        -ValuesToCheck $ValuesToCheck.Keys
-
-    Write-Verbose -Message "Test-TargetResource returned $TestResult"
-
-    return $TestResult
+    $result = Test-M365DSCTargetResource -DesiredValues $PSBoundParameters `
+        -ResourceName $($MyInvocation.MyCommand.Source).Replace('MSFT_', '')
+    return $result
 }
 
 function Export-TargetResource
@@ -409,9 +376,9 @@ function Export-TargetResource
         [System.String[]]
         $AccessTokens
     )
+
     $ConnectionMode = New-M365DSCConnection -Workload 'ExchangeOnline' `
-        -InboundParameters $PSBoundParameters `
-        -SkipModuleReload $true
+        -InboundParameters $PSBoundParameters
 
     #Ensure the proper dependencies are installed in the current environment.
     Confirm-M365DSCDependencies
@@ -458,7 +425,7 @@ function Export-TargetResource
                 TenantId              = $TenantId
                 CertificateThumbprint = $CertificateThumbprint
                 CertificatePassword   = $CertificatePassword
-                Managedidentity       = $ManagedIdentity.IsPresent
+                ManagedIdentity       = $ManagedIdentity.IsPresent
                 CertificatePath       = $CertificatePath
                 AccessTokens          = $AccessTokens
             }
@@ -485,17 +452,14 @@ function Export-TargetResource
     }
     catch
     {
-        Write-M365DSCHost -Message $Global:M365DSCEmojiRedX -CommitWrite
-
         New-M365DSCLogEntry -Message 'Error during Export:' `
             -Exception $_ `
             -Source $($MyInvocation.MyCommand.Source) `
             -TenantId $TenantId `
             -Credential $Credential
 
-        return ''
+        throw
     }
 }
 
 Export-ModuleMember -Function *-TargetResource
-

@@ -49,8 +49,8 @@ function Get-TargetResource
         $ScheduleInfo,
 
         [Parameter()]
+        [ValidateSet('Present', 'Absent')]
         [System.String]
-        [ValidateSet('Absent', 'Present')]
         $Ensure = 'Present',
 
         [Parameter()]
@@ -82,12 +82,14 @@ function Get-TargetResource
         $AccessTokens
     )
 
+    Write-Verbose -Message "Getting configuration of the AAD Role Eligibility Schedule Request with Principal {$Principal}, RoleDefinition {$RoleDefinition}, PrincipalType {$PrincipalType} and DirectoryScopeId {$DirectoryScopeId}"
+
     try
     {
         if (-not $Script:exportedInstance)
         {
-            $ConnectionMode = New-M365DSCConnection -Workload 'MicrosoftGraph' `
-                -InboundParameters $PSBoundParameters | Out-Null
+            $null = New-M365DSCConnection -Workload 'MicrosoftGraph' `
+                -InboundParameters $PSBoundParameters
 
             #Ensure the proper dependencies are installed in the current environment.
             Confirm-M365DSCDependencies
@@ -130,6 +132,7 @@ function Get-TargetResource
         else
         {
             $schedule = $Script:exportedInstance
+            # To keep performance good, only assign the current instance
             $Script:AllSchedules = $Script:exportedInstance
         }
 
@@ -155,48 +158,53 @@ function Get-TargetResource
         }
 
         Write-Verbose -Message "Found Principal {$PrincipalValue}"
-        $RoleDefinitionId = $Script:RoleDefinitions.GetEnumerator() | Where-Object { $_.Value.DisplayName -eq $RoleDefinition } | Select-Object -ExpandProperty Key
-        Write-Verbose -Message "Retrieved role definition {$RoleDefinition} with ID {$RoleDefinitionId}"
+        $roleDefinitionId = $Script:RoleDefinitions.GetEnumerator() | Where-Object { $_.Value.DisplayName -eq $RoleDefinition } | Select-Object -ExpandProperty Key
+        Write-Verbose -Message "Retrieved role definition {$RoleDefinition} with ID {$roleDefinitionId}"
 
         if ($null -eq $schedule)
         {
-            Write-Verbose -Message "Retrieving the request by PrincipalId {$($PrincipalInstance.Id)}, RoleDefinitionId {$($RoleDefinitionId)} and DirectoryScopeId {$($DirectoryScopeId)}"
+            Write-Verbose -Message "Retrieving the request by PrincipalId {$($PrincipalInstance.Id)}, RoleDefinitionId {$($roleDefinitionId)} and DirectoryScopeId {$($DirectoryScopeId)}"
             [array]$requests = $Script:AllSchedules | Where-Object -FilterScript {
                 $_.PrincipalId -eq $PrincipalInstance.Id -and
-                $_.RoleDefinitionId -eq $RoleDefinitionId -and
+                $_.RoleDefinitionId -eq $roleDefinitionId -and
                 $_.DirectoryScopeId -eq $DirectoryScopeId
             }
+
             if ($requests.Count -eq 0)
             {
-                # We need to make sure we're not ending up here because the role is a custom role (which has a different id).
-                # We start by retrieving all schedules for the given principal.
-                [array]$schedulesForPrincipal = $Script:AllSchedules | Where-Object -FilterScript {
-                    $_.PrincipalId -eq $PrincipalInstance.Id -and
-                    $_.DirectoryScopeId -eq $DirectoryScopeId
-                }
-
-                # Loop through the role associated with each schedule to check and see if we have a match on the name.
-                $schedule = $null
-                foreach ($foundSchedule in $schedulesForPrincipal)
+                # Lookup in Graph - can be the case if a role was created in this configuration run
+                Write-Verbose -Message "No cached schedules found, fetching with principalId, roleDefinitionId and directoryScopeId"
+                $requests = Get-MgBetaRoleManagementDirectoryRoleEligibilitySchedule -Filter "principalId eq '$($PrincipalInstance.Id)' and roleDefinitionId eq '$($roleDefinitionId)' and directoryScopeId eq '$($DirectoryScopeId)'" -ErrorAction SilentlyContinue
+                if ($requests.Count -eq 0)
                 {
-                    $scheduleRoleId = $foundSchedule.RoleDefinitionId
-                    $roleEntry = $Script:RoleDefinitions[$scheduleRoleId]
+                    # We need to make sure we're not ending up here because the role is a custom role (which has a different id).
+                    Write-Verbose -Message "No schedules found, testing for custom role definitions"
+                    $roleEntry = $Script:RoleDefinitions[$roleDefinitionId]
                     if ($null -eq $roleEntry)
                     {
-                        $roleEntry = Get-MgBetaRoleManagementDirectoryRoleDefinition -UnifiedRoleDefinitionId $scheduleRoleId
+                        $roleEntry = Get-MgBetaRoleManagementDirectoryRoleDefinition -UnifiedRoleDefinitionId $roleDefinitionId
                     }
                     if ($roleEntry.DisplayName -eq $RoleDefinition)
                     {
-                        $RoleDefinitionId = $roleEntry.Id
-                        $Script:RoleDefinitions.Add($scheduleRoleId, $roleEntry)
-                        $schedule = $foundSchedule
-                        break
+                        $roleDefinitionId = $roleEntry.Id
+                        if (-not $Script:RoleDefinitions.ContainsKey($roleDefinitionId))
+                        {
+                            $Script:RoleDefinitions.Add($roleDefinitionId, $roleEntry)
+                        }
+                        # The TemplateId is the id of the custom role definition
+                        Write-Verbose -Message "Fetching schedules for custom role definition with RoleDefinitionId {$roleDefinitionId}"
+                        $requests = Get-MgBetaRoleManagementDirectoryRoleEligibilitySchedule -Filter "principalId eq '$($PrincipalInstance.Id)' and roleDefinition/TemplateId eq '$($roleDefinitionId)' and directoryScopeId eq '$($DirectoryScopeId)'" -ErrorAction SilentlyContinue
+                        if ($requests.Count -eq 0)
+                        {
+                            Write-Verbose -Message "No schedules found for custom role definition"
+                            return $nullResult
+                        }
                     }
                 }
-
-                if ($null -eq $schedule)
+                else
                 {
-                    return $nullResult
+                    Write-Verbose -Message "Adding schedule to cache"
+                    $Script:AllSchedules += $requests[0]
                 }
             }
             else
@@ -205,40 +213,10 @@ function Get-TargetResource
             }
         }
 
-        if ($null -eq $schedule)
-        {
-            $schedule = $Script:AllSchedules | Where-Object -FilterScript {
-                $_.PrincipalId -eq $request.PrincipalId -and
-                $_.RoleDefinitionId -eq $RoleDefinitionId
-            }
-        }
-        if ($null -eq $schedule)
-        {
-            foreach ($instance in $schedules)
-            {
-                $roleDefinitionInfo = $Script:RoleDefinitions[$instance.RoleDefinitionId]
-                if ($null -ne $roleDefinitionInfo -and $RoleDefinitionInfo.DisplayName -eq $RoleDefinition)
-                {
-                    $schedule = $instance
-                    break
-                }
-            }
-        }
-
-        if ($null -eq $schedule)
-        {
-            if ($null -eq $schedule)
-            {
-                Write-Verbose -Message "Could not retrieve the schedule for {$($request.PrincipalId)} & RoleDefinitionId {$RoleDefinitionId}"
-            }
-            return $nullResult
-        }
-
         $ScheduleInfoValue = @{}
-
         if ($null -ne $schedule.ScheduleInfo.Expiration)
         {
-            $expirationValue = @{
+            $expirationValue = [ordered]@{
                 duration = $schedule.ScheduleInfo.Expiration.Duration
                 type     = $schedule.ScheduleInfo.Expiration.Type
             }
@@ -252,8 +230,8 @@ function Get-TargetResource
         {
             if (Test-M365DSCRecurrenceIsConfigured -RecurrenceSettings $schedule.ScheduleInfo.Recurrence)
             {
-                $recurrenceValue = @{
-                    pattern = @{
+                $recurrenceValue = [ordered]@{
+                    pattern = [ordered]@{
                         dayOfMonth     = $schedule.ScheduleInfo.Recurrence.Pattern.dayOfMonth
                         daysOfWeek     = $schedule.ScheduleInfo.Recurrence.Pattern.daysOfWeek
                         firstDayOfWeek = $schedule.ScheduleInfo.Recurrence.Pattern.firstDayOfWeek
@@ -262,7 +240,7 @@ function Get-TargetResource
                         month          = $schedule.ScheduleInfo.Recurrence.Pattern.month
                         type           = $schedule.ScheduleInfo.Recurrence.Pattern.type
                     }
-                    range   = @{
+                    range   = [ordered]@{
                         endDate             = $schedule.ScheduleInfo.Recurrence.Range.endDate
                         numberOfOccurrences = $schedule.ScheduleInfo.Recurrence.Range.numberOfOccurrences
                         recurrenceTimeZone  = $schedule.ScheduleInfo.Recurrence.Range.recurrenceTimeZone
@@ -284,10 +262,10 @@ function Get-TargetResource
             RoleDefinition        = $RoleDefinition
             DirectoryScopeId      = $schedule.DirectoryScopeId
             AppScopeId            = $schedule.AppScopeId
-            Action                = $schedule.Action
+            #Action                = $schedule.Action
             Id                    = $schedule.Id
-            Justification         = $schedule.Justification
-            IsValidationOnly      = $schedule.IsValidationOnly
+            Justification         = "Assignment of role eligibility '$RoleDefinition' to principal '$PrincipalValue' of type '$PrincipalType'."
+            #IsValidationOnly      = $schedule.IsValidationOnly
             ScheduleInfo          = $ScheduleInfoValue
             Ensure                = 'Present'
             Credential            = $Credential
@@ -295,21 +273,20 @@ function Get-TargetResource
             TenantId              = $TenantId
             ApplicationSecret     = $ApplicationSecret
             CertificateThumbprint = $CertificateThumbprint
-            Managedidentity       = $ManagedIdentity.IsPresent
+            ManagedIdentity       = $ManagedIdentity.IsPresent
             AccessTokens          = $AccessTokens
         }
         return $results
     }
     catch
     {
-        Write-Verbose "Error: $_"
         New-M365DSCLogEntry -Message 'Error retrieving data:' `
             -Exception $_ `
             -Source $($MyInvocation.MyCommand.Source) `
             -TenantId $TenantId `
             -Credential $Credential
 
-        return $nullResult
+        throw
     }
 }
 
@@ -361,8 +338,8 @@ function Set-TargetResource
         $ScheduleInfo,
 
         [Parameter()]
+        [ValidateSet('Present', 'Absent')]
         [System.String]
-        [ValidateSet('Absent', 'Present')]
         $Ensure = 'Present',
 
         [Parameter()]
@@ -393,6 +370,17 @@ function Set-TargetResource
         [System.String[]]
         $AccessTokens
     )
+
+    # TODO: Remove during next breaking change
+    if ($PSBoundParameters.ContainsKey('Action'))
+    {
+        Write-Warning -Message "The parameter 'Action' is deprecated. It will be removed in the next breaking change release."
+    }
+
+    if ($PSBoundParameters.ContainsKey('IsValidationOnly'))
+    {
+        Write-Warning -Message "The parameter 'IsValidationOnly' is deprecated. It will be removed in the next breaking change release."
+    }
 
     #Ensure the proper dependencies are installed in the current environment.
     Confirm-M365DSCDependencies
@@ -429,13 +417,17 @@ function Set-TargetResource
         $PrincipalId = $PrincipalInstance.Id
     }
 
-    Write-Verbose -Message "Retrieving ROleDefinitionId from Set-TargetResource"
-    $RoleDefinitionId = (Get-MgBetaRoleManagementDirectoryRoleDefinition -Filter "DisplayName eq '$($RoleDefinition -replace "'", "''")'").Id
+    Write-Verbose -Message "Retrieving RoleDefinitionId from Set-TargetResource"
+    $roleDefinitionId = (Get-MgBetaRoleManagementDirectoryRoleDefinition -Filter "DisplayName eq '$($RoleDefinition -replace "'", "''")'").Id
+    if ([System.String]::IsNullOrEmpty($roleDefinitionId))
+    {
+        throw "Couldn't find Role Definition {$RoleDefinition}"
+    }
 
     $instanceParams = @{
         directoryScopeId = $DirectoryScopeId
         principalId      = $PrincipalId
-        roleDefinitionId = $RoleDefinitionId
+        roleDefinitionId = $roleDefinitionId
         scheduleInfo     = @{
             expiration = @{
                 type        = $ScheduleInfo.Expiration.Type
@@ -516,6 +508,13 @@ function Set-TargetResource
         $instanceParams.Add('justification', 'AdminRemove by Microsoft365DSC')
         Write-Verbose -Message "Removing role eligibility Schedule with parameters:`r`n$(ConvertTo-Json $instanceParams -Depth 10)"
         New-MgBetaRoleManagementDirectoryRoleEligibilityScheduleRequest @instanceParams
+        if ($Script:AllSchedules.Count -gt 0)
+        {
+            # Remove the instance from the cached list to avoid re-processing
+            $Script:AllSchedules = $Script:AllSchedules | Where-Object {
+                $_.RoleDefinition -ne $RoleDefinition -and $_.Principal -ne $Principal -and $_.PrincipalType -ne $PrincipalType -and $_.DirectoryScopeId -ne $DirectoryScopeId
+            }
+        }
     }
 }
 
@@ -568,8 +567,8 @@ function Test-TargetResource
         $ScheduleInfo,
 
         [Parameter()]
+        [ValidateSet('Present', 'Absent')]
         [System.String]
-        [ValidateSet('Absent', 'Present')]
         $Ensure = 'Present',
 
         [Parameter()]
@@ -601,6 +600,17 @@ function Test-TargetResource
         $AccessTokens
     )
 
+    # TODO: Remove during next breaking change
+    if ($PSBoundParameters.ContainsKey('Action'))
+    {
+        Write-Warning -Message "The parameter 'Action' is deprecated. It will be removed in the next breaking change release."
+    }
+
+    if ($PSBoundParameters.ContainsKey('IsValidationOnly'))
+    {
+        Write-Warning -Message "The parameter 'IsValidationOnly' is deprecated. It will be removed in the next breaking change release."
+    }
+
     #region Telemetry
     $ResourceName = $MyInvocation.MyCommand.ModuleName.Replace('MSFT_', '')
     $CommandName = $MyInvocation.MyCommand
@@ -610,9 +620,10 @@ function Test-TargetResource
     Add-M365DSCTelemetryEvent -Data $data
     #endregion
 
+    $compareParameters = Get-CompareParameters
     $result = Test-M365DSCTargetResource -DesiredValues $PSBoundParameters `
                                          -ResourceName $($MyInvocation.MyCommand.Source).Replace('MSFT_', '') `
-                                         -ExcludedProperties @('Action', 'IsValidationOnly', 'Justification')
+                                         @compareParameters
     return $result
 }
 
@@ -622,6 +633,10 @@ function Export-TargetResource
     [OutputType([System.String])]
     param
     (
+        [Parameter()]
+        [System.String]
+        $Filter,
+
         [Parameter()]
         [System.Management.Automation.PSCredential]
         $Credential,
@@ -669,12 +684,11 @@ function Export-TargetResource
     try
     {
         $Script:ExportMode = $true
-        [array] $Script:exportedInstances = Get-MgBetaRoleManagementDirectoryRoleEligibilitySchedule -All `
-                                                -ErrorAction SilentlyContinue
+        [array] $Script:exportedInstances = Get-MgBetaRoleManagementDirectoryRoleEligibilitySchedule -All -Filter $Filter -ErrorAction SilentlyContinue
 
         $i = 1
         $dscContent = ''
-        if ($Script:exportedInstances.Length -eq 0)
+        if ($Script:exportedInstances.Count -eq 0)
         {
             Write-M365DSCHost -Message $Global:M365DSCEmojiGreenCheckMark -CommitWrite
         }
@@ -794,15 +808,13 @@ function Export-TargetResource
     }
     catch
     {
-        Write-M365DSCHost -Message $Global:M365DSCEmojiRedX -CommitWrite
-
         New-M365DSCLogEntry -Message 'Error during Export:' `
             -Exception $_ `
             -Source $($MyInvocation.MyCommand.Source) `
             -TenantId $TenantId `
             -Credential $Credential
 
-        return ''
+        throw
     }
 }
 
@@ -836,5 +848,38 @@ function Test-M365DSCRecurrenceIsConfigured
     return $true
 }
 
-Export-ModuleMember -Function *-TargetResource
+function Get-CompareParameters
+{
+    [CmdletBinding()]
+    [OutputType([System.Collections.Hashtable])]
+    param()
 
+    return @{
+        ExcludedProperties = @('Action', 'IsValidationOnly', 'Justification')
+        PostProcessing = {
+            param($DesiredValues, $CurrentValues, $ValuesToCheck, $ignore)
+            if (-not [System.String]::IsNullOrEmpty($DesiredValues.ScheduleInfo.StartDateTime))
+            {
+                $parsedDesiredDate = [System.DateTime]::MinValue
+                $parseResultDesired = [System.DateTime]::TryParse($DesiredValues.ScheduleInfo.StartDateTime, [ref]$parsedDesiredDate)
+
+                $parsedCurrentDate = [System.DateTime]::MinValue
+                $parseResultCurrent = [System.DateTime]::TryParse($CurrentValues.ScheduleInfo.StartDateTime, [ref]$parsedCurrentDate)
+
+                if ($parseResultDesired -and $parseResultCurrent)
+                {
+                    Write-Verbose -Message "Parsed Desired StartDateTime: $parsedDesiredDate, Parsed Current StartDateTime: $parsedCurrentDate"
+                    if ($parsedDesiredDate -ne $parsedCurrentDate -and $parsedDesiredDate -lt [System.DateTime]::UtcNow)
+                    {
+                        Write-Verbose -Message "Ignoring StartDateTime in ScheduleInfo as it is in the past. StartDateTime cannot be set to a past date."
+                        Write-Verbose -Message "Aligning the Desired and Current StartDateTime values for comparison."
+                        $DesiredValues.ScheduleInfo.StartDateTime = $CurrentValues.ScheduleInfo.StartDateTime
+                    }
+                }
+            }
+            return [System.Tuple[Hashtable, Hashtable, Hashtable]]::new($DesiredValues, $CurrentValues, $ValuesToCheck)
+        }
+    }
+}
+
+Export-ModuleMember -Function @('*-TargetResource', 'Get-CompareParameters')

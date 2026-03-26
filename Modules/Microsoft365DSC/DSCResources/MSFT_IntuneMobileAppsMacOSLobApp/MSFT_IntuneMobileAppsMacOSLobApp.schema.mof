@@ -10,6 +10,24 @@ class MSFT_DeviceManagementMobileAppAssignment
     [Write, Description("Possible values for the install intent chosen by the admin."), ValueMap{"available", "required", "uninstall", "availableWithoutEnrollment"}, Values{"available", "required", "uninstall", "availableWithoutEnrollment"}] String intent;
 };
 
+[ClassVersion("1.0.0.3")]
+class MSFT_DeviceManagementMobileAppAssignmentSettings
+{
+    [Required, Description("The odata type of the assignment type."), ValueMap{"#microsoft.graph.androidManagedStoreAppAssignmentSettings", "#microsoft.graph.iosStoreAppAssignmentSettings", "#microsoft.graph.iosLobAppAssignmentSettings", "#microsoft.graph.macOsLobAppAssignmentSettings", "#microsoft.graph.win32LobAppAssignmentSettings", "#microsoft.graph.winGetAppAssignmentSettings", "#microsoft.graph.windowsUniversalAppXAppAssignmentSettings"}, Values{"#microsoft.graph.androidManagedStoreAppAssignmentSettings", "#microsoft.graph.iosLobAppAssignmentSettings", "#microsoft.graph.iosStoreAppAssignmentSettings", "#microsoft.graph.macOsLobAppAssignmentSettings", "#microsoft.graph.win32LobAppAssignmentSettings", "#microsoft.graph.winGetAppAssignmentSettings", "#microsoft.graph.windowsUniversalAppXAppAssignmentSettings"}] String odataType;
+};
+
+[ClassVersion("1.0.0.0")]
+class MSFT_DeviceManagementMacOSLobAppAssignmentSettings : MSFT_DeviceManagementMobileAppAssignmentSettings
+{
+    [Write, Description("When TRUE, indicates that the app should be uninstalled when the device is removed from Intune. When FALSE, indicates that the app will not be uninstalled when the device is removed from Intune.")] Boolean uninstallOnDeviceRemoval;
+};
+
+[ClassVersion("1.0.0.0")]
+class MSFT_DeviceManagementMacOSLobAppAssignment : MSFT_DeviceManagementMobileAppAssignment
+{
+    [Write, Description("The settings of the assignment."), EmbeddedInstance("MSFT_DeviceManagementMacOSLobAppAssignmentSettings")] String assignmentSettings;
+};
+
 [ClassVersion("1.0.0")]
 class MSFT_DeviceManagementMinimumOperatingSystem
 {
@@ -42,15 +60,15 @@ class MSFT_DeviceManagementMobileAppCategory
     [Write, Description("The unique identifier for an entity. Read-only.")] String Id;
 };
 
-[ClassVersion("1.0.0")]
+[ClassVersion("1.0.0.1")]
 class MSFT_DeviceManagementMobileAppChildApp
 {
-    [Write, Description("The bundleId of the app.")] String BundleId;
+    [Key, Description("The bundleId of the app.")] String BundleId;
     [Write, Description("The build number of the app.")] String BuildNumber;
     [Write, Description("The version number of the app.")] String VersionNumber;
 };
 
-[ClassVersion("1.0.0.0"), FriendlyName("IntuneMobileAppsMacOSLobApp")]
+[ClassVersion("1.0.0.1"), FriendlyName("IntuneMobileAppsMacOSLobApp")]
 class MSFT_IntuneMobileAppsMacOSLobApp : OMI_BaseResource
 {
     [Key, Description("The admin provided or imported title of the app. Inherited from mobileApp.")] String DisplayName;
@@ -72,7 +90,7 @@ class MSFT_IntuneMobileAppsMacOSLobApp : OMI_BaseResource
     [Write, Description("The icon for this app."), EmbeddedInstance("MSFT_DeviceManagementMimeContent")] String LargeIcon;
     [Write, Description("The minimum supported operating system to install the app."), EmbeddedInstance("MSFT_DeviceManagementMinimumOperatingSystem")] String MinimumSupportedOperatingSystem;
     [Write, Description("The list of categories for this app."), EmbeddedInstance("MSFT_DeviceManagementMobileAppCategory")] String Categories[];
-    [Write, Description("The list of assignments for this app."), EmbeddedInstance("MSFT_DeviceManagementMobileAppAssignment")] String Assignments[];
+    [Write, Description("The list of assignments for this app."), EmbeddedInstance("MSFT_DeviceManagementMacOSLobAppAssignment")] String Assignments[];
     [Write, Description("The list of child apps for this app package."), EmbeddedInstance("MSFT_DeviceManagementMobileAppChildApp")] String ChildApps[];
     [Write, Description("Present ensures the policy exists, absent ensures it is removed."), ValueMap{"Present", "Absent"}, Values{"Present", "Absent"}] String Ensure;
     [Write, Description("Credentials of the Admin"), EmbeddedInstance("MSFT_Credential")] String Credential;

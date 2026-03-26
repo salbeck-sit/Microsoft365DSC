@@ -110,37 +110,43 @@ function Get-TargetResource
         $AccessTokens
     )
 
-    New-M365DSCConnection -Workload 'ExchangeOnline' `
-        -InboundParameters $PSBoundParameters | Out-Null
+    Write-Verbose -Message "Getting Migration Endpoint configuration for $Identity"
 
-    #Ensure the proper dependencies are installed in the current environment.
-    Confirm-M365DSCDependencies
-
-    #region Telemetry
-    $ResourceName = $MyInvocation.MyCommand.ModuleName.Replace('MSFT_', '')
-    $CommandName = $MyInvocation.MyCommand
-    $data = Format-M365DSCTelemetryParameters -ResourceName $ResourceName `
-        -CommandName $CommandName `
-        -Parameters $PSBoundParameters
-    Add-M365DSCTelemetryEvent -Data $data
-    #endregion
-
-    $nullResult = $PSBoundParameters
-    $nullResult.Ensure = 'Absent'
     try
     {
-        if ($null -ne $Script:exportedInstances -and $Script:ExportMode)
+        if (-not $Script:exportedInstance -or $Script:exportedInstance.Identity -ne $Identity)
         {
-            $migrationEndpoint = $Script:exportedInstances | Where-Object -FilterScript { $_.Identity -eq $Identity }
+            $null = New-M365DSCConnection -Workload 'ExchangeOnline' `
+                -InboundParameters $PSBoundParameters
+
+            #Ensure the proper dependencies are installed in the current environment.
+            Confirm-M365DSCDependencies
+
+            #region Telemetry
+            $ResourceName = $MyInvocation.MyCommand.ModuleName.Replace('MSFT_', '')
+            $CommandName = $MyInvocation.MyCommand
+            $data = Format-M365DSCTelemetryParameters -ResourceName $ResourceName `
+                -CommandName $CommandName `
+                -Parameters $PSBoundParameters
+            Add-M365DSCTelemetryEvent -Data $data
+            #endregion
+
+            $nullResult = $PSBoundParameters
+            $nullResult.Ensure = 'Absent'
+
+            $migrationEndpoint = Get-MigrationEndpoint -Identity $Identity -ErrorAction SilentlyContinue
+            if ($null -eq $migrationEndpoint)
+            {
+                Write-Verbose -Message "Migration Endpoint with Identity $Identity not found"
+                return $nullResult
+            }
         }
         else
         {
-            $migrationEndpoint = Get-MigrationEndpoint -Identity $Identity -ErrorAction Stop
+            $migrationEndpoint = $Script:exportedInstance
         }
-        if ($null -eq $migrationEndpoint)
-        {
-            return $nullResult
-        }
+
+        Write-Verbose -Message "Migration Endpoint with Identity $($migrationEndpoint.Identity) found."
 
         $results = @{
             Identity                      = $Identity
@@ -170,7 +176,7 @@ function Get-TargetResource
             AccessTokens                  = $AccessTokens
         }
 
-        return [System.Collections.Hashtable] $results
+        return $results
     }
     catch
     {
@@ -180,7 +186,7 @@ function Get-TargetResource
             -TenantId $TenantId `
             -Credential $Credential
 
-        return $nullResult
+        throw
     }
 }
 
@@ -293,6 +299,8 @@ function Set-TargetResource
         $AccessTokens
     )
 
+    Write-Verbose -Message "Setting Migration Endpoint configuration for $Identity"
+
     #Ensure the proper dependencies are installed in the current environment.
     Confirm-M365DSCDependencies
 
@@ -339,8 +347,8 @@ function Set-TargetResource
         # Removing mailbox permission parameter as this is valid only for outlook anywhere migration
         $setParams.Remove('MailboxPermission') | Out-Null
         $newParams.Remove('MailboxPermission') | Out-Null
-        $newParams.Remove("AcceptUntrustedCertificates") | Out-Null
-        $setParams.Remove("AcceptUntrustedCertificates") | Out-Null
+        $newParams.Remove('AcceptUntrustedCertificates') | Out-Null
+        $setParams.Remove('AcceptUntrustedCertificates') | Out-Null
 
         # adding skip verification switch to skip verifying
         # that the remote server is reachable when creating a migration endpoint.
@@ -482,9 +490,6 @@ function Test-TargetResource
         $AccessTokens
     )
 
-    #Ensure the proper dependencies are installed in the current environment.
-    Confirm-M365DSCDependencies
-
     #region Telemetry
     $ResourceName = $MyInvocation.MyCommand.ModuleName.Replace('MSFT_', '')
     $CommandName = $MyInvocation.MyCommand
@@ -494,20 +499,9 @@ function Test-TargetResource
     Add-M365DSCTelemetryEvent -Data $data
     #endregion
 
-    $CurrentValues = Get-TargetResource @PSBoundParameters
-    $ValuesToCheck = ([Hashtable]$PSBoundParameters).Clone()
-
-    Write-Verbose -Message "Current Values: $(Convert-M365DscHashtableToString -Hashtable $CurrentValues)"
-    Write-Verbose -Message "Target Values: $(Convert-M365DscHashtableToString -Hashtable $ValuesToCheck)"
-
-    $testResult = Test-M365DSCParameterState -CurrentValues $CurrentValues `
-        -Source $($MyInvocation.MyCommand.Source) `
-        -DesiredValues $PSBoundParameters `
-        -ValuesToCheck $ValuesToCheck.Keys
-
-    Write-Verbose -Message "Test-TargetResource returned $testResult"
-
-    return $testResult
+    $result = Test-M365DSCTargetResource -DesiredValues $PSBoundParameters `
+        -ResourceName $($MyInvocation.MyCommand.Source).Replace('MSFT_', '')
+    return $result
 }
 
 function Export-TargetResource
@@ -562,12 +556,11 @@ function Export-TargetResource
 
     try
     {
-        $Script:ExportMode = $true
-        [array] $Script:exportedInstances = Get-MigrationEndpoint -ErrorAction Stop
+        [array] $migrationEndpoints = Get-MigrationEndpoint -ErrorAction Stop
 
         $i = 1
         $dscContent = ''
-        if ($Script:exportedInstances.Length -eq 0)
+        if ($migrationEndpoints.Length -eq 0)
         {
             Write-M365DSCHost -Message $Global:M365DSCEmojiGreenCheckMark -CommitWrite
         }
@@ -575,10 +568,10 @@ function Export-TargetResource
         {
             Write-M365DSCHost -Message "`r`n" -DeferWrite
         }
-        foreach ($config in $Script:exportedInstances)
+        foreach ($config in $migrationEndpoints)
         {
             $displayedKey = $config.Identity
-            Write-M365DSCHost -Message "    |---[$i/$($Script:exportedInstances.Count)] $displayedKey" -DeferWrite
+            Write-M365DSCHost -Message "    |---[$i/$($migrationEndpoints.Count)] $displayedKey" -DeferWrite
             $params = @{
                 Identity              = $config.Identity
                 Credential            = $Credential
@@ -588,9 +581,8 @@ function Export-TargetResource
                 ManagedIdentity       = $ManagedIdentity.IsPresent
                 AccessTokens          = $AccessTokens
             }
-
-            $Results = Get-TargetResource @Params
-
+            $Script:exportedInstance = $config
+            $Results = Get-TargetResource @params
             $currentDSCBlock = Get-M365DSCExportContentForResource -ResourceName $ResourceName `
                 -ConnectionMode $ConnectionMode `
                 -ModulePath $PSScriptRoot `
@@ -606,17 +598,14 @@ function Export-TargetResource
     }
     catch
     {
-        Write-M365DSCHost -Message $Global:M365DSCEmojiRedX -CommitWrite
-
         New-M365DSCLogEntry -Message 'Error during Export:' `
             -Exception $_ `
             -Source $($MyInvocation.MyCommand.Source) `
             -TenantId $TenantId `
             -Credential $Credential
 
-        return ''
+        throw
     }
 }
 
 Export-ModuleMember -Function *-TargetResource
-

@@ -27,8 +27,8 @@ function Get-TargetResource
         $DeviceLinks,
 
         [Parameter()]
+        [ValidateSet('Present', 'Absent')]
         [System.String]
-        [ValidateSet('Absent', 'Present')]
         $Ensure = 'Present',
 
         [Parameter()]
@@ -60,11 +60,13 @@ function Get-TargetResource
         $AccessTokens
     )
 
+    Write-Verbose -Message "Getting configuration for the AAD Network Access Forwarding Profile with Id {$Id} and Name {$Name}"
+
     try
     {
         if (-not $Script:exportedInstance -or $Script:exportedInstance.Id -ne $Id)
         {
-            $ConnectionMode = New-M365DSCConnection -Workload 'MicrosoftGraph' `
+            $null = New-M365DSCConnection -Workload 'MicrosoftGraph' `
                 -InboundParameters $PSBoundParameters
 
             #Ensure the proper dependencies are installed in the current environment.
@@ -137,7 +139,7 @@ function Get-TargetResource
             ManagedIdentity       = $ManagedIdentity.IsPresent
         }
 
-        return [System.Collections.Hashtable] $results
+        return $results
     }
     catch
     {
@@ -147,7 +149,7 @@ function Get-TargetResource
             -TenantId $TenantId `
             -Credential $Credential
 
-        return $nullResult
+        throw
     }
 }
 
@@ -177,8 +179,8 @@ function Set-TargetResource
         $DeviceLinks,
 
         [Parameter()]
+        [ValidateSet('Present', 'Absent')]
         [System.String]
-        [ValidateSet('Absent', 'Present')]
         $Ensure = 'Present',
 
         [Parameter()]
@@ -223,13 +225,10 @@ function Set-TargetResource
     #endregion
 
     $currentInstance = Get-TargetResource @PSBoundParameters
-
     $BoundParameters = Remove-M365DSCAuthenticationParameter -BoundParameters $PSBoundParameters
 
     # creating the device links property
-    $deviceLinksHashtable = Convert-M365DSCDRGComplexTypeToHashtable -ComplexObject $BoundParameters.DeviceLinks
-    # renames the odataType property to @odata.type
-    $deviceLinksHashtable = Rename-M365DSCCimInstanceParameter -Properties $deviceLinksHashtable
+    $deviceLinksHashtable = Rename-M365DSCCimInstanceParameter -Properties $BoundParameters.DeviceLinks
 
     #creating the forwarding policies list by getting the ids
     $allForwardingProfiles = Get-MgBetaNetworkAccessForwardingProfile
@@ -324,8 +323,8 @@ function Test-TargetResource
         $DeviceLinks,
 
         [Parameter()]
+        [ValidateSet('Present', 'Absent')]
         [System.String]
-        [ValidateSet('Absent', 'Present')]
         $Ensure = 'Present',
 
         [Parameter()]
@@ -367,7 +366,7 @@ function Test-TargetResource
     #endregion
 
     $result = Test-M365DSCTargetResource -DesiredValues $PSBoundParameters `
-                                         -ResourceName $($MyInvocation.MyCommand.Source).Replace('MSFT_', '')
+        -ResourceName $($MyInvocation.MyCommand.Source).Replace('MSFT_', '')
     return $result
 }
 
@@ -505,7 +504,7 @@ function Export-TargetResource
                     -CIMInstanceName 'AADRemoteNetworkDeviceLink' `
                     -ComplexTypeMapping $complexMapping
 
-                if (-Not [String]::IsNullOrWhiteSpace($complexTypeStringResult))
+                if (-not [String]::IsNullOrWhiteSpace($complexTypeStringResult))
                 {
                     $Results.DeviceLinks = $complexTypeStringResult
                 }
@@ -532,15 +531,13 @@ function Export-TargetResource
     }
     catch
     {
-        Write-M365DSCHost -Message $Global:M365DSCEmojiRedX -CommitWrite
-
         New-M365DSCLogEntry -Message 'Error during Export:' `
             -Exception $_ `
             -Source $($MyInvocation.MyCommand.Source) `
             -TenantId $TenantId `
             -Credential $Credential
 
-        return ''
+        throw
     }
 }
 
@@ -548,7 +545,8 @@ function Get-MicrosoftGraphRemoteNetworkDeviceLinksHashtable
 {
     [CmdletBinding()]
     [OutputType([System.Collections.ArrayList])]
-    param (
+    param
+    (
         [Parameter()]
         [System.Collections.ArrayList]
         $DeviceLinks
@@ -687,4 +685,3 @@ function Get-MicrosoftGraphRemoteNetworkDeviceLinksHashtable
 }
 
 Export-ModuleMember -Function *-TargetResource
-

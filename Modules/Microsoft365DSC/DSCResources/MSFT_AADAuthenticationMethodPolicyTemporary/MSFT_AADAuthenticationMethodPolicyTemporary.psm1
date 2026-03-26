@@ -46,8 +46,8 @@ function Get-TargetResource
         #endregion
 
         [Parameter()]
+        [ValidateSet('Present', 'Absent')]
         [System.String]
-        [ValidateSet('Absent', 'Present')]
         $Ensure = 'Present',
 
         [Parameter()]
@@ -85,7 +85,7 @@ function Get-TargetResource
     {
         if (-not $Script:exportedInstance -or $Script:exportedInstance.Id -ne $Id)
         {
-            $ConnectionMode = New-M365DSCConnection -Workload 'MicrosoftGraph' `
+            $null = New-M365DSCConnection -Workload 'MicrosoftGraph' `
                 -InboundParameters $PSBoundParameters
 
             #Ensure the proper dependencies are installed in the current environment.
@@ -127,24 +127,15 @@ function Get-TargetResource
         foreach ($currentExcludeTargets in $getValue.excludeTargets)
         {
             Write-Verbose -Message "Retrieving ExcludeTarget {$currentExcludeTargets}"
-            $myExcludeTargets = @{}
+            $myExcludeTargets = [ordered]@{}
             if ($currentExcludeTargets.id -ne 'all_users')
             {
-                try
+                $myExcludeTargetsDisplayName = Get-M365DSCGroupDisplayNameById -GroupId $currentExcludeTargets.id
+                if ($null -eq $myExcludeTargetsDisplayName)
                 {
-                    $myExcludeTargetsDisplayName = Get-MgGroup -GroupId $currentExcludeTargets.id -ErrorAction Stop
-                    $myExcludeTargets.Add('Id', $myExcludeTargetsDisplayName.DisplayName)
-                }
-                catch
-                {
-                    $message = "Could not find a group with id $($currentExcludeTargets.id) specified in ExcludeTargets. Skipping group!"
-                    New-M365DSCLogEntry -Message $message `
-                        -Exception $_ `
-                        -Source $($MyInvocation.MyCommand.Source) `
-                        -TenantId $TenantId `
-                        -Credential $Credential
                     continue
                 }
+                $myExcludeTargets.Add('Id', $myExcludeTargetsDisplayName)
             }
             else
             {
@@ -153,10 +144,10 @@ function Get-TargetResource
 
             if ($null -ne $currentExcludeTargets.targetType)
             {
-                $myExcludeTargets.Add('TargetType', $currentExcludeTargets.targetType.toString())
+                $myExcludeTargets.Add('TargetType', $currentExcludeTargets.targetType.ToString())
             }
 
-            if ($myExcludeTargets.values.Where({ $null -ne $_ }).count -gt 0)
+            if ($myExcludeTargets.values.Where({ $null -ne $_ }).Count -gt 0)
             {
                 $complexExcludeTargets += $myExcludeTargets
             }
@@ -164,42 +155,33 @@ function Get-TargetResource
         #endregion
 
         Write-Verbose -Message 'Processing IncludeTargets'
-        $complexincludeTargets = @()
-        foreach ($currentincludeTargets in $getValue.AdditionalProperties.includeTargets)
+        $complexIncludeTargets = @()
+        foreach ($currentIncludeTargets in $getValue.AdditionalProperties.includeTargets)
         {
-            Write-Verbose -Message "Retrieving IncludeTarget {$($currentincludeTargets.id)}"
-            $myincludeTargets = @{}
+            Write-Verbose -Message "Retrieving IncludeTarget {$($currentIncludeTargets.id)}"
+            $myIncludeTargets = [ordered]@{}
             if ($currentIncludeTargets.id -ne 'all_users')
             {
-                try
+                $myIncludeTargetsDisplayName = Get-M365DSCGroupDisplayNameById -GroupId $currentIncludeTargets.id
+                if ($null -eq $myIncludeTargetsDisplayName)
                 {
-                    $myIncludeTargetsDisplayName = Get-MgGroup -GroupId $currentIncludeTargets.id -ErrorAction Stop
-                    $myIncludeTargets.Add('Id', $myIncludeTargetsDisplayName.DisplayName)
-                }
-                catch
-                {
-                    $message = "Could not find a group with id $($currentIncludeTargets.id) specified in IncludeTargets. Skipping group!"
-                    New-M365DSCLogEntry -Message $message `
-                        -Exception $_ `
-                        -Source $($MyInvocation.MyCommand.Source) `
-                        -TenantId $TenantId `
-                        -Credential $Credential
                     continue
                 }
+                $myIncludeTargets.Add('Id', $myIncludeTargetsDisplayName)
             }
             else
             {
                 $myIncludeTargets.Add('Id', $currentIncludeTargets.id)
             }
 
-            if ($null -ne $currentincludeTargets.targetType)
+            if ($null -ne $currentIncludeTargets.targetType)
             {
-                $myincludeTargets.Add('TargetType', $currentincludeTargets.targetType.toString())
+                $myIncludeTargets.Add('TargetType', $currentIncludeTargets.targetType.ToString())
             }
 
-            if ($myincludeTargets.values.Where({ $null -ne $_ }).count -gt 0)
+            if ($myIncludeTargets.values.Where({ $null -ne $_ }).Count -gt 0)
             {
-                $complexincludeTargets += $myincludeTargets
+                $complexIncludeTargets += $myIncludeTargets
             }
         }
 
@@ -220,7 +202,7 @@ function Get-TargetResource
             MaximumLifetimeInMinutes = $getValue.AdditionalProperties.maximumLifetimeInMinutes
             MinimumLifetimeInMinutes = $getValue.AdditionalProperties.minimumLifetimeInMinutes
             ExcludeTargets           = $complexExcludeTargets
-            IncludeTargets           = $complexincludeTargets
+            IncludeTargets           = $complexIncludeTargets
             State                    = $enumState
             Id                       = $getValue.Id
             Ensure                   = 'Present'
@@ -229,12 +211,12 @@ function Get-TargetResource
             TenantId                 = $TenantId
             ApplicationSecret        = $ApplicationSecret
             CertificateThumbprint    = $CertificateThumbprint
-            Managedidentity          = $ManagedIdentity.IsPresent
+            ManagedIdentity          = $ManagedIdentity.IsPresent
             AccessTokens             = $AccessTokens
             #endregion
         }
 
-        return [System.Collections.Hashtable] $results
+        return $results
     }
     catch
     {
@@ -244,7 +226,7 @@ function Get-TargetResource
             -TenantId $TenantId `
             -Credential $Credential
 
-        return $nullResult
+        throw
     }
 }
 
@@ -293,8 +275,8 @@ function Set-TargetResource
         #endregion
 
         [Parameter()]
+        [ValidateSet('Present', 'Absent')]
         [System.String]
-        [ValidateSet('Absent', 'Present')]
         $Ensure = 'Present',
 
         [Parameter()]
@@ -341,52 +323,19 @@ function Set-TargetResource
     #endregion
 
     $currentInstance = Get-TargetResource @PSBoundParameters
-
     $BoundParameters = Remove-M365DSCAuthenticationParameter -BoundParameters $PSBoundParameters
 
     if ($Ensure -eq 'Present')
     {
         Write-Verbose -Message "Updating the Azure AD Authentication Method Policy Temporary with Id {$($currentInstance.Id)}"
 
-        $UpdateParameters = ([Hashtable]$BoundParameters).clone()
+        $UpdateParameters = ([Hashtable]$BoundParameters).Clone()
         $UpdateParameters = Rename-M365DSCCimInstanceParameter -Properties $UpdateParameters
-
         $UpdateParameters.Remove('Id') | Out-Null
 
-        $keys = (([Hashtable]$UpdateParameters).clone()).Keys
-        foreach ($key in $keys)
-        {
-            if ($null -ne $UpdateParameters.$key -and $UpdateParameters.$key.getType().Name -like '*cimInstance*')
-            {
-                $UpdateParameters.$key = Convert-M365DSCDRGComplexTypeToHashtable -ComplexObject $UpdateParameters.$key
-            }
-            if ($key -eq 'IncludeTargets')
-            {
-                $i = 0
-                foreach ($entry in $UpdateParameters.$key)
-                {
-                    if ($entry.id -notmatch '^[0-9a-f]{8}-([0-9a-f]{4}-){3}[0-9a-f]{12}$|all_users')
-                    {
-                        $Filter = "DisplayName eq '$($entry.id -replace "'", "''")'" | Out-String
-                        $UpdateParameters.$key[$i].foreach('id', (Get-MgGroup -Filter $Filter).id.ToString())
-                    }
-                    $i++
-                }
-            }
-            if ($key -eq 'ExcludeTargets')
-            {
-                $i = 0
-                foreach ($entry in $UpdateParameters.$key)
-                {
-                    if ($entry.id -notmatch '^[0-9a-f]{8}-([0-9a-f]{4}-){3}[0-9a-f]{12}$|all_users')
-                    {
-                        $Filter = "DisplayName eq '$($entry.id -replace "'", "''")'" | Out-String
-                        $UpdateParameters.$key[$i].foreach('id', (Get-MgGroup -Filter $Filter).id.ToString())
-                    }
-                    $i++
-                }
-            }
-        }
+        Update-M365DSCAuthenticationTargets -Targets $UpdateParameters.ExcludeTargets
+        Update-M365DSCAuthenticationTargets -Targets $UpdateParameters.IncludeTargets
+
         #region resource generator code
         $UpdateParameters.Add('@odata.type', '#microsoft.graph.temporaryAccessPassAuthenticationMethodConfiguration')
         Update-MgBetaPolicyAuthenticationMethodPolicyAuthenticationMethodConfiguration  `
@@ -449,8 +398,8 @@ function Test-TargetResource
         #endregion
 
         [Parameter()]
+        [ValidateSet('Present', 'Absent')]
         [System.String]
-        [ValidateSet('Absent', 'Present')]
         $Ensure = 'Present',
 
         [Parameter()]
@@ -492,7 +441,7 @@ function Test-TargetResource
     #endregion
 
     $result = Test-M365DSCTargetResource -DesiredValues $PSBoundParameters `
-                                         -ResourceName $($MyInvocation.MyCommand.Source).Replace('MSFT_', '')
+        -ResourceName $($MyInvocation.MyCommand.Source).Replace('MSFT_', '')
     return $result
 }
 
@@ -585,7 +534,7 @@ function Export-TargetResource
                 TenantId              = $TenantId
                 ApplicationSecret     = $ApplicationSecret
                 CertificateThumbprint = $CertificateThumbprint
-                Managedidentity       = $ManagedIdentity.IsPresent
+                ManagedIdentity       = $ManagedIdentity.IsPresent
                 AccessTokens          = $AccessTokens
             }
 
@@ -596,7 +545,7 @@ function Export-TargetResource
                 $complexTypeStringResult = Get-M365DSCDRGComplexTypeToString `
                     -ComplexObject $Results.ExcludeTargets `
                     -CIMInstanceName 'AADAuthenticationMethodPolicyTemporaryExcludeTarget'
-                if (-Not [String]::IsNullOrWhiteSpace($complexTypeStringResult))
+                if (-not [String]::IsNullOrWhiteSpace($complexTypeStringResult))
                 {
                     $Results.ExcludeTargets = $complexTypeStringResult
                 }
@@ -611,7 +560,7 @@ function Export-TargetResource
                 $complexTypeStringResult = Get-M365DSCDRGComplexTypeToString `
                     -ComplexObject $Results.IncludeTargets `
                     -CIMInstanceName 'AADAuthenticationMethodPolicyTemporaryIncludeTarget'
-                if (-Not [String]::IsNullOrWhiteSpace($complexTypeStringResult))
+                if (-not [String]::IsNullOrWhiteSpace($complexTypeStringResult))
                 {
                     $Results.IncludeTargets = $complexTypeStringResult
                 }
@@ -638,17 +587,14 @@ function Export-TargetResource
     }
     catch
     {
-        Write-M365DSCHost -Message $Global:M365DSCEmojiRedX -CommitWrite
-
         New-M365DSCLogEntry -Message 'Error during Export:' `
             -Exception $_ `
             -Source $($MyInvocation.MyCommand.Source) `
             -TenantId $TenantId `
             -Credential $Credential
 
-        return ''
+        throw
     }
 }
 
 Export-ModuleMember -Function *-TargetResource
-

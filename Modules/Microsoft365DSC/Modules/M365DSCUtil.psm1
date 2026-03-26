@@ -1,17 +1,158 @@
 #region Session Objects
 $Global:SessionSecurityCompliance = $null
+[hashtable]$Script:M365DSCTelemetryConnectionToGraphParams = @{}
 #endregion
 
-#region Extraction Modes
-$Global:DefaultComponents = @('SPOApp', 'SPOSiteDesign')
+$Script:M365DSCWorkloads = @('AAD', 'ADO', 'AZURE', 'COMMERCE', 'DEFENDER', 'EXO', 'FABRIC', 'INTUNE', 'O365', 'OD', 'PLANNER', 'PP', 'SC', 'SENTINEL', 'SH', 'SPO', 'TEAMS')
+$Script:M365DSCDependenciesValidated = $false
+$Script:IsPowerShellCore = $PSVersionTable.PSEdition -eq 'Core'
+$Script:IsPsResourceGetAvailable = $null -ne (Get-Module -Name Microsoft.PowerShell.PSResourceGet -ListAvailable)
+$Script:M365DSCStringReplacementMap = @{}
+if ($null -eq $Script:M365DSCDependencies)
+{
+    $Script:M365DSCDependencies = [System.Collections.Generic.Dictionary[System.String, System.Object]]::new([System.StringComparer]::OrdinalIgnoreCase)
+    $dependencies = (Import-PowerShellDataFile "$PSScriptRoot/../Dependencies/Manifest.psd1").Dependencies
+    foreach ($dependency in $dependencies)
+    {
+        # TODO: Review again once ModuleFast can work with additional properties
+        # https://github.com/microsoft/Microsoft365DSC/pull/6726
+        # https://github.com/ykuijs/M365DSC_CICD/issues/53
+        if ($dependency.ModuleName -eq 'PnP.PowerShell')
+        {
+            $dependency.DependsOn = @('Microsoft.Graph.Authentication')
+        }
+        $Script:M365DSCDependencies.Add($dependency.ModuleName, $dependency)
+    }
 
-$Global:FullComponents = @('AADRoleManagementPolicyRule', 'AADGroup', 'AADServicePrincipal', 'ADOSecurityPolicy', 'AzureSubscription','FabricAdminTenantSettings', `
-        'DefenderSubscriptionPlan', 'EXOCalendarProcessing', 'EXODistributionGroup', 'EXOMailboxAutoReplyConfiguration', `
-        'EXOMailboxPermission','EXOMailboxCalendarFolder','EXOMailboxSettings', 'EXOManagementRole', 'O365Group', 'AADUser', `
-        'PlannerPlan', 'PlannerBucket', 'PlannerTask', 'PPPowerAppsEnvironment', 'PPTenantSettings', 'SentinelSetting', 'SentinelWatchlist', `
-        'SPOSiteAuditSettings', 'SPOSiteGroup', 'SPOSite', 'SPOUserProfileProperty', 'SPOPropertyBag', 'TeamsTeam', 'TeamsChannel', `
-        'TeamsUser', 'TeamsChannelTab', 'TeamsOnlineVoicemailUserSettings', 'TeamsUserCallingSettings', 'TeamsUserPolicyAssignment')
-#endregion
+    $commandToModuleMap = @{}
+    $Script:M365DSCResourceSettings = [System.Collections.Generic.Dictionary[System.String, System.Object]]::new([System.StringComparer]::OrdinalIgnoreCase)
+    foreach ($file in (Get-ChildItem -Path "$PSScriptRoot/../DSCResources" -Filter 'settings.json' -Recurse))
+    {
+        Write-Verbose -Message "Processing settings.json file at path: $($file.FullName)"
+        $jsonContent = [System.IO.File]::ReadAllText($file.FullName) | ConvertFrom-Json
+        foreach ($commandMap in $jsonContent.commands)
+        {
+            $commandToModuleMap[$commandMap.module] += @($commandMap.cmdlets)
+        }
+        $directoryName = (Split-Path -Path $file.DirectoryName -Leaf).Replace('MSFT_', '')
+        $Script:M365DSCResourceSettings.Add($directoryName, @{
+            requiredModules = $jsonContent.requiredModules
+            commands        = $jsonContent.commands
+            mode            = $jsonContent.mode
+        })
+    }
+
+    Write-Verbose -Message 'Loading current configuration from config.json'
+    $Script:M365DSCValidatedDependencies = [System.Collections.Generic.List[System.String]]::new($Script:M365DSCDependencies.Count)
+    $configAsPsCustomObject = Get-Content -Path "$PSScriptRoot/../config.json" | ConvertFrom-Json
+    $configAsHashtable = @{}
+    foreach ($property in $configAsPsCustomObject.PSObject.Properties)
+    {
+        $configAsHashtable.Add($property.Name, $property.Value)
+    }
+    $Script:CurrentConfiguration = $configAsHashtable
+    $globalRequiredModules = $Script:CurrentConfiguration.requiredModules
+    foreach ($entry in $commandToModuleMap.GetEnumerator())
+    {
+        $sortedFunctions = @($globalRequiredModules.$($entry.Key)) + @($entry.Value) | Sort-Object -Unique
+        $Script:M365DSCDependencies[$entry.Key].Commands = $sortedFunctions
+    }
+    $Script:M365DSCRequiredModules = @($globalRequiredModules.psobject.Properties.Name)
+    $Script:M365DSCRequiredModulesLoaded = $false
+}
+
+function Get-M365DSCModuleConfiguration
+{
+    [CmdletBinding()]
+    [OutputType([System.Collections.Hashtable])]
+    param()
+
+    return $Script:CurrentConfiguration.Clone()
+}
+
+function Set-M365DSCModuleConfiguration
+{
+    [CmdletBinding()]
+    param
+    (
+        [Parameter(Mandatory = $true)]
+        [System.String]
+        $Key,
+
+        [Parameter(Mandatory = $true)]
+        [AllowEmptyCollection()]
+        [AllowEmptyString()]
+        [AllowNull()]
+        [System.Object]
+        $Value
+    )
+
+    $Script:CurrentConfiguration.$Key = $Value
+}
+
+<#
+.DESCRIPTION
+    This function retrieves the resources available in the M365DSC project based on the specified export mode.
+
+.FUNCTIONALITY
+    Public
+
+.PARAMETER Mode
+    Specifies the mode of the export. Valid values are 'Default' and 'Full'.
+    - 'Default' includes only configuration resources.
+    - 'Full' includes all resources, both configuration and data.
+
+.PARAMETER ExcludeConfigurationResources
+    If specified, configuration resources will be excluded from the results. Works only for the 'Full' mode.
+
+.EXAMPLE
+    Get-M365DSCResourcesByExportMode -Mode 'Default'
+
+    This command retrieves all resources that are available in the Default export mode.
+
+.EXAMPLE
+    Get-M365DSCResourcesByExportMode -Mode 'Full'
+
+    This command retrieves all resources that are available in the Full export mode.
+
+.OUTPUTS
+    [System.String[]] - An array of resource names that match the specified export mode.
+#>
+function Get-M365DSCResourcesByExportMode
+{
+    [CmdletBinding()]
+    [OutputType([System.String[]])]
+    param
+    (
+        [Parameter(Mandatory = $true)]
+        [ValidateSet('Default', 'Full')]
+        [System.String]
+        $Mode,
+
+        [Parameter(Mandatory = $false)]
+        [switch]
+        $ExcludeConfigurationResources
+    )
+
+    $resources = [System.Collections.Generic.List[System.String]]::new($Script:M365DSCResourceSettings.Keys.Count)
+    foreach ($resource in $Script:M365DSCResourceSettings.Keys)
+    {
+        if ($Mode -eq 'Default' -and $Script:M365DSCResourceSettings[$resource].mode -eq 'Configuration')
+        {
+            $resources.Add($resource)
+        }
+        elseif ($Mode -eq 'Full')
+        {
+            if ($ExcludeConfigurationResources -and $Script:M365DSCResourceSettings[$resource].mode -eq 'Configuration')
+            {
+                continue
+            }
+            $resources.Add($resource)
+        }
+    }
+
+    return $resources.ToArray()
+}
 
 <#
 .Description
@@ -286,7 +427,7 @@ function Compare-PSCustomObjectArrays
                 $propertyName = $property.Name
 
                 if ((-not [System.String]::IsNullOrEmpty($DesiredEntry.$PropertyName) -and -not [System.String]::IsNullOrEmpty($EquivalentEntryInCurrent.$PropertyName)) -and `
-                    $DesiredEntry.$PropertyName -ne $EquivalentEntryInCurrent.$PropertyName)
+                        $DesiredEntry.$PropertyName -ne $EquivalentEntryInCurrent.$PropertyName)
                 {
                     $drift = $true
                     if ($DesiredEntry.$PropertyName.GetType().Name -eq 'String' -and $DesiredEntry.$PropertyName.Contains('$OrganizationName'))
@@ -342,7 +483,7 @@ function Compare-PSCustomObjectArrays
                 $propertyName = $property.Name
 
                 if ((-not [System.String]::IsNullOrEmpty($fixedEntry.$PropertyName) -and -not [System.String]::IsNullOrEmpty($EquivalentEntryInDesired.$PropertyName)) -and `
-                    $fixedEntry.$PropertyName -ne $EquivalentEntryInDesired.$PropertyName)
+                        $fixedEntry.$PropertyName -ne $EquivalentEntryInDesired.$PropertyName)
                 {
                     $drift = $true
                     if ($fixedEntry.$PropertyName.GetType().Name -eq 'String' -and $fixedEntry.$PropertyName.Contains('$OrganizationName'))
@@ -408,6 +549,39 @@ function Get-M365DSCTenantNameFromParameterSet
 }
 
 <#
+.DESCRIPTION
+    This function converts a property value to an array of specified element type.
+
+.FUNCTIONALITY
+    Internal
+#>
+function Get-M365DSCArrayFromProperty
+{
+    [CmdletBinding()]
+    [OutputType([System.Array])]
+    param
+    (
+        [Parameter(Mandatory = $true)]
+        [AllowEmptyCollection()]
+        [AllowNull()]
+        [System.Object]
+        $PropertyValue,
+
+        [Parameter(Mandatory = $false)]
+        [System.Type]
+        $ElementType = [System.Object]
+    )
+
+    $array = [System.Array]::CreateInstance($ElementType, 0)
+    foreach ($item in $PropertyValue)
+    {
+        $array += $item
+    }
+
+    ,$array
+}
+
+<#
 .Description
 This function tests if the DSC hashtables have the same values
 
@@ -437,20 +611,20 @@ function Test-M365DSCParameterState
         $Source = 'Generic',
 
         [Parameter(Position = 5)]
-        [System.String]
-        $Tenant,
-
-        [Parameter(Position = 6)]
         [System.Collections.Hashtable]
         $IncludedDrifts,
 
-        [Parameter(Position = 7)]
+        [Parameter(Position = 6)]
         [switch]
         $NoEventMessage,
 
-        [Parameter(Position = 8)]
+        [Parameter(Position = 7)]
         [switch]
-        $NoDriftReset
+        $NoDriftReset,
+
+        [Parameter(Position = 8)]
+        [System.String[]]
+        $ExcludedProperties
     )
 
     $startTime = [System.DateTime]::Now
@@ -481,7 +655,7 @@ function Test-M365DSCParameterState
 
     $ConnectionMode = Get-M365DSCAuthenticationMode $DesiredValues
     $dataEvaluation.Add('ConnectionMode', $ConnectionMode)
-    $ValuesToCheckData = $ValuesToCheck | Where-Object -FilterScript {$_ -ne 'Verbose'}
+    $ValuesToCheckData = $ValuesToCheck | Where-Object -FilterScript { $_ -ne 'Verbose' }
     $dataEvaluation.Add('Parameters', $ValuesToCheckData -join "`r`n")
     $dataEvaluation.Add('ParametersCount', $ValuesToCheckData.Length)
     Add-M365DSCTelemetryEvent -Type 'DriftEvaluation' -Data $dataEvaluation
@@ -500,10 +674,10 @@ function Test-M365DSCParameterState
         foreach ($existingDrift in $IncludedDrifts)
         {
             $propertyName = $existingDrift.Keys[0]
-            $value =  $existingDrift."$propertyName"
+            $value = $existingDrift."$propertyName"
             $start = $value.IndexOf('</CurrentValue>')
             $currentValue = $value.Substring(0, $start).Replace('<CurrentValue>', '')
-            $desiredValue = $value.Substring($start+15, ($value.Length)-($start+15)).Replace('<DesiredValue>', '').Replace('</DesiredValue>', '')
+            $desiredValue = $value.Substring($start + 15, ($value.Length) - ($start + 15)).Replace('<DesiredValue>', '').Replace('</DesiredValue>', '')
             $DriftObject.DriftInfo.Add($propertyName, @{
                 PropertyName = $propertyName
                 CurrentValue = $currentValue
@@ -513,15 +687,16 @@ function Test-M365DSCParameterState
         $returnValue = $false
     }
 
-    if (($DesiredValues.GetType().Name -ne 'HashTable') `
-            -and ($DesiredValues.GetType().Name -ne 'CimInstance') `
-            -and ($DesiredValues.GetType().Name -ne 'PSBoundParametersDictionary'))
+    $desiredTypeName = $DesiredValues.GetType().Name
+    if (($desiredTypeName -ne 'HashTable') `
+            -and ($desiredTypeName -ne 'CimInstance') `
+            -and ($desiredTypeName -ne 'PSBoundParametersDictionary'))
     {
         throw ("Property 'DesiredValues' in Test-M365DSCParameterState must be either a " + `
-                "Hashtable or CimInstance. Type detected was $($DesiredValues.GetType().Name)")
+                "Hashtable or CimInstance. Type detected was $($desiredTypeName)")
     }
 
-    if (($DesiredValues.GetType().Name -eq 'CimInstance') -and ($null -eq $ValuesToCheck))
+    if (($desiredTypeName -eq 'CimInstance') -and ($null -eq $ValuesToCheck))
     {
         throw ("If 'DesiredValues' is a CimInstance then property 'ValuesToCheck' must contain " + `
                 'a value')
@@ -546,19 +721,21 @@ function Test-M365DSCParameterState
         }
     }
 
+    $propertiesToExclude = @('Verbose', 'Credential', 'ApplicationId', 'CertificateThumbprint', 'CertificatePath', 'CertificatePassword', 'TenantId', 'ApplicationSecret', 'ManagedIdentity', 'AccessTokens')
+    if ($null -ne $ExcludedProperties)
+    {
+        $propertiesToExclude += $ExcludedProperties
+        $propertiesToExclude = $propertiesToExclude | Select-Object -Unique
+    }
     $KeyList | ForEach-Object -Process {
-        if (($_ -ne 'Verbose') -and ($_ -ne 'Credential') `
-                -and ($_ -ne 'ApplicationId') -and ($_ -ne 'CertificateThumbprint') `
-                -and ($_ -ne 'CertificatePath') -and ($_ -ne 'CertificatePassword') `
-                -and ($_ -ne 'TenantId') -and ($_ -ne 'ApplicationSecret') `
-                -and ($_ -ne 'ManagedIdentity') -and ($_ -ne 'AccessTokens'))
+        if ($_ -notin $propertiesToExclude)
         {
-            if (($CurrentValues.ContainsKey($_) -eq $false) `
-                    -or ($CurrentValues.$_ -ne $DesiredValues.$_) `
-                    -or (($DesiredValues.ContainsKey($_) -eq $true) -and ($null -ne $DesiredValues.$_ -and $DesiredValues.$_.GetType().IsArray)))
+            if (-not $CurrentValues.ContainsKey($_) `
+                    -or $CurrentValues.$_ -ne $DesiredValues.$_ `
+                    -or ($DesiredValues.ContainsKey($_) -eq $true -and ($null -ne $DesiredValues.$_ -and $DesiredValues.$_.GetType().IsArray)))
             {
-                if ($DesiredValues.GetType().Name -eq 'HashTable' -or `
-                        $DesiredValues.GetType().Name -eq 'PSBoundParametersDictionary')
+                if ($desiredTypeName -eq 'HashTable' -or `
+                        $desiredTypeName -eq 'PSBoundParametersDictionary')
                 {
                     $CheckDesiredValue = $DesiredValues.ContainsKey($_)
                 }
@@ -619,7 +796,7 @@ function Test-M365DSCParameterState
                             {
                                 $arrayCompare = $null
                                 if ($CurrentValues.$fieldName.GetType().Name -ne 'CimInstance' -and `
-                                    $CurrentValues.$fieldName.GetType().Name -ne 'CimInstance[]')
+                                        $CurrentValues.$fieldName.GetType().Name -ne 'CimInstance[]')
                                 {
                                     $arrayCompare = Compare-PSCustomObjectArrays -CurrentValues $CurrentValues.$fieldName `
                                         -DesiredValues $AllDesiredValuesAsArray
@@ -670,11 +847,11 @@ function Test-M365DSCParameterState
                                     Write-Verbose -Message "$($_.InputObject) - $($_.SideIndicator)"
                                 }
 
-                                $EventValue = "<CurrentValue>$($CurrentValues.$fieldName)</CurrentValue>"
-                                $EventValue += "<DesiredValue>$($DesiredValues.$fieldName)</DesiredValue>"
+                                $EventValue = "<CurrentValue>$($CurrentValues.$fieldName -join ', ')</CurrentValue>"
+                                $EventValue += "<DesiredValue>$($DesiredValues.$fieldName -join ', ')</DesiredValue>"
                                 $DriftObject.DriftInfo.Add($fieldName, @{
-                                    CurrentValue = $CurrentValues.$fieldName
-                                    DesiredValue = $DesiredValues.$fieldName
+                                    CurrentValue = $CurrentValues.$fieldName -join ', '
+                                    DesiredValue = $DesiredValues.$fieldName -join ', '
                                 })
                                 $DriftedParameters.Add($fieldName, $EventValue)
                                 $returnValue = $false
@@ -695,6 +872,7 @@ function Test-M365DSCParameterState
                                     }
                                     catch
                                     {
+                                        Write-Warning -Message "Could not replace line breaks in current value of property $fieldName"
                                     }
                                 }
                                 if (-not [string]::IsNullOrEmpty($DesiredValues.$fieldName))
@@ -705,6 +883,7 @@ function Test-M365DSCParameterState
                                     }
                                     catch
                                     {
+                                        Write-Warning -Message "Could not replace line breaks in desired value of property $fieldName"
                                     }
                                 }
 
@@ -716,7 +895,7 @@ function Test-M365DSCParameterState
                                 elseif (-not [string]::IsNullOrEmpty($CurrentValues.$fieldName) -and
                                     -not [string]::IsNullOrEmpty($DesiredValues.$fieldName) -and
                                     [string]::Equals($CurrentValues.$fieldName, $DesiredValues.$fieldName,
-                                    [System.StringComparison]::Ordinal))
+                                        [System.StringComparison]::Ordinal))
                                 {
                                 }
                                 else
@@ -737,7 +916,7 @@ function Test-M365DSCParameterState
                                     $returnValue = $false
                                 }
                             }
-                            'Int32'
+                            { $_ -eq 'Int32' -or $_ -eq 'UInt32' }
                             {
                                 if (($DesiredValues.$fieldName -eq 0) `
                                         -and ($null -eq $CurrentValues.$fieldName))
@@ -934,22 +1113,29 @@ function Test-M365DSCParameterState
         $LCMState = $null
         try
         {
-            $LCMInfo = Get-DscLocalConfigurationManager -ErrorAction Stop
+            if (([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator))
+            {
+                $LCMInfo = Get-DscLocalConfigurationManager -ErrorAction Stop
 
-            if ($LCMInfo.LCMStateDetail -eq 'LCM is performing a consistency check.' -or `
-                    $LCMInfo.LCMStateDetail -eq 'LCM exécute une vérification de cohérence.' -or `
-                    $LCMInfo.LCMStateDetail -eq 'LCM führt gerade eine Konsistenzüberprüfung durch.')
-            {
-                $LCMState = 'ConsistencyCheck'
+                if ($LCMInfo.LCMStateDetail -eq 'LCM is performing a consistency check.' -or `
+                        $LCMInfo.LCMStateDetail -eq 'LCM exécute une vérification de cohérence.' -or `
+                        $LCMInfo.LCMStateDetail -eq 'LCM führt gerade eine Konsistenzüberprüfung durch.')
+                {
+                    $LCMState = 'ConsistencyCheck'
+                }
+                elseif ($LCMInfo.LCMStateDetail -eq 'LCM is testing node against the configuration.')
+                {
+                    $LCMState = 'ManualTestDSCConfiguration'
+                }
+                elseif ($LCMInfo.LCMStateDetail -eq 'LCM is applying a new configuration.' -or `
+                        $LCMInfo.LCMStateDetail -eq 'LCM applique une nouvelle configuration.')
+                {
+                    $LCMState = 'Initial'
+                }
             }
-            elseif ($LCMInfo.LCMStateDetail -eq 'LCM is testing node against the configuration.')
+            else
             {
-                $LCMState = 'ManualTestDSCConfiguration'
-            }
-            elseif ($LCMInfo.LCMStateDetail -eq 'LCM is applying a new configuration.' -or `
-                    $LCMInfo.LCMStateDetail -eq 'LCM applique une nouvelle configuration.')
-            {
-                $LCMState = 'Initial'
+                $LCMState = 'Unauthorized'
             }
         }
         catch
@@ -1055,7 +1241,7 @@ function Test-M365DSCParameterState
     }
 
     $timeTaken = [System.DateTime]::Now.Subtract($startTime).TotalMilliseconds
-    $data  = [System.Collections.Generic.Dictionary[[String], [String]]]::new()
+    $data = [System.Collections.Generic.Dictionary[[String], [String]]]::new()
     $data.Add('Resource', $Source)
     $data.Add('Method', 'Test-M365DSCParameterState')
     $data.Add('TimeTakenMilliseconds', $timeTaken)
@@ -1070,6 +1256,12 @@ function Test-M365DSCParameterState
 <#
 .Description
     Centralized method to evaluate the result of the various Test-TargetResource functions
+
+.PARAMETER PostProcessing
+    Optional Func delegate that allows custom processing of the DesiredValues, CurrentValues and ValuesToCheck.
+    The function receives three hashtable parameters: DesiredValues, CurrentValues (from Get-TargetResource) and ValuesToCheck.
+    Additionally, it gets an array of objects as PostProcessingArgs.
+    The delegate must return a Tuple[Hashtable, Hashtable, Hashtable] where Item1 is the processed DesiredValues, Item2 is the processed CurrentValues and Item3 is the processed ValuesToCheck.
 
 .FUNCTIONALITY
     Internal
@@ -1091,6 +1283,18 @@ function Test-M365DSCTargetResource
         [System.String[]]
         $ExcludedProperties,
 
+        [Parameter()]
+        [System.String[]]
+        $IncludedProperties,
+
+        [Parameter()]
+        [System.Func[Hashtable, Hashtable, Hashtable, [Object[]], Tuple[Hashtable, Hashtable, Hashtable]]]
+        $PostProcessing,
+
+        [Parameter()]
+        [System.Object[]]
+        $PostProcessingArgs = @(),
+
         [Parameter(
             ParameterSetName = 'PassThru'
         )]
@@ -1107,6 +1311,12 @@ function Test-M365DSCTargetResource
 
     #Ensure the proper dependencies are installed in the current environment.
     Confirm-M365DSCDependencies
+
+    if ($null -eq (Get-Module -Name 'M365DSCCompare'))
+    {
+        $compareModulePath = Join-Path -Path $PSScriptRoot -ChildPath 'M365DSCCompare.psm1'
+        Import-Module -Name $compareModulePath -Force
+    }
 
     # Retrieve the primary keys of the given resource and remove them from the list of values to check.
     $currentPath = $PSScriptRoot
@@ -1127,124 +1337,116 @@ function Test-M365DSCTargetResource
     }
     $finalString = $keyStrings -join ' and '
 
-    Write-Verbose -Message "Testing configuration of the $ResourceName with $finalString"
+    $Verbose = $false
+    if ($DesiredValues.Verbose -eq $true)
+    {
+        $Verbose = $true
+    }
+
+    Write-Verbose -Message "Testing configuration of the $ResourceName with $finalString" -Verbose:$Verbose
 
     $CurrentValues = & MSFT_$ResourceName\Get-TargetResource @DesiredValues
-    $ValuesToCheck = ([Hashtable]$DesiredValues).Clone()
-    $ValuesToCheck.Remove('Id') | Out-Null
-    $ValuesToCheck.Remove('Identity') | Out-Null
 
-    # Remove the key parameters from the comparison
-    foreach ($keyToRemove in $resourceKeys)
-    {
-        $ValuesToCheck.Remove($keyToRemove.Name) | Out-Null
-    }
-
-    # Remove PSCredential object from the list of properties to be evaluated
-    $credentialProperties = $resourceDefinition.Parameters | Where-Object -FilterScript { $_.CIMType -eq 'MSFT_Credential' }
-    foreach ($property in $credentialProperties)
-    {
-        $ValuesToCheck.Remove($property.Name) | Out-Null
-    }
-
-    # Remove the ExcludedProperties from the list of properties to be evaluated
-    foreach ($property in $ExcludedProperties)
-    {
-        $ValuesToCheck.Remove($property) | Out-Null
-    }
-
-    $testTargetResource = $true
-
-    # Compare Cim instances
-    $desiredKeys = ([Hashtable]$DesiredValues).Clone().Keys
-    foreach ($key in $desiredKeys)
-    {
-        $source = $DesiredValues.$key
-        $target = $CurrentValues.$key
-        if ($null -ne $source -and $source.GetType().Name -like '*CimInstance*')
-        {
-            $CIMProperty = $resourceDefinition.Parameters | Where-Object -FilterScript { $_.Name -eq $key }
-            $CIMName = $CIMProperty.CIMType.Replace('[]', '')
-            $CIMDefinition = $Script:M365DSCSchema | Where-Object -FilterScript { $_.ClassName -eq $CIMName }
-            $CIMPrimaryKeys = $CIMDefinition.Parameters | Where-Object -FilterScript { $_.Option -eq 'Required' }
-
-            $targetObjects = @{}
-            if ($source.GetType().Name -eq 'CimInstance[]')
-            {
-                $targetObjects = @()
-            }
-
-            foreach ($targetObject in $target)
-            {
-                foreach ($primaryKey in $CIMPrimaryKeys.Name)
-                {
-                    $targetObject.Remove($primaryKey) | Out-Null
-                }
-
-                if ($targetObjects -is [array])
-                {
-                    $targetObjects += $targetObject
-                }
-                else
-                {
-                    $targetObjects = $targetObject
-                }
-            }
-
-            $testResult = Compare-M365DSCComplexObjectV2 `
-                -Source ($source) `
-                -Target ($targetObjects) `
-                -PropertyName $key
-
-            if (-not $testResult)
-            {
-                Write-Verbose "TestResult returned False for $source"
-                $testTargetResource = $false
-            }
-
-            $DesiredValues.Remove($key) | Out-Null
-            $ValuesToCheck.Remove($key) | Out-Null
-        }
-    }
-
-    Write-Verbose -Message "Current Values: $(Convert-M365DscHashtableToString -Hashtable $CurrentValues)"
-    Write-Verbose -Message "Target Values: $(Convert-M365DscHashtableToString -Hashtable $ValuesToCheck)"
-
-    $testResult = Test-M365DSCParameterState -CurrentValues $CurrentValues `
-            -Source $ResourceName `
-            -DesiredValues $DesiredValues `
-            -ValuesToCheck $ValuesToCheck.Keys `
-            -NoEventMessage `
-            -NoDriftReset
-
-    Write-Verbose -Message "Test-M365DSCTargetResource returned $testResult"
-
-    if (-not $testResult)
-    {
-        $testTargetResource = $false
-    }
+    $testTargetResource = Compare-M365DSCResourceState -ResourceName $ResourceName `
+        -DesiredValues $DesiredValues `
+        -CurrentValues $CurrentValues `
+        -ExcludedProperties $ExcludedProperties `
+        -IncludedProperties $IncludedProperties `
+        -PostProcessing $PostProcessing `
+        -PostProcessingArgs $PostProcessingArgs
 
     if (-not $testTargetResource)
     {
         $TenantName = Get-M365DSCTenantNameFromParameterSet -ParameterSet $DesiredValues
         Write-M365DSCDriftsToEventLog -Drifts $Global:AllDrifts `
-                                      -ResourceName $ResourceName `
-                                      -TenantName $TenantName `
-                                      -CurrentValues $CurrentValues `
-                                      -DesiredValues $DesiredValues
+            -ResourceName $ResourceName `
+            -TenantName $TenantName `
+            -CurrentValues $CurrentValues `
+            -DesiredValues $DesiredValues `
+            -Verbose:$Verbose
     }
+
+    Write-Verbose -Message "Test-M365DSCTargetResource returned $testTargetResource" -Verbose:$Verbose
 
     if ($PassThru)
     {
         return @{
-            ResourceName = $ResourceName
-            CurrentValues = $CurrentValues
-            DesiredValues = $DesiredValues
+            ResourceName       = $ResourceName
+            CurrentValues      = $CurrentValues
+            DesiredValues      = $DesiredValues
             TestTargetResource = $testTargetResource
         }
     }
 
     return $testTargetResource
+}
+
+<#
+.DESCRIPTION
+    Sets the script scoped variable that holds all the M365DSC resources.
+
+.PARAMETER DscResourceDictionary
+    A dictionary containing all the M365DSC resources.
+
+.FUNCTIONALITY
+    Internal
+#>
+function Set-M365DSCAllResourcesDictionary
+{
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory = $true)]
+        $DscResourceDictionary
+    )
+
+    $Script:AllM365DSCResources = $DscResourceDictionary
+}
+
+<#
+.DESCRIPTION
+    Retrieves the script scoped variable that holds all the M365DSC resources.
+
+.FUNCTIONALITY
+    Internal
+#>
+function Get-M365DSCAllResourcesDictionary
+{
+    [CmdletBinding()]
+    param()
+
+    $Script:AllM365DSCResources
+}
+
+<#
+.DESCRIPTION
+    Initializes the script scoped variable that holds all the M365DSC resources.
+
+.FUNCTIONALITY
+    Internal
+#>
+function Initialize-M365DSCAllResourcesDictionary
+{
+    [CmdletBinding()]
+    param()
+
+    if ($null -eq $Script:AllM365DSCResources -and -not $Global:IsTestEnvironment)
+    {
+        $Script:AllM365DSCResources = [System.Collections.Generic.Dictionary[System.String, System.Object]]::new([System.StringComparer]::InvariantCultureIgnoreCase)
+        if ($Script:IsPowerShellCore)
+        {
+            Import-Module -Name 'PSDesiredStateConfiguration' -RequiredVersion 2.0.7 -Prefix 'Pwsh' -Force
+            $resources = Get-PwshDscResource -Module 'Microsoft365Dsc'
+        }
+        else
+        {
+            $currentModule = Get-Module -Name 'Microsoft365DSC'
+            $resources = Get-DscResource -Module 'Microsoft365Dsc' | Where-Object Version -EQ $currentModule.Version
+        }
+        foreach ($resource in $resources)
+        {
+            $Script:AllM365DSCResources.Add($resource.Name, $resource)
+        }
+    }
 }
 
 <#
@@ -1273,7 +1475,7 @@ Specifies the components to skip when creating the export
 Specifies the workload for which an export should be created for all resources.
 
 .Parameter Mode
-Specifies the mode of the export: Lite, Default or Full.
+Specifies the mode of the export: Default or Full.
 
 .Parameter GenerateInfo
 Specifies if each exported resource should get a link to the Wiki article of the resource.
@@ -1302,11 +1504,23 @@ Specifies the path of the PFX file which is used for authentication.
 .Parameter Filters
 Specifies resource level filters to apply in order to reduce the number of instances exported.
 
+.PARAMETER AccessTokens
+    Specifies the access token to use for authentication.
+
 .Parameter ManagedIdentity
 Specifies use of managed identity for authentication.
 
 .Parameter Validate
 Specifies that the configuration needs to be validated for conflicts or issues after its extraction is completed.
+
+.PARAMETER Parallel
+    Specifies that the export is executed in parallel.
+
+.PARAMETER TokenReplacement
+    Specifies the hashtable to use for token replacement. Key is the value to replace, and the value is the variable to use for replacement without the '$' sign.
+
+.PARAMETER WithStatistics
+    Specifies that statistics about the export should be shown after completion.
 
 .Example
 Export-M365DSCConfiguration -Components @("AADApplication", "AADConditionalAccessPolicy", "AADGroupsSettings") -Credential $Credential
@@ -1318,7 +1532,7 @@ Export-M365DSCConfiguration -Mode 'Default' -ApplicationId '2560bb7c-bc85-415f-a
 Export-M365DSCConfiguration -Components @("AADApplication", "AADConditionalAccessPolicy", "AADGroupsSettings") -Credential $Credential -Path 'C:\DSC' -FileName 'MyConfig.ps1'
 
 .Example
-Export-M365DSCConfiguration -Credential $Credential -Filters @{AADApplication = "DisplayName eq 'MyApp'"}
+Export-M365DSCConfiguration -Credential $Credential -Filters @{AADApplication = "DisplayName eq 'MyApp'"} -TokenReplacement @{ 'alternate-email.onmicrosoft.com' = 'AlternateEmail' }
 
 .Example
 Export-M365DSCConfiguration -Workloads @("SPO") -ExcludeComponents @("SPOPropertyBag") -Credential $Credential
@@ -1361,7 +1575,7 @@ function Export-M365DSCConfiguration
         $Workloads,
 
         [Parameter(ParameterSetName = 'Export')]
-        [ValidateSet('Lite', 'Default', 'Full')]
+        [ValidateSet('Default', 'Full')]
         [System.String]
         $Mode = 'Default',
 
@@ -1379,34 +1593,19 @@ function Export-M365DSCConfiguration
 
         [Parameter(ParameterSetName = 'Export')]
         [ValidateScript({
-            $invalid = $false
-            try
-            {
-                [System.Guid]::Parse($_) | Out-Null
-                $invalid = $true
-            }
-            catch
-            {
                 $invalid = $false
-            }
-            if ($invalid)
-            {
-                throw "Please provide the tenant name (e.g., contoso.onmicrosoft.com) for TenantId instead of its GUID."
-            }
-            else
-            {
-                $invalid = $_ -notmatch ".onmicrosoft."
-                if (-not $invalid)
+                $parseGuid = [System.Guid]::Empty
+                if ([System.Guid]::TryParse($_, [ref]$parseGuid))
                 {
-                    return $true
+                    throw 'Please provide the tenant name (e.g., contoso.onmicrosoft.com) for TenantId instead of its GUID.'
                 }
-                else
+                $invalid = $_ -notmatch '.onmicrosoft.'
+                if ($invalid)
                 {
-                    Write-Warning -Message "We recommend providing the TenantId property in the format of <tenant>.onmicrosoft.*"
+                    Write-Warning -Message 'We recommend providing the TenantId property in the format of <tenant>.onmicrosoft.*'
                 }
-            }
-            return $true
-        })]
+                return $true
+            })]
         [System.String]
         $TenantId,
 
@@ -1440,7 +1639,19 @@ function Export-M365DSCConfiguration
 
         [Parameter(ParameterSetName = 'Export')]
         [Switch]
-        $Validate
+        $Validate,
+
+        [Parameter(ParameterSetName = 'Export')]
+        [Switch]
+        $Parallel,
+
+        [Parameter(ParameterSetName = 'Export')]
+        [System.Collections.Hashtable]
+        $TokenReplacement,
+
+        [Parameter(ParameterSetName = 'Export')]
+        [Switch]
+        $WithStatistics
     )
 
     $currentStartDateTime = [System.DateTime]::Now
@@ -1461,16 +1672,19 @@ function Export-M365DSCConfiguration
     # Suppress Progress overlays
     $Global:ProgressPreference = 'SilentlyContinue'
 
-    # Suppress Warnings
-    $Global:WarningPreference = 'SilentlyContinue'
+    # Check ErrorActionPreference - Azure DevOps and other Pipeline environments set it to 'Stop' by default
+    if ($ErrorActionPreference -eq 'Stop' -and -not $PSBoundParameters.ContainsKey('ErrorAction'))
+    {
+        $ErrorActionPreference = 'Continue'
+    }
 
     ##### FIRST CHECK AUTH PARAMETERS
     if ($PSBoundParameters.ContainsKey('Credential') -eq $true -and `
-        -not [System.String]::IsNullOrEmpty($Credential))
+            -not [System.String]::IsNullOrEmpty($Credential))
     {
-        if ($Credential.Username -notmatch ".onmicrosoft.")
+        if ($Credential.Username -notmatch '.onmicrosoft.')
         {
-            Write-Warning -Message "We recommend providing the username in the format of <tenant>.onmicrosoft.* for the Credential property."
+            Write-Warning -Message 'We recommend providing the username in the format of <tenant>.onmicrosoft.* for the Credential property.'
         }
     }
 
@@ -1532,10 +1746,12 @@ function Export-M365DSCConfiguration
     #endregion
 
     # Make sure we are not connected to Microsoft Graph on another tenant
+    # except if connected through MSCloudLoginAssistant - it will handle the connection
     try
     {
         Confirm-M365DSCLoadedModule -ModuleName 'Microsoft.Graph.Authentication'
-        if ($null -ne (Get-MgContext))
+        $currentConnectionProfile = Get-MSCloudLoginConnectionProfile -Workload 'MicrosoftGraph'
+        if ($null -ne (Get-MgContext) -and -not $currentConnectionProfile.Connected)
         {
             Disconnect-MgGraph -ErrorAction Stop | Out-Null
             Reset-MSCloudLoginConnectionProfileContext -Workload 'MicrosoftGraph'
@@ -1553,7 +1769,31 @@ function Export-M365DSCConfiguration
     $data.Add('M365DSCExportId', $currentExportID)
     $data.Add('ConnectionMode', $ConnectionMode)
 
+    # Define connection to Graph parameters because it is required by the telemetry.
+    if ($null -eq $Script:M365DSCTelemetryConnectionToGraphParams -or `
+        ($null -ne $Script:M365DSCTelemetryConnectionToGraphParams -and `
+                $Script:M365DSCTelemetryConnectionToGraphParams.Keys.Count -eq 0))
+    {
+        $Script:M365DSCTelemetryConnectionToGraphParams = @{
+            Credential            = $Credential
+            ApplicationId         = $ApplicationId
+            TenantId              = $TenantId
+            ApplicationSecret     = $ApplicationSecret
+            CertificateThumbprint = $CertificateThumbprint
+            CertificatePassword   = $CertificatePassword
+            CertificatePath       = $CertificatePath
+            Identity              = $ManagedIdentity.IsPresent
+            AccessTokens          = $AccessTokens
+        }
+    }
+
     Add-M365DSCTelemetryEvent -Type 'ExportInitiated' -Data $data
+    Initialize-M365DSCAllResourcesDictionary
+    if ($PSBoundParameters.ContainsKey('TokenReplacement'))
+    {
+        Set-M365DSCStringReplacementMap -Map $TokenReplacement
+    }
+
     if ($null -ne $Workloads)
     {
         Write-M365DSCHost -Message "Exporting Microsoft 365 configuration for Workloads: $($Workloads -join ', ')"
@@ -1573,7 +1813,11 @@ function Export-M365DSCConfiguration
             -AccessTokens $AccessTokens `
             -GenerateInfo $GenerateInfo `
             -Filters $Filters `
-            -Validate:$Validate
+            -Validate:$Validate `
+            -Parallel:$Parallel `
+            -ResourceSettings $Script:M365DSCResourceSettings `
+            -ErrorAction $ErrorActionPreference `
+            -WithStatistics:$WithStatistics
     }
     elseif ($null -ne $Components)
     {
@@ -1593,7 +1837,11 @@ function Export-M365DSCConfiguration
             -AccessTokens $AccessTokens `
             -GenerateInfo $GenerateInfo `
             -Filters $Filters `
-            -Validate:$Validate
+            -Validate:$Validate `
+            -Parallel:$Parallel `
+            -ResourceSettings $Script:M365DSCResourceSettings `
+            -ErrorAction $ErrorActionPreference `
+            -WithStatistics:$WithStatistics
     }
     elseif ($null -ne $Mode)
     {
@@ -1614,7 +1862,11 @@ function Export-M365DSCConfiguration
             -GenerateInfo $GenerateInfo `
             -AllComponents `
             -Filters $Filters `
-            -Validate:$Validate
+            -Validate:$Validate `
+            -Parallel:$Parallel `
+            -ResourceSettings $Script:M365DSCResourceSettings `
+            -ErrorAction $ErrorActionPreference `
+            -WithStatistics:$WithStatistics
     }
 
     # Clear the exported resource instances' names Global variable
@@ -1633,23 +1885,50 @@ function Export-M365DSCConfiguration
     $data.Add('M365DSCExportId', $currentExportID)
     $data.Add('ConnectionMode', $ConnectionMode)
     $timeTaken = [System.DateTime]::Now.Subtract($currentStartDateTime)
-    $data.Add('TotalSeconds',$timeTaken.TotalSeconds)
+    $data.Add('TotalSeconds', $timeTaken.TotalSeconds)
     Add-M365DSCTelemetryEvent -Type 'ExportCompleted' -Data $data
 }
 
-$Script:M365DSCDependenciesValidated = $false
-$Script:IsPowerShellCore = $PSVersionTable.PSEdition -eq 'Core'
-if ($null -eq $Script:M365DSCDependencies)
+<#
+.DESCRIPTION
+    This function imports all the required M365DSC module dependencies as specified in the M365DSC dependencies manifest.
+
+.EXAMPLE
+    PS> Import-M365DSCModuleDependency
+
+.FUNCTIONALITY
+    Internal
+#>
+function Import-M365DSCModuleDependency
 {
-    $Script:M365DSCDependencies = (Import-PowerShellDataFile "$PSScriptRoot/../Dependencies/Manifest.psd1").Dependencies
-    $Script:M365DSCResourceSettings = @{}
-    Get-ChildItem -Path "$PSScriptRoot/../DSCResources" -Filter 'settings.json' -Recurse | ForEach-Object {
-        Write-Verbose -Message "Processing settings.json file at path: $($_.FullName)"
-        $jsonContent = Get-Content -Path $_.FullName -Raw | ConvertFrom-Json
-        $directoryName = Split-Path -Path $_.DirectoryName -Leaf
-        $Script:M365DSCResourceSettings.Add($directoryName, $jsonContent.requiredModules)
+    [CmdletBinding()]
+    param ()
+
+    foreach ($entry in $Script:M365DSCDependencies.GetEnumerator())
+    {
+        if ($entry.Value.PowerShellCore -and -not $Script:IsPowerShellCore)
+        {
+            continue
+        }
+
+        Write-Verbose -Message "Importing $($entry.Key) with version $($entry.Value.RequiredVersion)"
+        $importModuleSplat = @{
+            Name                = $entry.Key
+            RequiredVersion     = $entry.Value.RequiredVersion
+            Global              = $true
+            Function            = @('*')
+            Cmdlet              = @('*')
+            Alias               = @()
+            Variable            = @()
+            DisableNameChecking = $true
+        }
+        if ($entry.Value.Commands.Count -gt 0)
+        {
+            $importModuleSplat.Function = $entry.Value.Commands
+            $importModuleSplat.Cmdlet = $entry.Value.Commands
+        }
+        Import-Module @importModuleSplat -Verbose:$false
     }
-    $Script:M365DSCValidatedDependencies = @()
 }
 
 <#
@@ -1674,19 +1953,42 @@ function Confirm-M365DSCLoadedModule
         $ModuleName
     )
 
-    if ($Script:M365DSCValidatedDependencies -contains $ModuleName)
+    if ($Script:M365DSCValidatedDependencies.Contains($ModuleName))
     {
         Write-Verbose -Message "Module '$ModuleName' has already been validated."
         return
     }
 
-    $manifestModule = $Script:M365DSCDependencies | Where-Object -FilterScript { $_.ModuleName -eq $ModuleName }
-    $loadedModule = Get-Module -Name $ModuleName
+    $manifestModule = $Script:M365DSCDependencies[$ModuleName]
 
+    if ($null -ne $manifestModule.DependsOn -and $manifestModule.DependsOn.Count -gt 0)
+    {
+        foreach ($dependency in $manifestModule.DependsOn)
+        {
+            Write-Verbose -Message "Validating dependency '$dependency' for module '$ModuleName'."
+            Confirm-M365DSCLoadedModule -ModuleName $dependency
+        }
+    }
+
+    $loadedModule = Get-Module -Name $ModuleName
     if ($null -eq $loadedModule)
     {
         Write-Verbose -Message "Module '$ModuleName' is not loaded. Importing it now."
-        Import-Module -Name $ModuleName -RequiredVersion $manifestModule.RequiredVersion -Global
+        $importModuleSplat = @{
+            Name                = $ModuleName
+            RequiredVersion     = $manifestModule.RequiredVersion
+            Global              = $true
+            Alias               = @()
+            Cmdlet              = @()
+            Variable            = @()
+            DisableNameChecking = $true
+        }
+        if ($manifestModule.Commands.Count -gt 0)
+        {
+            $importModuleSplat.Add('Function', $manifestModule.Commands)
+            $importModuleSplat.Cmdlet = $manifestModule.Commands
+        }
+        Import-Module @importModuleSplat
         Write-Verbose -Message "Module '$ModuleName' with version '$($manifestModule.RequiredVersion)' has been imported."
     }
     elseif ($loadedModule.Version -ne $manifestModule.RequiredVersion)
@@ -1694,7 +1996,7 @@ function Confirm-M365DSCLoadedModule
         Write-Verbose -Message "Module '$ModuleName' is loaded but the version '$($loadedModule.Version)' does not match the required version '$($manifestModule.RequiredVersion)'."
         Remove-Module -Name $ModuleName -Force -ErrorAction SilentlyContinue
         Write-Verbose -Message "Unloaded module '$ModuleName' with version '$($loadedModule.Version)'."
-        Import-Module -Name $ModuleName -RequiredVersion $manifestModule.RequiredVersion -Global
+        Import-Module -Name $ModuleName -RequiredVersion $manifestModule.RequiredVersion -Global -Alias @() -Cmdlet @() -Variable @() -DisableNameChecking
         Write-Verbose -Message "Re-imported module '$ModuleName' with version '$($manifestModule.RequiredVersion)'."
     }
     else
@@ -1702,9 +2004,9 @@ function Confirm-M365DSCLoadedModule
         Write-Verbose -Message "Module '$ModuleName' is already loaded."
     }
 
-    if ($Script:M365DSCValidatedDependencies -notcontains $ModuleName)
+    if (-not $Script:M365DSCValidatedDependencies.Contains($ModuleName))
     {
-        $Script:M365DSCValidatedDependencies += $ModuleName
+        $Script:M365DSCValidatedDependencies.Add($ModuleName)
     }
 }
 
@@ -1719,7 +2021,7 @@ function Confirm-M365DSCLoadedModule
     PS> Confirm-M365DSCModuleDependency -ModuleName 'MSFT_AADApplication'
 
 .FUNCTIONALITY
-    Public
+    Internal
 #>
 function Confirm-M365DSCModuleDependency
 {
@@ -1732,18 +2034,19 @@ function Confirm-M365DSCModuleDependency
 
     $Global:MaximumFunctionCount = 32767
 
-    if ($Global:SkipModuleValidation)
+    if ($Global:IsTestEnvironment -or (Get-M365DSCModuleConfiguration).skipModuleDependencyValidation)
     {
         Write-Verbose -Message "Skipping module dependency validation in test environment for module '$ModuleName'."
         return
     }
 
-    $modulesToCheck = $Script:M365DSCResourceSettings[$ModuleName]
+    $modulesToCheck = $Script:M365DSCResourceSettings[$ModuleName.Replace('MSFT_', '')].requiredModules
     foreach ($module in $modulesToCheck)
     {
         Write-Verbose -Message "Validating module dependency: $($module)"
         Confirm-M365DSCLoadedModule -ModuleName $module
     }
+    Write-Verbose -Message "All dependencies for module '$ModuleName' have been validated."
 }
 
 <#
@@ -1837,7 +2140,7 @@ function Get-M365DSCAPIEndpoint
     {
         $webrequest = Invoke-WebRequest -Uri "https://login.windows.net/$($TenantId)/.well-known/openid-configuration" -UseBasicParsing
         $response = ConvertFrom-Json $webrequest.Content
-        $tenantRegionScope = $response."tenant_region_scope"
+        $tenantRegionScope = $response.'tenant_region_scope'
 
         $endpoints = @{
             AzureManagement = $null
@@ -1849,12 +2152,12 @@ function Get-M365DSCAPIEndpoint
             {
                 if ($null -ne $response.'tenant_region_sub_scope' -and $response.'tenant_region_sub_scope' -eq 'DODCON')
                 {
-                    $endpoints.AzureManagement = "https://management.usgovcloudapi.net"
+                    $endpoints.AzureManagement = 'https://management.usgovcloudapi.net'
                 }
             }
             default
             {
-                $endpoints.AzureManagement = "https://management.azure.com"
+                $endpoints.AzureManagement = 'https://management.azure.com'
             }
         }
         return $endpoints
@@ -1905,15 +2208,15 @@ function Get-M365DSCTenantDomain
 
     if ([System.String]::IsNullOrEmpty($CertificatePath))
     {
-        $ConnectionMode = New-M365DSCConnection -Workload 'MicrosoftGraph' `
+        $null = New-M365DSCConnection -Workload 'MicrosoftGraph' `
             -InboundParameters $PSBoundParameters
 
         try
         {
-            $tenantDetails = Get-MgBetaOrganization -ErrorAction 'Stop'
-            $defaultDomain = $tenantDetails.VerifiedDomains | Where-Object -FilterScript { $_.IsInitial }
+            $tenantDetails = (Invoke-MgGraphRequest -Uri '/beta/organization' -Method GET -ErrorAction 'Stop').value
+            $defaultDomain = $tenantDetails.verifiedDomains | Where-Object -FilterScript { $_.isInitial }
 
-            return $defaultDomain.Name
+            return $defaultDomain.name
         }
         catch
         {
@@ -1978,10 +2281,25 @@ function Get-M365DSCOrganization
         }
         else
         {
-            Throw 'Tenant ID must be name of the tenant, e.g. contoso.onmicrosoft.com'
+            throw 'Tenant ID must be name of the tenant, e.g. contoso.onmicrosoft.com'
         }
 
     }
+}
+
+<#
+.DESCRIPTION
+    This function retrieves the telemetry connection parameters for the current session.
+
+.FUNCTIONALITY
+    Internal.
+#>
+function Get-M365DSCTelemetryConnectionParameter
+{
+    [CmdletBinding()]
+    param ()
+
+    $Script:M365DSCTelemetryConnectionToGraphParams.Clone()
 }
 
 <#
@@ -2004,50 +2322,40 @@ function New-M365DSCConnection
 
         [Parameter(Mandatory = $true)]
         [ValidateScript({
-            if ($null -ne $_.Credential)
-            {
-                $invalid = $_.Credential.Username -notmatch ".onmicrosoft."
-                if (-not $invalid)
+                if ($null -ne $_.Credential)
                 {
-                    return $true
-                }
-                else
-                {
-                    Write-Warning -Message "We recommend providing the username in the format of <tenant>.onmicrosoft.* for the Credential property."
-                }
-            }
-
-            if ($null -ne $_.TenantId)
-            {
-                $invalid = $false
-                try
-                {
-                    [System.Guid]::Parse($_.TenantId) | Out-Null
-                    $invalid = $true
-                }
-                catch
-                {
-                    $invalid = $false
-                }
-                if ($invalid)
-                {
-                    throw "Please provide the tenant name (e.g., contoso.onmicrosoft.com) for TenantId instead of its GUID."
-                }
-                else
-                {
-                    $invalid = $_.TenantId -notmatch ".onmicrosoft."
+                    $invalid = $_.Credential.Username -notmatch '.onmicrosoft.'
                     if (-not $invalid)
                     {
                         return $true
                     }
                     else
                     {
-                        Write-Warning -Message "We recommend providing the tenant name in format <tenant>.onmicrosoft.* for TenantId."
+                        Write-Warning -Message 'We recommend providing the username in the format of <tenant>.onmicrosoft.* for the Credential property.'
                     }
                 }
-            }
-            return $true
-        })]
+
+                if ($null -ne $_.TenantId)
+                {
+                    $parseGuid = [System.Guid]::Empty
+                    $isValid = [System.Guid]::TryParse($_.TenantId, [ref]$parseGuid)
+                    if ($isValid)
+                    {
+                        throw 'Please provide the tenant name (e.g., contoso.onmicrosoft.com) for TenantId instead of its GUID.'
+                    }
+
+                    $isValid = $_.TenantId -match '.onmicrosoft.'
+                    if ($isValid)
+                    {
+                        return $true
+                    }
+                    else
+                    {
+                        Write-Warning -Message 'We recommend providing the tenant name in format <tenant>.onmicrosoft.* for TenantId.'
+                    }
+                }
+                return $true
+            })]
         [System.Collections.Hashtable]
         $InboundParameters,
 
@@ -2056,11 +2364,19 @@ function New-M365DSCConnection
         $Url,
 
         [Parameter()]
-        [System.Boolean]
-        $SkipModuleReload = $false
+        [switch]
+        $EnableSearchOnlySession
     )
 
-    $Global:MaximumFunctionCount = 32767
+    if (-not $Script:M365DSCRequiredModulesLoaded)
+    {
+        foreach ($requiredModule in $Script:M365DSCRequiredModules)
+        {
+            Write-Verbose -Message "Ensuring required module '$requiredModule' is loaded."
+            Confirm-M365DSCLoadedModule -ModuleName $requiredModule
+        }
+        $Script:M365DSCRequiredModulesLoaded = $true
+    }
 
     if ($Workload -eq 'MicrosoftTeams')
     {
@@ -2070,33 +2386,24 @@ function New-M365DSCConnection
         }
         catch
         {
-            Import-Module 'MicrosoftTeams' -Global -Force | Out-Null
+            Import-Module 'MicrosoftTeams' -Global -Force -Alias @() -Cmdlet @() -Variable @() -DisableNameChecking | Out-Null
         }
     }
 
     Write-Verbose -Message "Attempting connection to {$Workload} with:"
     Write-Verbose -Message "$($InboundParameters | Out-String)"
 
-    if ($SkipModuleReload -eq $true)
-    {
-        $Global:CurrentModeIsExport = $true
-    }
-    else
-    {
-        $Global:CurrentModeIsExport = $false
-    }
-
     #region Telemetry
     $data = [System.Collections.Generic.Dictionary[[String], [String]]]::new()
     $data.Add('Source', 'M365DSCUtil')
     $data.Add('Workload', $Workload)
 
-    $Global:M365DSCTelemetryConnectionToGraphParams = @{}
+    $Script:M365DSCTelemetryConnectionToGraphParams = @{}
 
     # Keep track of workloads we already connected so that we don't send additional Telemetry events.
     if ($null -eq $Script:M365ConnectedToWorkloads)
     {
-        Write-Verbose -Message "Initializing the Connected To Workloads List."
+        Write-Verbose -Message 'Initializing the Connected To Workloads List.'
         $Script:M365ConnectedToWorkloads = @()
     }
 
@@ -2104,15 +2411,15 @@ function New-M365DSCConnection
     if ($InboundParameters.ApplicationSecret)
     {
         $InboundParameters.ApplicationSecret = $InboundParameters.ApplicationSecret.GetNetworkCredential().Password
-        if (-not $Global:M365DSCTelemetryConnectionToGraphParams.ContainsKey('ApplicationSecret'))
+        if (-not $Script:M365DSCTelemetryConnectionToGraphParams.ContainsKey('ApplicationSecret'))
         {
-            $Global:M365DSCTelemetryConnectionToGraphParams.Add('ApplicationSecret', $InboundParameters.ApplicationSecret)
+            $Script:M365DSCTelemetryConnectionToGraphParams.Add('ApplicationSecret', $InboundParameters.ApplicationSecret)
         }
     }
 
     # Case both authentication methods are attempted
     if ($null -ne $InboundParameters.Credential -and `
-        -not [System.String]::IsNullOrEmpty($InboundParameters.CertificateThumbprint))
+            -not [System.String]::IsNullOrEmpty($InboundParameters.CertificateThumbprint))
     {
         $message = 'Both Authentication methods are attempted'
         Write-Verbose -Message $message
@@ -2148,13 +2455,13 @@ function New-M365DSCConnection
         Write-Verbose -Message 'Credential was specified. Connecting via User Principal'
         if ([System.String]::IsNullOrEmpty($Url))
         {
-            if (-not $Global:M365DSCTelemetryConnectionToGraphParams.ContainsKey('Credential'))
+            if (-not $Script:M365DSCTelemetryConnectionToGraphParams.ContainsKey('Credential'))
             {
-                $Global:M365DSCTelemetryConnectionToGraphParams.Add('Credential', $InboundParameters.Credential)
+                $Script:M365DSCTelemetryConnectionToGraphParams.Add('Credential', $InboundParameters.Credential)
             }
             Connect-M365Tenant -Workload $Workload `
                 -Credential $InboundParameters.Credential `
-                -SkipModuleReload $Global:CurrentModeIsExport
+                -EnableSearchOnlySession:$EnableSearchOnlySession
 
             if (-not $Script:M365ConnectedToWorkloads -contains "$Workload-Credential")
             {
@@ -2166,9 +2473,9 @@ function New-M365DSCConnection
                         $tenantId = $InboundParameters.Credential.Username.Split('@')[1]
                         $data.Add('Tenant', $tenantId)
 
-                        if (-not $Global:M365DSCTelemetryConnectionToGraphParams.ContainsKey('TenantId'))
+                        if (-not $Script:M365DSCTelemetryConnectionToGraphParams.ContainsKey('TenantId'))
                         {
-                            $Global:M365DSCTelemetryConnectionToGraphParams.Add('TenantId', $tenantId)
+                            $Script:M365DSCTelemetryConnectionToGraphParams.Add('TenantId', $tenantId)
                         }
                     }
                 }
@@ -2185,14 +2492,15 @@ function New-M365DSCConnection
         if ($InboundParameters.ContainsKey('Credential') -and
             $null -ne $InboundParameters.Credential)
         {
-            if (-not $Global:M365DSCTelemetryConnectionToGraphParams.ContainsKey('Credential'))
+            if (-not $Script:M365DSCTelemetryConnectionToGraphParams.ContainsKey('Credential'))
             {
-                $Global:M365DSCTelemetryConnectionToGraphParams.Add('Credential', $InboundParameters.Credential)
+                $Script:M365DSCTelemetryConnectionToGraphParams.Add('Credential', $InboundParameters.Credential)
             }
             Connect-M365Tenant -Workload $Workload `
                 -Credential $InboundParameters.Credential `
                 -Url $Url `
-                -SkipModuleReload $Global:CurrentModeIsExport
+                -EnableSearchOnlySession:$EnableSearchOnlySession
+
             if (-not $Script:M365ConnectedToWorkloads -contains "$Workload-Credential")
             {
                 $data.Add('ConnectionMode', 'Credential')
@@ -2202,9 +2510,9 @@ function New-M365DSCConnection
                     {
                         $tenantId = $InboundParameters.Credential.Username.Split('@')[1]
                         $data.Add('Tenant', $tenantId)
-                        if (-not $Global:M365DSCTelemetryConnectionToGraphParams.ContainsKey('TenantId'))
+                        if (-not $Script:M365DSCTelemetryConnectionToGraphParams.ContainsKey('TenantId'))
                         {
-                            $Global:M365DSCTelemetryConnectionToGraphParams.Add('TenantId', $tenantId)
+                            $Script:M365DSCTelemetryConnectionToGraphParams.Add('TenantId', $tenantId)
                         }
                     }
                 }
@@ -2227,18 +2535,19 @@ function New-M365DSCConnection
     {
         if ([System.String]::IsNullOrEmpty($Url))
         {
-            if (-not $Global:M365DSCTelemetryConnectionToGraphParams.ContainsKey('Credential'))
+            if (-not $Script:M365DSCTelemetryConnectionToGraphParams.ContainsKey('Credential'))
             {
-                $Global:M365DSCTelemetryConnectionToGraphParams.Add('Credential', $InboundParameters.Credential)
+                $Script:M365DSCTelemetryConnectionToGraphParams.Add('Credential', $InboundParameters.Credential)
             }
-            if (-not $Global:M365DSCTelemetryConnectionToGraphParams.ContainsKey('ApplicationId'))
+            if (-not $Script:M365DSCTelemetryConnectionToGraphParams.ContainsKey('ApplicationId'))
             {
-                $Global:M365DSCTelemetryConnectionToGraphParams.Add('ApplicationId', $InboundParameters.ApplicationId)
+                $Script:M365DSCTelemetryConnectionToGraphParams.Add('ApplicationId', $InboundParameters.ApplicationId)
             }
             Connect-M365Tenant -Workload $Workload `
                 -ApplicationId $InboundParameters.ApplicationId `
                 -Credential $InboundParameters.Credential `
-                -SkipModuleReload $Global:CurrentModeIsExport
+                -EnableSearchOnlySession:$EnableSearchOnlySession
+
             if (-not $Script:M365ConnectedToWorkloads -contains "$Workload-CredentialsWithApplicationId")
             {
                 $data.Add('ConnectionMode', 'CredentialsWithApplicationId')
@@ -2249,9 +2558,9 @@ function New-M365DSCConnection
                     {
                         $tenantId = $InboundParameters.Credential.Username.Split('@')[1]
                         $data.Add('Tenant', $tenantId)
-                        if (-not $Global:M365DSCTelemetryConnectionToGraphParams.ContainsKey('TenantId'))
+                        if (-not $Script:M365DSCTelemetryConnectionToGraphParams.ContainsKey('TenantId'))
                         {
-                            $Global:M365DSCTelemetryConnectionToGraphParams.Add('TenantId', $tenantId)
+                            $Script:M365DSCTelemetryConnectionToGraphParams.Add('TenantId', $tenantId)
                         }
                     }
                 }
@@ -2267,19 +2576,20 @@ function New-M365DSCConnection
         }
         else
         {
-            if (-not $Global:M365DSCTelemetryConnectionToGraphParams.ContainsKey('ApplicationId'))
+            if (-not $Script:M365DSCTelemetryConnectionToGraphParams.ContainsKey('ApplicationId'))
             {
-                $Global:M365DSCTelemetryConnectionToGraphParams.Add('ApplicationId', $InboundParameters.ApplicationId)
+                $Script:M365DSCTelemetryConnectionToGraphParams.Add('ApplicationId', $InboundParameters.ApplicationId)
             }
-            if (-not $Global:M365DSCTelemetryConnectionToGraphParams.ContainsKey('Credential'))
+            if (-not $Script:M365DSCTelemetryConnectionToGraphParams.ContainsKey('Credential'))
             {
-                $Global:M365DSCTelemetryConnectionToGraphParams.Add('Credential', $InboundParameters.Credential)
+                $Script:M365DSCTelemetryConnectionToGraphParams.Add('Credential', $InboundParameters.Credential)
             }
             Connect-M365Tenant -Workload $Workload `
                 -ApplicationId $InboundParameters.ApplicationId `
                 -Credential $InboundParameters.Credential `
                 -Url $Url `
-                -SkipModuleReload $Global:CurrentModeIsExport
+                -EnableSearchOnlySession:$EnableSearchOnlySession
+
             if (-not $Script:M365ConnectedToWorkloads -contains "$Workload-CredentialsWithApplicationId")
             {
                 $data.Add('ConnectionMode', 'CredentialsWithApplicationId')
@@ -2290,9 +2600,9 @@ function New-M365DSCConnection
                     {
                         $tenantId = $InboundParameters.Credential.Username.Split('@')[1]
                         $data.Add('Tenant', $tenantId)
-                        if (-not $Global:M365DSCTelemetryConnectionToGraphParams.ContainsKey('ApplicationId'))
+                        if (-not $Script:M365DSCTelemetryConnectionToGraphParams.ContainsKey('ApplicationId'))
                         {
-                            $Global:M365DSCTelemetryConnectionToGraphParams.Add('ApplicationId', $tenantId)
+                            $Script:M365DSCTelemetryConnectionToGraphParams.Add('ApplicationId', $tenantId)
                         }
                     }
                 }
@@ -2318,28 +2628,28 @@ function New-M365DSCConnection
         {
             Write-Verbose -Message 'ApplicationId, TenantId, CertificatePath & CertificatePassword were specified. Connecting via Service Principal'
 
-            if (-not $Global:M365DSCTelemetryConnectionToGraphParams.ContainsKey('ApplicationId'))
+            if (-not $Script:M365DSCTelemetryConnectionToGraphParams.ContainsKey('ApplicationId'))
             {
-                $Global:M365DSCTelemetryConnectionToGraphParams.Add('ApplicationId', $InboundParameters.ApplicationId)
+                $Script:M365DSCTelemetryConnectionToGraphParams.Add('ApplicationId', $InboundParameters.ApplicationId)
             }
-            if (-not $Global:M365DSCTelemetryConnectionToGraphParams.ContainsKey('TenantId'))
+            if (-not $Script:M365DSCTelemetryConnectionToGraphParams.ContainsKey('TenantId'))
             {
-                $Global:M365DSCTelemetryConnectionToGraphParams.Add('TenantId', $InboundParameters.TenantId)
+                $Script:M365DSCTelemetryConnectionToGraphParams.Add('TenantId', $InboundParameters.TenantId)
             }
-            if (-not $Global:M365DSCTelemetryConnectionToGraphParams.ContainsKey('CertificatePassword'))
+            if (-not $Script:M365DSCTelemetryConnectionToGraphParams.ContainsKey('CertificatePassword'))
             {
-                $Global:M365DSCTelemetryConnectionToGraphParams.Add('CertificatePassword', $InboundParameters.CertificatePassword.Password)
+                $Script:M365DSCTelemetryConnectionToGraphParams.Add('CertificatePassword', $InboundParameters.CertificatePassword.Password)
             }
-            if (-not $Global:M365DSCTelemetryConnectionToGraphParams.ContainsKey('CertificatePath'))
+            if (-not $Script:M365DSCTelemetryConnectionToGraphParams.ContainsKey('CertificatePath'))
             {
-                $Global:M365DSCTelemetryConnectionToGraphParams.Add('CertificatePath', $InboundParameters.CertificatePath)
+                $Script:M365DSCTelemetryConnectionToGraphParams.Add('CertificatePath', $InboundParameters.CertificatePath)
             }
             Connect-M365Tenant -Workload $Workload `
                 -ApplicationId $InboundParameters.ApplicationId `
                 -TenantId $InboundParameters.TenantId `
                 -CertificatePassword $InboundParameters.CertificatePassword.Password `
                 -CertificatePath $InboundParameters.CertificatePath `
-                -SkipModuleReload $Global:CurrentModeIsExport
+                -EnableSearchOnlySession:$EnableSearchOnlySession
 
             if (-not $Script:M365ConnectedToWorkloads -contains "$Workload-ServicePrincipalWithPath")
             {
@@ -2347,9 +2657,9 @@ function New-M365DSCConnection
                 if (-not $data.ContainsKey('Tenant'))
                 {
                     $data.Add('Tenant', $InboundParameters.TenantId)
-                    if (-not $Global:M365DSCTelemetryConnectionToGraphParams.ContainsKey('TenantId'))
+                    if (-not $Script:M365DSCTelemetryConnectionToGraphParams.ContainsKey('TenantId'))
                     {
-                        $Global:M365DSCTelemetryConnectionToGraphParams.Add('TenantId', $InboundParameters.TenantId)
+                        $Script:M365DSCTelemetryConnectionToGraphParams.Add('TenantId', $InboundParameters.TenantId)
                     }
                 }
                 Add-M365DSCTelemetryEvent -Data $data -Type 'Connection'
@@ -2403,23 +2713,23 @@ function New-M365DSCConnection
         {
             Write-Verbose -Message 'ApplicationId, TenantId, ApplicationSecret were specified. Connecting via Service Principal'
 
-            if (-not $Global:M365DSCTelemetryConnectionToGraphParams.ContainsKey('ApplicationId'))
+            if (-not $Script:M365DSCTelemetryConnectionToGraphParams.ContainsKey('ApplicationId'))
             {
-                $Global:M365DSCTelemetryConnectionToGraphParams.Add('ApplicationId', $InboundParameters.ApplicationId)
+                $Script:M365DSCTelemetryConnectionToGraphParams.Add('ApplicationId', $InboundParameters.ApplicationId)
             }
-            if (-not $Global:M365DSCTelemetryConnectionToGraphParams.ContainsKey('TenantId'))
+            if (-not $Script:M365DSCTelemetryConnectionToGraphParams.ContainsKey('TenantId'))
             {
-                $Global:M365DSCTelemetryConnectionToGraphParams.Add('TenantId', $InboundParameters.TenantId)
+                $Script:M365DSCTelemetryConnectionToGraphParams.Add('TenantId', $InboundParameters.TenantId)
             }
-            if (-not $Global:M365DSCTelemetryConnectionToGraphParams.ContainsKey('ApplicationSecret'))
+            if (-not $Script:M365DSCTelemetryConnectionToGraphParams.ContainsKey('ApplicationSecret'))
             {
-                $Global:M365DSCTelemetryConnectionToGraphParams.Add('ApplicationSecret', $InboundParameters.ApplicationSecret)
+                $Script:M365DSCTelemetryConnectionToGraphParams.Add('ApplicationSecret', $InboundParameters.ApplicationSecret)
             }
             Connect-M365Tenant -Workload $Workload `
                 -ApplicationId $InboundParameters.ApplicationId `
                 -TenantId $InboundParameters.TenantId `
                 -ApplicationSecret $InboundParameters.ApplicationSecret `
-                -SkipModuleReload $Global:CurrentModeIsExport
+                -EnableSearchOnlySession:$EnableSearchOnlySession
 
             if (-not $Script:M365ConnectedToWorkloads -contains "$Workload-ServicePrincipalWithSecret")
             {
@@ -2435,24 +2745,24 @@ function New-M365DSCConnection
         }
         else
         {
-            if (-not $Global:M365DSCTelemetryConnectionToGraphParams.ContainsKey('ApplicationId'))
+            if (-not $Script:M365DSCTelemetryConnectionToGraphParams.ContainsKey('ApplicationId'))
             {
-                $Global:M365DSCTelemetryConnectionToGraphParams.Add('ApplicationId', $InboundParameters.ApplicationId)
+                $Script:M365DSCTelemetryConnectionToGraphParams.Add('ApplicationId', $InboundParameters.ApplicationId)
             }
-            if (-not $Global:M365DSCTelemetryConnectionToGraphParams.ContainsKey('TenantId'))
+            if (-not $Script:M365DSCTelemetryConnectionToGraphParams.ContainsKey('TenantId'))
             {
-                $Global:M365DSCTelemetryConnectionToGraphParams.Add('TenantId', $InboundParameters.TenantId)
+                $Script:M365DSCTelemetryConnectionToGraphParams.Add('TenantId', $InboundParameters.TenantId)
             }
-            if (-not $Global:M365DSCTelemetryConnectionToGraphParams.ContainsKey('ApplicationSecret'))
+            if (-not $Script:M365DSCTelemetryConnectionToGraphParams.ContainsKey('ApplicationSecret'))
             {
-                $Global:M365DSCTelemetryConnectionToGraphParams.Add('ApplicationSecret', $InboundParameters.ApplicationSecret)
+                $Script:M365DSCTelemetryConnectionToGraphParams.Add('ApplicationSecret', $InboundParameters.ApplicationSecret)
             }
             Connect-M365Tenant -Workload $Workload `
                 -ApplicationId $InboundParameters.ApplicationId `
                 -TenantId $InboundParameters.TenantId `
                 -ApplicationSecret $InboundParameters.ApplicationSecret `
                 -Url $Url `
-                -SkipModuleReload $Global:CurrentModeIsExport
+                -EnableSearchOnlySession:$EnableSearchOnlySession
 
             if (-not $Script:M365ConnectedToWorkloads -contains "$Workload-ServicePrincipalWithSecret")
             {
@@ -2471,26 +2781,27 @@ function New-M365DSCConnection
     {
         Write-Verbose -Message 'ApplicationId, TenantId, CertificateThumbprint were specified. Connecting via Service Principal'
 
-        if (-not $Global:M365DSCTelemetryConnectionToGraphParams.ContainsKey('ApplicationId'))
+        if (-not $Script:M365DSCTelemetryConnectionToGraphParams.ContainsKey('ApplicationId'))
         {
-            $Global:M365DSCTelemetryConnectionToGraphParams.Add('ApplicationId', $InboundParameters.ApplicationId)
+            $Script:M365DSCTelemetryConnectionToGraphParams.Add('ApplicationId', $InboundParameters.ApplicationId)
         }
-        if (-not $Global:M365DSCTelemetryConnectionToGraphParams.ContainsKey('TenantId'))
+        if (-not $Script:M365DSCTelemetryConnectionToGraphParams.ContainsKey('TenantId'))
         {
-            $Global:M365DSCTelemetryConnectionToGraphParams.Add('TenantId', $InboundParameters.TenantId)
+            $Script:M365DSCTelemetryConnectionToGraphParams.Add('TenantId', $InboundParameters.TenantId)
         }
-        if (-not $Global:M365DSCTelemetryConnectionToGraphParams.ContainsKey('CertificateThumbprint'))
+        if (-not $Script:M365DSCTelemetryConnectionToGraphParams.ContainsKey('CertificateThumbprint'))
         {
-            $Global:M365DSCTelemetryConnectionToGraphParams.Add('CertificateThumbprint', $InboundParameters.CertificateThumbprint)
+            $Script:M365DSCTelemetryConnectionToGraphParams.Add('CertificateThumbprint', $InboundParameters.CertificateThumbprint)
         }
-        Write-Verbose -Message "Calling into Connect-M365Tenant"
+        Write-Verbose -Message 'Calling into Connect-M365Tenant'
         Connect-M365Tenant -Workload $Workload `
             -ApplicationId $InboundParameters.ApplicationId `
             -TenantId $InboundParameters.TenantId `
             -CertificateThumbprint $InboundParameters.CertificateThumbprint `
-            -SkipModuleReload $Global:CurrentModeIsExport `
-            -Url $Url
-        Write-Verbose -Message "Connection initiated."
+            -Url $Url `
+            -EnableSearchOnlySession:$EnableSearchOnlySession
+
+        Write-Verbose -Message 'Connection initiated.'
         if (-not $Script:M365ConnectedToWorkloads -contains "$Workload-ServicePrincipalWithThumbprint")
         {
             $data.Add('ConnectionMode', 'ServicePrincipalWithThumbprint')
@@ -2505,21 +2816,22 @@ function New-M365DSCConnection
     }
     # Case only the TenantId and Credentials parameters are specified
     elseif ($null -ne $InboundParameters.Credential -and `
-    -not [System.String]::IsNullOrEmpty($InboundParameters.TenantId))
+            -not [System.String]::IsNullOrEmpty($InboundParameters.TenantId))
     {
-        if (-not $Global:M365DSCTelemetryConnectionToGraphParams.ContainsKey('Credential'))
+        if (-not $Script:M365DSCTelemetryConnectionToGraphParams.ContainsKey('Credential'))
         {
-            $Global:M365DSCTelemetryConnectionToGraphParams.Add('Credential', $InboundParameters.Credential)
+            $Script:M365DSCTelemetryConnectionToGraphParams.Add('Credential', $InboundParameters.Credential)
         }
-        if (-not $Global:M365DSCTelemetryConnectionToGraphParams.ContainsKey('TenantId'))
+        if (-not $Script:M365DSCTelemetryConnectionToGraphParams.ContainsKey('TenantId'))
         {
-            $Global:M365DSCTelemetryConnectionToGraphParams.Add('TenantId', $InboundParameters.TenantId)
+            $Script:M365DSCTelemetryConnectionToGraphParams.Add('TenantId', $InboundParameters.TenantId)
         }
         Connect-M365Tenant -Workload $Workload `
             -TenantId $InboundParameters.TenantId `
             -Credential $InboundParameters.Credential `
             -Url $Url `
-            -SkipModuleReload $Global:CurrentModeIsExport
+            -EnableSearchOnlySession:$EnableSearchOnlySession
+
         if (-not $Script:M365ConnectedToWorkloads -contains "$Workload-CredentialsWithTenantId")
         {
             $data.Add('ConnectionMode', 'CredentialsWithTenantId')
@@ -2530,7 +2842,7 @@ function New-M365DSCConnection
             Add-M365DSCTelemetryEvent -Data $data -Type 'Connection'
             $Script:M365ConnectedToWorkloads += "$Workload-CredentialsWithTenantId"
         }
-        return "CredentialsWithTenantId"
+        return 'CredentialsWithTenantId'
     }
     # Case only Managed Identity and TenantId are specified
     elseif ($InboundParameters.ManagedIdentity -and `
@@ -2538,18 +2850,18 @@ function New-M365DSCConnection
     {
         Write-Verbose -Message 'Connecting via managed identity'
 
-        if (-not $Global:M365DSCTelemetryConnectionToGraphParams.ContainsKey('Identity'))
+        if (-not $Script:M365DSCTelemetryConnectionToGraphParams.ContainsKey('Identity'))
         {
-            $Global:M365DSCTelemetryConnectionToGraphParams.Add('Identity', $true)
+            $Script:M365DSCTelemetryConnectionToGraphParams.Add('Identity', $true)
         }
-        if (-not $Global:M365DSCTelemetryConnectionToGraphParams.ContainsKey('TenantId'))
+        if (-not $Script:M365DSCTelemetryConnectionToGraphParams.ContainsKey('TenantId'))
         {
-            $Global:M365DSCTelemetryConnectionToGraphParams.Add('TenantId', $InboundParameters.TenantId)
+            $Script:M365DSCTelemetryConnectionToGraphParams.Add('TenantId', $InboundParameters.TenantId)
         }
         Connect-M365Tenant -Workload $Workload `
             -Identity `
             -TenantId $InboundParameters.TenantId `
-            -SkipModuleReload $Global:CurrentModeIsExport
+            -EnableSearchOnlySession:$EnableSearchOnlySession
 
         if (-not $Script:M365ConnectedToWorkloads -contains "$Workload-ManagedIdentity")
         {
@@ -2565,23 +2877,23 @@ function New-M365DSCConnection
     }
     # Case Access Token is Specified
     elseif ($null -ne $InboundParameters.AccessTokens -and `
-    -not [System.String]::IsNullOrEmpty($InboundParameters.TenantId))
+            -not [System.String]::IsNullOrEmpty($InboundParameters.TenantId))
     {
         Write-Verbose -Message 'Connecting via Access Tokens'
 
-        if (-not $Global:M365DSCTelemetryConnectionToGraphParams.ContainsKey('AccessTokens'))
+        if (-not $Script:M365DSCTelemetryConnectionToGraphParams.ContainsKey('AccessTokens'))
         {
-            $Global:M365DSCTelemetryConnectionToGraphParams.Add('AccessTokens', $InboundParameters.AccessTokens)
+            $Script:M365DSCTelemetryConnectionToGraphParams.Add('AccessTokens', $InboundParameters.AccessTokens)
         }
 
-        if (-not $Global:M365DSCTelemetryConnectionToGraphParams.ContainsKey('TenantId'))
+        if (-not $Script:M365DSCTelemetryConnectionToGraphParams.ContainsKey('TenantId'))
         {
-            $Global:M365DSCTelemetryConnectionToGraphParams.Add('TenantId', $InboundParameters.TenantId)
+            $Script:M365DSCTelemetryConnectionToGraphParams.Add('TenantId', $InboundParameters.TenantId)
         }
         Connect-M365Tenant -Workload $Workload `
             -AccessTokens $InboundParameters.AccessTokens `
             -TenantId $InboundParameters.TenantId `
-            -SkipModuleReload $Global:CurrentModeIsExport
+            -EnableSearchOnlySession:$EnableSearchOnlySession
 
         if (-not $Script:M365ConnectedToWorkloads -contains "$Workload-AccessTokens")
         {
@@ -2629,18 +2941,19 @@ function Get-SPOAdministrationUrl
     }
 
     Write-Verbose -Message 'Connection to Azure AD is required to automatically determine SharePoint Online admin URL...'
-    $ConnectionMode = New-M365DSCConnection -Workload 'MicrosoftGraph' `
+    $null = New-M365DSCConnection -Workload 'MicrosoftGraph' `
         -InboundParameters $PSBoundParameters
     Write-Verbose -Message 'Getting SharePoint Online admin URL...'
-    [Array]$defaultDomain = Get-MgBetaDomain | Where-Object { ($_.Id -like '*.onmicrosoft.com' -or $_.Id -like '*.onmicrosoft.de' -or $_.Id -like '*.onmicrosoft.us') -and $_.IsInitial -eq $true } # We don't use IsDefault here because the default could be a custom domain
+    $domain = Invoke-MgGraphRequest -Uri 'beta/domains' -Method GET
+    [Array]$defaultDomain = $domain | Where-Object { ($_.id -like '*.onmicrosoft.com' -or $_.id -like '*.onmicrosoft.de' -or $_.id -like '*.onmicrosoft.us') -and $_.isInitial -eq $true } # We don't use IsDefault here because the default could be a custom domain
 
-    if ($defaultDomain[0].Id -like '*.onmicrosoft.com*')
+    if ($defaultDomain[0].id -like '*.onmicrosoft.com*')
     {
-        $global:tenantName = $defaultDomain[0].Id -replace '.onmicrosoft.com', ''
+        $global:tenantName = $defaultDomain[0].id -replace '.onmicrosoft.com', ''
     }
-    elseif ($defaultDomain[0].Id -like '*.onmicrosoft.de*')
+    elseif ($defaultDomain[0].id -like '*.onmicrosoft.de*')
     {
-        $global:tenantName = $defaultDomain[0].Id -replace '.onmicrosoft.de', ''
+        $global:tenantName = $defaultDomain[0].id -replace '.onmicrosoft.de', ''
     }
     $global:AdminUrl = "https://$global:tenantName-admin.sharepoint.com"
     Write-Verbose -Message "SharePoint Online admin URL is $global:AdminUrl"
@@ -2675,97 +2988,23 @@ function Get-M365TenantName
     }
 
     Write-Verbose -Message 'Connection to Azure AD is required to automatically determine SharePoint Online admin URL...'
-    $ConnectionMode = New-M365DSCConnection -Workload 'MicrosoftGraph' `
+    $null = New-M365DSCConnection -Workload 'MicrosoftGraph' `
         -InboundParameters $PSBoundParameters
     Write-Verbose -Message 'Getting SharePoint Online admin URL...'
-    [Array]$defaultDomain = Get-MgBetaDomain | Where-Object { ($_.Id -like '*.onmicrosoft.com' -or $_.Id -like '*.onmicrosoft.de') -and $_.IsInitial -eq $true } # We don't use IsDefault here because the default could be a custom domain
+    $domain = Invoke-MgGraphRequest -Uri 'beta/domains' -Method GET
+    [Array]$defaultDomain = $domain | Where-Object { ($_.id -like '*.onmicrosoft.com' -or $_.id -like '*.onmicrosoft.de') -and $_.isInitial -eq $true } # We don't use IsDefault here because the default could be a custom domain
 
-    if ($defaultDomain[0].Id -like '*.onmicrosoft.com*')
+    if ($defaultDomain[0].id -like '*.onmicrosoft.com*')
     {
-        $tenantName = $defaultDomain[0].Id -replace '.onmicrosoft.com', ''
+        $tenantName = $defaultDomain[0].id -replace '.onmicrosoft.com', ''
     }
-    elseif ($defaultDomain[0].Id -like '*.onmicrosoft.de*')
+    elseif ($defaultDomain[0].id -like '*.onmicrosoft.de*')
     {
-        $tenantName = $defaultDomain[0].Id -replace '.onmicrosoft.de', ''
+        $tenantName = $defaultDomain[0].id -replace '.onmicrosoft.de', ''
     }
 
     Write-Verbose -Message "M365 tenant name is $tenantName"
     return $tenantName
-}
-
-<#
-.Description
-This function splits the provided array in the specified number of arrays
-
-.Functionality
-Internal
-#>
-function Split-ArrayByParts
-{
-    [OutputType([System.Object[]])]
-    param
-    (
-        [Parameter(Mandatory = $true)]
-        [System.Object[]]
-        $Array,
-
-        [Parameter(Mandatory = $true)]
-        [System.Uint32]
-        $Parts
-    )
-
-    if ($Parts)
-    {
-        $PartSize = [Math]::Ceiling($Array.Count / $Parts)
-    }
-    $outArray = New-Object -TypeName 'System.Collections.Generic.List[PSObject]'
-
-    for ($i = 0; $i -lt $Parts; $i++)
-    {
-        $start = ($i * $PartSize)
-
-        if ($start -lt $Array.Count)
-        {
-            $end = (($i + 1) * $PartSize) - 1
-            if ($end -ge $Array.Count)
-            {
-                $end = $Array.Count - 1
-            }
-            $outArray.Add(@($Array[$start..$end]))
-        }
-    }
-
-    return , $outArray
-}
-
-<#
-.Description
-This function creates a PSCustomObject of the provided input values
-
-.Functionality
-Internal
-#>
-function Get-SPOUserProfilePropertyInstance
-{
-    [CmdletBinding()]
-    [OutputType([System.Collections.Hashtable])]
-    param
-    (
-        [Parameter(Mandatory = $true)]
-        [System.String]
-        $Key,
-
-        [Parameter()]
-        [System.String]
-        $Value
-    )
-
-    $result = [PSCustomObject]@{
-        Key   = $Key
-        Value = $Value
-    }
-
-    return $result
 }
 
 <#
@@ -2789,17 +3028,18 @@ function Install-M365DSCDevBranch
     [CmdletBinding()]
     param(
         [Parameter()]
-        [ValidateSet("CurrentUser", "AllUsers")]
-        $Scope = "AllUsers"
+        [ValidateSet('CurrentUser', 'AllUsers')]
+        $Scope = 'AllUsers'
     )
 
-    try {
+    try
+    {
 
         $longPathsEnabled = (Get-ItemProperty 'HKLM:\SYSTEM\CurrentControlSet\Control\FileSystem').LongPathsEnabled -eq 1
         if (-not $longPathsEnabled)
         {
-            $message = "Long paths are not enabled on this system. You may encounter issues with the installation of Microsoft365DSC because of long file names."
-            $message += "To enable long paths, set the registry LongPathsEnabled DWORD entry to 1 in HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\FileSystem."
+            $message = 'Long paths are not enabled on this system. You may encounter issues with the installation of Microsoft365DSC because of long file names.'
+            $message += 'To enable long paths, set the registry LongPathsEnabled DWORD entry to 1 in HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\FileSystem.'
             Write-Warning -Message $message
         }
 
@@ -2810,7 +3050,7 @@ function Install-M365DSCDevBranch
         $extractPath = $env:Temp + '\O365Dev'
         Write-Host 'Done' -ForegroundColor Green
 
-        Invoke-WebRequest -Uri $url -OutFile $output
+        Invoke-WebRequest -Uri $url -OutFile $output -UseBasicParsing
 
         Expand-Archive $output -DestinationPath $extractPath -Force
         #endregion
@@ -2818,7 +3058,7 @@ function Install-M365DSCDevBranch
         #region Install All Dependencies
         $manifest = Import-PowerShellDataFile "$extractPath\Microsoft365DSC-Dev\Modules\Microsoft365DSC\Microsoft365DSC.psd1"
         $dependencies = $manifest.RequiredModules
-        if ((-not(([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator))) -and ($Scope -eq "AllUsers"))
+        if ((-not(([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator))) -and ($Scope -eq 'AllUsers'))
         {
             Write-Error 'Cannot update the dependencies for Microsoft365DSC. You need to run this command as a local administrator.'
         }
@@ -2917,12 +3157,12 @@ function Get-AllSPOPackages
 
     try
     {
-        $ConnectionMode = New-M365DSCConnection -Workload 'PnP' `
+        $null = New-M365DSCConnection -Workload 'PnP' `
             -InboundParameters $PSBoundParameters
 
         $tenantAppCatalogUrl = Get-PnPTenantAppCatalogUrl -ErrorAction Stop
 
-        $ConnectionMode = New-M365DSCConnection -Workload 'PnP' `
+        $null = New-M365DSCConnection -Workload 'PnP' `
             -InboundParameters $PSBoundParameters `
             -Url $tenantAppCatalogUrl
 
@@ -2940,8 +3180,8 @@ function Get-AllSPOPackages
                 foreach ($file in $allFiles)
                 {
                     $filesToDownload += @{
-                        Name = $file.Name
-                        Site = $tenantAppCatalogUrl
+                        Name  = $file.Name
+                        Site  = $tenantAppCatalogUrl
                         Title = $file.Title
                     }
                 }
@@ -2949,10 +3189,10 @@ function Get-AllSPOPackages
             catch
             {
                 New-M365DSCLogEntry -Message $_.Exception.Message `
-                -Exception $_ `
-                -Source $($MyInvocation.MyCommand.Source) `
-                -TenantId $TenantId `
-                -Credential $Credential
+                    -Exception $_ `
+                    -Source $($MyInvocation.MyCommand.Source) `
+                    -TenantId $TenantId `
+                    -Credential $Credential
             }
         }
 
@@ -3044,6 +3284,9 @@ Specifies the name of resources that should not be assessed as part of the repor
 .Parameter DriftOnly
 Specifies if the report should only show properties drifts and not missing instances.
 
+.Parameter KeepExport
+Specifies if the export created to compare with the blueprint should be kept after the report is generated. By default, the export will be removed after the report is generated.
+
 .Example
 Assert-M365DSCBlueprint -BluePrintUrl 'C:\DS\blueprint.m365' -OutputReportPath 'C:\DSC\BlueprintReport.html'
 
@@ -3052,6 +3295,9 @@ Assert-M365DSCBlueprint -BluePrintUrl 'C:\DS\blueprint.m365' -OutputReportPath '
 
 .Example
 Assert-M365DSCBlueprint -BluePrintUrl 'C:\DS\blueprint.m365' -OutputReportPath 'C:\DSC\BlueprintReport.html' -ApplicationId $clientid -TenantId $tenantId -CertificateThumbprint $certthumbprint -HeaderFilePath 'C:\DSC\ReportCustomHeader.html'
+
+.Example
+Assert-M365DSCBlueprint -BluePrintUrl 'C:\DS\blueprint.m365' -OutputReportPath 'C:\DSC\BlueprintReport.html' -KeepExport $true
 
 .Functionality
 Public
@@ -3112,7 +3358,11 @@ function Assert-M365DSCBlueprint
 
         [Parameter()]
         [System.Boolean]
-        $DriftOnly = $true
+        $DriftOnly = $true,
+
+        [Parameter()]
+        [System.Boolean]
+        $KeepExport = $false
     )
 
     #Ensure the proper dependencies are installed in the current environment.
@@ -3130,7 +3380,7 @@ function Assert-M365DSCBlueprint
     try
     {
         # Download the BluePrint locally in a temp location
-        Invoke-WebRequest -Uri $BluePrintUrl -OutFile $LocalBluePrintPath
+        Invoke-WebRequest -Uri $BluePrintUrl -OutFile $LocalBluePrintPath -UseBasicParsing
     }
     catch
     {
@@ -3146,7 +3396,7 @@ function Assert-M365DSCBlueprint
         }
     }
 
-    if ((Test-Path -Path $LocalBluePrintPath))
+    if (Test-Path -Path $LocalBluePrintPath)
     {
         # Parse the content of the BluePrint into an array of PowerShell Objects
         $fileContent = Get-Content $LocalBluePrintPath -Raw
@@ -3222,6 +3472,13 @@ function Assert-M365DSCBlueprint
             -Type $Type `
             -ExcludedProperties $ExcludedProperties `
             -ExcludedResources $ExcludedResources
+
+        # Clean up the temporary files
+        Remove-Item $LocalBluePrintPath -Force -ErrorAction SilentlyContinue
+        if (!$KeepExport)
+        {
+            Remove-Item $ExportPath -Force -ErrorAction SilentlyContinue
+        }
     }
     else
     {
@@ -3247,7 +3504,7 @@ function Test-M365DSCDependenciesForNewVersions
     $i = 1
     Import-Module PowerShellGet -Force
 
-    foreach ($dependency in $Script:M365DSCDependencies)
+    foreach ($dependency in $Script:M365DSCDependencies.Values.GetEnumerator())
     {
         Write-Progress -Activity 'Scanning Dependencies' -PercentComplete ($i / $Script:M365DSCDependencies.Count * 100)
         try
@@ -3289,6 +3546,12 @@ Specifies that the function should only return the dependencies that are not ins
 .Parameter Scope
 Specifies the scope of the update of the module. The default value is AllUsers(needs to run as elevated user).
 
+.PARAMETER Proxy
+Specifies the proxy server to use for the module installation.
+
+.PARAMETER Repository
+Specifies the PowerShell repository name to use for the installation of the dependencies.
+
 .Example
 Update-M365DSCDependencies
 
@@ -3315,12 +3578,16 @@ function Update-M365DSCDependencies
         $ValidateOnly,
 
         [Parameter()]
-        [ValidateSet("CurrentUser", "AllUsers")]
-        $Scope = "AllUsers",
+        [ValidateSet('CurrentUser', 'AllUsers')]
+        $Scope = 'AllUsers',
 
         [Parameter()]
         [System.String]
-        $Proxy
+        $Proxy,
+
+        [Parameter()]
+        [System.String]
+        $Repository = 'PSGallery'
     )
 
     try
@@ -3336,7 +3603,29 @@ function Update-M365DSCDependencies
             $params.Add('Proxy', $Proxy)
         }
 
-        foreach ($dependency in $Script:M365DSCDependencies)
+        # Check if PSResourceGet is installed or not
+        if (-not $Script:IsPsResourceGetAvailable)
+        {
+            Write-Warning -Message 'Microsoft.PowerShell.PSResourceGet is not installed, installing it now...'
+            try
+            {
+                Install-Module -Name Microsoft.PowerShell.PSResourceGet -Scope $Scope -AllowClobber @params -Force -ErrorAction Stop -Repository PSGallery
+                $Script:IsPsResourceGetAvailable = $true
+            }
+            catch
+            {
+                Write-Warning -Message 'Failed to install Microsoft.PowerShell.PSResourceGet, continuing without it...'
+            }
+        }
+
+        $scopedIsPsResourceGetAvailable = $Script:IsPsResourceGetAvailable
+        if ($params.ContainsKey('Proxy'))
+        {
+            Write-Information -MessageData 'Falling back to Install-Module because Install-PSResource does not support a proxy'
+            $scopedIsPsResourceGetAvailable = $false
+        }
+
+        foreach ($dependency in $Script:M365DSCDependencies.Values.GetEnumerator())
         {
             Write-Progress -Activity 'Scanning dependencies' -PercentComplete ($i / $Script:M365DSCDependencies.Count * 100)
             try
@@ -3361,7 +3650,7 @@ function Update-M365DSCDependencies
                     $errorFound = $false
                     try
                     {
-                        if ((-not(([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator))) -and ($Scope -eq "AllUsers"))
+                        if ((-not(([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator))) -and ($Scope -eq 'AllUsers'))
                         {
                             Write-Error 'Cannot update the dependencies for Microsoft365DSC. You need to run this command as a local administrator.'
                             $errorFound = $true
@@ -3384,14 +3673,23 @@ function Update-M365DSCDependencies
                             continue
                         }
 
-                        Write-Information -MessageData "Installing $($dependency.ModuleName) version {$($dependency.RequiredVersion)}"
                         Remove-Module $dependency.ModuleName -Force -ErrorAction SilentlyContinue
                         if ($dependency.ModuleName -like 'Microsoft.Graph*')
                         {
                             Remove-Module 'Microsoft.Graph.Authentication' -Force -ErrorAction SilentlyContinue
                         }
                         Remove-Module $dependency.ModuleName -Force -ErrorAction SilentlyContinue
-                        Install-Module $dependency.ModuleName -RequiredVersion $dependency.RequiredVersion -AllowClobber -Force -Scope "$Scope" @Params
+
+                        if ($scopedIsPsResourceGetAvailable)
+                        {
+                            Write-Information -MessageData "Using Install-PSResource to install $($dependency.ModuleName) with version {$($dependency.RequiredVersion)}"
+                            Install-PSResource -Name $dependency.ModuleName -Version $dependency.RequiredVersion -Scope $Scope -AcceptLicense -SkipDependencyCheck -TrustRepository -Repository $Repository
+                        }
+                        else
+                        {
+                            Write-Information -MessageData "Using Install-Module to install $($dependency.ModuleName) with version {$($dependency.RequiredVersion)}"
+                            Install-Module $dependency.ModuleName -RequiredVersion $dependency.RequiredVersion -AllowClobber -Force -Scope "$Scope" @Params -Repository $Repository
+                        }
                     }
                 }
 
@@ -3400,11 +3698,11 @@ function Update-M365DSCDependencies
                     Remove-Module $dependency.ModuleName -Force -ErrorAction SilentlyContinue
                     if ($dependency.Prefix)
                     {
-                        Import-Module $dependency.ModuleName -Global -Prefix $dependency.Prefix -Force
+                        Import-Module $dependency.ModuleName -Global -Prefix $dependency.Prefix -Force -DisableNameChecking
                     }
                     else
                     {
-                        Import-Module $dependency.ModuleName -Global -Force
+                        Import-Module $dependency.ModuleName -Global -Force -Alias @() -Cmdlet @() -Variable @() -DisableNameChecking
                     }
                 }
 
@@ -3456,7 +3754,7 @@ function Uninstall-M365DSCOutdatedDependencies
         $InformationPreference = 'Continue'
 
         [array]$microsoft365DscModules = Get-Module Microsoft365DSC -ListAvailable
-        $outdatedMicrosoft365DscModules = $microsoft365DscModules | Sort-Object Version | Select-Object -SkipLast 1
+        $outdatedMicrosoft365DscModules = $microsoft365DscModules | Sort-Object -Property Version | Select-Object -SkipLast 1
 
         foreach ($module in $outdatedMicrosoft365DscModules)
         {
@@ -3477,7 +3775,7 @@ function Uninstall-M365DSCOutdatedDependencies
             }
         }
 
-        $allDependenciesExceptAuth = $Script:M365DSCDependencies | Where-Object { $_.ModuleName -ne 'Microsoft.Graph.Authentication' }
+        $allDependenciesExceptAuth = $Script:M365DSCDependencies.Values.GetEnumerator().Where({ $_.ModuleName -ne 'Microsoft.Graph.Authentication' })
 
         $i = 1
         foreach ($dependency in $allDependenciesExceptAuth)
@@ -3530,7 +3828,7 @@ function Uninstall-M365DSCOutdatedDependencies
         Write-Error $_
     }
 
-    $authModule = $Script:M365DSCDependencies | Where-Object { $_.ModuleName -eq 'Microsoft.Graph.Authentication' }
+    $authModule = $Script:M365DSCDependencies['Microsoft.Graph.Authentication']
     try
     {
         Write-Information -MessageData 'Checking Microsoft.Graph.Authentication'
@@ -3556,69 +3854,6 @@ function Uninstall-M365DSCOutdatedDependencies
         Write-Error -Message "Could not uninstall {$($dependency.ModuleName)}" -ErrorAction Continue
     }
 }
-
-<#
-.Description
-This function removes all empty values from a dictionary object
-
-.Functionality
-Internal
-#>
-function Remove-M365DSCEmptyValue
-{
-    [Alias('Remove-M365DSCEmptyValues')]
-    [CmdletBinding()]
-    param
-    (
-        [Alias('Splat', 'IDictionary')][Parameter(Mandatory)][System.Collections.IDictionary] $Hashtable,
-        [string[]] $ExcludeParameter,
-        [switch] $Recursive,
-        [int] $Rerun
-    )
-
-    foreach ($Key in [string[]] $Hashtable.Keys)
-    {
-        if ($Key -notin $ExcludeParameter)
-        {
-            if ($Recursive)
-            {
-                if ($Hashtable[$Key] -is [System.Collections.IDictionary])
-                {
-                    if ($Hashtable[$Key].Count -eq 0)
-                    {
-                        $Hashtable.Remove($Key)
-                    }
-                    else
-                    {
-                        Remove-M365DSCEmptyValue -Hashtable $Hashtable[$Key] -Recursive:$Recursive
-                    }
-                }
-                else
-                {
-                    if ($null -eq $Hashtable[$Key] -or ($Hashtable[$Key] -is [string] -and $Hashtable[$Key] -eq '') -or ($Hashtable[$Key] -is [System.Collections.IList] -and $Hashtable[$Key].Count -eq 0))
-                    {
-                        $Hashtable.Remove($Key)
-                    }
-                }
-            }
-            else
-            {
-                if ($null -eq $Hashtable[$Key] -or ($Hashtable[$Key] -is [string] -and $Hashtable[$Key] -eq '') -or ($Hashtable[$Key] -is [System.Collections.IList] -and $Hashtable[$Key].Count -eq 0))
-                {
-                    $Hashtable.Remove($Key)
-                }
-            }
-        }
-    }
-    if ($Rerun)
-    {
-        for ($i = 0; $i -lt $Rerun; $i++)
-        {
-            Remove-M365DSCEmptyValue -Hashtable $Hashtable -Recursive:$Recursive
-        }
-    }
-}
-
 
 <#
 .Description
@@ -3817,9 +4052,59 @@ function Update-M365DSCExportAuthenticationResults
     }
 
     return @{
-        Results = $Results
+        Results  = $Results
         NoEscape = $noEscape
     }
+}
+
+<#
+.DESCRIPTION
+    This function sets the string replacement map used during export.
+
+.FUNCTIONALITY
+    Internal
+#>
+function Set-M365DSCStringReplacementMap
+{
+    [CmdletBinding()]
+    param(
+        [Parameter()]
+        [System.Collections.Hashtable]
+        $Map,
+
+        [Parameter()]
+        [switch]
+        $Clear
+    )
+
+    if ($Clear)
+    {
+        $Script:M365DSCStringReplacementMap = @{}
+    }
+
+    if ($PSBoundParameters.ContainsKey('Map'))
+    {
+        foreach ($key in $Map.Keys)
+        {
+            $Script:M365DSCStringReplacementMap[$key] = $Map[$key]
+        }
+    }
+}
+
+<#
+.DESCRIPTION
+    This function returns the string replacement map used during export.
+
+.FUNCTIONALITY
+    Internal
+#>
+function Get-M365DSCStringReplacementMap
+{
+    [CmdletBinding()]
+    [OutputType([System.Collections.Hashtable])]
+    param()
+
+    return $Script:M365DSCStringReplacementMap.Clone()
 }
 
 <#
@@ -3894,36 +4179,16 @@ function Get-M365DSCExportContentForResource
     }
 
     $primaryKey = ''
-    $ModuleFullName = "MSFT_" + $ResourceName
-    $moduleInfo = Get-Command -Module $ModuleFullName -ErrorAction SilentlyContinue
-    if ($null -eq $moduleInfo)
+    $ModuleFullName = 'MSFT_' + $ResourceName
+    $Resource = $Script:AllM365DSCResources.$ResourceName
+    $Keys = $Resource.Properties.Where({ $_.IsMandatory }) | Select-Object -ExpandProperty Name
+    if ($null -eq $keys)
     {
-        if ($Script:AllM365DscResources.Count -eq 0)
-        {
-            if ($Script:IsPowerShellCore)
-            {
-                $Script:AllM365DscResources = Get-PwshDscResource -Module 'Microsoft365Dsc'
-            }
-            else
-            {
-                $Script:AllM365DscResources = Get-DscResource -Module 'Microsoft365Dsc'
-            }
-        }
-
-        $Resource = $Script:AllM365DscResources.Where({ $_.Name -eq $ResourceName })
-        $Keys = $Resource.Properties.Where({ $_.IsMandatory }) | `
-            Select-Object -ExpandProperty Name
-        if ($null -eq $keys)
+        if (-not (Get-Module $ModuleFullName))
         {
             Import-Module $Resource.Path -Force
-            $moduleInfo = Get-Command -Module $ModuleFullName -ErrorAction SilentlyContinue
-            $cmdInfo = $moduleInfo | Where-Object -FilterScript {$_.Name -eq 'Get-TargetResource'}
-            $Keys = $cmdInfo.Parameters.Values.Where({ $_.ParameterSets.Values.IsMandatory }).Name
         }
-    }
-    else
-    {
-        $cmdInfo = $moduleInfo | Where-Object -FilterScript {$_.Name -eq 'Get-TargetResource'}
+        $cmdInfo = Get-Command $ModuleFullName\Get-TargetResource -ErrorAction SilentlyContinue
         $Keys = $cmdInfo.Parameters.Values.Where({ $_.ParameterSets.Values.IsMandatory }).Name
     }
 
@@ -3972,8 +4237,7 @@ function Get-M365DSCExportContentForResource
         $primaryKey = $Results.UserPrincipalName
     }
 
-    if ([String]::IsNullOrEmpty($primaryKey) -and `
-        -not $Keys.Contains('IsSingleInstance'))
+    if ([String]::IsNullOrEmpty($primaryKey) -and -not $Keys.Contains('IsSingleInstance'))
     {
         foreach ($Key in $Keys)
         {
@@ -4005,9 +4269,9 @@ function Get-M365DSCExportContentForResource
     $i = 2
     $tempName = $instanceName
     while ($null -ne $Global:M365DSCExportedResourceInstancesNames -and `
-           $Global:M365DSCExportedResourceInstancesNames.Contains($tempName))
+            $Global:M365DSCExportedResourceInstancesNames.Contains($tempName))
     {
-        $tempName = $instanceName + "-" + $i.ToString()
+        $tempName = $instanceName + '-' + $i.ToString()
         $i++
     }
     $instanceName = $tempName
@@ -4024,6 +4288,35 @@ function Get-M365DSCExportContentForResource
         $partialContent = $partialContent -ireplace [regex]::Escape($OrganizationName), "`$OrganizationName"
         $partialContent = $partialContent -ireplace [regex]::Escape('@' + $OrganizationName), "@`$OrganizationName"
     }
+
+    # Apply additional string to variable replacements from mapping
+    if ($null -ne $Script:M365DSCStringReplacementMap -and $Script:M365DSCStringReplacementMap.Count -gt 0)
+    {
+        foreach ($entry in $Script:M365DSCStringReplacementMap.GetEnumerator())
+        {
+            $target = $entry.Key
+            $varName = $entry.Value
+            if ([System.String]::IsNullOrEmpty($target) -or [System.String]::IsNullOrEmpty($varName))
+            {
+                Write-Verbose -Message "Skipping invalid string replacement map entry: Key = '$target', VariableName = '$varName'"
+                continue
+            }
+            # Skip if already handled as OrganizationName
+            if ($OrganizationName -and ($target -ieq $OrganizationName))
+            {
+                Write-Verbose -Message "Skipping replacement for target [$target] because it matches the OrganizationName: '$OrganizationName'"
+                continue
+            }
+
+            if ($partialContent.ToLower().IndexOf($target.ToLower()) -gt 0)
+            {
+                $partialContent = $partialContent -ireplace [regex]::Escape($target + ':'), "`$(`$ConfigurationData.NonNodeData.$varName):"
+                $partialContent = $partialContent -ireplace [regex]::Escape($target), "`$(`$ConfigurationData.NonNodeData.$varName)"
+                $partialContent = $partialContent -ireplace [regex]::Escape('@' + $target), "@`$(`$ConfigurationData.NonNodeData.$varName)"
+            }
+        }
+    }
+
     [void]$content.Append($partialContent)
     [void]$content.Append("        }`r`n")
 
@@ -4058,9 +4351,9 @@ function Get-M365DSCComponentsWithMostSecureAuthenticationType
     $Components = @()
     foreach ($resource in $modules)
     {
-        if ($Resources -contains ($resource.Name.Replace('.psm1', '').Replace('MSFT_', '')))
+        if ($Resources -contains ($resource.Name -replace '.psm1', '' -replace 'MSFT_', ''))
         {
-            Import-Module $resource.FullName -Force
+            Import-Module $resource.FullName -Force -Function @('Set-TargetResource') -DisableNameChecking
             $parameters = (Get-Command 'Set-TargetResource').Parameters.Keys
 
             # Case - Resource supports CertificateThumbprint
@@ -4210,28 +4503,28 @@ function Test-M365DSCObjectHasProperty
 
 <#
 .Description
-    This function returns the used workloads for the specified DSC resources
+    This function returns the connection workloads for the specified DSC resources
 
 .Parameter ResourceNames
-    Specifies the resources for which the workloads should be determined.
+    Specifies the resources for which the connection workloads should be determined.
     Either a single string, an array of strings or an object with 'Name' and 'AuthenticationMethod' can be provided.
 
 .Example
-    Get-M365DSCWorkloadsListFromResourceNames -ResourceNames AADUser
+    Get-M365DSCConnectedWorkloadList -ResourceNames AADUser
 
 .EXAMPLE
-    Get-M365DSCWorkloadsListFromResourceNames -ResourceNames @('AADUser', 'AADGroup')
+    Get-M365DSCConnectedWorkloadList -ResourceNames @('AADUser', 'AADGroup')
 
 .EXAMPLE
-    Get-M365DSCWorkloadsListFromResourceNames -ResourceNames @{Name = 'AADUser'; AuthenticationMethod = 'Credentials'}
+    Get-M365DSCConnectedWorkloadList -ResourceNames @{Name = 'AADUser'; AuthenticationMethod = 'Credentials'}
 
 .Functionality
 Public
 #>
-function Get-M365DSCWorkloadsListFromResourceNames
+function Get-M365DSCConnectedWorkloadList
 {
     [CmdletBinding()]
-    [OutputType([System.Collections.Hashtable])]
+    [OutputType([System.Collections.Hashtable[]])]
     param
     (
         [Parameter(Mandatory = $true, Position = 1)]
@@ -4349,7 +4642,54 @@ function Get-M365DSCWorkloadsListFromResourceNames
             }
         }
     }
-    return ($workloads | Sort-Object {$_.Name})
+    return ($workloads | Sort-Object { $_.Name })
+}
+
+<#
+.Description
+    This function returns the workload to which the specified DSC resources belongs.
+
+.Parameter ResourceName
+    Specifies the resources for which the workloads should be determined.
+    Either a single string or an array of strings.
+
+.Example
+    Get-M365DSCWorkloadForResource -ResourceName AADUser
+
+.EXAMPLE
+    Get-M365DSCWorkloadForResource -ResourceName @('AADUser', 'AADGroup')
+
+.Functionality
+Internal
+#>
+function Get-M365DSCWorkloadForResource
+{
+    [CmdletBinding()]
+    [OutputType([System.String[]])]
+    param
+    (
+        [Parameter(Mandatory = $true, Position = 1)]
+        [System.String[]]
+        $ResourceName
+    )
+
+    $workloads = @()
+    foreach ($resource in $ResourceName)
+    {
+        foreach ($workload in $Script:M365DSCWorkloads)
+        {
+            if ($resource -like "$($workload)*")
+            {
+                if ($workloads -notcontains $workload)
+                {
+                    $workloads += $workload
+                    break
+                }
+            }
+        }
+    }
+
+    return $workloads | Sort-Object
 }
 
 <#
@@ -4433,7 +4773,7 @@ function New-M365DSCCmdletDocumentation
     Write-Host -Object 'Creating Markdown documentation for M365DSC cmdlets:' -ForegroundColor Gray
 
     $counter = 0
-    foreach ($command in (Get-Module Microsoft365Dsc).ExportedCommands.GetEnumerator())
+    foreach ($command in (Get-Module Microsoft365DSC).ExportedCommands.GetEnumerator())
     {
         $commandName = $command.Key
         $helpInfo = Get-Help $commandName
@@ -4445,32 +4785,32 @@ function New-M365DSCCmdletDocumentation
             $output = New-Object -TypeName System.Text.StringBuilder
 
             $null = $output.AppendLine("# $($commandName)")
-            $null = $output.AppendLine('')
+            $null = $output.AppendLine()
 
             $helpInfo = Get-Help -Name $commandName
             if ($helpInfo.description.Count -ne 0)
             {
                 $null = $output.AppendLine('## Description')
-                $null = $output.AppendLine('')
+                $null = $output.AppendLine()
                 $null = $output.AppendLine($helpInfo.Description[0].Text)
-                $null = $output.AppendLine('')
+                $null = $output.AppendLine()
             }
 
             $cmd = Get-Command -Name $commandName
             if ([String]::IsNullOrEmpty($cmd.OutputType) -eq $false)
             {
                 $null = $output.AppendLine('## Output')
-                $null = $output.AppendLine('')
+                $null = $output.AppendLine()
                 $null = $output.AppendLine('This function outputs information as the following type:')
                 $null = $output.AppendLine("**$($cmd.OutputType)**")
-                $null = $output.AppendLine('')
+                $null = $output.AppendLine()
             }
             else
             {
                 $null = $output.AppendLine('## Output')
-                $null = $output.AppendLine('')
+                $null = $output.AppendLine()
                 $null = $output.AppendLine('This function does not generate any output.')
-                $null = $output.AppendLine('')
+                $null = $output.AppendLine()
             }
 
             $ast = $cmd.ScriptBlock.Ast
@@ -4478,7 +4818,7 @@ function New-M365DSCCmdletDocumentation
             $parameters = $ast.FindAll({ $args[0] -is [System.Management.Automation.Language.ParameterAst] }, $true)
 
             $null = $output.AppendLine('## Parameters')
-            $null = $output.AppendLine('')
+            $null = $output.AppendLine()
             if ($parameters.Count -gt 0)
             {
                 $null = $output.AppendLine('| Parameter | Required | DataType | Default Value | Allowed Values | Description |')
@@ -4503,32 +4843,47 @@ function New-M365DSCCmdletDocumentation
                     }
                     $mandatory = (Get-Culture).TextInfo.ToTitleCase($mandatory.ToLower())
 
-                    $null = $output.AppendLine("| $($paramName) | $($mandatory) | $($parameter.StaticType.Name) | $($parameter.DefaultValue.Value) | $($parameter.Attributes.Where({$_.TypeName.FullName -eq 'ValidateSet'}).PositionalArguments.Value -join ', ') | $($description) |")
-
+                    $defaultValue = " $($parameter.DefaultValue.Value) "
+                    if ($defaultValue -eq '  ')
+                    {
+                        $defaultValue = ' '
+                    }
+                    $validateSetValue = " $($parameter.Attributes.Where({$_.TypeName.FullName -eq 'ValidateSet'}).PositionalArguments.Value -join ', ') "
+                    if ($validateSetValue -eq '  ')
+                    {
+                        $validateSetValue = ' '
+                    }
+                    $description = " $($description.Split("`n") -join ' ') "
+                    if ($description -eq '  ')
+                    {
+                        $description = ' '
+                    }
+                    $null = $output.AppendLine("| $($paramName) | $($mandatory) | $($parameter.StaticType.Name) |$defaultValue|$validateSetValue|$description|")
                 }
-                $null = $output.AppendLine('')
+                $null = $output.AppendLine()
             }
             else
             {
                 $null = $output.AppendLine('This function does not have any input parameters.')
+                $null = $output.AppendLine()
             }
 
             if ($helpInfo.examples.example.Count -ne 0)
             {
                 $null = $output.AppendLine('## Examples')
-                $null = $output.AppendLine('')
+                $null = $output.AppendLine()
                 foreach ($example in $helpInfo.examples.example)
                 {
                     $null = $output.AppendLine($example.title)
-                    $null = $output.AppendLine('')
+                    $null = $output.AppendLine()
                     $null = $output.AppendLine("``$($example.code)``")
-                    $null = $output.AppendLine('')
+                    $null = $output.AppendLine()
                 }
             }
 
             $savePath = Join-Path -Path $cmdletDocsRoot -ChildPath "$commandName.md"
             $null = Out-File `
-                -InputObject ($output.ToString() -replace '\r?\n', "`r`n") `
+                -InputObject ($output.ToString() -replace '\r?\n', "`r`n").TrimEnd("`r`n") `
                 -FilePath $savePath `
                 -Encoding utf8 `
                 -Force:$Force
@@ -4552,7 +4907,7 @@ Specifies the resource name for which the example should be generated.
 .Functionality
 Internal, Hidden
 #>
-function Create-M365DSCResourceExample
+function New-M365DSCResourceExample
 {
     param
     (
@@ -4662,7 +5017,7 @@ function New-M365DSCMissingResourcesExample
         $m365Resources = Get-DscResource -Module Microsoft365DSC | Select-Object -ExpandProperty Name
     }
 
-    $examplesPath = Join-Path $location -ChildPath '..\Examples\Resources'
+    $examplesPath = Join-Path $location -ChildPath '..\..\..\Examples\Resources'
     $examples = Get-ChildItem -Path $examplesPath | Where-Object { $_.PsIsContainer } | Select-Object -ExpandProperty Name
 
     [array]$differences = Compare-Object -ReferenceObject $m365Resources -DifferenceObject $examples
@@ -4673,7 +5028,7 @@ function New-M365DSCMissingResourcesExample
     foreach ($difference in $differences)
     {
         Write-Host "[$count/$total] Processing $($difference.InputObject)"
-        $path = Join-Path -Path '.\Modules\Microsoft365DSC\Examples\Resources' -ChildPath $difference.InputObject
+        $path = Join-Path -Path '.\Examples\Resources' -ChildPath $difference.InputObject
         switch ($difference.SideIndicator)
         {
             '<='
@@ -4681,7 +5036,7 @@ function New-M365DSCMissingResourcesExample
                 Write-Host '  - Example missing, generating!'
                 $null = New-Item -Path $path -ItemType Directory
                 $exampleFile = Join-Path -Path $path -ChildPath '1-Configure.ps1'
-                Set-Content -Path $exampleFile -Value (Create-M365DSCResourceExample -ResourceName $difference.InputObject)
+                Set-Content -Path $exampleFile -Value (New-M365DSCResourceExample -ResourceName $difference.InputObject)
             }
             '=>'
             {
@@ -4695,21 +5050,25 @@ function New-M365DSCMissingResourcesExample
 
 <#
 .Description
-This function validates there are no updates to the module or it's dependencies and no multiple versions are present on the local system.
+    This function validates there are no updates to the module or it's dependencies and no multiple versions are present on the local system.
 
 .Example
-Test-M365DSCModuleValidity
-
-.Example
-Test-M365DSCModuleValidity -Force
+    Test-M365DSCModuleValidity
 
 .Functionality
-Public
+    Public
 #>
 function Test-M365DSCModuleValidity
 {
     [CmdletBinding()]
     param()
+
+    if ($Script:IsM365DSCModuleValidated)
+    {
+        Write-Verbose -Message 'The Microsoft365DSC module has already been validated in this session.'
+        Write-Verbose -Message 'If you have updated the module, please restart your PowerShell session to re-validate.'
+        return
+    }
 
     if ($env:AZUREPS_HOST_ENVIRONMENT -like 'AzureAutomation*')
     {
@@ -4718,8 +5077,15 @@ function Test-M365DSCModuleValidity
         return
     }
 
-    # validate only one installation of the module is present (and it's the latest version available)
-    $latestVersion = (Find-Module -Name 'Microsoft365DSC' -Includes 'DSCResource').Version
+    # Validate if only one installation of the module is present and that it's the latest version available
+    if ($Script:IsPsResourceGetAvailable)
+    {
+        $latestVersion = (Find-PSResource -Name 'Microsoft365DSC' -Repository 'PSGallery').Version | Sort-Object -Descending | Select-Object -First 1
+    }
+    else
+    {
+        $latestVersion = (Find-Module -Name 'Microsoft365DSC' -Includes 'DSCResource').Version
+    }
     $localVersion = (Get-Module -Name 'Microsoft365DSC').Version
 
     if ($latestVersion -gt $localVersion)
@@ -4728,6 +5094,8 @@ function Test-M365DSCModuleValidity
         Write-Host "To update the module and it's dependencies, run the following command:"
         Write-Host 'Update-M365DSCModule' -ForegroundColor Blue
     }
+
+    $Script:IsM365DSCModuleValidated = $true
 }
 
 
@@ -4737,6 +5105,18 @@ This function updates the module, dependencies and uninstalls outdated dependenc
 
 .Parameter Scope
 Specifies the scope of the update of the module. The default value is AllUsers(needs to run as elevated user).
+
+.PARAMETER Proxy
+Specifies the proxy server to use for the update.
+
+.PARAMETER BaseRepository
+Specifies the PowerShell Repository name to use for the installation of the Microsoft365DSC module.
+
+.PARAMETER DependencyRepository
+Specifies the PowerShell Repository name to use for the installation of the dependencies of the Microsoft365DSC module.
+
+.PARAMETER NoUninstall
+Indicates if outdated dependencies and modules should be uninstalled.
 
 .Example
 Update-M365DSCModule
@@ -4755,12 +5135,20 @@ function Update-M365DSCModule
     [CmdletBinding()]
     param(
         [Parameter()]
-        [ValidateSet("CurrentUser", "AllUsers")]
-        $Scope = "AllUsers",
+        [ValidateSet('CurrentUser', 'AllUsers')]
+        $Scope = 'AllUsers',
 
         [Parameter()]
         [System.String]
         $Proxy,
+
+        [Parameter()]
+        [System.String]
+        $BaseRepository = 'PSGallery',
+
+        [Parameter()]
+        [System.String]
+        $DependencyRepository = 'PSGallery',
 
         [Parameter()]
         [switch]
@@ -4779,17 +5167,41 @@ function Update-M365DSCModule
     }
     catch
     {
-        if ($_.Exception.Message -like "*Module 'Microsoft365DSC' was not installed by using Install-Module")
+        if ($_.Exception.Message -like "*Module 'Microsoft365DSC' was not installed by using Install-Module*")
         {
-            Write-Verbose -Message "The Microsoft365DSC module was not installed from the PowerShell Gallery and therefore cannot be updated."
+            Write-Verbose -Message 'The Microsoft365DSC module might have been installed with Install-PSResource'
+            if ($null -ne (Get-Module -Name Microsoft.PowerShell.PSResourceGet -ListAvailable))
+            {
+                Write-Verbose -Message 'Updating the Microsoft365DSC module using Update-PSResource...'
+                try
+                {
+                    Update-PSResource -Name 'Microsoft365DSC' -Scope $Scope `
+                        -TrustRepository -AcceptLicense -SkipDependencyCheck `
+                        -Repository $BaseRepository -ErrorAction Stop
+                }
+                catch
+                {
+                    if ($_.Exception.Message -like '*No installed packages*')
+                    {
+                        Write-Verbose -Message 'Microsoft365DSC was neither installed using Install-Module nor Install-PSResource. Skipping update check.'
+                    }
+                    else
+                    {
+                        New-M365DSCLogEntry -Message 'Error Updating Module:' `
+                            -Exception $_ `
+                            -Source $($MyInvocation.MyCommand.Source)
+                        throw $_
+                    }
+                }
+            }
         }
     }
     try
     {
-        Write-Verbose -Message "Unloading all instances of the Microsoft365DSC module from the current PowerShell session."
+        Write-Verbose -Message 'Unloading all instances of the Microsoft365DSC module from the current PowerShell session.'
         Remove-Module Microsoft365DSC -Force
 
-        Write-Verbose -Message "Retrieving all versions of the Microsoft365DSC installed on the machine."
+        Write-Verbose -Message 'Retrieving all versions of the Microsoft365DSC installed on the machine.'
         [Array]$instances = Get-Module Microsoft365DSC -ListAvailable | Sort-Object -Property Version -Descending
         if ($instances.Length -gt 0)
         {
@@ -4804,7 +5216,8 @@ function Update-M365DSCModule
             -Source $($MyInvocation.MyCommand.Source)
         throw $_
     }
-    Update-M365DSCDependencies -Scope $Scope -Proxy $Proxy
+
+    Update-M365DSCDependencies -Scope $Scope -Proxy $Proxy -Repository $DependencyRepository
 
     if (-not $NoUninstall)
     {
@@ -4908,13 +5321,14 @@ function Get-M365DSCConfigurationConflict
     }
     else
     {
-        $resourcesInModule = Get-DSCResource -Module 'Microsoft365DSC'
+        $currentModule = Get-Module -Name 'Microsoft365DSC'
+        $resourcesInModule = Get-DscResource -Module 'Microsoft365DSC' | Where-Object Version -EQ $currentModule.Version
     }
     foreach ($component in $parsedContent)
     {
-        $resourceDefinition = $resourcesInModule | Where-Object -FilterScript {$_.Name -eq $component.ResourceName}
-        [Array]$mandatoryProperties = $resourceDefinition.Properties | Where-Object -FilterScript {$_.IsMandatory}
-        $primaryKeyValues = ""
+        $resourceDefinition = $resourcesInModule | Where-Object -FilterScript { $_.Name -eq $component.ResourceName }
+        [Array]$mandatoryProperties = $resourceDefinition.Properties | Where-Object -FilterScript { $_.IsMandatory }
+        $primaryKeyValues = ''
         foreach ($mandatoryKey in $mandatoryProperties.Name)
         {
             $primaryKeyValues += "$($component.$mandatoryKey)|"
@@ -4927,7 +5341,7 @@ function Get-M365DSCConfigurationConflict
                 ResourceName         = $component.ResourceName
                 InstanceName         = $component.ResourceInstanceName
                 AdditionalProperties = @{}
-                Reason               = "DuplicatePrimaryKey"
+                Reason               = 'DuplicatePrimaryKey'
             }
 
             foreach ($mandatoryKey in $mandatoryProperties.Name)
@@ -4942,133 +5356,6 @@ function Get-M365DSCConfigurationConflict
         }
     }
     return $results
-}
-
-# TODO: Check if necessary to keep this function.
-<#
-.Description
-This function returns a hashtable with aligned to the parameter pattern of the given cmdlet.
-
-.Example
-$param = @{
-    Path = 'C:\Test'
-    DoesNotExist = '123'
-}
-Sync-M365DSCParameter -Command (Get-Command -Name Get-ChildItem) -Parameters $param
-
-.Functionality
-Private
-#>
-function Sync-M365DSCParameter
-{
-    [Cmdletbinding()]
-    param (
-        [Parameter(Mandatory = $true)]
-        [ValidateScript( {
-                    $_ -is [System.Management.Automation.FunctionInfo] -or
-                    $_ -is [System.Management.Automation.CmdletInfo] -or
-                    $_ -is [System.Management.Automation.ExternalScriptInfo] -or
-                    $_ -is [System.Management.Automation.AliasInfo]
-            })]
-        [object]$Command,
-
-        [hashtable]$Parameters,
-
-        [switch]$ConvertValue
-    )
-
-    if (-not $PSBoundParameters.ContainsKey('Parameters'))
-    {
-        $Parameters = ([hashtable]$ALBoundParameters).Clone()
-    }
-    else
-    {
-        $Parameters = ([hashtable]$Parameters).Clone()
-    }
-
-    if ($Command -is [System.Management.Automation.AliasInfo])
-    {
-        $command = & (Get-Module -Name $Command.Source) {
-            param([string]$Name)
-
-            Get-Command -Name $Name
-        } $Command.Definition
-    }
-
-    $commonParameters = [System.Management.Automation.Internal.CommonParameters].GetProperties().Name
-    $commandParameterKeys = $Command.Parameters.Keys.GetEnumerator() | ForEach-Object { $_ }
-    $parameterKeys = $Parameters.Keys.GetEnumerator() | ForEach-Object { $_ }
-
-    $keysToRemove = Compare-Object -ReferenceObject $commandParameterKeys -DifferenceObject $parameterKeys |
-        Select-Object -ExpandProperty InputObject
-
-    $keysToRemove = $keysToRemove + $commonParameters | Select-Object -Unique #remove the common parameters
-
-    foreach ($key in $keysToRemove)
-    {
-        $Parameters.Remove($key)
-    }
-
-    if ($ConvertValue.IsPresent)
-    {
-        $keysToUpdate = @{}
-        foreach ($kvp in $Parameters.GetEnumerator())
-        {
-            if (-not $kvp.Value) # $null or empty string will not trip up conversion
-            {
-                continue
-            }
-
-            $targetType = $Command.Parameters[$kvp.Key].ParameterType
-            $sourceType = $kvp.Value.GetType()
-            $targetValue = $kvp.Value -as $targetType
-
-            if (-not $targetValue -and $targetType.ImplementedInterfaces -contains [Collections.IList])
-            {
-                $targetValue = $targetType::new()
-                foreach ($v in $kvp.Value)
-                {
-                    $targetValue.Add($v)
-                }
-            }
-
-            if (-not $targetValue -and $targetType.ImplementedInterfaces -contains [Collections.IDictionary] )
-            {
-                $targetValue = $targetType::new()
-                foreach ($k in $kvp.Value.GetEnumerator())
-                {
-                    $targetValue.Add($k.Key, $k.Value)
-                }
-            }
-
-            if (-not $targetValue -and ($sourceType.ImplementedInterfaces -contains [Collections.IList] -and $targetType.ImplementedInterfaces -notcontains [Collections.IList]))
-            {
-                Write-Verbose -Message "Value of source parameter $($kvp.Key) is a collection, but target parameter is not. Selecting first object"
-                $targetValue = $kvp.Value | Select-Object -First 1
-            }
-
-            if (-not $targetValue)
-            {
-                Write-Error -Message "Conversion of source parameter $($kvp.Key) (Type: $($sourceType.FullName)) to type $($targetType.FullName) was impossible"
-                return
-            }
-
-            $keysToUpdate[$kvp.Key] = $targetValue
-        }
-    }
-
-    if ($keysToUpdate)
-    {
-        foreach ($kvp in $keysToUpdate.GetEnumerator())
-        {
-            $Parameters[$kvp.Key] = $kvp.Value
-        }
-    }
-
-    if ($PSBoundParameters.ContainsKey('Parameters'))
-    {
-        $Parameters
-    }
 }
 
 <#
@@ -5107,18 +5394,18 @@ function Join-M365DSCConfiguration
         $ConfigurationPath
     )
 
-    if ($ConfigurationFile -notlike "*.ps1")
+    if ($ConfigurationFile -notlike '*.ps1')
     {
-        throw "The ConfigurationFile parameter must be a .ps1 file."
+        throw 'The ConfigurationFile parameter must be a .ps1 file.'
     }
 
     if (-not (Test-Path -Path $ConfigurationPath))
     {
-        throw "The ConfigurationPath parameter must be a valid path."
+        throw 'The ConfigurationPath parameter must be a valid path.'
     }
 
     $ConfigurationFilePath = Join-Path -Path $ConfigurationPath -ChildPath $ConfigurationFile
-    $ConfigurationPath = Join-Path -Path $ConfigurationPath -ChildPath "*"
+    $ConfigurationPath = Join-Path -Path $ConfigurationPath -ChildPath '*'
 
     $baseConfiguration = ConvertTo-DSCObject -Path $ConfigurationFilePath
     $additionalConfigurations = Get-Item -Path $ConfigurationPath -Filter *.ps1 -Exclude $ConfigurationFile | ForEach-Object { ConvertTo-DSCObject -Path $_.FullName }
@@ -5144,9 +5431,6 @@ function Join-M365DSCConfiguration
 .DESCRIPTION
     Invokes a script-based DSC resource from a Windows PowerShell 5.1 session into a PowerShell Core session.
 
-.PARAMETER Name
-    The name of the resource to invoke.
-
 .PARAMETER Path
     The path to the module containing the resource.
 
@@ -5157,7 +5441,11 @@ function Join-M365DSCConfiguration
     The parameters to pass to the function.
 
 .EXAMPLE
-    Invoke-PowerShellCoreResource -Name Resource -Path 'C:\Program Files\...\DSCResources\MSFT_Resource\MSFT_Resource.psm1' -FunctionName Test -Parameters @{ Name = 'Value' }
+    Invoke-PowerShellCoreResource -Path 'C:\Program Files\...\DSCResources\MSFT_Resource\MSFT_Resource.psm1' -FunctionName Test-TargetResource -Parameters @{ Name = 'Value' }
+
+.EXAMPLE
+    # From inside of a DSC resource
+    Invoke-PowerShellCoreResource -Path $PSCommandPath -FunctionName $MyInvocation.MyCommand.Name -Parameters $PSBoundParameters
 
 .FUNCTIONALITY
     Internal
@@ -5168,19 +5456,20 @@ function Join-M365DSCConfiguration
 function Invoke-PowerShellCoreResource
 {
     [CmdletBinding()]
+    [OutputType([System.Object])]
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSReviewUnusedParameter', 'Path', Justification = 'Using statement not detected')]
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSReviewUnusedParameter', 'FunctionName', Justification = 'Using statement not detected')]
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSReviewUnusedParameter', 'Parameters', Justification = 'Using statement not detected')]
     param (
         [Parameter(Mandatory = $true)]
-        [string]$Name,
+        [System.String]$Path,
 
         [Parameter(Mandatory = $true)]
-        [string]$Path,
+        [ValidateSet('Get-TargetResource', 'Set-TargetResource', 'Test-TargetResource', 'Export-TargetResource')]
+        [System.String]$FunctionName,
 
         [Parameter(Mandatory = $true)]
-        [ValidateSet('Get', 'Set', 'Test', 'Export')]
-        [string]$FunctionName,
-
-        [Parameter(Mandatory = $true)]
-        [hashtable]$Parameters
+        [System.Collections.Hashtable]$Parameters
     )
 
     if (-not $script:PSCoreSessionInitialized)
@@ -5190,7 +5479,7 @@ function Invoke-PowerShellCoreResource
 
     $output = Invoke-Command -Session $PSCoreSession -ScriptBlock {
         Import-Module -Name $using:Path
-        & $using:FunctionName-TargetResource @using:Parameters
+        & $using:FunctionName @using:Parameters
     }
 
     return $output
@@ -5208,11 +5497,14 @@ function Invoke-PowerShellCoreResource
 #>
 function Initialize-PowerShellCoreSession
 {
+    [CmdletBinding()]
+    param ()
+
     $script:PSCoreSession = New-PSSession -ComputerName localhost -ConfigurationName PowerShell.7 -EnableNetworkAccess
     $lcmConfig = Get-DscLocalConfigurationManager
     Invoke-Command -Session $script:PSCoreSession -ScriptBlock {
-        Import-Module -Name PSDesiredStateConfiguration -MinimumVersion 2.0.7 -ErrorAction SilentlyContinue
-        Import-Module -Name Microsoft365DSC
+        Import-Module -Name PSDesiredStateConfiguration -MinimumVersion 2.0.7 -ErrorAction SilentlyContinue -DisableNameChecking -SkipEditionCheck
+        Import-Module -Name Microsoft365DSC -Alias @() -Cmdlet @() -Variable @() -DisableNameChecking -SkipEditionCheck
         Set-M365DSCLCMConfiguration -LCMConfig $using:lcmConfig
     }
     $script:PSCoreSessionInitialized = $true
@@ -5270,7 +5562,7 @@ function Write-M365DSCHost
         if ($DeferWrite)
         {
             $Script:M365DSCHostMessages += @{
-                Message = $Message
+                Message         = $Message
                 ForegroundColor = $ForegroundColor
             }
             return
@@ -5334,19 +5626,497 @@ function Write-M365DSCHost
 function Invoke-M365DSCGraphBatchRequest
 {
     [CmdletBinding()]
+    [OutputType([System.Collections.Hashtable[]])]
     param (
         [Parameter(Mandatory = $true)]
+        [AllowEmptyCollection()]
         [System.Collections.Hashtable[]]
-        $Requests
+        $Requests,
+
+        [Parameter()]
+        [switch]
+        $AsList
     )
 
-    $request = @{
-        requests = $Requests
+    $batchResponses = [System.Collections.Generic.List[System.Collections.Hashtable]]::new()
+    for ($i = 0; $i -lt $Requests.Count; $i += 20)
+    {
+        $batchRequestSized = $Requests[$i..([Math]::Min($i + 19, $Requests.Count - 1))]
+
+        $request = @{
+            requests = $batchRequestSized
+        }
+
+        Write-Verbose -Message "Sending BATCH Request with:`r`n$($request | ConvertTo-Json -Depth 10))"
+        $batchResponses.AddRange([System.Collections.Hashtable[]](Invoke-MgGraphRequest -Method POST `
+            -Uri 'beta/$batch' `
+            -Body ($request | ConvertTo-Json -Depth 10) `
+            -ErrorAction SilentlyContinue).responses)
     }
 
-    (Invoke-MgGraphRequest -Method POST `
-        -Uri 'beta/$batch' `
-        -Body ($request | ConvertTo-Json -Depth 10)).responses
+    if ($AsList)
+    {
+        return $batchResponses
+    }
+    return $batchResponses.ToArray()
+}
+
+<#
+.DESCRIPTION
+    This function splits a large M365DSC configuration file into smaller files based on size and resource count limits.
+
+.PARAMETER Path
+    The path to the M365DSC configuration file to split.
+
+.PARAMETER OutputFolder
+    The folder where the split configuration files will be saved. Defaults to the same folder as the input file.
+
+.PARAMETER MaxFileSizeMB
+    The maximum size (in megabytes) for each split configuration file. Default is 3 MB.
+
+.PARAMETER MaxResources
+    The maximum number of resources per split configuration file. Default is 0 (no limit).
+
+.EXAMPLE
+    Split-M365DSCConfiguration -Path 'C:\Configs\M365TenantConfig.ps1' -OutputFolder 'C:\Configs\Split' -MaxFileSizeMB 2 -MaxResources 50
+    This example splits the 'M365TenantConfig.ps1' file into smaller files, each with a maximum size of 2 MB and a maximum of 50 resources, saving them in the 'C:\Configs\Split' folder.
+
+.FUNCTIONALITY
+    Public
+#>
+function Split-M365DSCConfiguration
+{
+    param (
+        [Parameter(Mandatory = $true)]
+        [System.String]
+        $Path,
+
+        [Parameter()]
+        [System.String]
+        $OutputFolder = (Split-Path $Path),
+
+        [Parameter()]
+        [System.Double]
+        $MaxFileSizeMB = 3,
+
+        [Parameter()]
+        [System.Int32]
+        $MaxResources = 0  # 0 = ignore resource count limit
+    )
+
+    $fileContent = Get-Content -Encoding utf8 -Path $Path -Raw
+
+    # Extract content inside "Node localhost { ... }"
+    $pattern = 'Node localhost\s*{([\s\S]*)\s+}(\r|\n)+\s+}'
+    $nodeMatch = [regex]::Match($fileContent, $pattern)
+    if (-not $nodeMatch.Success)
+    {
+        throw "Could not find a 'Node localhost { ... }' block in file: $Path"
+    }
+
+    $nodeContent = $nodeMatch.Groups[1].Value
+
+    # Extract header (everything before Node localhost)
+    $header = ($fileContent -split 'Node localhost')[0] + "Node localhost`n    {`n"
+    $footer = "`n    }`n}`n`nM365TenantConfig -ConfigurationData .\ConfigurationData.psd1"
+
+    # Split into DSC resource text blocks using brace-depth parsing
+    $resources = @()
+    $lines = $nodeContent -split "`r?`n"
+    $currentResource = [System.Text.StringBuilder]::new()
+    $braceDepth = 0
+    $insideResource = $false
+
+    for ($i = 0; $i -lt $lines.Count; $i++)
+    {
+        $line = $lines[$i]
+        # Detect resource start
+        if (-not $insideResource -and $line.Trim() -match '^[a-zA-Z0-9_]+\s+"[^"]+"')
+        {
+            $insideResource = $true
+            $null = $currentResource.Clear()
+            $null = $currentResource.AppendLine($line)
+            # Calculate brace depth
+            $braceDepth = ($line -split '{').Count - ($line -split '}').Count
+            continue
+        }
+
+        if ($insideResource)
+        {
+            $null = $currentResource.AppendLine($line)
+
+            # Adjust brace depth based on line content
+            $braceDepth += ($line -split '{').Count - ($line -split '}').Count
+
+            # End of resource block
+            if ($braceDepth -le 0)
+            {
+                $resources += '        ' + $currentResource.ToString().Trim()
+                $insideResource = $false
+            }
+        }
+    }
+
+    if (-not $resources)
+    {
+        throw 'No DSC resources found in the Node block.'
+    }
+
+    # Splitting logic
+    $i = 1
+    $currentGroup = @()
+    $currentSize = 0
+    $maxBytes = $MaxFileSizeMB * 1MB
+
+    foreach ($res in $resources)
+    {
+        # Calculate size of the resource in bytes
+        $resBytes = [System.Text.Encoding]::UTF8.GetByteCount($res)
+        $resourceCountLimitReached = ($MaxResources -gt 0 -and $currentGroup.Count -ge $MaxResources)
+        $sizeLimitReached = ($currentSize + $resBytes) -gt $maxBytes
+
+        # Write current group if limits are reached
+        if (($sizeLimitReached -or $resourceCountLimitReached) -and $currentGroup.Count -gt 0)
+        {
+            $outPath = Join-Path $OutputFolder ('M365TenantConfig_{0}.ps1' -f $i)
+            $configText = $header + ($currentGroup -join "`n") + $footer
+            Set-Content -Path $outPath -Value $configText -Encoding UTF8 -Force
+            Write-M365DSCHost -Message "Created: $outPath" -CommitWrite
+            $i++
+            $currentGroup = @()
+            $currentSize = 0
+        }
+
+        $currentGroup += $res
+        $currentSize += $resBytes
+    }
+
+    # Write final group
+    if ($currentGroup.Count -gt 0)
+    {
+        $outPath = Join-Path $OutputFolder ('M365TenantConfig_{0}.ps1' -f $i)
+        $configText = $header + ($currentGroup -join "`n`n") + $footer
+        Set-Content -Path $outPath -Value $configText -Encoding UTF8 -Force
+        Write-M365DSCHost -Message "Created: $outPath" -CommitWrite
+    }
+}
+
+<#
+.Description
+    This function retrieves the comparison metadata for a given M365DSC resource.
+    The metadata indicates whether a resource requires custom comparison logic and
+    should expose a Get-CompareParameters function.
+
+.Parameter ResourceName
+    The name of the M365DSC resource (without MSFT_ prefix).
+
+.Example
+    PS> Get-M365DSCResourceComparisonMetadata -ResourceName 'AADRoleAssignmentScheduleRequest'
+
+.Functionality
+    Internal
+#>
+function Get-M365DSCResourceComparisonMetadata
+{
+    [CmdletBinding()]
+    [OutputType([System.Collections.Hashtable])]
+    param
+    (
+        [Parameter(Mandatory = $true)]
+        [System.String]
+        $ResourceName
+    )
+
+    if ($null -eq $Script:M365DSCComparisonMetadata)
+    {
+        $metadataPath = Join-Path -Path $PSScriptRoot -ChildPath '..\ComparisonMetadata.json'
+        if (Test-Path -Path $metadataPath)
+        {
+            try
+            {
+                $metadataContent = Get-Content -Path $metadataPath -Raw | ConvertFrom-Json
+                $Script:M365DSCComparisonMetadata = @{}
+                foreach ($resource in $metadataContent.Resources.PSObject.Properties)
+                {
+                    $Script:M365DSCComparisonMetadata[$resource.Name] = @{
+                        HasCustomComparison = $resource.Value.HasCustomComparison
+                        Description         = $resource.Value.Description
+                    }
+                }
+            }
+            catch
+            {
+                Write-Warning -Message "Failed to load comparison metadata from $metadataPath : $_"
+                $Script:M365DSCComparisonMetadata = @{}
+            }
+        }
+        else
+        {
+            Write-Verbose -Message "Comparison metadata file not found at $metadataPath"
+            $Script:M365DSCComparisonMetadata = @{}
+        }
+    }
+
+    if ($Script:M365DSCComparisonMetadata.ContainsKey($ResourceName))
+    {
+        return $Script:M365DSCComparisonMetadata[$ResourceName]
+    }
+
+    return @{
+        HasCustomComparison = $false
+    }
+}
+
+<#
+.Description
+    This function retrieves the comparison parameters from a resource's Get-CompareParameters function.
+    This is used during drift detection and reporting to ensure that resource-specific comparison logic
+    (such as PostProcessing scripts and ExcludedProperties) is applied consistently.
+
+.Parameter ResourceName
+    The name of the M365DSC resource (without MSFT_ prefix).
+
+.Example
+    PS> Get-M365DSCResourceComparisonParameters -ResourceName 'AADRoleAssignmentScheduleRequest'
+
+.Functionality
+    Internal
+#>
+function Get-M365DSCResourceComparisonParameters
+{
+    [CmdletBinding()]
+    [OutputType([System.Collections.Hashtable])]
+    param
+    (
+        [Parameter(Mandatory = $true)]
+        [System.String]
+        $ResourceName
+    )
+
+    $compareParameters = @{}
+
+    try
+    {
+        # Check if this resource has custom comparison logic
+        $metadata = Get-M365DSCResourceComparisonMetadata -ResourceName $ResourceName
+
+        if (-not $metadata.HasCustomComparison)
+        {
+            Write-Verbose -Message "Resource $ResourceName does not have custom comparison logic."
+            return $compareParameters
+        }
+
+        # Import the resource module if not already loaded
+        $moduleName = "MSFT_$ResourceName"
+        $module = Get-Module -Name $moduleName
+
+        if ($null -eq $module)
+        {
+            $resourceModulePath = Join-Path -Path $PSScriptRoot -ChildPath "..\DSCResources\$moduleName\$moduleName.psm1"
+            if (Test-Path -Path $resourceModulePath)
+            {
+                $previousValue = (Get-M365DSCModuleConfiguration).skipModuleDependencyValidation
+                if (-not $metadata.RequiresModuleCheck)
+                {
+                    Set-M365DSCModuleConfiguration -Key 'skipModuleDependencyValidation' -Value $true
+                }
+                Import-Module -Name $resourceModulePath -Force -Global -Function Get-CompareParameters -Alias @() -Cmdlet @() -Variable @() -DisableNameChecking
+                Set-M365DSCModuleConfiguration -Key 'skipModuleDependencyValidation' -Value $previousValue
+                Write-Verbose -Message "Imported module $moduleName from $resourceModulePath"
+            }
+            else
+            {
+                Write-Warning -Message "Resource module not found at $resourceModulePath"
+                return $compareParameters
+            }
+        }
+
+        if ($null -eq $Script:CompareParametersCache)
+        {
+            $Script:CompareParametersCache = @{}
+        }
+
+        if ($Script:CompareParametersCache.ContainsKey($ResourceName))
+        {
+            return $Script:CompareParametersCache[$ResourceName]
+        }
+
+        # Check if the Get-CompareParameters function exists
+        $getCompareParamsCommand = Get-Command -Name "$moduleName\Get-CompareParameters" -ErrorAction SilentlyContinue
+
+        if ($null -eq $getCompareParamsCommand)
+        {
+            Write-Warning -Message "Resource $ResourceName is marked as having custom comparison, but Get-CompareParameters function not found."
+            return $compareParameters
+        }
+
+        # Invoke the Get-CompareParameters function
+        $compareParameters = & "$moduleName\Get-CompareParameters"
+
+        # Cache the retrieved parameters
+        $Script:CompareParametersCache[$ResourceName] = $compareParameters
+    }
+    catch
+    {
+        Write-Warning -Message "Failed to retrieve comparison parameters for $ResourceName : $_"
+    }
+
+    return $compareParameters
+}
+
+function Get-M365DSCGroupDisplayNameById
+{
+    [CmdletBinding()]
+    [OutputType([System.String])]
+    param
+    (
+        [Parameter(Mandatory = $true)]
+        [System.String]
+        $GroupId
+    )
+
+    try
+    {
+        $group = Get-MgGroup -GroupId $GroupId -Property DisplayName -ErrorAction Stop
+        return $group.DisplayName
+    }
+    catch
+    {
+        $message = "Could not find a group with id $($GroupId). Skipping group display name resolution for this id."
+        New-M365DSCLogEntry -Message $message `
+            -Exception $_ `
+            -Source $($MyInvocation.MyCommand.Source) `
+            -TenantId $TenantId `
+            -Credential $Credential
+    }
+}
+
+function Get-M365DSCGroupIdByDisplayName
+{
+    [CmdletBinding()]
+    [OutputType([System.String])]
+    param
+    (
+        [Parameter(Mandatory = $true)]
+        [System.String]
+        $GroupDisplayName
+    )
+
+    try
+    {
+        $group = Get-MgGroup -Filter "displayName eq '$GroupDisplayName'" -Property Id -ErrorAction Stop
+        return $group.Id
+    }
+    catch
+    {
+        $message = "Could not find a group with display name $($GroupDisplayName). Skipping group ID resolution for this display name."
+        New-M365DSCLogEntry -Message $message `
+            -Exception $_ `
+            -Source $($MyInvocation.MyCommand.Source) `
+            -TenantId $TenantId `
+            -Credential $Credential
+    }
+}
+
+function Get-M365DSCUserPrincipalNameById
+{
+    [CmdletBinding()]
+    [OutputType([System.String])]
+    param
+    (
+        [Parameter(Mandatory = $true)]
+        [System.String]
+        $UserId
+    )
+
+    try
+    {
+        $user = Get-MgUser -UserId $UserId -Property UserPrincipalName -ErrorAction Stop
+        return $user.UserPrincipalName
+    }
+    catch
+    {
+        $message = "Could not find a user with id $($UserId). Skipping user principal name resolution for this id."
+        New-M365DSCLogEntry -Message $message `
+            -Exception $_ `
+            -Source $($MyInvocation.MyCommand.Source) `
+            -TenantId $TenantId `
+            -Credential $Credential
+    }
+}
+
+function Get-M365DSCUserIdByPrincipalName
+{
+    [CmdletBinding()]
+    [OutputType([System.String])]
+    param
+    (
+        [Parameter(Mandatory = $true)]
+        [System.String]
+        $UserPrincipalName
+    )
+
+    try
+    {
+        $user = Get-MgUser -UserId $UserPrincipalName -Property Id -ErrorAction Stop
+        return $user.Id
+    }
+    catch
+    {
+        $message = "Could not find a user with principal name $($UserPrincipalName). Skipping user ID resolution for this principal name."
+        New-M365DSCLogEntry -Message $message `
+            -Exception $_ `
+            -Source $($MyInvocation.MyCommand.Source) `
+            -TenantId $TenantId `
+            -Credential $Credential
+    }
+}
+
+function Update-M365DSCAuthenticationTargets
+{
+    [CmdletBinding()]
+    param
+    (
+        [Parameter(Mandatory = $true)]
+        [AllowEmptyCollection()]
+        [AllowNull()]
+        [System.Object[]]
+        $Targets
+    )
+
+    if ($null -eq $targets)
+    {
+        return
+    }
+
+    foreach ($target in $targets)
+    {
+        if ($target.ContainsKey('Id') -and $target.ContainsKey('TargetType'))
+        {
+            if ($target.Id -eq '0000000-0000-0000-0000-000000000000' -or $target.Id -eq 'all_users' `
+                -or $target.Id -match '^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$')
+            {
+                continue
+            }
+
+            if ($target.TargetType -eq 'Group')
+            {
+                $groupId = Get-M365DSCGroupIdByDisplayName -GroupDisplayName $($target.Id -replace "'", "''")
+                if ($null -ne $groupId)
+                {
+                    $target.Id = $groupId
+                }
+            }
+            elseif ($target.TargetType -eq 'User')
+            {
+                $userId = Get-M365DSCUserIdByPrincipalName -UserPrincipalName $($target.Id -replace "'", "''")
+                if ($null -ne $userId)
+                {
+                    $target.Id = $userId
+                }
+            }
+        }
+    }
 }
 
 Export-ModuleMember -Function @(
@@ -5359,19 +6129,32 @@ Export-ModuleMember -Function @(
     'Export-M365DSCConfiguration',
     'Get-AllSPOPackages',
     'Get-M365DSCAllResources',
-    'Get-M365DSCAPIEndpoint'
+    'Get-M365DSCAllResourcesDictionary',
+    'Get-M365DSCAPIEndpoint',
+    'Get-M365DSCArrayFromProperty',
     'Get-M365DSCAuthenticationMode',
     'Get-M365DSCComponentsWithMostSecureAuthenticationType',
     'Get-M365DSCConfigurationConflict',
+    'Get-M365DSCConnectedWorkloadList',
     'Get-M365DSCExportContentForResource',
+    'Get-M365DSCGroupDisplayNameById',
+    'Get-M365DSCGroupIdByDisplayName',
+    'Get-M365DSCModuleConfiguration',
     'Get-M365DSCOrganization',
+    'Get-M365DSCResourceComparisonMetadata',
+    'Get-M365DSCResourceComparisonParameters',
+    'Get-M365DSCResourcesByExportMode',
+    'Get-M365DSCStringReplacementMap',
+    'Get-M365DSCTelemetryConnectionParameter',
     'Get-M365DSCTenantDomain',
     'Get-M365DSCTenantNameFromParameterSet',
-    'Get-M365DSCWorkloadsListFromResourceNames',
+    'Get-M365DSCUserIdByPrincipalName',
+    'Get-M365DSCUserPrincipalNameById',
+    'Get-M365DSCWorkloadForResource',
     'Get-M365TenantName',
     'Get-SPOAdministrationUrl',
-    'Get-SPOUserProfilePropertyInstance',
     'Get-TeamByName',
+    'Initialize-M365DSCAllResourcesDictionary',
     'Install-M365DSCDevBranch',
     'Invoke-M365DSCGraphBatchRequest',
     'Invoke-PowerShellCoreResource',
@@ -5379,18 +6162,21 @@ Export-ModuleMember -Function @(
     'New-M365DSCCmdletDocumentation',
     'New-M365DSCConnection',
     'New-M365DSCMissingResourcesExample',
-    'Remove-M365DSCEmptyValue',
     'Remove-M365DSCAuthenticationParameter',
     'Remove-NullEntriesFromHashtable',
-    'Split-ArrayByParts',
-    'Sync-M365DSCParameter',
+    'Set-M365DSCAllResourcesDictionary',
+    'Set-M365DSCModuleConfiguration',
+    'Set-M365DSCStringReplacementMap',
+    'Split-M365DSCConfiguration',
     'Test-M365DSCDependenciesForNewVersions',
     'Test-M365DSCModuleValidity',
     'Test-M365DSCParameterState',
     'Test-M365DSCTargetResource',
     'Uninstall-M365DSCOutdatedDependencies',
+    'Update-M365DSCAuthenticationTargets',
     'Update-M365DSCDependencies',
     'Update-M365DSCExportAuthenticationResults',
     'Update-M365DSCModule',
-    'Write-M365DSCHost'
+    'Write-M365DSCHost',
+    'Import-M365DSCModuleDependency'
 )

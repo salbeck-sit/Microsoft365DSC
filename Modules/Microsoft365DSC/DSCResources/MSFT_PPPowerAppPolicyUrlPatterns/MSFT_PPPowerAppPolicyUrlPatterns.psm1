@@ -48,12 +48,14 @@ function Get-TargetResource
         $AccessTokens
     )
 
+    Write-Verbose -Message "Getting configuration for Power Platform DLP Policy Connector Configurations with PPTenantId {$PPTenantId} and PolicyName {$PolicyName}"
+
     try
     {
         if (-not $Script:exportedInstance -or $Script:exportedInstance.properties.displayName -ne $PolicyName)
         {
-            $ConnectionMode = New-M365DSCConnection -Workload 'PowerPlatformREST' `
-                -InboundParameters $PSBoundParameters | Out-Null
+            $null = New-M365DSCConnection -Workload 'PowerPlatformREST' `
+                -InboundParameters $PSBoundParameters
 
             #Ensure the proper dependencies are installed in the current environment.
             Confirm-M365DSCDependencies
@@ -70,8 +72,8 @@ function Get-TargetResource
             $nullResult = $PSBoundParameters
             $nullResult.Ensure = 'Absent'
 
-            $uri = "https://" + (Get-MSCloudLoginConnectionProfile -Workload 'PowerPlatformREST').BapEndpoint + `
-                "/providers/Microsoft.BusinessAppPlatform/scopes/admin/apiPolicies?api-version=2016-11-01"
+            $uri = 'https://' + (Get-MSCloudLoginConnectionProfile -Workload 'PowerPlatformREST').BapEndpoint + `
+                '/providers/Microsoft.BusinessAppPlatform/scopes/admin/apiPolicies?api-version=2016-11-01'
 
             $policies = Invoke-M365DSCPowerPlatformRESTWebRequest -Uri $uri -Method 'GET'
 
@@ -94,8 +96,8 @@ function Get-TargetResource
             return $nullResult
         }
 
-        $uri = "https://" + (Get-MSCloudLoginConnectionProfile -Workload 'PowerPlatformREST').BapEndpoint + `
-               "/providers/PowerPlatform.Governance/v1/tenants/$($PPTenantId)/policies/$($policy.name)/urlPatterns"
+        $uri = 'https://' + (Get-MSCloudLoginConnectionProfile -Workload 'PowerPlatformREST').BapEndpoint + `
+            "/providers/PowerPlatform.Governance/v1/tenants/$($PPTenantId)/policies/$($policy.name)/urlPatterns"
 
         $rules = Invoke-M365DSCPowerPlatformRESTWebRequest -Uri $uri -Method 'GET' -ErrorAction SilentlyContinue
         $RulesValue = @()
@@ -120,18 +122,17 @@ function Get-TargetResource
             ManagedIdentity       = $ManagedIdentity.IsPresent
             AccessTokens          = $AccessTokens
         }
-        return [System.Collections.Hashtable] $results
+        return $results
     }
     catch
     {
-        Write-Verbose -Message $_
         New-M365DSCLogEntry -Message 'Error retrieving data:' `
             -Exception $_ `
             -Source $($MyInvocation.MyCommand.Source) `
             -TenantId $TenantId `
             -Credential $Credential
 
-        return $nullResult
+        throw
     }
 }
 
@@ -182,8 +183,10 @@ function Set-TargetResource
         $AccessTokens
     )
 
-    New-M365DSCConnection -Workload 'PowerPlatformREST' `
-        -InboundParameters $PSBoundParameters | Out-Null
+    Write-Verbose -Message "Setting configuration for Power Platform DLP Policy Connector Configurations with PPTenantId {$PPTenantId} and PolicyName {$PolicyName}"
+
+    $null = New-M365DSCConnection -Workload 'PowerPlatformREST' `
+        -InboundParameters $PSBoundParameters
 
     #Ensure the proper dependencies are installed in the current environment.
     Confirm-M365DSCDependencies
@@ -197,8 +200,8 @@ function Set-TargetResource
     Add-M365DSCTelemetryEvent -Data $data
     #endregion
 
-    $uri = "https://" + (Get-MSCloudLoginConnectionProfile -Workload 'PowerPlatformREST').BapEndpoint + `
-               "/providers/Microsoft.BusinessAppPlatform/scopes/admin/apiPolicies?api-version=2016-11-01"
+    $uri = 'https://' + (Get-MSCloudLoginConnectionProfile -Workload 'PowerPlatformREST').BapEndpoint + `
+        '/providers/Microsoft.BusinessAppPlatform/scopes/admin/apiPolicies?api-version=2016-11-01'
 
     $policies = Invoke-M365DSCPowerPlatformRESTWebRequest -Uri $uri -Method 'GET'
 
@@ -228,8 +231,8 @@ function Set-TargetResource
         $payload = $(ConvertTo-Json $body -Depth 9 -Compress)
         Write-Verbose -Message "Setting new Url Patterns for Policy {$($PolicyName)} with parameters:`r`n$payload"
 
-        $uri = "https://" + (Get-MSCloudLoginConnectionProfile -Workload 'PowerPlatformREST').BapEndpoint + `
-               "/providers/PowerPlatform.Governance/v1/tenants/$($PPTenantId)/policies/$($policy.name)/urlPatterns"
+        $uri = 'https://' + (Get-MSCloudLoginConnectionProfile -Workload 'PowerPlatformREST').BapEndpoint + `
+            "/providers/PowerPlatform.Governance/v1/tenants/$($PPTenantId)/policies/$($policy.name)/urlPatterns"
 
         Invoke-M365DSCPowerPlatformRESTWebRequest -Uri $uri -Method 'POST' -Body $body
 
@@ -238,8 +241,8 @@ function Set-TargetResource
     elseif ($Ensure -eq 'Absent')
     {
         Write-Verbose -Message "Removing Url Patterns for Policy {$($PolicyNameValue)}"
-        $uri = "https://" + (Get-MSCloudLoginConnectionProfile -Workload 'PowerPlatformREST').BapEndpoint + `
-               "/providers/PowerPlatform.Governance/v1/tenants/$($PPTenantId)/policies/$($policy.name)/urlPatterns"
+        $uri = 'https://' + (Get-MSCloudLoginConnectionProfile -Workload 'PowerPlatformREST').BapEndpoint + `
+            "/providers/PowerPlatform.Governance/v1/tenants/$($PPTenantId)/policies/$($policy.name)/urlPatterns"
 
         Invoke-M365DSCPowerPlatformRESTWebRequest -Uri $uri -Method 'DELETE' -Body $body
     }
@@ -293,9 +296,6 @@ function Test-TargetResource
         $AccessTokens
     )
 
-    #Ensure the proper dependencies are installed in the current environment.
-    Confirm-M365DSCDependencies
-
     #region Telemetry
     $ResourceName = $MyInvocation.MyCommand.ModuleName.Replace('MSFT_', '')
     $CommandName = $MyInvocation.MyCommand
@@ -305,47 +305,9 @@ function Test-TargetResource
     Add-M365DSCTelemetryEvent -Data $data
     #endregion
 
-    $CurrentValues = Get-TargetResource @PSBoundParameters
-    $ValuesToCheck = ([Hashtable]$PSBoundParameters).Clone()
-
-    Write-Verbose -Message "Current Values: $(Convert-M365DscHashtableToString -Hashtable $CurrentValues)"
-    Write-Verbose -Message "Target Values: $(Convert-M365DscHashtableToString -Hashtable $ValuesToCheck)"
-    $testResult = $true
-
-    #Compare Cim instances
-    Write-Verbose -Message "Comparing CIMInstances"
-    foreach ($key in $PSBoundParameters.Keys)
-    {
-        $source = $PSBoundParameters.$key
-        $target = $CurrentValues.$key
-        if ($source.getType().Name -like '*CimInstance*')
-        {
-            Write-Verbose -Message "Comparing Complex key {$key}"
-            $testResult = Compare-M365DSCComplexObject `
-                -Source ($source) `
-                -Target ($target)
-
-            if (-Not $testResult)
-            {
-                $testResult = $false
-                break
-            }
-
-            $ValuesToCheck.Remove($key) | Out-Null
-        }
-    }
-    if ($testResult)
-    {
-        Write-Verbose -Message "Testing Parameters"
-        $testResult = Test-M365DSCParameterState -CurrentValues $CurrentValues `
-            -Source $($MyInvocation.MyCommand.Source) `
-            -DesiredValues $PSBoundParameters `
-            -ValuesToCheck $ValuesToCheck.Keys
-    }
-
-    Write-Verbose -Message "Test-TargetResource returned $testResult"
-
-    return $testResult
+    $result = Test-M365DSCTargetResource -DesiredValues $PSBoundParameters `
+        -ResourceName $($MyInvocation.MyCommand.Source).Replace('MSFT_', '')
+    return $result
 }
 
 function Export-TargetResource
@@ -405,11 +367,11 @@ function Export-TargetResource
     try
     {
         $tenantinfo = (Get-MgContext).TenantId
-        $uri = "https://" + (Get-MSCloudLoginConnectionProfile -Workload 'PowerPlatformREST').BapEndpoint + `
-               "/providers/Microsoft.BusinessAppPlatform/scopes/admin/apiPolicies?api-version=2016-11-01"
+        $uri = 'https://' + (Get-MSCloudLoginConnectionProfile -Workload 'PowerPlatformREST').BapEndpoint + `
+            '/providers/Microsoft.BusinessAppPlatform/scopes/admin/apiPolicies?api-version=2016-11-01'
 
         [array]$policies = Invoke-M365DSCPowerPlatformRESTWebRequest -Uri $uri -Method 'GET'
-        $policies =  $policies.value | Where-Object -FilterScript {$_.type -eq 'Microsoft.BusinessAppPlatform/scopes/apiPolicies'}
+        $policies = $policies.value | Where-Object -FilterScript { $_.type -eq 'Microsoft.BusinessAppPlatform/scopes/apiPolicies' }
         $dscContent = ''
         if ($policies.Length -eq 0)
         {
@@ -446,7 +408,7 @@ function Export-TargetResource
                 $complexTypeStringResult = Get-M365DSCDRGComplexTypeToString `
                     -ComplexObject $Results.RuleSet `
                     -CIMInstanceName 'PPPowerAppPolicyUrlPatternsRule'
-                if (-Not [String]::IsNullOrWhiteSpace($complexTypeStringResult))
+                if (-not [String]::IsNullOrWhiteSpace($complexTypeStringResult))
                 {
                     $Results.RuleSet = $complexTypeStringResult
                 }
@@ -473,17 +435,14 @@ function Export-TargetResource
     }
     catch
     {
-        Write-M365DSCHost -Message $Global:M365DSCEmojiRedX -CommitWrite
-
         New-M365DSCLogEntry -Message 'Error during Export:' `
             -Exception $_ `
             -Source $($MyInvocation.MyCommand.Source) `
             -TenantId $TenantId `
             -Credential $Credential
 
-        return ''
+        throw
     }
 }
 
 Export-ModuleMember -Function *-TargetResource
-

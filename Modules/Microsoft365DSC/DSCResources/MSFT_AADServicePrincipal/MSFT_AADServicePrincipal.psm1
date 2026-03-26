@@ -1,5 +1,5 @@
 Confirm-M365DSCModuleDependency -ModuleName 'MSFT_AADServicePrincipal'
-$Script:PropertiesToExport = "AppDisplayName", "AppId", "Id", "DisplayName", "CustomSecurityAttributes", "AlternativeNames", "AccountEnabled", "AppRoleAssignmentRequired", "ErrorUrl", "Homepage", "LogoutUrl", "Notes", "PreferredSingleSignOnMode", "PublisherName", "ReplyUrls", "SamlMetadataURL", "ServicePrincipalNames", "ServicePrincipalType", "Tags", "KeyCredentials", "PasswordCredentials"
+$Script:PropertiesToExport = 'AppDisplayName', 'AppId', 'Id', 'DisplayName', 'CustomSecurityAttributes', 'AlternativeNames', 'AccountEnabled', 'AppRoleAssignmentRequired', 'ErrorUrl', 'Homepage', 'LogoutUrl', 'Notes', 'PreferredSingleSignOnMode', 'PublisherName', 'ReplyUrls', 'SamlMetadataURL', 'ServicePrincipalNames', 'ServicePrincipalType', 'Tags', 'KeyCredentials', 'PasswordCredentials'
 
 function Get-TargetResource
 {
@@ -133,12 +133,13 @@ function Get-TargetResource
         $AccessTokens
     )
 
+    Write-Verbose -Message "Getting configuration of AAD Service Principal with AppId {$AppId}"
+
     try
     {
         if (-not $Script:exportedInstance -or $Script:exportedInstance.AppId -ne $AppId)
         {
-            Write-Verbose -Message 'Getting configuration of Azure AD ServicePrincipal'
-            $ConnectionMode = New-M365DSCConnection -Workload 'MicrosoftGraph' `
+            $null = New-M365DSCConnection -Workload 'MicrosoftGraph' `
                 -InboundParameters $PSBoundParameters
 
             #Ensure the proper dependencies are installed in the current environment.
@@ -156,33 +157,25 @@ function Get-TargetResource
             $nullReturn = $PSBoundParameters
             $nullReturn.Ensure = 'Absent'
 
-            $AADServicePrincipal = $null
-            try
+            if (-not [System.String]::IsNullOrEmpty($ObjectID))
             {
-                if (-not [System.String]::IsNullOrEmpty($ObjectID))
-                {
-                    $AADServicePrincipal = Get-MgServicePrincipal -ServicePrincipalId $ObjectId `
-                        -Property $Script:PropertiesToExport `
-                        -Expand 'AppRoleAssignedTo' `
-                        -ErrorAction Stop
-                }
-            }
-            catch
-            {
-                Write-Verbose -Message "Azure AD ServicePrincipal with ObjectID: $($ObjectID) could not be retrieved"
+                $AADServicePrincipal = Get-MgServicePrincipal -ServicePrincipalId $ObjectId `
+                    -Property $Script:PropertiesToExport `
+                    -ExpandProperty 'AppRoleAssignedTo' `
+                    -ErrorAction SilentlyContinue
             }
 
             if ($null -eq $AADServicePrincipal)
             {
                 $ObjectGuid = [System.Guid]::empty
-                if (-not [System.Guid]::TryParse($AppId, [System.Management.Automation.PSReference]$ObjectGuid))
+                if (-not [System.Guid]::TryParse($AppId, [ref]$ObjectGuid))
                 {
                     $AADServicePrincipal = [Array](Get-MgServicePrincipal -Filter "DisplayName eq '$($AppId -replace "'", "''")'" `
                             -Property $Script:PropertiesToExport `
                             -Expand 'AppRoleAssignedTo')
                     if ($null -ne $AADServicePrincipal -and $AADServicePrincipal.Count -gt 1)
                     {
-                        Throw "Multiple Service Principal with the DisplayName $($AppId) exist in the tenant."
+                        throw "Multiple Service Principal with the DisplayName $($AppId) exist in the tenant."
                     }
                 }
                 else
@@ -194,6 +187,7 @@ function Get-TargetResource
             }
             if ($null -eq $AADServicePrincipal)
             {
+                Write-Verbose -Message "Service Principal with AppId '$AppId' not found."
                 return $nullReturn
             }
         }
@@ -204,19 +198,19 @@ function Get-TargetResource
 
         $batchRequests = @(
             @{
-                id = 'AppRoleAssignedTo'
+                id     = 'AppRoleAssignedTo'
                 method = 'GET'
-                url = "/servicePrincipals/$($AADServicePrincipal.Id)/appRoleAssignedTo"
+                url    = "/servicePrincipals/$($AADServicePrincipal.Id)/appRoleAssignedTo"
             }
             @{
-                id = 'Owners'
+                id     = 'Owners'
                 method = 'GET'
-                url = "/servicePrincipals/$($AADServicePrincipal.Id)/owners"
+                url    = "/servicePrincipals/$($AADServicePrincipal.Id)/owners"
             }
             @{
-                id = 'delegatedPermissionClassifications'
+                id     = 'delegatedPermissionClassifications'
                 method = 'GET'
-                url = "/servicePrincipals/$($AADServicePrincipal.Id)/delegatedPermissionClassifications"
+                url    = "/servicePrincipals/$($AADServicePrincipal.Id)/delegatedPermissionClassifications"
             }
         )
         $batchResponse = Invoke-M365DSCGraphBatchRequest -Requests $batchRequests -ErrorAction SilentlyContinue
@@ -279,7 +273,7 @@ function Get-TargetResource
         $complexKeyCredentials = @()
         foreach ($currentkeyCredentials in $AADServicePrincipal.keyCredentials)
         {
-            $mykeyCredentials = @{}
+            $mykeyCredentials = [ordered]@{}
             if ($null -ne $currentkeyCredentials.customKeyIdentifier)
             {
                 $mykeyCredentials.Add('CustomKeyIdentifier', [convert]::ToBase64String($currentkeyCredentials.customKeyIdentifier))
@@ -312,7 +306,7 @@ function Get-TargetResource
         $complexPasswordCredentials = @()
         foreach ($currentpasswordCredentials in $AADServicePrincipal.passwordCredentials)
         {
-            $mypasswordCredentials = @{}
+            $mypasswordCredentials = [ordered]@{}
             $mypasswordCredentials.Add('DisplayName', $currentpasswordCredentials.displayName)
             if ($null -ne $currentpasswordCredentials.endDateTime)
             {
@@ -336,10 +330,17 @@ function Get-TargetResource
             $complexCustomSecurityAttributes = @()
         }
 
-        $appIdToExport = $AADServicePrincipal.AppDisplayName
-        if ([System.String]::IsNullOrEmpty($appIdToExport))
+        # If the App Id was passed in as a Guid, return it as a GUID. Otherwise return it as text.
+        $ObjectGuid = [System.Guid]::empty
+        if (-not [System.String]::IsNullOrEmpty($AppId) -and [System.Guid]::TryParse($AppId, [ref]$ObjectGuid))
         {
+            Write-Verbose -Message 'Returning AppId as GUID since the provided value was in GUID format.'
             $appIdToExport = $AADServicePrincipal.AppId
+        }
+        else
+        {
+            Write-Verbose -Message 'Returning AppId as Display Name since the provided value was NOT in GUID format.'
+            $appIdToExport = $AADServicePrincipal.DisplayName
         }
 
         $tagsValue = @()
@@ -396,22 +397,20 @@ function Get-TargetResource
             ApplicationSecret                  = $ApplicationSecret
             TenantId                           = $TenantId
             CertificateThumbprint              = $CertificateThumbprint
-            Managedidentity                    = $ManagedIdentity.IsPresent
+            ManagedIdentity                    = $ManagedIdentity.IsPresent
             AccessTokens                       = $AccessTokens
         }
-        Write-Verbose -Message "Get-TargetResource Result: `n $(Convert-M365DscHashtableToString -Hashtable $result)"
         return $result
     }
     catch
     {
-        Write-Verbose -Message $_
         New-M365DSCLogEntry -Message 'Error retrieving data:' `
             -Exception $_ `
             -Source $($MyInvocation.MyCommand.Source) `
             -TenantId $TenantId `
             -Credential $Credential
 
-        return $nullReturn
+        throw
     }
 }
 
@@ -546,9 +545,6 @@ function Set-TargetResource
         $AccessTokens
     )
 
-    $ConnectionMode = New-M365DSCConnection -Workload 'MicrosoftGraph' `
-        -InboundParameters $PSBoundParameters
-
     Write-Verbose -Message 'Setting configuration of Azure AD ServicePrincipal'
     #Ensure the proper dependencies are installed in the current environment.
     Confirm-M365DSCDependencies
@@ -563,16 +559,8 @@ function Set-TargetResource
     #endregion
 
     $currentAADServicePrincipal = Get-TargetResource @PSBoundParameters
-    $currentParameters = $PSBoundParameters
-    $currentParameters.Remove('ApplicationId') | Out-Null
-    $currentParameters.Remove('TenantId') | Out-Null
-    $currentParameters.Remove('CertificateThumbprint') | Out-Null
-    $currentParameters.Remove('ManagedIdentity') | Out-Null
-    $currentParameters.Remove('Credential') | Out-Null
-    $currentParameters.Remove('Ensure') | Out-Null
+    $currentParameters = Remove-M365DSCAuthenticationParameter -BoundParameters $PSBoundParameters
     $currentParameters.Remove('ObjectID') | Out-Null
-    $currentParameters.Remove('ApplicationSecret') | Out-Null
-    $currentParameters.Remove('AccessTokens') | Out-Null
     $currentParameters.Remove('Owners') | Out-Null
 
     # update the custom security attributes to be cmdlet comsumable
@@ -589,7 +577,7 @@ function Set-TargetResource
     $ObjectGuid = [System.Guid]::empty
     if (-not [System.Guid]::TryParse($AppId, [System.Management.Automation.PSReference]$ObjectGuid))
     {
-        Write-Verbose -Message "AppId was provided as a DisplayName. Translating it to an a GUID."
+        Write-Verbose -Message 'AppId was provided as a DisplayName. Translating it to an a GUID.'
         $appInstance = Get-MgApplication -Filter "DisplayName eq '$($AppId -replace "'", "''")'"
         $currentParameters.AppId = $appInstance.AppId
         Write-Verbose -Message "Translated to AppId {$($currentParameters.AppId)}"
@@ -615,7 +603,7 @@ function Set-TargetResource
                 '@odata.id' = (Get-MSCloudLoginConnectionProfile -Workload MicrosoftGraph).ResourceUrl + "v1.0/directoryObjects/$($userInfo.Id)"
             }
             Write-Verbose -Message "Adding new owner {$owner}"
-            $newOwner = New-MgServicePrincipalOwnerByRef -ServicePrincipalId $newSP.Id -BodyParameter $body
+            $null = New-MgServicePrincipalOwnerByRef -ServicePrincipalId $newSP.Id -BodyParameter $body
         }
 
         # Adding delegated permissions classifications
@@ -635,14 +623,9 @@ function Set-TargetResource
         # Update AppRoleAssignedTo
         if ($AppRoleAssignedToSpecified)
         {
-            Write-Verbose -Message "Updating AppRoleAssignedTo value"
+            Write-Verbose -Message 'Updating AppRoleAssignedTo value'
             foreach ($assignment in $AppRoleAssignedTo)
             {
-                $AppRoleAssignedToValues += @{
-                    PrincipalType = $assignment.PrincipalType
-                    Identity      = $assignment.Identity
-                }
-
                 if ($assignment.PrincipalType -eq 'User')
                 {
                     Write-Verbose -Message "Retrieving user {$($assignment.Identity)}"
@@ -655,6 +638,7 @@ function Set-TargetResource
                     $group = Get-MgGroup -Filter "DisplayName eq '$($assignment.Identity -replace "'", "''")'"
                     $PrincipalIdValue = $group.Id
                 }
+
                 $bodyParam = @{
                     principalId = $PrincipalIdValue
                     resourceId  = $newSP.Id
@@ -702,7 +686,7 @@ function Set-TargetResource
         }
         if ($AppRoleAssignedToSpecified)
         {
-            Write-Verbose -Message "Need to update AppRoleAssignedTo value"
+            Write-Verbose -Message 'Need to update AppRoleAssignedTo value'
             [Array]$currentPrincipals = $currentAADServicePrincipal.AppRoleAssignedTo.Identity
             [Array]$desiredPrincipals = $AppRoleAssignedTo.Identity
 
@@ -816,7 +800,7 @@ function Set-TargetResource
             else
             {
                 Write-Verbose -Message "Removing owner {$($userInfo.Id)}"
-                Remove-MgServicePrincipalOwnerByRef -ServicePrincipalId $currentAADServicePrincipal.ObjectId `
+                Remove-MgServicePrincipalOwnerDirectoryObjectByRef -ServicePrincipalId $currentAADServicePrincipal.ObjectId `
                     -DirectoryObjectId $userInfo.Id | Out-Null
             }
         }
@@ -984,7 +968,7 @@ function Test-TargetResource
         $AccessTokens
     )
 
-    $ConnectionMode = New-M365DSCConnection -Workload 'MicrosoftGraph' `
+    $null = New-M365DSCConnection -Workload 'MicrosoftGraph' `
         -InboundParameters $PSBoundParameters
 
     #Ensure the proper dependencies are installed in the current environment.
@@ -999,34 +983,10 @@ function Test-TargetResource
     Add-M365DSCTelemetryEvent -Data $data
     #endregion
 
-    # Evaluate AppId in GUID or DisplayName form.
-    $ObjectGuid = [System.Guid]::Empty
-    if ([System.Guid]::TryParse($PSBoundParameters.AppId, [System.Management.Automation.PSReference]$ObjectGuid))
-    {
-        # AppId was provided as a GUID, but Get-TargetResource returns it as Display name.
-        # Evaluate the translation to display name
-        Write-Verbose -Message "AppId was provided as a GUID, translating into a DisplayName"
-        $appInstance = Get-MgApplication -Filter "AppId eq '$($PSBoundParameters.AppId)'" -ErrorAction SilentlyContinue
-        if ($null -ne $appInstance)
-        {
-            $PSBoundParameters.AppId = $appInstance.DisplayName
-        }
-        else
-        {
-            $spn = Get-MgServicePrincipal -Filter "AppId eq '$($PSBoundParameters.AppId)'"
-            if ($null -eq $spn)
-            {
-                Write-Verbose -Message "Application or Service Principal with AppId '$($PSBoundParameters.AppId)' not found. Leaving it as AppId."
-            }
-            else
-            {
-                $PSBoundParameters.AppId = $spn.DisplayName
-            }
-        }
-    }
-
+    $compareParameters = Get-CompareParameters
     $result = Test-M365DSCTargetResource -DesiredValues $PSBoundParameters `
-                                         -ResourceName $($MyInvocation.MyCommand.Source).Replace('MSFT_', '')
+        -ResourceName $($MyInvocation.MyCommand.Source).Replace('MSFT_', '') `
+        @compareParameters
     return $result
 }
 
@@ -1067,8 +1027,8 @@ function Export-TargetResource
         [Parameter()]
         [System.String[]]
         $AccessTokens
-
     )
+
     $ConnectionMode = New-M365DSCConnection -Workload 'MicrosoftGraph' `
         -InboundParameters $PSBoundParameters
 
@@ -1109,7 +1069,7 @@ function Export-TargetResource
                 ApplicationSecret     = $ApplicationSecret
                 TenantId              = $TenantId
                 CertificateThumbprint = $CertificateThumbprint
-                Managedidentity       = $ManagedIdentity.IsPresent
+                ManagedIdentity       = $ManagedIdentity.IsPresent
                 AppID                 = $AADServicePrincipal.AppId
                 AccessTokens          = $AccessTokens
             }
@@ -1220,15 +1180,13 @@ function Export-TargetResource
     }
     catch
     {
-        Write-M365DSCHost -Message $Global:M365DSCEmojiRedX -CommitWrite
-
         New-M365DSCLogEntry -Message 'Error during Export:' `
             -Exception $_ `
             -Source $($MyInvocation.MyCommand.Source) `
             -TenantId $TenantId `
             -Credential $Credential
 
-        return ''
+        throw
     }
 }
 
@@ -1299,9 +1257,10 @@ function Get-M365DSCAADServicePrincipalCustomSecurityAttributesAsCmdletHashtable
 }
 
 # Function to create MSFT_AttributeValue
-function Create-AttributeValue
+function New-AttributeValue
 {
-    param (
+    param
+    (
         [string]$AttributeName,
         [object]$Value
     )
@@ -1347,7 +1306,8 @@ function Create-AttributeValue
 function Get-CustomSecurityAttributes
 {
     [OutputType([System.Array])]
-    param (
+    param
+    (
         $ServicePrincipal
     )
 
@@ -1373,7 +1333,7 @@ function Get-CustomSecurityAttributes
             $attributeName = $attribute # Keep the attribute name as it is
 
             # Create the attribute value and add it to the set
-            $attributeSet.AttributeValues += Create-AttributeValue -AttributeName $attributeName -Value $value
+            $attributeSet.AttributeValues += New-AttributeValue -AttributeName $attributeName -Value $value
         }
 
         #Add the attribute set to the final structure
@@ -1384,5 +1344,15 @@ function Get-CustomSecurityAttributes
     return [Array]$newCustomSecurityAttributes
 }
 
-Export-ModuleMember -Function *-TargetResource
+function Get-CompareParameters
+{
+    [CmdletBinding()]
+    [OutputType([System.Collections.Hashtable])]
+    param()
 
+    return @{
+        ExcludedProperties = @('ObjectId')
+    }
+}
+
+Export-ModuleMember -Function @('*-TargetResource', 'Get-CompareParameters')

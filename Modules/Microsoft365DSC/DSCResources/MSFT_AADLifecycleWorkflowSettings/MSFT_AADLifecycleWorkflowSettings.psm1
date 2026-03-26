@@ -7,6 +7,7 @@ function Get-TargetResource
     param
     (
         [Parameter(Mandatory = $true)]
+        [ValidateSet('Yes')]
         [System.String]
         $IsSingleInstance,
 
@@ -51,12 +52,14 @@ function Get-TargetResource
         $AccessTokens
     )
 
+    Write-Verbose -Message 'Getting the AAD Lifecycle Workflow Settings'
+
     try
     {
         if (-not $Script:exportedInstance)
         {
-            New-M365DSCConnection -Workload 'MicrosoftGraph' `
-                -InboundParameters $PSBoundParameters | Out-Null
+            $null = New-M365DSCConnection -Workload 'MicrosoftGraph' `
+                -InboundParameters $PSBoundParameters
 
             #Ensure the proper dependencies are installed in the current environment.
             Confirm-M365DSCDependencies
@@ -96,18 +99,17 @@ function Get-TargetResource
             ManagedIdentity                 = $ManagedIdentity.IsPresent
             AccessTokens                    = $AccessTokens
         }
-        return [System.Collections.Hashtable] $results
+        return $results
     }
     catch
     {
-        Write-Verbose -Message $_
         New-M365DSCLogEntry -Message 'Error retrieving data:' `
             -Exception $_ `
             -Source $($MyInvocation.MyCommand.Source) `
             -TenantId $TenantId `
             -Credential $Credential
 
-        return $nullResult
+        throw
     }
 }
 
@@ -117,6 +119,7 @@ function Set-TargetResource
     param
     (
         [Parameter(Mandatory = $true)]
+        [ValidateSet('Yes')]
         [System.String]
         $IsSingleInstance,
 
@@ -131,11 +134,6 @@ function Set-TargetResource
         [Parameter()]
         [System.Boolean]
         $UseCompanyBranding,
-
-        [Parameter()]
-        [ValidateSet('Present', 'Absent')]
-        [System.String]
-        $Ensure = 'Present',
 
         [Parameter()]
         [System.Management.Automation.PSCredential]
@@ -165,6 +163,11 @@ function Set-TargetResource
         [System.String[]]
         $AccessTokens
     )
+
+    Write-Verbose -Message 'Setting the AAD Lifecycle Workflow Settings'
+
+    $null = New-M365DSCConnection -Workload 'MicrosoftGraph' `
+        -InboundParameters $PSBoundParameters
 
     #Ensure the proper dependencies are installed in the current environment.
     Confirm-M365DSCDependencies
@@ -196,6 +199,7 @@ function Test-TargetResource
     param
     (
         [Parameter(Mandatory = $true)]
+        [ValidateSet('Yes')]
         [System.String]
         $IsSingleInstance,
 
@@ -210,11 +214,6 @@ function Test-TargetResource
         [Parameter()]
         [System.Boolean]
         $UseCompanyBranding,
-
-        [Parameter()]
-        [ValidateSet('Present', 'Absent')]
-        [System.String]
-        $Ensure = 'Present',
 
         [Parameter()]
         [System.Management.Automation.PSCredential]
@@ -255,7 +254,7 @@ function Test-TargetResource
     #endregion
 
     $result = Test-M365DSCTargetResource -DesiredValues $PSBoundParameters `
-                                         -ResourceName $($MyInvocation.MyCommand.Source).Replace('MSFT_', '')
+        -ResourceName $($MyInvocation.MyCommand.Source).Replace('MSFT_', '')
     return $result
 }
 
@@ -362,26 +361,23 @@ function Export-TargetResource
     }
     catch
     {
-        if ($_.ErrorDetails.Message -like "Insufficient license *")
+        if ($_.ErrorDetails.Message -like 'Insufficient license *')
         {
             Write-M365DSCHost -Message "`r`n    " -DeferWrite
             Write-M365DSCHost -Message $Global:M365DSCEmojiYellowCircle -DeferWrite
-            Write-M365DSCHost -Message " Insufficient license. You need the Entra ID Governance license." -CommitWrite
+            Write-M365DSCHost -Message ' Insufficient license. You need the Entra ID Governance license.' -CommitWrite
         }
         else
         {
-            Write-M365DSCHost -Message $Global:M365DSCEmojiRedX -CommitWrite
-
             New-M365DSCLogEntry -Message 'Error during Export:' `
                 -Exception $_ `
                 -Source $($MyInvocation.MyCommand.Source) `
                 -TenantId $TenantId `
                 -Credential $Credential
-        }
 
-        return ''
+            throw
+        }
     }
 }
 
 Export-ModuleMember -Function *-TargetResource
-

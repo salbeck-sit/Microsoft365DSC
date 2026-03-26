@@ -24,38 +24,38 @@ function Get-TargetResource
         $Id,
 
         [Parameter()]
-        [ValidateSet('0', '1')]
-        [System.String]
+        [ValidateSet(0, 1)]
+        [System.Int32]
         $InternetExplorerIntegrationReloadInIEModeAllowed,
 
         [Parameter()]
-        [ValidateSet('0', '1')]
-        [System.String]
+        [ValidateSet(0, 1)]
+        [System.Int32]
         $SSLErrorOverrideAllowed,
 
         [Parameter()]
-        [ValidateSet('0', '1')]
-        [System.String]
+        [ValidateSet(0, 1)]
+        [System.Int32]
         $InternetExplorerIntegrationZoneIdentifierMhtFileAllowed,
 
         [Parameter()]
-        [ValidateSet('0', '1')]
-        [System.String]
+        [ValidateSet(0, 1)]
+        [System.Int32]
         $BrowserLegacyExtensionPointsBlockingEnabled,
 
         [Parameter()]
-        [ValidateSet('0', '1')]
-        [System.String]
+        [ValidateSet(0, 1)]
+        [System.Int32]
         $SitePerProcess,
 
         [Parameter()]
-        [ValidateSet('0', '1')]
-        [System.String]
+        [ValidateSet(0, 1)]
+        [System.Int32]
         $EdgeEnhanceImagesEnabled,
 
         [Parameter()]
-        [ValidateSet('0', '1')]
-        [System.String]
+        [ValidateSet(0, 1)]
+        [System.Int32]
         $ExtensionInstallBlocklist,
 
         [Parameter()]
@@ -64,18 +64,18 @@ function Get-TargetResource
         $ExtensionInstallBlocklistDesc,
 
         [Parameter()]
-        [ValidateSet('0', '1')]
-        [System.String]
+        [ValidateSet(0, 1)]
+        [System.Int32]
         $WebSQLAccess,
 
         [Parameter()]
-        [ValidateSet('0', '1')]
-        [System.String]
+        [ValidateSet(0, 1)]
+        [System.Int32]
         $BasicAuthOverHttpEnabled,
 
         [Parameter()]
-        [ValidateSet('0', '1')]
-        [System.String]
+        [ValidateSet(0, 1)]
+        [System.Int32]
         $MicrosoftEdge_HTTPAuthentication_AuthSchemes,
 
         [Parameter()]
@@ -83,63 +83,63 @@ function Get-TargetResource
         $AuthSchemes_AuthSchemes,
 
         [Parameter()]
-        [ValidateSet('0', '1')]
-        [System.String]
+        [ValidateSet(0, 1)]
+        [System.Int32]
         $NativeMessagingUserLevelHosts,
 
         [Parameter()]
-        [ValidateSet('0', '1')]
-        [System.String]
+        [ValidateSet(0, 1)]
+        [System.Int32]
         $InsecurePrivateNetworkRequestsAllowed,
 
         [Parameter()]
-        [ValidateSet('0', '1')]
-        [System.String]
+        [ValidateSet(0, 1)]
+        [System.Int32]
         $InternetExplorerModeToolbarButtonEnabled,
 
         [Parameter()]
-        [ValidateSet('0', '1')]
-        [System.String]
+        [ValidateSet(0, 1)]
+        [System.Int32]
         $SmartScreenEnabled,
 
         [Parameter()]
-        [ValidateSet('0', '1')]
-        [System.String]
+        [ValidateSet(0, 1)]
+        [System.Int32]
         $SmartScreenPuaEnabled,
 
         [Parameter()]
-        [ValidateSet('0', '1')]
-        [System.String]
+        [ValidateSet(0, 1)]
+        [System.Int32]
         $PreventSmartScreenPromptOverride,
 
         [Parameter()]
-        [ValidateSet('0', '1')]
-        [System.String]
+        [ValidateSet(0, 1)]
+        [System.Int32]
         $PreventSmartScreenPromptOverrideForFiles,
 
         [Parameter()]
-        [ValidateSet('0', '1')]
-        [System.String]
+        [ValidateSet(0, 1)]
+        [System.Int32]
         $SharedArrayBufferUnrestrictedAccessAllowed,
 
         [Parameter()]
-        [ValidateSet('0', '1')]
-        [System.String]
+        [ValidateSet(0, 1)]
+        [System.Int32]
         $TyposquattingCheckerEnabled,
 
         [Parameter()]
-        [ValidateSet('0', '1')]
-        [System.String]
+        [ValidateSet(0, 1)]
+        [System.Int32]
         $edge_DynamicCodeSettings,
 
         [Parameter()]
-        [ValidateSet('0', '1')]
-        [System.String]
+        [ValidateSet(0, 1)]
+        [System.Int32]
         $DynamicCodeSettings_DynamicCodeSettings,
 
         [Parameter()]
-        [ValidateSet('0', '1')]
-        [System.String]
+        [ValidateSet(0, 1)]
+        [System.Int32]
         $ApplicationBoundEncryptionEnabled,
 
         [Parameter()]
@@ -148,8 +148,8 @@ function Get-TargetResource
         #endregion
 
         [Parameter()]
+        [ValidateSet('Present', 'Absent')]
         [System.String]
-        [ValidateSet('Absent', 'Present')]
         $Ensure = 'Present',
 
         [Parameter()]
@@ -188,7 +188,7 @@ function Get-TargetResource
         if (-not $Script:exportedInstance -or $Script:exportedInstance.DisplayName -ne $DisplayName)
         {
 
-            $ConnectionMode = New-M365DSCConnection -Workload 'MicrosoftGraph' `
+            $null = New-M365DSCConnection -Workload 'MicrosoftGraph' `
                 -InboundParameters $PSBoundParameters
 
             #Ensure the proper dependencies are installed in the current environment.
@@ -275,7 +275,7 @@ function Get-TargetResource
         }
         $results.Add('Assignments', $assignmentResult)
 
-        return [System.Collections.Hashtable] $results
+        return $results
     }
     catch
     {
@@ -285,7 +285,7 @@ function Get-TargetResource
             -TenantId $TenantId `
             -Credential $Credential
 
-        return $nullResult
+        throw
     }
 }
 
@@ -312,38 +312,38 @@ function Set-TargetResource
         $Id,
 
         [Parameter()]
-        [ValidateSet('0', '1')]
-        [System.String]
+        [ValidateSet(0, 1)]
+        [System.Int32]
         $InternetExplorerIntegrationReloadInIEModeAllowed,
 
         [Parameter()]
-        [ValidateSet('0', '1')]
-        [System.String]
+        [ValidateSet(0, 1)]
+        [System.Int32]
         $SSLErrorOverrideAllowed,
 
         [Parameter()]
-        [ValidateSet('0', '1')]
-        [System.String]
+        [ValidateSet(0, 1)]
+        [System.Int32]
         $InternetExplorerIntegrationZoneIdentifierMhtFileAllowed,
 
         [Parameter()]
-        [ValidateSet('0', '1')]
-        [System.String]
+        [ValidateSet(0, 1)]
+        [System.Int32]
         $BrowserLegacyExtensionPointsBlockingEnabled,
 
         [Parameter()]
-        [ValidateSet('0', '1')]
-        [System.String]
+        [ValidateSet(0, 1)]
+        [System.Int32]
         $SitePerProcess,
 
         [Parameter()]
-        [ValidateSet('0', '1')]
-        [System.String]
+        [ValidateSet(0, 1)]
+        [System.Int32]
         $EdgeEnhanceImagesEnabled,
 
         [Parameter()]
-        [ValidateSet('0', '1')]
-        [System.String]
+        [ValidateSet(0, 1)]
+        [System.Int32]
         $ExtensionInstallBlocklist,
 
         [Parameter()]
@@ -352,18 +352,18 @@ function Set-TargetResource
         $ExtensionInstallBlocklistDesc,
 
         [Parameter()]
-        [ValidateSet('0', '1')]
-        [System.String]
+        [ValidateSet(0, 1)]
+        [System.Int32]
         $WebSQLAccess,
 
         [Parameter()]
-        [ValidateSet('0', '1')]
-        [System.String]
+        [ValidateSet(0, 1)]
+        [System.Int32]
         $BasicAuthOverHttpEnabled,
 
         [Parameter()]
-        [ValidateSet('0', '1')]
-        [System.String]
+        [ValidateSet(0, 1)]
+        [System.Int32]
         $MicrosoftEdge_HTTPAuthentication_AuthSchemes,
 
         [Parameter()]
@@ -371,63 +371,63 @@ function Set-TargetResource
         $AuthSchemes_AuthSchemes,
 
         [Parameter()]
-        [ValidateSet('0', '1')]
-        [System.String]
+        [ValidateSet(0, 1)]
+        [System.Int32]
         $NativeMessagingUserLevelHosts,
 
         [Parameter()]
-        [ValidateSet('0', '1')]
-        [System.String]
+        [ValidateSet(0, 1)]
+        [System.Int32]
         $InsecurePrivateNetworkRequestsAllowed,
 
         [Parameter()]
-        [ValidateSet('0', '1')]
-        [System.String]
+        [ValidateSet(0, 1)]
+        [System.Int32]
         $InternetExplorerModeToolbarButtonEnabled,
 
         [Parameter()]
-        [ValidateSet('0', '1')]
-        [System.String]
+        [ValidateSet(0, 1)]
+        [System.Int32]
         $SmartScreenEnabled,
 
         [Parameter()]
-        [ValidateSet('0', '1')]
-        [System.String]
+        [ValidateSet(0, 1)]
+        [System.Int32]
         $SmartScreenPuaEnabled,
 
         [Parameter()]
-        [ValidateSet('0', '1')]
-        [System.String]
+        [ValidateSet(0, 1)]
+        [System.Int32]
         $PreventSmartScreenPromptOverride,
 
         [Parameter()]
-        [ValidateSet('0', '1')]
-        [System.String]
+        [ValidateSet(0, 1)]
+        [System.Int32]
         $PreventSmartScreenPromptOverrideForFiles,
 
         [Parameter()]
-        [ValidateSet('0', '1')]
-        [System.String]
+        [ValidateSet(0, 1)]
+        [System.Int32]
         $SharedArrayBufferUnrestrictedAccessAllowed,
 
         [Parameter()]
-        [ValidateSet('0', '1')]
-        [System.String]
+        [ValidateSet(0, 1)]
+        [System.Int32]
         $TyposquattingCheckerEnabled,
 
         [Parameter()]
-        [ValidateSet('0', '1')]
-        [System.String]
+        [ValidateSet(0, 1)]
+        [System.Int32]
         $edge_DynamicCodeSettings,
 
         [Parameter()]
-        [ValidateSet('0', '1')]
-        [System.String]
+        [ValidateSet(0, 1)]
+        [System.Int32]
         $DynamicCodeSettings_DynamicCodeSettings,
 
         [Parameter()]
-        [ValidateSet('0', '1')]
-        [System.String]
+        [ValidateSet(0, 1)]
+        [System.Int32]
         $ApplicationBoundEncryptionEnabled,
 
         [Parameter()]
@@ -435,8 +435,8 @@ function Set-TargetResource
         $Assignments,
         #endregion
         [Parameter()]
+        [ValidateSet('Present', 'Absent')]
         [System.String]
-        [ValidateSet('Absent', 'Present')]
         $Ensure = 'Present',
 
         [Parameter()]
@@ -472,13 +472,13 @@ function Set-TargetResource
 
     if ($PSBoundParameters.ContainsKey('WebSQLAccess'))
     {
-        Write-Warning -Message "The WebSQLAccess parameter is deprecated and will be removed in a future version. It will not be used in the current operation."
+        Write-Warning -Message 'The WebSQLAccess parameter is deprecated and will be removed in a future version. It will not be used in the current operation.'
         $PSBoundParameters.Remove('WebSQLAccess') | Out-Null
     }
 
     if ($PSBoundParameters.ContainsKey('EdgeEnhanceImagesEnabled'))
     {
-        Write-Warning -Message "The EdgeEnhanceImagesEnabled parameter is deprecated and will be removed in a future version. It will not be used in the current operation."
+        Write-Warning -Message 'The EdgeEnhanceImagesEnabled parameter is deprecated and will be removed in a future version. It will not be used in the current operation.'
         $PSBoundParameters.Remove('EdgeEnhanceImagesEnabled') | Out-Null
     }
 
@@ -495,7 +495,6 @@ function Set-TargetResource
     #endregion
 
     $currentInstance = Get-TargetResource @PSBoundParameters
-
     $BoundParameters = Remove-M365DSCAuthenticationParameter -BoundParameters $PSBoundParameters
 
     $templateReferenceId = 'c66347b7-8325-4954-a235-3bf2233dfbfd_3'
@@ -505,7 +504,7 @@ function Set-TargetResource
     if ($Ensure -eq 'Present' -and $currentInstance.Ensure -eq 'Absent')
     {
         Write-Verbose -Message "Creating an Intune Security Baseline Microsoft Edge with Name {$DisplayName}"
-        $BoundParameters.Remove("Assignments") | Out-Null
+        $BoundParameters.Remove('Assignments') | Out-Null
 
         $settings = Get-IntuneSettingCatalogPolicySetting `
             -DSCParams ([System.Collections.Hashtable]$BoundParameters) `
@@ -518,6 +517,7 @@ function Set-TargetResource
             Platforms         = $platforms
             Technologies      = $technologies
             Settings          = $settings
+            RoleScopeTagIds   = $RoleScopeTagIds
         }
 
         #region resource generator code
@@ -536,7 +536,7 @@ function Set-TargetResource
     elseif ($Ensure -eq 'Present' -and $currentInstance.Ensure -eq 'Present')
     {
         Write-Verbose -Message "Updating the Intune Security Baseline Microsoft Edge with Id {$($currentInstance.Id)}"
-        $BoundParameters.Remove("Assignments") | Out-Null
+        $BoundParameters.Remove('Assignments') | Out-Null
 
         $settings = Get-IntuneSettingCatalogPolicySetting `
             -DSCParams ([System.Collections.Hashtable]$BoundParameters) `
@@ -549,7 +549,8 @@ function Set-TargetResource
             -TemplateReferenceId $templateReferenceId `
             -Platforms $platforms `
             -Technologies $technologies `
-            -Settings $settings
+            -Settings $settings `
+            -RoleScopeTagIds $RoleScopeTagIds
 
         #region resource generator code
         $assignmentsHash = ConvertTo-IntunePolicyAssignment -IncludeDeviceFilter:$true -Assignments $Assignments
@@ -592,38 +593,38 @@ function Test-TargetResource
         $Id,
 
         [Parameter()]
-        [ValidateSet('0', '1')]
-        [System.String]
+        [ValidateSet(0, 1)]
+        [System.Int32]
         $InternetExplorerIntegrationReloadInIEModeAllowed,
 
         [Parameter()]
-        [ValidateSet('0', '1')]
-        [System.String]
+        [ValidateSet(0, 1)]
+        [System.Int32]
         $SSLErrorOverrideAllowed,
 
         [Parameter()]
-        [ValidateSet('0', '1')]
-        [System.String]
+        [ValidateSet(0, 1)]
+        [System.Int32]
         $InternetExplorerIntegrationZoneIdentifierMhtFileAllowed,
 
         [Parameter()]
-        [ValidateSet('0', '1')]
-        [System.String]
+        [ValidateSet(0, 1)]
+        [System.Int32]
         $BrowserLegacyExtensionPointsBlockingEnabled,
 
         [Parameter()]
-        [ValidateSet('0', '1')]
-        [System.String]
+        [ValidateSet(0, 1)]
+        [System.Int32]
         $SitePerProcess,
 
         [Parameter()]
-        [ValidateSet('0', '1')]
-        [System.String]
+        [ValidateSet(0, 1)]
+        [System.Int32]
         $EdgeEnhanceImagesEnabled,
 
         [Parameter()]
-        [ValidateSet('0', '1')]
-        [System.String]
+        [ValidateSet(0, 1)]
+        [System.Int32]
         $ExtensionInstallBlocklist,
 
         [Parameter()]
@@ -632,18 +633,18 @@ function Test-TargetResource
         $ExtensionInstallBlocklistDesc,
 
         [Parameter()]
-        [ValidateSet('0', '1')]
-        [System.String]
+        [ValidateSet(0, 1)]
+        [System.Int32]
         $WebSQLAccess,
 
         [Parameter()]
-        [ValidateSet('0', '1')]
-        [System.String]
+        [ValidateSet(0, 1)]
+        [System.Int32]
         $BasicAuthOverHttpEnabled,
 
         [Parameter()]
-        [ValidateSet('0', '1')]
-        [System.String]
+        [ValidateSet(0, 1)]
+        [System.Int32]
         $MicrosoftEdge_HTTPAuthentication_AuthSchemes,
 
         [Parameter()]
@@ -651,63 +652,63 @@ function Test-TargetResource
         $AuthSchemes_AuthSchemes,
 
         [Parameter()]
-        [ValidateSet('0', '1')]
-        [System.String]
+        [ValidateSet(0, 1)]
+        [System.Int32]
         $NativeMessagingUserLevelHosts,
 
         [Parameter()]
-        [ValidateSet('0', '1')]
-        [System.String]
+        [ValidateSet(0, 1)]
+        [System.Int32]
         $InsecurePrivateNetworkRequestsAllowed,
 
         [Parameter()]
-        [ValidateSet('0', '1')]
-        [System.String]
+        [ValidateSet(0, 1)]
+        [System.Int32]
         $InternetExplorerModeToolbarButtonEnabled,
 
         [Parameter()]
-        [ValidateSet('0', '1')]
-        [System.String]
+        [ValidateSet(0, 1)]
+        [System.Int32]
         $SmartScreenEnabled,
 
         [Parameter()]
-        [ValidateSet('0', '1')]
-        [System.String]
+        [ValidateSet(0, 1)]
+        [System.Int32]
         $SmartScreenPuaEnabled,
 
         [Parameter()]
-        [ValidateSet('0', '1')]
-        [System.String]
+        [ValidateSet(0, 1)]
+        [System.Int32]
         $PreventSmartScreenPromptOverride,
 
         [Parameter()]
-        [ValidateSet('0', '1')]
-        [System.String]
+        [ValidateSet(0, 1)]
+        [System.Int32]
         $PreventSmartScreenPromptOverrideForFiles,
 
         [Parameter()]
-        [ValidateSet('0', '1')]
-        [System.String]
+        [ValidateSet(0, 1)]
+        [System.Int32]
         $SharedArrayBufferUnrestrictedAccessAllowed,
 
         [Parameter()]
-        [ValidateSet('0', '1')]
-        [System.String]
+        [ValidateSet(0, 1)]
+        [System.Int32]
         $TyposquattingCheckerEnabled,
 
         [Parameter()]
-        [ValidateSet('0', '1')]
-        [System.String]
+        [ValidateSet(0, 1)]
+        [System.Int32]
         $edge_DynamicCodeSettings,
 
         [Parameter()]
-        [ValidateSet('0', '1')]
-        [System.String]
+        [ValidateSet(0, 1)]
+        [System.Int32]
         $DynamicCodeSettings_DynamicCodeSettings,
 
         [Parameter()]
-        [ValidateSet('0', '1')]
-        [System.String]
+        [ValidateSet(0, 1)]
+        [System.Int32]
         $ApplicationBoundEncryptionEnabled,
 
         [Parameter()]
@@ -716,8 +717,8 @@ function Test-TargetResource
         #endregion
 
         [Parameter()]
+        [ValidateSet('Present', 'Absent')]
         [System.String]
-        [ValidateSet('Absent', 'Present')]
         $Ensure = 'Present',
 
         [Parameter()]
@@ -751,18 +752,15 @@ function Test-TargetResource
 
     if ($PSBoundParameters.ContainsKey('WebSQLAccess'))
     {
-        Write-Warning -Message "The WebSQLAccess parameter is deprecated and will be removed in a future version. It will not be used in the current operation."
+        Write-Warning -Message 'The WebSQLAccess parameter is deprecated and will be removed in a future version. It will not be used in the current operation.'
         $PSBoundParameters.Remove('WebSQLAccess') | Out-Null
     }
 
     if ($PSBoundParameters.ContainsKey('EdgeEnhanceImagesEnabled'))
     {
-        Write-Warning -Message "The EdgeEnhanceImagesEnabled parameter is deprecated and will be removed in a future version. It will not be used in the current operation."
+        Write-Warning -Message 'The EdgeEnhanceImagesEnabled parameter is deprecated and will be removed in a future version. It will not be used in the current operation.'
         $PSBoundParameters.Remove('EdgeEnhanceImagesEnabled') | Out-Null
     }
-
-    #Ensure the proper dependencies are installed in the current environment.
-    Confirm-M365DSCDependencies
 
     #region Telemetry
     $ResourceName = $MyInvocation.MyCommand.ModuleName.Replace('MSFT_', '')
@@ -773,62 +771,11 @@ function Test-TargetResource
     Add-M365DSCTelemetryEvent -Data $data
     #endregion
 
-    Write-Verbose -Message "Testing configuration of the Intune Security Baseline Microsoft Edge with Id {$Id} and Name {$DisplayName}"
-
-    $CurrentValues = Get-TargetResource @PSBoundParameters
-    [Hashtable]$ValuesToCheck = @{}
-    $MyInvocation.MyCommand.Parameters.GetEnumerator() | ForEach-Object {
-        if ($_.Key -notlike '*Variable' -or $_.Key -notin @('Verbose', 'Debug', 'ErrorAction', 'WarningAction', 'InformationAction'))
-        {
-            if ($null -ne $CurrentValues[$_.Key] -or $null -ne $PSBoundParameters[$_.Key])
-            {
-                $ValuesToCheck.Add($_.Key, $null)
-                if (-not $PSBoundParameters.ContainsKey($_.Key))
-                {
-                    $PSBoundParameters.Add($_.Key, $null)
-                }
-            }
-        }
-    }
-    $testResult = $true
-
-    #Compare Cim instances
-    foreach ($key in $PSBoundParameters.Keys)
-    {
-        $source = $PSBoundParameters.$key
-        $target = $CurrentValues.$key
-        if ($null -ne $source -and $source.GetType().Name -like '*CimInstance*')
-        {
-            $testResult = Compare-M365DSCComplexObject `
-                -Source ($source) `
-                -Target ($target)
-
-            if (-not $testResult)
-            {
-                break
-            }
-
-            $ValuesToCheck.Remove($key) | Out-Null
-        }
-    }
-
-    $ValuesToCheck.Remove('Id') | Out-Null
-    $ValuesToCheck = Remove-M365DSCAuthenticationParameter -BoundParameters $ValuesToCheck
-
-    Write-Verbose -Message "Current Values: $(Convert-M365DscHashtableToString -Hashtable $CurrentValues)"
-    Write-Verbose -Message "Target Values: $(Convert-M365DscHashtableToString -Hashtable $PSBoundParameters)"
-
-    if ($testResult)
-    {
-        $testResult = Test-M365DSCParameterState -CurrentValues $CurrentValues `
-            -Source $($MyInvocation.MyCommand.Source) `
-            -DesiredValues $PSBoundParameters `
-            -ValuesToCheck $ValuesToCheck.Keys
-    }
-
-    Write-Verbose -Message "Test-TargetResource returned $testResult"
-
-    return $testResult
+    $compareParameters = Get-CompareParameters
+    $result = Test-M365DSCTargetResource -DesiredValues $PSBoundParameters `
+        -ResourceName $($MyInvocation.MyCommand.Source).Replace('MSFT_', '') `
+        @compareParameters
+    return $result
 }
 
 function Export-TargetResource
@@ -888,7 +835,7 @@ function Export-TargetResource
     try
     {
         #region resource generator code
-        $policyTemplateID = 'c66347b7-8325-4954-a235-3bf2233dfbfd_2'
+        $policyTemplateID = 'c66347b7-8325-4954-a235-3bf2233dfbfd_3'
         [array]$getValue = Get-MgBetaDeviceManagementConfigurationPolicy `
             -Filter $Filter `
             -All `
@@ -965,17 +912,44 @@ function Export-TargetResource
     }
     catch
     {
-        Write-M365DSCHost -Message $Global:M365DSCEmojiRedX -CommitWrite
-
         New-M365DSCLogEntry -Message 'Error during Export:' `
             -Exception $_ `
             -Source $($MyInvocation.MyCommand.Source) `
             -TenantId $TenantId `
             -Credential $Credential
 
-        return ''
+        throw
     }
 }
 
-Export-ModuleMember -Function *-TargetResource
+function Get-CompareParameters
+{
+    [CmdletBinding()]
+    [OutputType([System.Collections.Hashtable])]
+    param()
 
+    return @{
+        ExcludedProperties = @('WebSQLAccess', 'EdgeEnhanceImagesEnabled')
+        PostProcessing     = {
+            param($DesiredValues, $CurrentValues, $ValuesToCheck, $PostProcessingArgs)
+            $PostProcessingArgs[0] | ForEach-Object {
+                if ($_.Key -notlike '*Variable' -or $_.Key -notin @('Verbose', 'Debug', 'ErrorAction', 'WarningAction', 'InformationAction'))
+                {
+                    if ($null -ne $CurrentValues[$_.Key] -or $null -ne $DesiredValues[$_.Key])
+                    {
+                        $ValuesToCheck[$_.Key] = $null
+                        if (-not $DesiredValues.ContainsKey($_.Key))
+                        {
+                            $DesiredValues.Add($_.Key, $null)
+                        }
+                    }
+                }
+            }
+
+            return [System.Tuple[Hashtable, Hashtable, Hashtable]]::new($DesiredValues, $CurrentValues, $ValuesToCheck)
+        }
+        PostProcessingArgs = $MyInvocation.MyCommand.Parameters.GetEnumerator()
+    }
+}
+
+Export-ModuleMember -Function @('*-TargetResource', 'Get-CompareParameters')

@@ -17,8 +17,8 @@ function Get-TargetResource
         #endregion
 
         [Parameter()]
+        [ValidateSet('Present', 'Absent')]
         [System.String]
-        [ValidateSet('Absent', 'Present')]
         $Ensure = 'Present',
 
         [Parameter()]
@@ -50,9 +50,11 @@ function Get-TargetResource
         $AccessTokens
     )
 
+    Write-Verbose -Message "Getting configuration for the Azure AD Organization Certificate Based Auth Configuration for OrganizationId {$OrganizationId}"
+
     try
     {
-        $ConnectionMode = New-M365DSCConnection -Workload 'MicrosoftGraph' `
+        $null = New-M365DSCConnection -Workload 'MicrosoftGraph' `
             -InboundParameters $PSBoundParameters
 
         #Ensure the proper dependencies are installed in the current environment.
@@ -93,7 +95,7 @@ function Get-TargetResource
         $complexCertificateAuthorities = @()
         foreach ($currentCertificateAuthorities in $getValue.certificateAuthorities)
         {
-            $myCertificateAuthorities = @{}
+            $myCertificateAuthorities = [ordered]@{}
             $myCertificateAuthorities.Add('Certificate', [System.Convert]::ToBase64String($currentCertificateAuthorities.certificate))
             $myCertificateAuthorities.Add('CertificateRevocationListUrl', $currentCertificateAuthorities.certificateRevocationListUrl)
             $myCertificateAuthorities.Add('DeltaCertificateRevocationListUrl', $currentCertificateAuthorities.deltaCertificateRevocationListUrl)
@@ -119,7 +121,7 @@ function Get-TargetResource
             #endregion
         }
 
-        return [System.Collections.Hashtable] $results
+        return $results
     }
     catch
     {
@@ -129,7 +131,7 @@ function Get-TargetResource
             -TenantId $TenantId `
             -Credential $Credential
 
-        return $nullResult
+        throw
     }
 }
 
@@ -149,8 +151,8 @@ function Set-TargetResource
         #endregion
 
         [Parameter()]
+        [ValidateSet('Present', 'Absent')]
         [System.String]
-        [ValidateSet('Absent', 'Present')]
         $Ensure = 'Present',
 
         [Parameter()]
@@ -194,8 +196,7 @@ function Set-TargetResource
     Add-M365DSCTelemetryEvent -Data $data
     #endregion
 
-    $currentInstance = Get-TargetResource @PSBoundParameters
-
+    $null = Get-TargetResource @PSBoundParameters
     $BoundParameters = Remove-M365DSCAuthenticationParameter -BoundParameters $PSBoundParameters
 
     # This GUID is ALWAYS fixed as per the documentation.
@@ -203,7 +204,7 @@ function Set-TargetResource
 
     # Delete the old configuration
     Write-Verbose -Message 'Removing the current Azure AD Organization Certificate Based Auth Configuration.'
-    Invoke-MgGraphRequest -Uri ((Get-MSCloudLoginConnectionProfile -Workload MicrosoftGraph).ResourceUrl + "beta/organization/$OrganizationId/certificateBasedAuthConfiguration/$CertificateBasedAuthConfigurationId") -Method DELETE
+    Invoke-MgGraphRequest -Uri "/beta/organization/$OrganizationId/certificateBasedAuthConfiguration/$CertificateBasedAuthConfigurationId" -Method DELETE
 
     if ($Ensure -eq 'Present')
     {
@@ -227,13 +228,12 @@ function Set-TargetResource
             certificateAuthorities = $createCertAuthorities
         }
 
-        $uri = ((Get-MSCloudLoginConnectionProfile -Workload MicrosoftGraph).ResourceUrl + `
-                    "beta/organization/$OrganizationId/certificateBasedAuthConfiguration/")
+        $uri = "/beta/organization/$OrganizationId/certificateBasedAuthConfiguration/"
 
         Write-Verbose -Message "Creating with Parameters:`r`n$(ConvertTo-Json $params -Depth 10)"
         Invoke-MgGraphRequest -Uri $uri `
-                              -Method 'POST' `
-                              -Body $params
+            -Method 'POST' `
+            -Body $params
     }
 }
 
@@ -254,8 +254,8 @@ function Test-TargetResource
         #endregion
 
         [Parameter()]
+        [ValidateSet('Present', 'Absent')]
         [System.String]
-        [ValidateSet('Absent', 'Present')]
         $Ensure = 'Present',
 
         [Parameter()]
@@ -297,7 +297,7 @@ function Test-TargetResource
     #endregion
 
     $result = Test-M365DSCTargetResource -DesiredValues $PSBoundParameters `
-                                         -ResourceName $($MyInvocation.MyCommand.Source).Replace('MSFT_', '')
+        -ResourceName $($MyInvocation.MyCommand.Source).Replace('MSFT_', '')
     return $result
 }
 
@@ -357,8 +357,6 @@ function Export-TargetResource
 
     try
     {
-        # This GUID is ALWAYS fixed as per the documentation.
-        $CertificateBasedAuthConfigurationId = '29728ade-6ae4-4ee9-9103-412912537da5'
         $getValue = Get-MgBetaOrganization
 
         $i = 1
@@ -424,17 +422,14 @@ function Export-TargetResource
     }
     catch
     {
-        Write-M365DSCHost -Message $Global:M365DSCEmojiRedX -CommitWrite
-
         New-M365DSCLogEntry -Message 'Error during Export:' `
             -Exception $_ `
             -Source $($MyInvocation.MyCommand.Source) `
             -TenantId $TenantId `
             -Credential $Credential
 
-        return ''
+        throw
     }
 }
 
 Export-ModuleMember -Function *-TargetResource
-

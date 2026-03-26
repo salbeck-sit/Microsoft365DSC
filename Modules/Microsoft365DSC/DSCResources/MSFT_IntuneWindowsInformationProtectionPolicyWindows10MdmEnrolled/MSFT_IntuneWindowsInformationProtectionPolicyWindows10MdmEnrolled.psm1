@@ -114,8 +114,8 @@ function Get-TargetResource
         #endregion
 
         [Parameter()]
+        [ValidateSet('Present', 'Absent')]
         [System.String]
-        [ValidateSet('Absent', 'Present')]
         $Ensure = 'Present',
 
         [Parameter()]
@@ -151,7 +151,7 @@ function Get-TargetResource
 
     try
     {
-        $ConnectionMode = New-M365DSCConnection -Workload 'MicrosoftGraph' `
+        $null = New-M365DSCConnection -Workload 'MicrosoftGraph' `
             -InboundParameters $PSBoundParameters
 
         #Ensure the proper dependencies are installed in the current environment.
@@ -179,7 +179,7 @@ function Get-TargetResource
         {
             Write-Verbose -Message "Could not find an Intune Windows Information Protection Policy for Windows10 Mdm Enrolled with Id {$Id}"
 
-            if (-Not [string]::IsNullOrEmpty($DisplayName))
+            if (-not [string]::IsNullOrEmpty($DisplayName))
             {
                 $getValue = Get-MgBetaDeviceAppManagementMdmWindowsInformationProtectionPolicy `
                     -All `
@@ -206,7 +206,7 @@ function Get-TargetResource
         Write-Verbose -Message "An Intune Windows Information Protection Policy for Windows10 Mdm Enrolled with Id {$Id} and DisplayName {$DisplayName} was found."
 
         #region resource generator code
-        $complexDataRecoveryCertificate = @{}
+        $complexDataRecoveryCertificate = [ordered]@{}
         $complexDataRecoveryCertificate.Add('Certificate', $getValue.DataRecoveryCertificate.certificate)
         $complexDataRecoveryCertificate.Add('Description', $getValue.DataRecoveryCertificate.description)
         if ($null -ne $getValue.DataRecoveryCertificate.expirationDateTime)
@@ -214,7 +214,7 @@ function Get-TargetResource
             $complexDataRecoveryCertificate.Add('ExpirationDateTime', ([DateTimeOffset]$getValue.DataRecoveryCertificate.expirationDateTime).ToString('o'))
         }
         $complexDataRecoveryCertificate.Add('SubjectName', $getValue.DataRecoveryCertificate.subjectName)
-        if ($complexDataRecoveryCertificate.values.Where({ $null -ne $_ }).count -eq 0)
+        if ($complexDataRecoveryCertificate.values.Where({ $null -ne $_ }).Count -eq 0)
         {
             $complexDataRecoveryCertificate = $null
         }
@@ -222,10 +222,10 @@ function Get-TargetResource
         $complexEnterpriseInternalProxyServers = @()
         foreach ($currentEnterpriseInternalProxyServers in $getValue.enterpriseInternalProxyServers)
         {
-            $myEnterpriseInternalProxyServers = @{}
+            $myEnterpriseInternalProxyServers = [ordered]@{}
             $myEnterpriseInternalProxyServers.Add('DisplayName', $currentEnterpriseInternalProxyServers.displayName)
             $myEnterpriseInternalProxyServers.Add('Resources', $currentEnterpriseInternalProxyServers.resources)
-            if ($myEnterpriseInternalProxyServers.values.Where({ $null -ne $_ }).count -gt 0)
+            if ($myEnterpriseInternalProxyServers.values.Where({ $null -ne $_ }).Count -gt 0)
             {
                 $complexEnterpriseInternalProxyServers += $myEnterpriseInternalProxyServers
             }
@@ -234,26 +234,26 @@ function Get-TargetResource
         $complexEnterpriseIPRanges = @()
         foreach ($currentEnterpriseIPRanges in $getValue.enterpriseIPRanges)
         {
-            $myEnterpriseIPRanges = @{}
+            $myEnterpriseIPRanges = [ordered]@{}
             $myEnterpriseIPRanges.Add('DisplayName', $currentEnterpriseIPRanges.displayName)
             $complexRanges = @()
             foreach ($currentRanges in $currentEnterpriseIPRanges.ranges)
             {
-                $myRanges = @{}
+                $myRanges = [ordered]@{}
                 $myRanges.Add('CidrAddress', $currentRanges.AdditionalProperties.cidrAddress)
                 $myRanges.Add('LowerAddress', $currentRanges.AdditionalProperties.lowerAddress)
                 $myRanges.Add('UpperAddress', $currentRanges.AdditionalProperties.upperAddress)
                 if ($null -ne $currentRanges.AdditionalProperties.'@odata.type')
                 {
-                    $myRanges.Add('odataType', $currentRanges.AdditionalProperties.'@odata.type'.toString())
+                    $myRanges.Add('odataType', $currentRanges.AdditionalProperties.'@odata.type'.ToString())
                 }
-                if ($myRanges.values.Where({ $null -ne $_ }).count -gt 0)
+                if ($myRanges.values.Where({ $null -ne $_ }).Count -gt 0)
                 {
                     $complexRanges += $myRanges
                 }
             }
             $myEnterpriseIPRanges.Add('Ranges', $complexRanges)
-            if ($myEnterpriseIPRanges.values.Where({ $null -ne $_ }).count -gt 0)
+            if ($myEnterpriseIPRanges.values.Where({ $null -ne $_ }).Count -gt 0)
             {
                 $complexEnterpriseIPRanges += $myEnterpriseIPRanges
             }
@@ -262,10 +262,10 @@ function Get-TargetResource
         $complexEnterpriseNetworkDomainNames = @()
         foreach ($currentEnterpriseNetworkDomainNames in $getValue.enterpriseNetworkDomainNames)
         {
-            $myEnterpriseNetworkDomainNames = @{}
+            $myEnterpriseNetworkDomainNames = [ordered]@{}
             $myEnterpriseNetworkDomainNames.Add('DisplayName', $currentEnterpriseNetworkDomainNames.displayName)
             $myEnterpriseNetworkDomainNames.Add('Resources', $currentEnterpriseNetworkDomainNames.resources)
-            if ($myEnterpriseNetworkDomainNames.values.Where({ $null -ne $_ }).count -gt 0)
+            if ($myEnterpriseNetworkDomainNames.values.Where({ $null -ne $_ }).Count -gt 0)
             {
                 $complexEnterpriseNetworkDomainNames += $myEnterpriseNetworkDomainNames
             }
@@ -274,10 +274,10 @@ function Get-TargetResource
         $complexEnterpriseProtectedDomainNames = @()
         foreach ($currentEnterpriseProtectedDomainNames in $getValue.enterpriseProtectedDomainNames)
         {
-            $myEnterpriseProtectedDomainNames = @{}
+            $myEnterpriseProtectedDomainNames = [ordered]@{}
             $myEnterpriseProtectedDomainNames.Add('DisplayName', $currentEnterpriseProtectedDomainNames.displayName)
             $myEnterpriseProtectedDomainNames.Add('Resources', $currentEnterpriseProtectedDomainNames.resources)
-            if ($myEnterpriseProtectedDomainNames.values.Where({ $null -ne $_ }).count -gt 0)
+            if ($myEnterpriseProtectedDomainNames.values.Where({ $null -ne $_ }).Count -gt 0)
             {
                 $complexEnterpriseProtectedDomainNames += $myEnterpriseProtectedDomainNames
             }
@@ -286,21 +286,21 @@ function Get-TargetResource
         $complexEnterpriseProxiedDomains = @()
         foreach ($currentEnterpriseProxiedDomains in $getValue.enterpriseProxiedDomains)
         {
-            $myEnterpriseProxiedDomains = @{}
+            $myEnterpriseProxiedDomains = [ordered]@{}
             $myEnterpriseProxiedDomains.Add('DisplayName', $currentEnterpriseProxiedDomains.displayName)
             $complexProxiedDomains = @()
             foreach ($currentProxiedDomains in $currentEnterpriseProxiedDomains.proxiedDomains)
             {
-                $myProxiedDomains = @{}
+                $myProxiedDomains = [ordered]@{}
                 $myProxiedDomains.Add('IpAddressOrFQDN', $currentProxiedDomains.ipAddressOrFQDN)
                 $myProxiedDomains.Add('Proxy', $currentProxiedDomains.proxy)
-                if ($myProxiedDomains.values.Where({ $null -ne $_ }).count -gt 0)
+                if ($myProxiedDomains.values.Where({ $null -ne $_ }).Count -gt 0)
                 {
                     $complexProxiedDomains += $myProxiedDomains
                 }
             }
             $myEnterpriseProxiedDomains.Add('ProxiedDomains', $complexProxiedDomains)
-            if ($myEnterpriseProxiedDomains.values.Where({ $null -ne $_ }).count -gt 0)
+            if ($myEnterpriseProxiedDomains.values.Where({ $null -ne $_ }).Count -gt 0)
             {
                 $complexEnterpriseProxiedDomains += $myEnterpriseProxiedDomains
             }
@@ -309,10 +309,10 @@ function Get-TargetResource
         $complexEnterpriseProxyServers = @()
         foreach ($currentEnterpriseProxyServers in $getValue.enterpriseProxyServers)
         {
-            $myEnterpriseProxyServers = @{}
+            $myEnterpriseProxyServers = [ordered]@{}
             $myEnterpriseProxyServers.Add('DisplayName', $currentEnterpriseProxyServers.displayName)
             $myEnterpriseProxyServers.Add('Resources', $currentEnterpriseProxyServers.resources)
-            if ($myEnterpriseProxyServers.values.Where({ $null -ne $_ }).count -gt 0)
+            if ($myEnterpriseProxyServers.values.Where({ $null -ne $_ }).Count -gt 0)
             {
                 $complexEnterpriseProxyServers += $myEnterpriseProxyServers
             }
@@ -321,7 +321,7 @@ function Get-TargetResource
         $complexExemptApps = @()
         foreach ($currentExemptApps in $getValue.exemptApps)
         {
-            $myExemptApps = @{}
+            $myExemptApps = [ordered]@{}
             $myExemptApps.Add('Denied', $currentExemptApps.denied)
             $myExemptApps.Add('Description', $currentExemptApps.description)
             $myExemptApps.Add('DisplayName', $currentExemptApps.displayName)
@@ -332,9 +332,9 @@ function Get-TargetResource
             $myExemptApps.Add('BinaryVersionLow', $currentExemptApps.AdditionalProperties.binaryVersionLow)
             if ($null -ne $currentExemptApps.AdditionalProperties.'@odata.type')
             {
-                $myExemptApps.Add('odataType', $currentExemptApps.AdditionalProperties.'@odata.type'.toString())
+                $myExemptApps.Add('odataType', $currentExemptApps.AdditionalProperties.'@odata.type'.ToString())
             }
-            if ($myExemptApps.values.Where({ $null -ne $_ }).count -gt 0)
+            if ($myExemptApps.values.Where({ $null -ne $_ }).Count -gt 0)
             {
                 $complexExemptApps += $myExemptApps
             }
@@ -343,10 +343,10 @@ function Get-TargetResource
         $complexNeutralDomainResources = @()
         foreach ($currentNeutralDomainResources in $getValue.neutralDomainResources)
         {
-            $myNeutralDomainResources = @{}
+            $myNeutralDomainResources = [ordered]@{}
             $myNeutralDomainResources.Add('DisplayName', $currentNeutralDomainResources.displayName)
             $myNeutralDomainResources.Add('Resources', $currentNeutralDomainResources.resources)
-            if ($myNeutralDomainResources.values.Where({ $null -ne $_ }).count -gt 0)
+            if ($myNeutralDomainResources.values.Where({ $null -ne $_ }).Count -gt 0)
             {
                 $complexNeutralDomainResources += $myNeutralDomainResources
             }
@@ -355,7 +355,7 @@ function Get-TargetResource
         $complexProtectedApps = @()
         foreach ($currentProtectedApps in $getValue.protectedApps)
         {
-            $myProtectedApps = @{}
+            $myProtectedApps = [ordered]@{}
             $myProtectedApps.Add('Denied', $currentProtectedApps.denied)
             $myProtectedApps.Add('Description', $currentProtectedApps.description)
             $myProtectedApps.Add('DisplayName', $currentProtectedApps.displayName)
@@ -366,9 +366,9 @@ function Get-TargetResource
             $myProtectedApps.Add('BinaryVersionLow', $currentProtectedApps.AdditionalProperties.binaryVersionLow)
             if ($null -ne $currentProtectedApps.AdditionalProperties.'@odata.type')
             {
-                $myProtectedApps.Add('odataType', $currentProtectedApps.AdditionalProperties.'@odata.type'.toString())
+                $myProtectedApps.Add('odataType', $currentProtectedApps.AdditionalProperties.'@odata.type'.ToString())
             }
-            if ($myProtectedApps.values.Where({ $null -ne $_ }).count -gt 0)
+            if ($myProtectedApps.values.Where({ $null -ne $_ }).Count -gt 0)
             {
                 $complexProtectedApps += $myProtectedApps
             }
@@ -377,10 +377,10 @@ function Get-TargetResource
         $complexSmbAutoEncryptedFileExtensions = @()
         foreach ($currentSmbAutoEncryptedFileExtensions in $getValue.smbAutoEncryptedFileExtensions)
         {
-            $mySmbAutoEncryptedFileExtensions = @{}
+            $mySmbAutoEncryptedFileExtensions = [ordered]@{}
             $mySmbAutoEncryptedFileExtensions.Add('DisplayName', $currentSmbAutoEncryptedFileExtensions.displayName)
             $mySmbAutoEncryptedFileExtensions.Add('Resources', $currentSmbAutoEncryptedFileExtensions.resources)
-            if ($mySmbAutoEncryptedFileExtensions.values.Where({ $null -ne $_ }).count -gt 0)
+            if ($mySmbAutoEncryptedFileExtensions.values.Where({ $null -ne $_ }).Count -gt 0)
             {
                 $complexSmbAutoEncryptedFileExtensions += $mySmbAutoEncryptedFileExtensions
             }
@@ -428,16 +428,16 @@ function Get-TargetResource
             TenantId                               = $TenantId
             ApplicationSecret                      = $ApplicationSecret
             CertificateThumbprint                  = $CertificateThumbprint
-            Managedidentity                        = $ManagedIdentity.IsPresent
+            ManagedIdentity                        = $ManagedIdentity.IsPresent
             AccessTokens                           = $AccessTokens
             #endregion
         }
-        if ($getValue.assignments.count -gt 0)
+        if ($getValue.assignments.Count -gt 0)
         {
             $results.Add('Assignments', (ConvertFrom-IntunePolicyAssignment -Assignments $getValue.assignments -IncludeDeviceFilter $false))
         }
 
-        return [System.Collections.Hashtable] $results
+        return $results
     }
     catch
     {
@@ -447,7 +447,7 @@ function Get-TargetResource
             -TenantId $TenantId `
             -Credential $Credential
 
-        return $nullResult
+        throw
     }
 }
 
@@ -611,33 +611,15 @@ function Set-TargetResource
 
     $currentInstance = Get-TargetResource @PSBoundParameters
 
-    $PSBoundParameters.Remove('Ensure') | Out-Null
-    $PSBoundParameters.Remove('Credential') | Out-Null
-    $PSBoundParameters.Remove('ApplicationId') | Out-Null
-    $PSBoundParameters.Remove('ApplicationSecret') | Out-Null
-    $PSBoundParameters.Remove('TenantId') | Out-Null
-    $PSBoundParameters.Remove('CertificateThumbprint') | Out-Null
-    $PSBoundParameters.Remove('ManagedIdentity') | Out-Null
-    $PSBoundParameters.Remove('Verbose') | Out-Null
-    $PSBoundParameters.Remove('AccessTokens') | Out-Null
-
     if ($Ensure -eq 'Present' -and $currentInstance.Ensure -eq 'Absent')
     {
         Write-Verbose -Message "Creating an Intune Windows Information Protection Policy for Windows10 Mdm Enrolled with DisplayName {$DisplayName}"
 
-        $PSBoundParameters.remove('Assignments') | Out-Null
-        $CreateParameters = ([Hashtable]$PSBoundParameters).clone()
-        $CreateParameters = Rename-M365DSCCimInstanceParameter -Properties $CreateParameters
-        $CreateParameters.Remove('Id') | Out-Null
+        $PSBoundParameters.Remove('Assignments') | Out-Null
+        $CreateParameters = Remove-M365DSCAuthenticationParameter -BoundParameters $PSBoundParameters
+        $createParameters = Rename-M365DSCCimInstanceParameter -Properties $createParameters
+        $createParameters.Remove('Id') | Out-Null
 
-        $keys = (([Hashtable]$CreateParameters).clone()).Keys
-        foreach ($key in $keys)
-        {
-            if ($null -ne $CreateParameters.$key -and $CreateParameters.$key.getType().Name -like '*cimInstance*')
-            {
-                $CreateParameters.$key = Convert-M365DSCDRGComplexTypeToHashtable -ComplexObject $CreateParameters.$key
-            }
-        }
 
         #region resource generator code
         $policy = New-MgBetaDeviceAppManagementMdmWindowsInformationProtectionPolicy -BodyParameter $CreateParameters
@@ -656,20 +638,11 @@ function Set-TargetResource
     {
         Write-Verbose -Message "Updating the Intune Windows Information Protection Policy for Windows10 Mdm Enrolled with Id {$($currentInstance.Id)}"
 
-        $PSBoundParameters.remove('Assignments') | Out-Null
-        $UpdateParameters = ([Hashtable]$PSBoundParameters).clone()
+        $PSBoundParameters.Remove('Assignments') | Out-Null
+        $UpdateParameters = Remove-M365DSCAuthenticationParameter -BoundParameters $PSBoundParameters
         $UpdateParameters = Rename-M365DSCCimInstanceParameter -Properties $UpdateParameters
-
         $UpdateParameters.Remove('Id') | Out-Null
 
-        $keys = (([Hashtable]$UpdateParameters).clone()).Keys
-        foreach ($key in $keys)
-        {
-            if ($null -ne $UpdateParameters.$key -and $UpdateParameters.$key.getType().Name -like '*cimInstance*')
-            {
-                $UpdateParameters.$key = Convert-M365DSCDRGComplexTypeToHashtable -ComplexObject $UpdateParameters.$key
-            }
-        }
 
         #region resource generator code
         $UpdateParameters.Add('@odata.type', '#microsoft.graph.MdmWindowsInformationProtectionPolicy')
@@ -806,8 +779,8 @@ function Test-TargetResource
         #endregion
 
         [Parameter()]
+        [ValidateSet('Present', 'Absent')]
         [System.String]
-        [ValidateSet('Absent', 'Present')]
         $Ensure = 'Present',
 
         [Parameter()]
@@ -839,9 +812,6 @@ function Test-TargetResource
         $AccessTokens
     )
 
-    #Ensure the proper dependencies are installed in the current environment.
-    Confirm-M365DSCDependencies
-
     #region Telemetry
     $ResourceName = $MyInvocation.MyCommand.ModuleName.Replace('MSFT_', '')
     $CommandName = $MyInvocation.MyCommand
@@ -851,54 +821,9 @@ function Test-TargetResource
     Add-M365DSCTelemetryEvent -Data $data
     #endregion
 
-    Write-Verbose -Message "Testing configuration of the Intune Windows Information Protection Policy for Windows10 Mdm Enrolled with Id {$Id} and DisplayName {$DisplayName}"
-
-    $CurrentValues = Get-TargetResource @PSBoundParameters
-    $ValuesToCheck = ([Hashtable]$PSBoundParameters).clone()
-    $testResult = $true
-
-    #Compare Cim instances
-    foreach ($key in $PSBoundParameters.Keys)
-    {
-        $source = $PSBoundParameters.$key
-        $target = $CurrentValues.$key
-        if ($source.getType().Name -like '*CimInstance*')
-        {
-            $testResult = Compare-M365DSCComplexObject `
-                -Source ($source) `
-                -Target ($target)
-
-            if ($key -eq 'Assignments')
-            {
-                $testResult = Compare-M365DSCIntunePolicyAssignment -Source $source -Target $target
-            }
-
-            if (-Not $testResult)
-            {
-                $testResult = $false
-                break
-            }
-
-            $ValuesToCheck.Remove($key) | Out-Null
-
-        }
-    }
-    $ValuesToCheck.Remove('Id') | Out-Null
-
-    Write-Verbose -Message "Current Values: $(Convert-M365DscHashtableToString -Hashtable $CurrentValues)"
-    Write-Verbose -Message "Target Values: $(Convert-M365DscHashtableToString -Hashtable $ValuesToCheck)"
-
-    if ($testResult)
-    {
-        $testResult = Test-M365DSCParameterState -CurrentValues $CurrentValues `
-            -Source $($MyInvocation.MyCommand.Source) `
-            -DesiredValues $PSBoundParameters `
-            -ValuesToCheck $ValuesToCheck.Keys
-    }
-
-    Write-Verbose -Message "Test-TargetResource returned $testResult"
-
-    return $testResult
+    $result = Test-M365DSCTargetResource -DesiredValues $PSBoundParameters `
+        -ResourceName $($MyInvocation.MyCommand.Source).Replace('MSFT_', '')
+    return $result
 }
 
 function Export-TargetResource
@@ -999,7 +924,7 @@ function Export-TargetResource
                 TenantId              = $TenantId
                 ApplicationSecret     = $ApplicationSecret
                 CertificateThumbprint = $CertificateThumbprint
-                Managedidentity       = $ManagedIdentity.IsPresent
+                ManagedIdentity       = $ManagedIdentity.IsPresent
                 AccessTokens          = $AccessTokens
             }
 
@@ -1010,7 +935,7 @@ function Export-TargetResource
                 $complexTypeStringResult = Get-M365DSCDRGComplexTypeToString `
                     -ComplexObject $Results.DataRecoveryCertificate `
                     -CIMInstanceName 'MicrosoftGraphwindowsInformationProtectionDataRecoveryCertificate'
-                if (-Not [String]::IsNullOrWhiteSpace($complexTypeStringResult))
+                if (-not [String]::IsNullOrWhiteSpace($complexTypeStringResult))
                 {
                     $Results.DataRecoveryCertificate = $complexTypeStringResult
                 }
@@ -1024,7 +949,7 @@ function Export-TargetResource
                 $complexTypeStringResult = Get-M365DSCDRGComplexTypeToString `
                     -ComplexObject $Results.EnterpriseInternalProxyServers `
                     -CIMInstanceName 'MicrosoftGraphwindowsInformationProtectionResourceCollection'
-                if (-Not [String]::IsNullOrWhiteSpace($complexTypeStringResult))
+                if (-not [String]::IsNullOrWhiteSpace($complexTypeStringResult))
                 {
                     $Results.EnterpriseInternalProxyServers = $complexTypeStringResult
                 }
@@ -1052,7 +977,7 @@ function Export-TargetResource
                     -CIMInstanceName 'MicrosoftGraphwindowsInformationProtectionIPRangeCollection' `
                     -ComplexTypeMapping $complexMapping
 
-                if (-Not [String]::IsNullOrWhiteSpace($complexTypeStringResult))
+                if (-not [String]::IsNullOrWhiteSpace($complexTypeStringResult))
                 {
                     $Results.EnterpriseIPRanges = $complexTypeStringResult
                 }
@@ -1066,7 +991,7 @@ function Export-TargetResource
                 $complexTypeStringResult = Get-M365DSCDRGComplexTypeToString `
                     -ComplexObject $Results.EnterpriseNetworkDomainNames `
                     -CIMInstanceName 'MicrosoftGraphwindowsInformationProtectionResourceCollection'
-                if (-Not [String]::IsNullOrWhiteSpace($complexTypeStringResult))
+                if (-not [String]::IsNullOrWhiteSpace($complexTypeStringResult))
                 {
                     $Results.EnterpriseNetworkDomainNames = $complexTypeStringResult
                 }
@@ -1080,7 +1005,7 @@ function Export-TargetResource
                 $complexTypeStringResult = Get-M365DSCDRGComplexTypeToString `
                     -ComplexObject $Results.EnterpriseProtectedDomainNames `
                     -CIMInstanceName 'MicrosoftGraphwindowsInformationProtectionResourceCollection'
-                if (-Not [String]::IsNullOrWhiteSpace($complexTypeStringResult))
+                if (-not [String]::IsNullOrWhiteSpace($complexTypeStringResult))
                 {
                     $Results.EnterpriseProtectedDomainNames = $complexTypeStringResult
                 }
@@ -1108,7 +1033,7 @@ function Export-TargetResource
                     -CIMInstanceName 'MicrosoftGraphwindowsInformationProtectionProxiedDomainCollection' `
                     -ComplexTypeMapping $complexMapping
 
-                if (-Not [String]::IsNullOrWhiteSpace($complexTypeStringResult))
+                if (-not [String]::IsNullOrWhiteSpace($complexTypeStringResult))
                 {
                     $Results.EnterpriseProxiedDomains = $complexTypeStringResult
                 }
@@ -1122,7 +1047,7 @@ function Export-TargetResource
                 $complexTypeStringResult = Get-M365DSCDRGComplexTypeToString `
                     -ComplexObject $Results.EnterpriseProxyServers `
                     -CIMInstanceName 'MicrosoftGraphwindowsInformationProtectionResourceCollection'
-                if (-Not [String]::IsNullOrWhiteSpace($complexTypeStringResult))
+                if (-not [String]::IsNullOrWhiteSpace($complexTypeStringResult))
                 {
                     $Results.EnterpriseProxyServers = $complexTypeStringResult
                 }
@@ -1136,7 +1061,7 @@ function Export-TargetResource
                 $complexTypeStringResult = Get-M365DSCDRGComplexTypeToString `
                     -ComplexObject $Results.ExemptApps `
                     -CIMInstanceName 'MicrosoftGraphwindowsInformationProtectionApp'
-                if (-Not [String]::IsNullOrWhiteSpace($complexTypeStringResult))
+                if (-not [String]::IsNullOrWhiteSpace($complexTypeStringResult))
                 {
                     $Results.ExemptApps = $complexTypeStringResult
                 }
@@ -1150,7 +1075,7 @@ function Export-TargetResource
                 $complexTypeStringResult = Get-M365DSCDRGComplexTypeToString `
                     -ComplexObject $Results.NeutralDomainResources `
                     -CIMInstanceName 'MicrosoftGraphwindowsInformationProtectionResourceCollection'
-                if (-Not [String]::IsNullOrWhiteSpace($complexTypeStringResult))
+                if (-not [String]::IsNullOrWhiteSpace($complexTypeStringResult))
                 {
                     $Results.NeutralDomainResources = $complexTypeStringResult
                 }
@@ -1164,7 +1089,7 @@ function Export-TargetResource
                 $complexTypeStringResult = Get-M365DSCDRGComplexTypeToString `
                     -ComplexObject $Results.ProtectedApps `
                     -CIMInstanceName 'MicrosoftGraphwindowsInformationProtectionApp'
-                if (-Not [String]::IsNullOrWhiteSpace($complexTypeStringResult))
+                if (-not [String]::IsNullOrWhiteSpace($complexTypeStringResult))
                 {
                     $Results.ProtectedApps = $complexTypeStringResult
                 }
@@ -1178,7 +1103,7 @@ function Export-TargetResource
                 $complexTypeStringResult = Get-M365DSCDRGComplexTypeToString `
                     -ComplexObject $Results.SmbAutoEncryptedFileExtensions `
                     -CIMInstanceName 'MicrosoftGraphwindowsInformationProtectionResourceCollection'
-                if (-Not [String]::IsNullOrWhiteSpace($complexTypeStringResult))
+                if (-not [String]::IsNullOrWhiteSpace($complexTypeStringResult))
                 {
                     $Results.SmbAutoEncryptedFileExtensions = $complexTypeStringResult
                 }
@@ -1205,9 +1130,9 @@ function Export-TargetResource
                 -Results $Results `
                 -Credential $Credential `
                 -NoEscape @('DataRecoveryCertificate', 'EnterpriseInternalProxyServers', 'EnterpriseIPRanges',
-                    'EnterpriseNetworkDomainNames', 'EnterpriseProtectedDomainNames', 'EnterpriseProxiedDomains',
-                    'EnterpriseProxyServers', 'ExemptApps', 'NeutralDomainResources', 'ProtectedApps',
-                    'SmbAutoEncryptedFileExtensions', 'Assignments')
+                'EnterpriseNetworkDomainNames', 'EnterpriseProtectedDomainNames', 'EnterpriseProxiedDomains',
+                'EnterpriseProxyServers', 'ExemptApps', 'NeutralDomainResources', 'ProtectedApps',
+                'SmbAutoEncryptedFileExtensions', 'Assignments')
 
             $dscContent += $currentDSCBlock
             Save-M365DSCPartialExport -Content $currentDSCBlock `
@@ -1226,18 +1151,15 @@ function Export-TargetResource
         }
         else
         {
-            Write-M365DSCHost -Message $Global:M365DSCEmojiRedX -CommitWrite
-
             New-M365DSCLogEntry -Message 'Error during Export:' `
                 -Exception $_ `
                 -Source $($MyInvocation.MyCommand.Source) `
                 -TenantId $TenantId `
                 -Credential $Credential
-        }
 
-        return ''
+            throw
+        }
     }
 }
 
 Export-ModuleMember -Function *-TargetResource
-

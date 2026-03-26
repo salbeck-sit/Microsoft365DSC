@@ -13,7 +13,7 @@ function Get-TargetResource
         $IsSingleInstance,
 
         [Parameter()]
-        [ValidateSet('notConfigured','enabled','disabled')]
+        [ValidateSet('notConfigured', 'enabled', 'disabled')]
         [System.String]
         $EnhancedBiometricsState,
 
@@ -26,7 +26,7 @@ function Get-TargetResource
         $PinExpirationInDays,
 
         [Parameter()]
-        [ValidateSet('allowed','required','disallowed')]
+        [ValidateSet('allowed', 'required', 'disallowed')]
         [System.String]
         $PinLowercaseCharactersUsage,
 
@@ -43,12 +43,12 @@ function Get-TargetResource
         $PinPreviousBlockCount,
 
         [Parameter()]
-        [ValidateSet('allowed','required','disallowed')]
+        [ValidateSet('allowed', 'required', 'disallowed')]
         [System.String]
         $PinSpecialCharactersUsage,
 
         [Parameter()]
-        [ValidateSet('allowed','required','disallowed')]
+        [ValidateSet('allowed', 'required', 'disallowed')]
         [System.String]
         $PinUppercaseCharactersUsage,
 
@@ -61,12 +61,12 @@ function Get-TargetResource
         $SecurityDeviceRequired,
 
         [Parameter()]
-        [ValidateSet('notConfigured','enabled','disabled')]
+        [ValidateSet('notConfigured', 'enabled', 'disabled')]
         [System.String]
         $SecurityKeyForSignIn,
 
         [Parameter()]
-        [ValidateSet('notConfigured','enabled','disabled')]
+        [ValidateSet('notConfigured', 'enabled', 'disabled')]
         [System.String]
         $State,
 
@@ -104,13 +104,13 @@ function Get-TargetResource
         $AccessTokens
     )
 
-    Write-Verbose -Message "Getting configuration for the Intune Windows Hello For Business Global Policy"
+    Write-Verbose -Message 'Getting configuration for the Intune Windows Hello For Business Global Policy'
 
     try
     {
         if (-not $Script:exportedInstance -or $Script:exportedInstance.DisplayName -ne $DisplayName)
         {
-            $ConnectionMode = New-M365DSCConnection -Workload 'MicrosoftGraph' `
+            $null = New-M365DSCConnection -Workload 'MicrosoftGraph' `
                 -InboundParameters $PSBoundParameters
 
             #Ensure the proper dependencies are installed in the current environment.
@@ -125,14 +125,12 @@ function Get-TargetResource
             Add-M365DSCTelemetryEvent -Data $data
             #endregion
 
-            $nullResult = $PSBoundParameters
-
             #region resource generator code
             $getValue = Get-MgBetaDeviceManagementDeviceEnrollmentConfiguration `
                 -ErrorAction SilentlyContinue | Where-Object `
                 -FilterScript {
-                    $_.AdditionalProperties.'@odata.type' -eq "#microsoft.graph.deviceEnrollmentWindowsHelloForBusinessConfiguration"
-                }
+                $_.AdditionalProperties.'@odata.type' -eq '#microsoft.graph.deviceEnrollmentWindowsHelloForBusinessConfiguration'
+            }
             #endregion
         }
         else
@@ -140,7 +138,7 @@ function Get-TargetResource
             $getValue = $Script:exportedInstance
         }
 
-        Write-Verbose -Message "An Intune Windows Hello For Business Global Policy was found"
+        Write-Verbose -Message 'An Intune Windows Hello For Business Global Policy was found'
 
         #region resource generator code
         $enumEnhancedBiometricsState = $null
@@ -182,31 +180,31 @@ function Get-TargetResource
 
         $results = @{
             #region resource generator code
-            IsSingleInstance                  = 'Yes'
-            EnhancedBiometricsState           = $enumEnhancedBiometricsState
-            EnhancedSignInSecurity            = $getValue.AdditionalProperties.enhancedSignInSecurity
-            PinExpirationInDays               = $getValue.AdditionalProperties.pinExpirationInDays
-            PinLowercaseCharactersUsage       = $enumPinLowercaseCharactersUsage
-            PinMaximumLength                  = $getValue.AdditionalProperties.pinMaximumLength
-            PinMinimumLength                  = $getValue.AdditionalProperties.pinMinimumLength
-            PinPreviousBlockCount             = $getValue.AdditionalProperties.pinPreviousBlockCount
-            PinSpecialCharactersUsage         = $enumPinSpecialCharactersUsage
-            PinUppercaseCharactersUsage       = $enumPinUppercaseCharactersUsage
-            RemotePassportEnabled             = $getValue.AdditionalProperties.remotePassportEnabled
-            SecurityDeviceRequired            = $getValue.AdditionalProperties.securityDeviceRequired
-            SecurityKeyForSignIn              = $enumSecurityKeyForSignIn
-            State                             = $enumState
-            UnlockWithBiometricsEnabled       = $getValue.AdditionalProperties.unlockWithBiometricsEnabled
-            Credential                        = $Credential
-            ApplicationId                     = $ApplicationId
-            TenantId                          = $TenantId
-            ApplicationSecret                 = $ApplicationSecret
-            CertificateThumbprint             = $CertificateThumbprint
-            ManagedIdentity                   = $ManagedIdentity.IsPresent
+            IsSingleInstance            = 'Yes'
+            EnhancedBiometricsState     = $enumEnhancedBiometricsState
+            EnhancedSignInSecurity      = $getValue.AdditionalProperties.enhancedSignInSecurity
+            PinExpirationInDays         = $getValue.AdditionalProperties.pinExpirationInDays
+            PinLowercaseCharactersUsage = $enumPinLowercaseCharactersUsage
+            PinMaximumLength            = $getValue.AdditionalProperties.pinMaximumLength
+            PinMinimumLength            = $getValue.AdditionalProperties.pinMinimumLength
+            PinPreviousBlockCount       = $getValue.AdditionalProperties.pinPreviousBlockCount
+            PinSpecialCharactersUsage   = $enumPinSpecialCharactersUsage
+            PinUppercaseCharactersUsage = $enumPinUppercaseCharactersUsage
+            RemotePassportEnabled       = $getValue.AdditionalProperties.remotePassportEnabled
+            SecurityDeviceRequired      = $getValue.AdditionalProperties.securityDeviceRequired
+            SecurityKeyForSignIn        = $enumSecurityKeyForSignIn
+            State                       = $enumState
+            UnlockWithBiometricsEnabled = $getValue.AdditionalProperties.unlockWithBiometricsEnabled
+            Credential                  = $Credential
+            ApplicationId               = $ApplicationId
+            TenantId                    = $TenantId
+            ApplicationSecret           = $ApplicationSecret
+            CertificateThumbprint       = $CertificateThumbprint
+            ManagedIdentity             = $ManagedIdentity.IsPresent
             #endregion
         }
 
-        return [System.Collections.Hashtable] $results
+        return $results
     }
     catch
     {
@@ -216,7 +214,7 @@ function Get-TargetResource
             -TenantId $TenantId `
             -Credential $Credential
 
-        return $nullResult
+        throw
     }
 }
 
@@ -232,7 +230,7 @@ function Set-TargetResource
         $IsSingleInstance,
 
         [Parameter()]
-        [ValidateSet('notConfigured','enabled','disabled')]
+        [ValidateSet('notConfigured', 'enabled', 'disabled')]
         [System.String]
         $EnhancedBiometricsState,
 
@@ -245,7 +243,7 @@ function Set-TargetResource
         $PinExpirationInDays,
 
         [Parameter()]
-        [ValidateSet('allowed','required','disallowed')]
+        [ValidateSet('allowed', 'required', 'disallowed')]
         [System.String]
         $PinLowercaseCharactersUsage,
 
@@ -262,12 +260,12 @@ function Set-TargetResource
         $PinPreviousBlockCount,
 
         [Parameter()]
-        [ValidateSet('allowed','required','disallowed')]
+        [ValidateSet('allowed', 'required', 'disallowed')]
         [System.String]
         $PinSpecialCharactersUsage,
 
         [Parameter()]
-        [ValidateSet('allowed','required','disallowed')]
+        [ValidateSet('allowed', 'required', 'disallowed')]
         [System.String]
         $PinUppercaseCharactersUsage,
 
@@ -280,12 +278,12 @@ function Set-TargetResource
         $SecurityDeviceRequired,
 
         [Parameter()]
-        [ValidateSet('notConfigured','enabled','disabled')]
+        [ValidateSet('notConfigured', 'enabled', 'disabled')]
         [System.String]
         $SecurityKeyForSignIn,
 
         [Parameter()]
-        [ValidateSet('notConfigured','enabled','disabled')]
+        [ValidateSet('notConfigured', 'enabled', 'disabled')]
         [System.String]
         $State,
 
@@ -323,7 +321,7 @@ function Set-TargetResource
         $AccessTokens
     )
 
-    Write-Verbose -Message "Setting configuration of the Intune Windows Hello For Business Global Policy"
+    Write-Verbose -Message 'Setting configuration of the Intune Windows Hello For Business Global Policy'
 
     #Ensure the proper dependencies are installed in the current environment.
     Confirm-M365DSCDependencies
@@ -337,29 +335,17 @@ function Set-TargetResource
     Add-M365DSCTelemetryEvent -Data $data
     #endregion
 
-    $currentInstance = Get-TargetResource @PSBoundParameters
-
+    $null = Get-TargetResource @PSBoundParameters
     $boundParameters = Remove-M365DSCAuthenticationParameter -BoundParameters $PSBoundParameters
-
-    Write-Verbose -Message "Updating the Intune Windows Hello For Business Global Policy"
 
     $updateParameters = ([Hashtable]$boundParameters).Clone()
     $updateParameters = Rename-M365DSCCimInstanceParameter -Properties $updateParameters
 
-    $keys = (([Hashtable]$updateParameters).Clone()).Keys
-    foreach ($key in $keys)
-    {
-        if ($null -ne $updateParameters.$key -and $updateParameters.$key.GetType().Name -like '*CimInstance*')
-        {
-            $updateParameters.$key = Convert-M365DSCDRGComplexTypeToHashtable -ComplexObject $updateParameters.DeviceEnrollmentConfigurationId
-        }
-    }
-
     #region resource generator code
-    $updateParameters.Add("@odata.type", "#microsoft.graph.deviceEnrollmentWindowsHelloForBusinessConfiguration")
+    $updateParameters.Add('@odata.type', '#microsoft.graph.deviceEnrollmentWindowsHelloForBusinessConfiguration')
     $policy = Get-MgBetaDeviceManagementDeviceEnrollmentConfiguration | Where-Object -FilterScript {
-            $_.AdditionalProperties.'@odata.type' -eq "#microsoft.graph.deviceEnrollmentWindowsHelloForBusinessConfiguration"
-        }
+        $_.AdditionalProperties.'@odata.type' -eq '#microsoft.graph.deviceEnrollmentWindowsHelloForBusinessConfiguration'
+    }
     Update-MgBetaDeviceManagementDeviceEnrollmentConfiguration `
         -DeviceEnrollmentConfigurationId $policy.Id `
         -BodyParameter $updateParameters
@@ -378,7 +364,7 @@ function Test-TargetResource
         $IsSingleInstance,
 
         [Parameter()]
-        [ValidateSet('notConfigured','enabled','disabled')]
+        [ValidateSet('notConfigured', 'enabled', 'disabled')]
         [System.String]
         $EnhancedBiometricsState,
 
@@ -391,7 +377,7 @@ function Test-TargetResource
         $PinExpirationInDays,
 
         [Parameter()]
-        [ValidateSet('allowed','required','disallowed')]
+        [ValidateSet('allowed', 'required', 'disallowed')]
         [System.String]
         $PinLowercaseCharactersUsage,
 
@@ -408,12 +394,12 @@ function Test-TargetResource
         $PinPreviousBlockCount,
 
         [Parameter()]
-        [ValidateSet('allowed','required','disallowed')]
+        [ValidateSet('allowed', 'required', 'disallowed')]
         [System.String]
         $PinSpecialCharactersUsage,
 
         [Parameter()]
-        [ValidateSet('allowed','required','disallowed')]
+        [ValidateSet('allowed', 'required', 'disallowed')]
         [System.String]
         $PinUppercaseCharactersUsage,
 
@@ -426,12 +412,12 @@ function Test-TargetResource
         $SecurityDeviceRequired,
 
         [Parameter()]
-        [ValidateSet('notConfigured','enabled','disabled')]
+        [ValidateSet('notConfigured', 'enabled', 'disabled')]
         [System.String]
         $SecurityKeyForSignIn,
 
         [Parameter()]
-        [ValidateSet('notConfigured','enabled','disabled')]
+        [ValidateSet('notConfigured', 'enabled', 'disabled')]
         [System.String]
         $State,
 
@@ -469,9 +455,6 @@ function Test-TargetResource
         $AccessTokens
     )
 
-    #Ensure the proper dependencies are installed in the current environment.
-    Confirm-M365DSCDependencies
-
     #region Telemetry
     $ResourceName = $MyInvocation.MyCommand.ModuleName.Replace('MSFT_', '')
     $CommandName = $MyInvocation.MyCommand
@@ -481,48 +464,9 @@ function Test-TargetResource
     Add-M365DSCTelemetryEvent -Data $data
     #endregion
 
-    Write-Verbose -Message "Testing configuration of the Intune Windows Hello For Business Global Policy"
-
-    $CurrentValues = Get-TargetResource @PSBoundParameters
-    $ValuesToCheck = ([Hashtable]$PSBoundParameters).Clone()
-    $testResult = $true
-
-    #Compare Cim instances
-    foreach ($key in $PSBoundParameters.Keys)
-    {
-        $source = $PSBoundParameters.$key
-        $target = $CurrentValues.$key
-        if ($null -ne $source -and $source.GetType().Name -like '*CimInstance*')
-        {
-            $testResult = Compare-M365DSCComplexObject `
-                -Source ($source) `
-                -Target ($target)
-
-            if (-not $testResult)
-            {
-                break
-            }
-
-            $ValuesToCheck.Remove($key) | Out-Null
-        }
-    }
-
-    $ValuesToCheck = Remove-M365DSCAuthenticationParameter -BoundParameters $ValuesToCheck
-
-    Write-Verbose -Message "Current Values: $(Convert-M365DscHashtableToString -Hashtable $CurrentValues)"
-    Write-Verbose -Message "Target Values: $(Convert-M365DscHashtableToString -Hashtable $ValuesToCheck)"
-
-    if ($testResult)
-    {
-        $testResult = Test-M365DSCParameterState -CurrentValues $CurrentValues `
-            -Source $($MyInvocation.MyCommand.Source) `
-            -DesiredValues $PSBoundParameters `
-            -ValuesToCheck $ValuesToCheck.Keys
-    }
-
-    Write-Verbose -Message "Test-TargetResource returned $testResult"
-
-    return $testResult
+    $result = Test-M365DSCTargetResource -DesiredValues $PSBoundParameters `
+        -ResourceName $($MyInvocation.MyCommand.Source).Replace('MSFT_', '')
+    return $result
 }
 
 function Export-TargetResource
@@ -585,8 +529,8 @@ function Export-TargetResource
         [array]$getValue = Get-MgBetaDeviceManagementDeviceEnrollmentConfiguration `
             -ErrorAction Stop | Where-Object `
             -FilterScript {
-                $_.AdditionalProperties.'@odata.type' -eq '#microsoft.graph.deviceEnrollmentWindowsHelloForBusinessConfiguration'
-            }
+            $_.AdditionalProperties.'@odata.type' -eq '#microsoft.graph.deviceEnrollmentWindowsHelloForBusinessConfiguration'
+        }
         #endregion
 
         $i = 1
@@ -612,14 +556,14 @@ function Export-TargetResource
             }
             Write-M365DSCHost -Message "    |---[$i/$($getValue.Count)] $displayedKey" -DeferWrite
             $params = @{
-                IsSingleInstance = 'Yes'
-                Credential = $Credential
-                ApplicationId = $ApplicationId
-                TenantId = $TenantId
-                ApplicationSecret = $ApplicationSecret
+                IsSingleInstance      = 'Yes'
+                Credential            = $Credential
+                ApplicationId         = $ApplicationId
+                TenantId              = $TenantId
+                ApplicationSecret     = $ApplicationSecret
                 CertificateThumbprint = $CertificateThumbprint
-                ManagedIdentity = $ManagedIdentity.IsPresent
-                AccessTokens = $AccessTokens
+                ManagedIdentity       = $ManagedIdentity.IsPresent
+                AccessTokens          = $AccessTokens
             }
 
             $Script:exportedInstance = $config
@@ -640,17 +584,14 @@ function Export-TargetResource
     }
     catch
     {
-        Write-M365DSCHost -Message $Global:M365DSCEmojiRedX -CommitWrite
-
         New-M365DSCLogEntry -Message 'Error during Export:' `
             -Exception $_ `
             -Source $($MyInvocation.MyCommand.Source) `
             -TenantId $TenantId `
             -Credential $Credential
 
-        return ''
+        throw
     }
 }
 
 Export-ModuleMember -Function *-TargetResource
-

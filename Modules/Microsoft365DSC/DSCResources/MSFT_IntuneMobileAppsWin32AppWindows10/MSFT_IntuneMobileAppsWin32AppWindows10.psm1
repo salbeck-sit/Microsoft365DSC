@@ -129,8 +129,8 @@ function Get-TargetResource
         #endregion
 
         [Parameter()]
+        [ValidateSet('Present', 'Absent')]
         [System.String]
-        [ValidateSet('Absent', 'Present')]
         $Ensure = 'Present',
 
         [Parameter()]
@@ -169,7 +169,7 @@ function Get-TargetResource
         if (-not $Script:exportedInstance -or $Script:exportedInstance.DisplayName -ne $DisplayName)
         {
 
-            $ConnectionMode = New-M365DSCConnection -Workload 'MicrosoftGraph' `
+            $null = New-M365DSCConnection -Workload 'MicrosoftGraph' `
                 -InboundParameters $PSBoundParameters
 
             #Ensure the proper dependencies are installed in the current environment.
@@ -228,7 +228,7 @@ function Get-TargetResource
         $complexCategories = @()
         foreach ($category in $getValue.Categories)
         {
-            $myCategory = @{}
+            $myCategory = [ordered]@{}
             $myCategory.Add('Id', $category.id)
             $myCategory.Add('DisplayName', $category.displayName)
             $complexCategories += $myCategory
@@ -236,7 +236,7 @@ function Get-TargetResource
         $complexLargeIcon = $null
         if ($null -ne $getValue.LargeIcon.Value)
         {
-            $complexLargeIcon = @{}
+            $complexLargeIcon = [ordered]@{}
             $complexLargeIcon.Add('Type', $getValue.LargeIcon.Type)
             $complexLargeIcon.Add('Value', [System.Convert]::ToBase64String($getValue.LargeIcon.Value))
         }
@@ -253,26 +253,30 @@ function Get-TargetResource
             }
             switch ($ruleType)
             {
-                'FileSystem' {
+                'FileSystem'
+                {
                     $baseRule.Add('Check32BitOn64System', $rule.check32BitOn64System)
                     $baseRule.Add('Path', $rule.path)
                     $baseRule.Add('FileOrFolderName', $rule.fileOrFolderName)
                     $baseRule.Add('FileSystemOperationType', $rule.operationType)
                 }
-                'Registry' {
+                'Registry'
+                {
                     $baseRule.Add('Check32BitOn64System', $rule.check32BitOn64System)
                     $baseRule.Add('KeyPath', $rule.keyPath)
                     $baseRule.Add('RegistryOperationType', $rule.operationType)
                     $baseRule.Add('ValueName', $rule.valueName)
                 }
-                "ProductCode" {
+                'ProductCode'
+                {
                     $baseRule.Add('ProductCode', $rule.productCode)
                     $baseRule.Add('ProductVersionOperator', $rule.productVersionOperator)
                     $baseRule.Add('ProductVersion', $rule.productVersion)
                     $baseRule.Remove('Operator') | Out-Null
                     $baseRule.Remove('ComparisonValue') | Out-Null
                 }
-                "PowerShellScript" {
+                'PowerShellScript'
+                {
                     $baseRule.Add('DisplayName', $rule.displayName)
                     $baseRule.Add('Script', [System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase64String($rule.scriptContent)))
                     $baseRule.Add('RunAs32Bit', $rule.runAs32Bit)
@@ -286,7 +290,7 @@ function Get-TargetResource
 
         if ($null -ne $getValue.AdditionalProperties.installExperience)
         {
-            $complexInstallExperience = @{}
+            $complexInstallExperience = [ordered]@{}
             $complexInstallExperience.Add('DeviceRestartBehavior', $getValue.AdditionalProperties.installExperience.deviceRestartBehavior)
             $complexInstallExperience.Add('MaxRunTimeInMinutes', $getValue.AdditionalProperties.installExperience.maxRunTimeInMinutes)
             $complexInstallExperience.Add('RunAsAccount', $getValue.AdditionalProperties.installExperience.runAsAccount)
@@ -297,13 +301,13 @@ function Get-TargetResource
         {
             $complexReturnCodes += @{
                 ReturnCode = $returnCode.returnCode
-                Type = $returnCode.type
+                Type       = $returnCode.type
             }
         }
 
         if ($null -ne $getValue.AdditionalProperties.msiInformation)
         {
-            $complexMsiInformation = @{}
+            $complexMsiInformation = [ordered]@{}
             $complexMsiInformation.Add('ProductCode', $getValue.AdditionalProperties.msiInformation.productCode)
             $complexMsiInformation.Add('ProductVersion', $getValue.AdditionalProperties.msiInformation.productVersion)
             $complexMsiInformation.Add('UpgradeCode', $getValue.AdditionalProperties.msiInformation.upgradeCode)
@@ -316,42 +320,42 @@ function Get-TargetResource
 
         $results = @{
             #region resource generator code
-            AllowedArchitectures            = $getValue.AdditionalProperties.allowedArchitectures -split ","
-            Categories                      = $complexCategories
-            Description                     = $getValue.Description
-            Developer                       = $getValue.Developer
-            DisplayName                     = $getValue.DisplayName
-            FileName                        = $getValue.AdditionalProperties.fileName
-            InformationUrl                  = $getValue.InformationUrl
-            InstallCommandLine              = $getValue.AdditionalProperties.installCommandLine
-            UninstallCommandLine            = $getValue.AdditionalProperties.uninstallCommandLine
-            MinimumFreeDiskSpaceInMB        = $getValue.AdditionalProperties.minimumFreeDiskSpaceInMB
-            MinimumMemoryInMB               = $getValue.AdditionalProperties.minimumMemoryInMB
-            MinimumNumberOfProcessors       = $getValue.AdditionalProperties.minimumNumberOfProcessors
-            MinimumCpuSpeedInMHz            = $getValue.AdditionalProperties.minimumCpuSpeedInMHz
-            InstallExperience               = $complexInstallExperience
-            ReturnCodes                     = $complexReturnCodes
-            Rules                           = $complexRules
-            MsiInformation                  = $complexMsiInformation
-            SetupFilePath                   = $getValue.AdditionalProperties.setupFilePath
-            MinimumSupportedWindowsRelease  = $getValue.AdditionalProperties.minimumSupportedWindowsRelease
-            DisplayVersion                  = $getValue.AdditionalProperties.displayVersion
-            AllowAvailableUninstall         = $getValue.AdditionalProperties.allowAvailableUninstall
-            IsFeatured                      = $getValue.IsFeatured
-            LargeIcon                       = $complexLargeIcon
-            Notes                           = $getValue.Notes
-            Owner                           = $getValue.Owner
-            PrivacyInformationUrl           = $getValue.PrivacyInformationUrl
-            Publisher                       = $getValue.Publisher
-            RoleScopeTagIds                 = $getValue.RoleScopeTagIds
-            Id                              = $getValue.Id
-            Ensure                          = 'Present'
-            Credential                      = $Credential
-            ApplicationId                   = $ApplicationId
-            TenantId                        = $TenantId
-            ApplicationSecret               = $ApplicationSecret
-            CertificateThumbprint           = $CertificateThumbprint
-            ManagedIdentity                 = $ManagedIdentity.IsPresent
+            AllowedArchitectures           = $getValue.AdditionalProperties.allowedArchitectures -split ','
+            Categories                     = $complexCategories
+            Description                    = $getValue.Description
+            Developer                      = $getValue.Developer
+            DisplayName                    = $getValue.DisplayName
+            FileName                       = $getValue.AdditionalProperties.fileName
+            InformationUrl                 = $getValue.InformationUrl
+            InstallCommandLine             = $getValue.AdditionalProperties.installCommandLine
+            UninstallCommandLine           = $getValue.AdditionalProperties.uninstallCommandLine
+            MinimumFreeDiskSpaceInMB       = $getValue.AdditionalProperties.minimumFreeDiskSpaceInMB
+            MinimumMemoryInMB              = $getValue.AdditionalProperties.minimumMemoryInMB
+            MinimumNumberOfProcessors      = $getValue.AdditionalProperties.minimumNumberOfProcessors
+            MinimumCpuSpeedInMHz           = $getValue.AdditionalProperties.minimumCpuSpeedInMHz
+            InstallExperience              = $complexInstallExperience
+            ReturnCodes                    = $complexReturnCodes
+            Rules                          = $complexRules
+            MsiInformation                 = $complexMsiInformation
+            SetupFilePath                  = $getValue.AdditionalProperties.setupFilePath
+            MinimumSupportedWindowsRelease = $getValue.AdditionalProperties.minimumSupportedWindowsRelease
+            DisplayVersion                 = $getValue.AdditionalProperties.displayVersion
+            AllowAvailableUninstall        = $getValue.AdditionalProperties.allowAvailableUninstall
+            IsFeatured                     = $getValue.IsFeatured
+            LargeIcon                      = $complexLargeIcon
+            Notes                          = $getValue.Notes
+            Owner                          = $getValue.Owner
+            PrivacyInformationUrl          = $getValue.PrivacyInformationUrl
+            Publisher                      = $getValue.Publisher
+            RoleScopeTagIds                = $getValue.RoleScopeTagIds
+            Id                             = $getValue.Id
+            Ensure                         = 'Present'
+            Credential                     = $Credential
+            ApplicationId                  = $ApplicationId
+            TenantId                       = $TenantId
+            ApplicationSecret              = $ApplicationSecret
+            CertificateThumbprint          = $CertificateThumbprint
+            ManagedIdentity                = $ManagedIdentity.IsPresent
             #endregion
         }
         $assignmentsValues = Get-MgBetaDeviceAppManagementMobileAppAssignment -MobileAppId $Id
@@ -362,7 +366,7 @@ function Get-TargetResource
         }
         $results.Add('Assignments', $assignmentResult)
 
-        return [System.Collections.Hashtable] $results
+        return $results
     }
     catch
     {
@@ -372,7 +376,7 @@ function Get-TargetResource
             -TenantId $TenantId `
             -Credential $Credential
 
-        return $nullResult
+        throw
     }
 }
 
@@ -504,8 +508,8 @@ function Set-TargetResource
         #endregion
 
         [Parameter()]
+        [ValidateSet('Present', 'Absent')]
         [System.String]
-        [ValidateSet('Absent', 'Present')]
         $Ensure = 'Present',
 
         [Parameter()]
@@ -552,8 +556,7 @@ function Set-TargetResource
     #endregion
 
     $currentInstance = Get-TargetResource @PSBoundParameters
-
-    $boundParameters = Remove-M365DSCAuthenticationParameter -BoundParameters $PSBoundParameters
+    $BoundParameters = Remove-M365DSCAuthenticationParameter -BoundParameters $PSBoundParameters
     $boundParameters.Remove('Categories') | Out-Null
 
     if ($boundParameters.ContainsKey('AllowedArchitectures'))
@@ -577,63 +580,55 @@ function Set-TargetResource
     if ($Ensure -eq 'Present' -and $currentInstance.Ensure -eq 'Absent')
     {
         Write-Verbose -Message "Creating an Intune Mobile Apps Win32 App for Windows10 with DisplayName {$DisplayName}"
-        $boundParameters.Remove("Assignments") | Out-Null
+        $boundParameters.Remove('Assignments') | Out-Null
 
         if (-not $boundParameters.ContainsKey('FileName') -or [System.String]::IsNullOrEmpty($boundParameters.FileName))
         {
-            throw "FileName is required to create an Intune Mobile Apps Win32 App for Windows10."
+            throw 'FileName is required to create an Intune Mobile Apps Win32 App for Windows10.'
         }
 
         $createParameters = ([Hashtable]$boundParameters).Clone()
         $createParameters = Rename-M365DSCCimInstanceParameter -Properties $createParameters
         $createParameters.Remove('Id') | Out-Null
 
-        $keys = (([Hashtable]$createParameters).Clone()).Keys
-        $allRules = @()
-        foreach ($key in $keys)
+        if ($createParameters.ContainsKey('Rules'))
         {
-            if ($null -ne $createParameters.$key -and $PSBoundParameters.$key.GetType().Name -like '*CimInstance*')
+            $rulesToProcess = @()
+            $rulesToProcess = $createParameters.Rules
+
+            foreach ($rule in $rulesToProcess)
             {
-                $createParameters.$key = Convert-M365DSCDRGComplexTypeToHashtable -ComplexObject $createParameters.$key
-
-                if ($key -eq 'Rules')
+                $odataType = $rule.'@odata.type'
+                $rule.'@odata.type' = "#microsoft.graph.win32LobApp$($odataType)Rule"
+                switch ($odataType)
                 {
-                    $rulesToProcess = @()
-                    $rulesToProcess = $createParameters.$key
-
-                    foreach ($rule in $rulesToProcess)
+                    'FileSystem'
                     {
-                        $odataType = $rule.'@odata.type'
-                        $rule.'@odata.type' = "#microsoft.graph.win32LobApp$($odataType)Rule"
-                        switch ($odataType)
-                        {
-                            'FileSystem' {
-                                $rule.Add('operationType', $rule.fileSystemOperationType)
-                                $rule.Remove('fileSystemOperationType') | Out-Null
-                            }
-                            'Registry' {
-                                $rule.Add('operationType', $rule.registryOperationType)
-                                $rule.Remove('registryOperationType') | Out-Null
-                            }
-                            'PowerShellScript' {
-                                $rule.Add('scriptContent', [System.Convert]::ToBase64String([System.Text.Encoding]::UTF8.GetBytes($rule.script)))
-                                $rule.Remove('script') | Out-Null
-                                $rule.Add('operationType', $rule.powerShellScriptOperationType)
-                                $rule.Remove('powerShellScriptOperationType') | Out-Null
-                            }
-                        }
+                        $rule.Add('operationType', $rule.fileSystemOperationType)
+                        $rule.Remove('fileSystemOperationType') | Out-Null
                     }
-
-                    $createParameters.$key = $rulesToProcess
-                    $allRules += $rulesToProcess
+                    'Registry'
+                    {
+                        $rule.Add('operationType', $rule.registryOperationType)
+                        $rule.Remove('registryOperationType') | Out-Null
+                    }
+                    'PowerShellScript'
+                    {
+                        $rule.Add('scriptContent', [System.Convert]::ToBase64String([System.Text.Encoding]::UTF8.GetBytes($rule.script)))
+                        $rule.Remove('script') | Out-Null
+                        $rule.Add('operationType', $rule.powerShellScriptOperationType)
+                        $rule.Remove('powerShellScriptOperationType') | Out-Null
+                    }
                 }
             }
+
+            $createParameters.Rules = $rulesToProcess
         }
         #region resource generator code
-        $createParameters.Add("@odata.type", "#microsoft.graph.win32LobApp")
-        $policy = Invoke-MgGraphRequest -Method POST -Uri "/beta/deviceAppManagement/mobileApps" -Body ($createParameters | ConvertTo-Json -Depth 10)
+        $createParameters.Add('@odata.type', '#microsoft.graph.win32LobApp')
+        $policy = Invoke-MgGraphRequest -Method POST -Uri '/beta/deviceAppManagement/mobileApps' -Body ($createParameters | ConvertTo-Json -Depth 10)
 
-        Invoke-M365DSCIntuneMobileAppInitialUpload -AppId $policy.Id -OdataType "#microsoft.graph.win32LobApp" -FileExtension "intunewin"
+        Invoke-M365DSCIntuneMobileAppInitialUpload -AppId $policy.Id -OdataType '#microsoft.graph.win32LobApp' -FileExtension 'intunewin'
 
         if ($PSBoundParameters.ContainsKey('Categories'))
         {
@@ -652,57 +647,48 @@ function Set-TargetResource
     elseif ($Ensure -eq 'Present' -and $currentInstance.Ensure -eq 'Present')
     {
         Write-Verbose -Message "Updating the Intune Mobile Apps Win32 App for Windows10 with Id {$($currentInstance.Id)}"
-        $boundParameters.Remove("Assignments") | Out-Null
+        $boundParameters.Remove('Assignments') | Out-Null
 
         $updateParameters = ([Hashtable]$boundParameters).Clone()
         $updateParameters = Rename-M365DSCCimInstanceParameter -Properties $updateParameters
-
         $updateParameters.Remove('Id') | Out-Null
 
-        $keys = (([Hashtable]$updateParameters).Clone()).Keys
-        $allRules = @()
-        foreach ($key in $keys)
+        if ($updateParameters.ContainsKey('Rules'))
         {
-            if ($null -ne $updateParameters.$key -and $PSBoundParameters.$key.GetType().Name -like '*CimInstance*')
+            $rulesToProcess = @()
+            $rulesToProcess = $updateParameters.Rules
+
+            foreach ($rule in $rulesToProcess)
             {
-                $updateParameters.$key = Convert-M365DSCDRGComplexTypeToHashtable -ComplexObject $updateParameters.$key
-
-                if ($key -eq 'Rules')
+                $odataType = $rule.'@odata.type'
+                $rule.'@odata.type' = "#microsoft.graph.win32LobApp$($odataType)Rule"
+                switch ($odataType)
                 {
-                    $rulesToProcess = @()
-                    $rulesToProcess = $updateParameters.$key
-
-                    foreach ($rule in $rulesToProcess)
+                    'FileSystem'
                     {
-                        $odataType = $rule.'@odata.type'
-                        $rule.'@odata.type' = "#microsoft.graph.win32LobApp$($odataType)Rule"
-                        switch ($odataType)
-                        {
-                            'FileSystem' {
-                                $rule.Add('operationType', $rule.fileSystemOperationType)
-                                $rule.Remove('fileSystemOperationType') | Out-Null
-                            }
-                            'Registry' {
-                                $rule.Add('operationType', $rule.registryOperationType)
-                                $rule.Remove('registryOperationType') | Out-Null
-                            }
-                            'PowerShellScript' {
-                                $rule.Add('scriptContent', [System.Convert]::ToBase64String([System.Text.Encoding]::UTF8.GetBytes($rule.script)))
-                                $rule.Remove('script') | Out-Null
-                                $rule.Add('operationType', $rule.powerShellScriptOperationType)
-                                $rule.Remove('powerShellScriptOperationType') | Out-Null
-                            }
-                        }
+                        $rule.Add('operationType', $rule.fileSystemOperationType)
+                        $rule.Remove('fileSystemOperationType') | Out-Null
                     }
-
-                    $updateParameters.$key = $rulesToProcess
-                    $allRules += $rulesToProcess
+                    'Registry'
+                    {
+                        $rule.Add('operationType', $rule.registryOperationType)
+                        $rule.Remove('registryOperationType') | Out-Null
+                    }
+                    'PowerShellScript'
+                    {
+                        $rule.Add('scriptContent', [System.Convert]::ToBase64String([System.Text.Encoding]::UTF8.GetBytes($rule.script)))
+                        $rule.Remove('script') | Out-Null
+                        $rule.Add('operationType', $rule.powerShellScriptOperationType)
+                        $rule.Remove('powerShellScriptOperationType') | Out-Null
+                    }
                 }
             }
+
+            $updateParameters.Rules = $rulesToProcess
         }
 
         #region resource generator code
-        $updateParameters.Add("@odata.type", "#microsoft.graph.win32LobApp")
+        $updateParameters.Add('@odata.type', '#microsoft.graph.win32LobApp')
         Invoke-MgGraphRequest -Method PATCH -Uri "/beta/deviceAppManagement/mobileApps/$($currentInstance.Id)" -Body ($updateParameters | ConvertTo-Json -Depth 10)
 
         if ($PSBoundParameters.ContainsKey('Categories'))
@@ -854,8 +840,8 @@ function Test-TargetResource
         #endregion
 
         [Parameter()]
+        [ValidateSet('Present', 'Absent')]
         [System.String]
-        [ValidateSet('Absent', 'Present')]
         $Ensure = 'Present',
 
         [Parameter()]
@@ -887,9 +873,6 @@ function Test-TargetResource
         $AccessTokens
     )
 
-    #Ensure the proper dependencies are installed in the current environment.
-    Confirm-M365DSCDependencies
-
     #region Telemetry
     $ResourceName = $MyInvocation.MyCommand.ModuleName.Replace('MSFT_', '')
     $CommandName = $MyInvocation.MyCommand
@@ -899,49 +882,9 @@ function Test-TargetResource
     Add-M365DSCTelemetryEvent -Data $data
     #endregion
 
-    Write-Verbose -Message "Testing configuration of the Intune Mobile Apps Win32 App for Windows10 with Id {$Id} and DisplayName {$DisplayName}"
-
-    $CurrentValues = Get-TargetResource @PSBoundParameters
-    $ValuesToCheck = ([hashtable]$PSBoundParameters).Clone()
-    $testResult = $true
-
-    #Compare Cim instances
-    foreach ($key in $PSBoundParameters.Keys)
-    {
-        $source = $PSBoundParameters.$key
-        $target = $CurrentValues.$key
-        if ($null -ne $source -and $source.GetType().Name -like '*CimInstance*')
-        {
-            $testResult = Compare-M365DSCComplexObject `
-                -Source ($source) `
-                -Target ($target)
-
-            if (-not $testResult)
-            {
-                break
-            }
-
-            $ValuesToCheck.Remove($key) | Out-Null
-        }
-    }
-
-    $ValuesToCheck.Remove('Id') | Out-Null
-    $ValuesToCheck = Remove-M365DSCAuthenticationParameter -BoundParameters $ValuesToCheck
-
-    Write-Verbose -Message "Current Values: $(Convert-M365DscHashtableToString -Hashtable $CurrentValues)"
-    Write-Verbose -Message "Target Values: $(Convert-M365DscHashtableToString -Hashtable $ValuesToCheck)"
-
-    if ($testResult)
-    {
-        $testResult = Test-M365DSCParameterState -CurrentValues $CurrentValues `
-            -Source $($MyInvocation.MyCommand.Source) `
-            -DesiredValues $PSBoundParameters `
-            -ValuesToCheck $ValuesToCheck.Keys
-    }
-
-    Write-Verbose -Message "Test-TargetResource returned $testResult"
-
-    return $testResult
+    $result = Test-M365DSCTargetResource -DesiredValues $PSBoundParameters `
+        -ResourceName $($MyInvocation.MyCommand.Source).Replace('MSFT_', '')
+    return $result
 }
 
 function Export-TargetResource
@@ -1143,24 +1086,24 @@ function Export-TargetResource
             {
                 $complexMapping = @(
                     @{
-                        Name = 'AssignmentSettings'
+                        Name            = 'AssignmentSettings'
                         CIMInstanceName = 'DeviceManagementWin32MobileAppAssignmentSettings'
-                        IsRequired = $false
+                        IsRequired      = $false
                     },
                     @{
-                        Name = 'AutoUpdateSettings'
+                        Name            = 'AutoUpdateSettings'
                         CIMInstanceName = 'DeviceManagementWin32MobileAppAssignmentSettingsAutoUpdateSettings'
-                        IsRequired = $false
+                        IsRequired      = $false
                     },
                     @{
-                        Name = 'InstallTimeSettings'
+                        Name            = 'InstallTimeSettings'
                         CIMInstanceName = 'DeviceManagementWin32MobileAppAssignmentSettingsInstallTimeSettings'
-                        IsRequired = $false
+                        IsRequired      = $false
                     },
                     @{
-                        Name = 'RestartSettings'
+                        Name            = 'RestartSettings'
                         CIMInstanceName = 'DeviceManagementWin32MobileAppAssignmentSettingsRestartSettings'
-                        IsRequired = $false
+                        IsRequired      = $false
                     }
                 )
                 $complexTypeStringResult = Get-M365DSCDRGComplexTypeToString `
@@ -1193,15 +1136,13 @@ function Export-TargetResource
     }
     catch
     {
-        Write-M365DSCHost -Message $Global:M365DSCEmojiRedX -CommitWrite
-
         New-M365DSCLogEntry -Message 'Error during Export:' `
             -Exception $_ `
             -Source $($MyInvocation.MyCommand.Source) `
             -TenantId $TenantId `
             -Credential $Credential
 
-        return ''
+        throw
     }
 }
 

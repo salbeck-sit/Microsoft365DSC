@@ -8,6 +8,10 @@ function Get-TargetResource
     (
         #region resource generator code
         [Parameter()]
+        [System.String[]]
+        $AppliesTo,
+
+        [Parameter()]
         [System.String]
         $Description,
 
@@ -31,12 +35,11 @@ function Get-TargetResource
         [Parameter()]
         [System.String]
         $Id,
-
         #endregion
 
         [Parameter()]
+        [ValidateSet('Present', 'Absent')]
         [System.String]
-        [ValidateSet('Absent', 'Present')]
         $Ensure = 'Present',
 
         [Parameter()]
@@ -68,11 +71,13 @@ function Get-TargetResource
         $AccessTokens
     )
 
+    Write-Verbose -Message "Getting configuration of Azure AD Policy Feature Rollout Policy with Id {$Id} and DisplayName {$DisplayName}"
+
     try
     {
         if (-not $Script:exportedInstance -or $Script:exportedInstance.Id -ne $Id)
         {
-            $ConnectionMode = New-M365DSCConnection -Workload 'MicrosoftGraph' `
+            $null = New-M365DSCConnection -Workload 'MicrosoftGraph' `
                 -InboundParameters $PSBoundParameters
 
             #Ensure the proper dependencies are installed in the current environment.
@@ -92,8 +97,13 @@ function Get-TargetResource
 
             $getValue = $null
             #region resource generator code
-            $getValue = Get-MgBetaPolicyFeatureRolloutPolicy -FeatureRolloutPolicyId $Id -ErrorAction SilentlyContinue
-
+            if (-not [System.String]::IsNullOrEmpty($Id))
+            {
+                $getValue = Get-MgBetaPolicyFeatureRolloutPolicy `
+                    -FeatureRolloutPolicyId $Id `
+                    -ExpandProperty 'AppliesTo' `
+                    -ErrorAction SilentlyContinue
+            }
             if ($null -eq $getValue)
             {
                 Write-Verbose -Message "Could not find an Azure AD Policy Feature Rollout Policy with Id {$Id}"
@@ -102,6 +112,7 @@ function Get-TargetResource
                 {
                     $getValue = Get-MgBetaPolicyFeatureRolloutPolicy `
                         -Filter "DisplayName eq '$($DisplayName -replace "'", "''")'" `
+                        -ExpandProperty 'AppliesTo' `
                         -ErrorAction SilentlyContinue
                 }
             }
@@ -128,8 +139,21 @@ function Get-TargetResource
         }
         #endregion
 
+        $batchRequests = @()
+        foreach ($group in $getValue.AppliesTo)
+        {
+            $batchRequests += @{
+                id     = $group.Id
+                method = 'GET'
+                url    = "/groups/$($group.Id)?`$select=id,displayName"
+            }
+        }
+        $batchResponses = Invoke-M365DSCGraphBatchRequest -Requests $batchRequests
+        $groupDisplayNames = @($batchResponses.body.displayName | Sort-Object)
+
         $results = @{
             #region resource generator code
+            AppliesTo               = $groupDisplayNames
             Description             = $getValue.Description
             DisplayName             = $getValue.DisplayName
             Feature                 = $enumFeature
@@ -146,7 +170,7 @@ function Get-TargetResource
             #endregion
         }
 
-        return [System.Collections.Hashtable] $results
+        return $results
     }
     catch
     {
@@ -156,7 +180,7 @@ function Get-TargetResource
             -TenantId $TenantId `
             -Credential $Credential
 
-        return $nullResult
+        throw
     }
 }
 
@@ -166,6 +190,10 @@ function Set-TargetResource
     param
     (
         #region resource generator code
+        [Parameter()]
+        [System.String[]]
+        $AppliesTo,
+
         [Parameter()]
         [System.String]
         $Description,
@@ -193,8 +221,8 @@ function Set-TargetResource
 
         #endregion
         [Parameter()]
+        [ValidateSet('Present', 'Absent')]
         [System.String]
-        [ValidateSet('Absent', 'Present')]
         $Ensure = 'Present',
 
         [Parameter()]
@@ -239,9 +267,55 @@ function Set-TargetResource
     #endregion
 
     $currentInstance = Get-TargetResource @PSBoundParameters
-
     $BoundParameters = Remove-M365DSCAuthenticationParameter -BoundParameters $PSBoundParameters
 
+    if ($PSBoundParameters.ContainsKey('AppliesTo'))
+    {
+        $BoundParameters.Remove('AppliesTo') | Out-Null
+        $delta = Compare-Object -ReferenceObject $AppliesTo -DifferenceObject $currentInstance.AppliesTo
+        $groupsToRemove = $delta | Where-Object { $_.SideIndicator -eq '=>' }
+        $groupsToAdd = $delta | Where-Object { $_.SideIndicator -eq '<=' }
+
+        $batchRequestsToRemove = @()
+        foreach ($groupDisplayName in $groupsToRemove.InputObject)
+        {
+            $batchRequestsToRemove += @{
+                id     = $groupDisplayName
+                method = 'GET'
+                url    = "/groups?`$filter=displayName eq '$($groupDisplayName -replace "'", "''")'&`$select=id"
+            }
+        }
+        $batchResponsesToRemove = Invoke-M365DSCGraphBatchRequest -Requests $batchRequestsToRemove
+        $groupIdsToRemove = $batchResponsesToRemove.body.value.id
+        foreach ($groupToRemove in $groupIdsToRemove)
+        {
+            Write-Verbose -Message "Removing Group with Id [$groupToRemove] from AAD Feature Rollout Policy [$DisplayName]"
+            Remove-MgBetaPolicyFeatureRolloutPolicyApplyToByRef `
+                -FeatureRolloutPolicyId $currentInstance.Id `
+                -DirectoryObjectId $groupToRemove
+        }
+
+        $batchRequestsToAdd = @()
+        foreach ($groupDisplayName in $groupsToAdd.InputObject)
+        {
+            $batchRequestsToAdd += @{
+                id     = $groupDisplayName
+                method = 'GET'
+                url    = "/groups?`$filter=displayName eq '$($groupDisplayName -replace "'", "''")'&`$select=id"
+            }
+        }
+        $batchResponsesToAdd = Invoke-M365DSCGraphBatchRequest -Requests $batchRequestsToAdd
+        $groupIdsToAdd = $batchResponsesToAdd.body.value.id
+        foreach ($groupToAdd in $groupIdsToAdd)
+        {
+            Write-Verbose -Message "Adding Group with Id [$groupToAdd] to AAD Feature Rollout Policy [$DisplayName]"
+            New-MgBetaPolicyFeatureRolloutPolicyApplyToByRef `
+                -FeatureRolloutPolicyId $currentInstance.Id `
+                -BodyParameter @{
+                    '@odata.id' = (Get-MSCloudLoginConnectionProfile -Workload MicrosoftGraph).ResourceUrl + "v1.0/directoryObjects/$groupToAdd"
+                }
+        }
+    }
 
     if ($Ensure -eq 'Present' -and $currentInstance.Ensure -eq 'Absent')
     {
@@ -259,7 +333,6 @@ function Set-TargetResource
         Write-Verbose -Message "Updating the Azure AD Policy Feature Rollout Policy with Id {$($currentInstance.Id)}"
 
         $updateParameters = ([Hashtable]$BoundParameters).Clone()
-
         $updateParameters.Remove('Id') | Out-Null
         $updateParameters.Remove('Feature') | Out-Null
 
@@ -285,6 +358,10 @@ function Test-TargetResource
     param
     (
         #region resource generator code
+        [Parameter()]
+        [System.String[]]
+        $AppliesTo,
+
         [Parameter()]
         [System.String]
         $Description,
@@ -313,8 +390,8 @@ function Test-TargetResource
         #endregion
 
         [Parameter()]
+        [ValidateSet('Present', 'Absent')]
         [System.String]
-        [ValidateSet('Absent', 'Present')]
         $Ensure = 'Present',
 
         [Parameter()]
@@ -356,7 +433,7 @@ function Test-TargetResource
     #endregion
 
     $result = Test-M365DSCTargetResource -DesiredValues $PSBoundParameters `
-                                         -ResourceName $($MyInvocation.MyCommand.Source).Replace('MSFT_', '')
+        -ResourceName $($MyInvocation.MyCommand.Source).Replace('MSFT_', '')
     return $result
 }
 
@@ -419,6 +496,7 @@ function Export-TargetResource
         #region resource generator code
         [array]$getValue = Get-MgBetaPolicyFeatureRolloutPolicy `
             -Filter $Filter `
+            -ExpandProperty 'AppliesTo' `
             -All `
             -ErrorAction Stop
         #endregion
@@ -474,17 +552,14 @@ function Export-TargetResource
     }
     catch
     {
-        Write-M365DSCHost -Message $Global:M365DSCEmojiRedX -CommitWrite
-
         New-M365DSCLogEntry -Message 'Error during Export:' `
             -Exception $_ `
             -Source $($MyInvocation.MyCommand.Source) `
             -TenantId $TenantId `
             -Credential $Credential
 
-        return ''
+        throw
     }
 }
 
 Export-ModuleMember -Function *-TargetResource
-

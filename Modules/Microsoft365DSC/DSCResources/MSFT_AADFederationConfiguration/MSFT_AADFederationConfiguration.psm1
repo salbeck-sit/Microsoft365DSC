@@ -72,12 +72,14 @@ function Get-TargetResource
         $AccessTokens
     )
 
+    Write-Verbose -Message "Getting configuration for the AAD Federation Configuration with Id {$Id} and DisplayName {$DisplayName}"
+
     try
     {
         if (-not $Script:exportedInstance -or $Script:exportedInstance.Id -ne $Id)
         {
-            New-M365DSCConnection -Workload 'MicrosoftGraph' `
-                -InboundParameters $PSBoundParameters | Out-Null
+            $null = New-M365DSCConnection -Workload 'MicrosoftGraph' `
+                -InboundParameters $PSBoundParameters
 
             #Ensure the proper dependencies are installed in the current environment.
             Confirm-M365DSCDependencies
@@ -94,15 +96,15 @@ function Get-TargetResource
             $nullResult = $PSBoundParameters
             $nullResult.Ensure = 'Absent'
 
-            $uri = (Get-MSCloudLoginConnectionProfile -Workload MicrosoftGraph).ResourceUrl + 'beta/directory/federationConfigurations/microsoft.graph.samlOrWsFedExternalDomainFederation'
+            $uri = '/beta/directory/federationConfigurations/microsoft.graph.samlOrWsFedExternalDomainFederation'
             $instances = Invoke-MgGraphRequest $uri -Method Get
             if (-not [System.String]::IsNullOrEmpty($Id))
             {
-                $instance = $instances.value | Where-Object -FilterScript { $_.Id -eq $Id }
+                $instance = $instances.value | Where-Object -FilterScript { $_.id -eq $Id }
             }
             if ($null -eq $instance)
             {
-                $instance = $instances.value | Where-Object -FilterScript { $_.DisplayName -eq $DisplayName }
+                $instance = $instances.value | Where-Object -FilterScript { $_.displayName -eq $DisplayName }
             }
         }
         else
@@ -134,18 +136,17 @@ function Get-TargetResource
             AccessTokens                    = $AccessTokens
         }
 
-        return [System.Collections.Hashtable] $results
+        return $results
     }
     catch
     {
-        Write-Verbose -Message $_
         New-M365DSCLogEntry -Message 'Error retrieving data:' `
             -Exception $_ `
             -Source $($MyInvocation.MyCommand.Source) `
             -TenantId $TenantId `
             -Credential $Credential
 
-        return $nullResult
+        throw
     }
 }
 
@@ -251,26 +252,37 @@ function Set-TargetResource
             id            = $domain
         }
     }
+
+    if ([System.String]::IsNullOrEmpty($MetadataExchangeUri))
+    {
+        $instanceParams.Remove('metadataExchangeUri') | Out-Null
+    }
+
+    if ([System.String]::IsNullOrEmpty($SigningCertificate))
+    {
+        $instanceParams.Remove('signingCertificate') | Out-Null
+    }
+
     # CREATE
     if ($Ensure -eq 'Present' -and $currentInstance.Ensure -eq 'Absent')
     {
-        $uri = (Get-MSCloudLoginConnectionProfile -Workload MicrosoftGraph).ResourceUrl + 'beta/directory/federationConfigurations/microsoft.graph.samlOrWsFedExternalDomainFederation'
-        Write-Verbose -Message "Creating federation configuration {$DisplayName}"
+        $uri = '/beta/directory/federationConfigurations/microsoft.graph.samlOrWsFedExternalDomainFederation'
         $body = ConvertTo-Json $instanceParams -Depth 10 -Compress
+        Write-Verbose -Message "Creating federation configuration {$DisplayName} with:`r`n$body"
         Invoke-MgGraphRequest -Uri $uri -Method POST -Body $body
     }
     # UPDATE
     elseif ($Ensure -eq 'Present' -and $currentInstance.Ensure -eq 'Present')
     {
-        $uri = (Get-MSCloudLoginConnectionProfile -Workload MicrosoftGraph).ResourceUrl + 'beta/directory/federationConfigurations/microsoft.graph.samlOrWsFedExternalDomainFederation/$currentInstance.Id'
-        Write-Verbose -Message "Updating federation configuration {$DisplayName}"
+        $uri = "/beta/directory/federationConfigurations/microsoft.graph.samlOrWsFedExternalDomainFederation/$($currentInstance.Id)"
         $body = ConvertTo-Json $instanceParams -Depth 10 -Compress
+        Write-Verbose -Message "Updating federation configuration {$DisplayName} with:`r`n$body"
         Invoke-MgGraphRequest -Uri $uri -Method PATCH -Body $body
     }
     # REMOVE
     elseif ($Ensure -eq 'Absent' -and $currentInstance.Ensure -eq 'Present')
     {
-        $uri = (Get-MSCloudLoginConnectionProfile -Workload MicrosoftGraph).ResourceUrl + 'beta/directory/federationConfigurations/microsoft.graph.samlOrWsFedExternalDomainFederation/$currentInstance.Id'
+        $uri = "/beta/directory/federationConfigurations/microsoft.graph.samlOrWsFedExternalDomainFederation/$($currentInstance.Id)"
         Write-Verbose -Message "Removing federation configuration {$DisplayName}"
         Invoke-MgGraphRequest -Uri $uri -Method DELETE
     }
@@ -358,7 +370,7 @@ function Test-TargetResource
     #endregion
 
     $result = Test-M365DSCTargetResource -DesiredValues $PSBoundParameters `
-                                         -ResourceName $($MyInvocation.MyCommand.Source).Replace('MSFT_', '')
+        -ResourceName $($MyInvocation.MyCommand.Source).Replace('MSFT_', '')
     return $result
 }
 
@@ -368,6 +380,10 @@ function Export-TargetResource
     [OutputType([System.String])]
     param
     (
+        [Parameter()]
+        [System.String]
+        $Filter,
+
         [Parameter()]
         [System.Management.Automation.PSCredential]
         $Credential,
@@ -415,6 +431,10 @@ function Export-TargetResource
     try
     {
         $uri = (Get-MSCloudLoginConnectionProfile -Workload MicrosoftGraph).ResourceUrl + 'beta/directory/federationConfigurations/microsoft.graph.samlOrWsFedExternalDomainFederation'
+        if (-not [System.String]::IsNullOrEmpty($Filter))
+        {
+            $uri += "?`$filter=$Filter"
+        }
         [array] $Script:exportedInstances = Invoke-MgGraphRequest $uri -Method Get
 
         $i = 1
@@ -466,17 +486,14 @@ function Export-TargetResource
     }
     catch
     {
-        Write-M365DSCHost -Message $Global:M365DSCEmojiRedX -CommitWrite
-
         New-M365DSCLogEntry -Message 'Error during Export:' `
             -Exception $_ `
             -Source $($MyInvocation.MyCommand.Source) `
             -TenantId $TenantId `
             -Credential $Credential
 
-        return ''
+        throw
     }
 }
 
 Export-ModuleMember -Function *-TargetResource
-

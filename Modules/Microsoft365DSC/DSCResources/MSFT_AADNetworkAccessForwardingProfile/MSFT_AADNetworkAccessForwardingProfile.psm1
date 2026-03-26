@@ -53,11 +53,13 @@ function Get-TargetResource
         $AccessTokens
     )
 
+    Write-Verbose -Message "Getting configuration for the AAD Network Access Forwarding Policy with Id {$Id} and Name {$Name}"
+
     try
     {
         if (-not $Script:exportedInstance -or $Script:exportedInstance.Id -ne $Id)
         {
-            $ConnectionMode = New-M365DSCConnection -Workload 'MicrosoftGraph' `
+            $null = New-M365DSCConnection -Workload 'MicrosoftGraph' `
                 -InboundParameters $PSBoundParameters
 
             #Ensure the proper dependencies are installed in the current environment.
@@ -116,7 +118,7 @@ function Get-TargetResource
         $complexPolicies = @()
         foreach ($currentPolicy in $forwardingProfilePolicies)
         {
-            $myPolicies = @{}
+            $myPolicies = [ordered]@{}
             $myPolicies.Add('Name', $currentPolicy.Policy.Name)
             $myPolicies.Add('State', $currentPolicy.State)
             $myPolicies.Add('PolicyLinkId', $currentPolicy.Id)
@@ -139,7 +141,7 @@ function Get-TargetResource
             ManagedIdentity       = $ManagedIdentity.IsPresent
         }
 
-        return [System.Collections.Hashtable] $results
+        return $results
     }
     catch
     {
@@ -149,7 +151,7 @@ function Get-TargetResource
             -TenantId $TenantId `
             -Credential $Credential
 
-        return $nullResult
+        throw
     }
 }
 
@@ -218,7 +220,6 @@ function Set-TargetResource
     #endregion
 
     $currentInstance = Get-TargetResource @PSBoundParameters
-
     $BoundParameters = Remove-M365DSCAuthenticationParameter -BoundParameters $PSBoundParameters
 
     if ($null -ne $currentInstance)
@@ -227,17 +228,8 @@ function Set-TargetResource
 
         $updateParameters = ([Hashtable]$BoundParameters).Clone()
         $updateParameters = Rename-M365DSCCimInstanceParameter -Properties $updateParameters
-
         $updateParameters.Remove('Id') | Out-Null
 
-        $keys = (([Hashtable]$updateParameters).Clone()).Keys
-        foreach ($key in $keys)
-        {
-            if ($null -ne $updateParameters.$key -and $updateParameters.$key.GetType().Name -like '*CimInstance*')
-            {
-                $updateParameters.$key = Convert-M365DSCDRGComplexTypeToHashtable -ComplexObject $updateParameters.$key
-            }
-        }
         Write-Verbose -Message "Updating the Azure AD Network Access Forwarding Profile with  {$($currentInstance.Id)} {$($currentInstance.Name)} State"
         Update-MgBetaNetworkAccessForwardingProfile `
             -ForwardingProfileId $currentInstance.Id `
@@ -328,7 +320,7 @@ function Test-TargetResource
     #endregion
 
     $result = Test-M365DSCTargetResource -DesiredValues $PSBoundParameters `
-                                         -ResourceName $($MyInvocation.MyCommand.Source).Replace('MSFT_', '')
+        -ResourceName $($MyInvocation.MyCommand.Source).Replace('MSFT_', '')
     return $result
 }
 
@@ -446,7 +438,7 @@ function Export-TargetResource
                     -CIMInstanceName 'MicrosoftGraphNetworkaccessPolicyLink' `
                     -ComplexTypeMapping $complexMapping
 
-                if (-Not [String]::IsNullOrWhiteSpace($complexTypeStringResult))
+                if (-not [String]::IsNullOrWhiteSpace($complexTypeStringResult))
                 {
                     $Results.Policies = $complexTypeStringResult
                 }
@@ -474,17 +466,14 @@ function Export-TargetResource
     }
     catch
     {
-        Write-M365DSCHost -Message $Global:M365DSCEmojiRedX -CommitWrite
-
         New-M365DSCLogEntry -Message 'Error during Export:' `
             -Exception $_ `
             -Source $($MyInvocation.MyCommand.Source) `
             -TenantId $TenantId `
             -Credential $Credential
 
-        return ''
+        throw
     }
 }
 
 Export-ModuleMember -Function *-TargetResource
-

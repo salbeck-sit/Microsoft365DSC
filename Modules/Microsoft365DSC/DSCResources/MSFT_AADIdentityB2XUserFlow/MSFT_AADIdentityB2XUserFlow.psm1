@@ -26,8 +26,8 @@ function Get-TargetResource
         #endregion
 
         [Parameter()]
+        [ValidateSet('Present', 'Absent')]
         [System.String]
-        [ValidateSet('Absent', 'Present')]
         $Ensure = 'Present',
 
         [Parameter()]
@@ -59,11 +59,13 @@ function Get-TargetResource
         $AccessTokens
     )
 
+    Write-Verbose -Message "Getting configuration for the Azure AD Identity B2X User Flow with Id {$Id}"
+
     try
     {
         if (-not $Script:exportedInstance -or $Script:exportedInstance.Id -ne $Id)
         {
-            $ConnectionMode = New-M365DSCConnection -Workload 'MicrosoftGraph' `
+            $null = New-M365DSCConnection -Workload 'MicrosoftGraph' `
                 -InboundParameters $PSBoundParameters
 
             #Ensure the proper dependencies are installed in the current environment.
@@ -101,7 +103,8 @@ function Get-TargetResource
         Write-Verbose -Message "An Azure AD Identity B2 X User Flow with Id {$Id} was found"
 
         #region Get ApiConnectorConfiguration
-        $connectorConfiguration = Get-MgBetaIdentityB2XUserFlowApiConnectorConfiguration -B2XIdentityUserFlowId $Id -ExpandProperty 'postFederationSignup,postAttributeCollection'
+        $connectorConfiguration = Get-MgBetaIdentityB2XUserFlowApiConnectorConfiguration -B2XIdentityUserFlowId $Id `
+            -ExpandProperty 'postFederationSignup,postAttributeCollection'
 
         $complexApiConnectorConfiguration = @{
             postFederationSignupConnectorName    = Get-ConnectorName($connectorConfiguration.PostFederationSignup.DisplayName)
@@ -155,7 +158,7 @@ function Get-TargetResource
             #endregion
         }
 
-        return [System.Collections.Hashtable] $results
+        return $results
     }
     catch
     {
@@ -165,7 +168,7 @@ function Get-TargetResource
             -TenantId $TenantId `
             -Credential $Credential
 
-        return $nullResult
+        throw
     }
 }
 
@@ -193,8 +196,8 @@ function Set-TargetResource
 
         #endregion
         [Parameter()]
+        [ValidateSet('Present', 'Absent')]
         [System.String]
-        [ValidateSet('Absent', 'Present')]
         $Ensure = 'Present',
 
         [Parameter()]
@@ -240,8 +243,6 @@ function Set-TargetResource
 
     $currentInstance = Get-TargetResource @PSBoundParameters
 
-    $BoundParameters = Remove-M365DSCAuthenticationParameter -BoundParameters $PSBoundParameters
-
     if ($Ensure -eq 'Present' -and $currentInstance.Ensure -eq 'Absent')
     {
         Write-Verbose -Message "Creating an Azure AD Identity B2 X User Flow with Id {$Id}"
@@ -272,6 +273,7 @@ function Set-TargetResource
             apiConnectorConfiguration = $newApiConnectorConfiguration
         }
 
+        Write-Verbose -Message "Creating instance with:`r`n$(ConvertTo-Json $params -Depth 5)"
         $newObj = New-MgBetaIdentityB2XUserFlow -BodyParameter $params
 
         #region Add IdentityProvider objects to the newly created object
@@ -282,7 +284,6 @@ function Set-TargetResource
             }
 
             Write-Verbose -Message "Adding the Identity Provider with Id {$provider} to the newly created Azure AD Identity B2X User Flow with Id {$($newObj.Id)}"
-
             New-MgBetaIdentityB2XUserFlowIdentityProviderByRef -B2XIdentityUserFlowId $newObj.Id -BodyParameter $params
         }
         #endregion
@@ -313,7 +314,6 @@ function Set-TargetResource
             }
 
             Write-Verbose -Message "Adding the User Attribute Assignment with Id {$($userAttributeAssignment.Id)} to the newly created Azure AD Identity B2X User Flow with Id {$($newObj.Id)}"
-
             New-MgBetaIdentityB2XUserFlowUserAttributeAssignment -B2XIdentityUserFlowId $newObj.Id -BodyParameter $params
         }
         #endregion
@@ -366,7 +366,7 @@ function Set-TargetResource
         {
             Write-Verbose -Message "Removing the Identity Provider with Id {$provider} from the Azure AD Identity B2X User Flow with Id {$($currentInstance.Id)}"
 
-            Remove-MgBetaIdentityB2XUserFlowIdentityProviderByRef -B2XIdentityUserFlowId $currentInstance.Id -IdentityProviderBaseId $provider
+            Remove-MgBetaIdentityB2XUserFlowIdentityProviderBaseByRef -B2XIdentityUserFlowId $currentInstance.Id -IdentityProviderBaseId $provider
         }
         #endregion
 
@@ -452,8 +452,8 @@ function Test-TargetResource
         #endregion
 
         [Parameter()]
+        [ValidateSet('Present', 'Absent')]
         [System.String]
-        [ValidateSet('Absent', 'Present')]
         $Ensure = 'Present',
 
         [Parameter()]
@@ -495,7 +495,7 @@ function Test-TargetResource
     #endregion
 
     $result = Test-M365DSCTargetResource -DesiredValues $PSBoundParameters `
-                                         -ResourceName $($MyInvocation.MyCommand.Source).Replace('MSFT_', '')
+        -ResourceName $($MyInvocation.MyCommand.Source).Replace('MSFT_', '')
     return $result
 }
 
@@ -574,6 +574,10 @@ function Export-TargetResource
         }
         foreach ($config in $getValue)
         {
+            if ($null -ne $Global:M365DSCExportResourceInstancesCount)
+            {
+                $Global:M365DSCExportResourceInstancesCount++
+            }
             $displayedKey = $config.Id
             Write-M365DSCHost -Message "    |---[$i/$($getValue.Count)] $displayedKey" -DeferWrite
             $params = @{
@@ -646,15 +650,13 @@ function Export-TargetResource
     }
     catch
     {
-        Write-M365DSCHost -Message $Global:M365DSCEmojiRedX -CommitWrite
-
         New-M365DSCLogEntry -Message 'Error during Export:' `
             -Exception $_ `
             -Source $($MyInvocation.MyCommand.Source) `
             -TenantId $TenantId `
             -Credential $Credential
 
-        return ''
+        throw
     }
 }
 
@@ -671,4 +673,3 @@ function Get-ConnectorName($connectorName)
 }
 
 Export-ModuleMember -Function *-TargetResource
-

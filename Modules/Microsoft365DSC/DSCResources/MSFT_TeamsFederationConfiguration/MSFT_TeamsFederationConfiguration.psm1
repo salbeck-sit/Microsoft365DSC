@@ -6,11 +6,6 @@ function Get-TargetResource
     [OutputType([System.Collections.Hashtable])]
     param
     (
-        [Parameter(Mandatory = $true)]
-        [System.String]
-        [ValidateSet('Global')]
-        $Identity,
-
         [Parameter()]
         [System.String[]]
         $AllowedDomains,
@@ -23,11 +18,6 @@ function Get-TargetResource
         [System.Boolean]
         $AllowFederatedUsers,
 
-        # DEPRECATED
-        [Parameter()]
-        [System.Boolean]
-        $AllowPublicUsers,
-
         [Parameter()]
         [System.Boolean]
         $AllowTeamsConsumer,
@@ -35,6 +25,11 @@ function Get-TargetResource
         [Parameter()]
         [System.Boolean]
         $AllowTeamsConsumerInbound,
+
+        [Parameter()]
+        [ValidateSet('Disabled', 'Enabled')]
+        [System.String]
+        $DomainBlockingForMDOAdminsInTeams,
 
         [Parameter()]
         [System.String]
@@ -52,6 +47,11 @@ function Get-TargetResource
         [Parameter()]
         [System.Boolean]
         $RestrictTeamsConsumerToExternalUserProfiles,
+
+        [Parameter(Mandatory = $true)]
+        [ValidateSet('Yes')]
+        [System.String]
+        $IsSingleInstance,
 
         [Parameter()]
         [System.Management.Automation.PSCredential]
@@ -80,27 +80,26 @@ function Get-TargetResource
 
     Write-Verbose -Message 'Getting configuration of Teams Federation'
 
-    $ConnectionMode = New-M365DSCConnection -Workload 'MicrosoftTeams' `
-        -InboundParameters $PSBoundParameters
-
-    #Ensure the proper dependencies are installed in the current environment.
-    Confirm-M365DSCDependencies
-
-    #region Telemetry
-    $ResourceName = $MyInvocation.MyCommand.ModuleName -replace 'MSFT_', ''
-    $CommandName = $MyInvocation.MyCommand
-    $data = Format-M365DSCTelemetryParameters -ResourceName $ResourceName `
-        -CommandName $CommandName `
-        -Parameters $PSBoundParameters
-    Add-M365DSCTelemetryEvent -Data $data
-    #endregion
-
-    $nullReturn = @{
-        Identity = 'Global'
-    }
-
     try
     {
+        if (-not $Script:exportMode)
+        {
+            $null = New-M365DSCConnection -Workload 'MicrosoftTeams' `
+                -InboundParameters $PSBoundParameters
+
+            #Ensure the proper dependencies are installed in the current environment.
+            Confirm-M365DSCDependencies
+
+            #region Telemetry
+            $ResourceName = $MyInvocation.MyCommand.ModuleName -replace 'MSFT_', ''
+            $CommandName = $MyInvocation.MyCommand
+            $data = Format-M365DSCTelemetryParameters -ResourceName $ResourceName `
+                -CommandName $CommandName `
+                -Parameters $PSBoundParameters
+            Add-M365DSCTelemetryEvent -Data $data
+            #endregion
+        }
+
         $config = Get-CsTenantFederationConfiguration -ErrorAction Stop
 
         $AllowedDomainsArray = $config.AllowedDomains.AllowedDomain.Domain
@@ -126,18 +125,17 @@ function Get-TargetResource
         }
 
         return @{
-            Identity                                    = $Identity
             AllowedDomains                              = $AllowedDomainsValues
             BlockedDomains                              = $BlockedDomainsValues
             AllowFederatedUsers                         = $config.AllowFederatedUsers
-            #DEPRECATED
-            #AllowPublicUsers                            = $config.AllowPublicUsers
             AllowTeamsConsumer                          = $config.AllowTeamsConsumer
             AllowTeamsConsumerInbound                   = $config.AllowTeamsConsumerInbound
+            DomainBlockingForMDOAdminsInTeams           = $config.DomainBlockingForMDOAdminsInTeams
             ExternalAccessWithTrialTenants              = $config.ExternalAccessWithTrialTenants
             TreatDiscoveredPartnersAsUnverified         = $config.TreatDiscoveredPartnersAsUnverified
             SharedSipAddressSpace                       = $config.SharedSipAddressSpace
             RestrictTeamsConsumerToExternalUserProfiles = $config.RestrictTeamsConsumerToExternalUserProfiles
+            IsSingleInstance                            = 'Yes'
             Credential                                  = $Credential
             ApplicationId                               = $ApplicationId
             TenantId                                    = $TenantId
@@ -154,7 +152,7 @@ function Get-TargetResource
             -TenantId $TenantId `
             -Credential $Credential
 
-        return $nullReturn
+        throw
     }
 }
 
@@ -163,11 +161,6 @@ function Set-TargetResource
     [CmdletBinding()]
     param
     (
-        [Parameter(Mandatory = $true)]
-        [System.String]
-        [ValidateSet('Global')]
-        $Identity,
-
         [Parameter()]
         [System.String[]]
         $AllowedDomains,
@@ -182,15 +175,16 @@ function Set-TargetResource
 
         [Parameter()]
         [System.Boolean]
-        $AllowPublicUsers,
-
-        [Parameter()]
-        [System.Boolean]
         $AllowTeamsConsumer,
 
         [Parameter()]
         [System.Boolean]
         $AllowTeamsConsumerInbound,
+
+        [Parameter()]
+        [ValidateSet('Disabled', 'Enabled')]
+        [System.String]
+        $DomainBlockingForMDOAdminsInTeams,
 
         [Parameter()]
         [System.String]
@@ -208,6 +202,11 @@ function Set-TargetResource
         [Parameter()]
         [System.Boolean]
         $RestrictTeamsConsumerToExternalUserProfiles,
+
+        [Parameter(Mandatory = $true)]
+        [ValidateSet('Yes')]
+        [System.String]
+        $IsSingleInstance,
 
         [Parameter()]
         [System.Management.Automation.PSCredential]
@@ -248,34 +247,26 @@ function Set-TargetResource
     Add-M365DSCTelemetryEvent -Data $data
     #endregion
 
-    $ConnectionMode = New-M365DSCConnection -Workload 'MicrosoftTeams' `
+    $null = New-M365DSCConnection -Workload 'MicrosoftTeams' `
         -InboundParameters $PSBoundParameters
 
-    $SetParams = $PSBoundParameters
-    $SetParams.Remove('Credential') | Out-Null
-    $SetParams.Remove('ApplicationId') | Out-Null
-    $SetParams.Remove('TenantId') | Out-Null
-    $SetParams.Remove('CertificateThumbprint') | Out-Null
-    $SetParams.Remove('AllowedDomains') | Out-Null
-    $SetParams.Remove('ManagedIdentity') | Out-Null
-    $SetParams.Remove('AccessTokens') | Out-Null
-    if ($allowedDomains.Length -gt 0)
+    $SetParams = Remove-M365DSCAuthenticationParameter -BoundParameters $PSBoundParameters
+    if ($PSBoundParameters.ContainsKey('AllowedDomains'))
     {
-        $SetParams.Add('AllowedDomainsAsAList', $AllowedDomains)
-    }
-    else
-    {
-        $AllowAllKnownDomains = New-CsEdgeAllowAllKnownDomains
-        $SetParams.Add('AllowedDomains', $AllowAllKnownDomains)
+        if ($AllowedDomains.Count -gt 0)
+        {
+            $SetParams.Remove('AllowedDomains') | Out-Null
+            $SetParams.Add('AllowedDomainsAsAList', $AllowedDomains)
+        }
+        else
+        {
+            $AllowAllKnownDomains = New-CsEdgeAllowAllKnownDomains
+            $SetParams.AllowedDomains = $AllowAllKnownDomains
+        }
     }
 
-    if ($SetParams.ContainsKey('AllowPublicUsers'))
-    {
-        Write-Verbose -Message "[DEPRECATED] The AllowPublicUsers property is deprecated and will be removed."
-        $SetParams.Remove('AllowPublicUsers') | Out-Null
-    }
-
-    Write-Verbose -Message "SetParams: $(Convert-M365DscHashtableToString -Hashtable $SetParams)"
+    $SetParams.Add('Identity', 'Global')
+    $SetParams.Remove('IsSingleInstance') | Out-Null
     Set-CsTenantFederationConfiguration @SetParams
 }
 
@@ -285,11 +276,6 @@ function Test-TargetResource
     [OutputType([System.Boolean])]
     param
     (
-        [Parameter(Mandatory = $true)]
-        [System.String]
-        [ValidateSet('Global')]
-        $Identity,
-
         [Parameter()]
         [System.String[]]
         $AllowedDomains,
@@ -304,15 +290,16 @@ function Test-TargetResource
 
         [Parameter()]
         [System.Boolean]
-        $AllowPublicUsers,
-
-        [Parameter()]
-        [System.Boolean]
         $AllowTeamsConsumer,
 
         [Parameter()]
         [System.Boolean]
         $AllowTeamsConsumerInbound,
+
+        [Parameter()]
+        [ValidateSet('Disabled', 'Enabled')]
+        [System.String]
+        $DomainBlockingForMDOAdminsInTeams,
 
         [Parameter()]
         [System.String]
@@ -330,6 +317,11 @@ function Test-TargetResource
         [Parameter()]
         [System.Boolean]
         $RestrictTeamsConsumerToExternalUserProfiles,
+
+        [Parameter(Mandatory = $true)]
+        [ValidateSet('Yes')]
+        [System.String]
+        $IsSingleInstance,
 
         [Parameter()]
         [System.Management.Automation.PSCredential]
@@ -355,11 +347,9 @@ function Test-TargetResource
         [System.String[]]
         $AccessTokens
     )
-    #Ensure the proper dependencies are installed in the current environment.
-    Confirm-M365DSCDependencies
 
     #region Telemetry
-    $ResourceName = $MyInvocation.MyCommand.ModuleName -replace 'MSFT_', ''
+    $ResourceName = $MyInvocation.MyCommand.ModuleName.Replace('MSFT_', '')
     $CommandName = $MyInvocation.MyCommand
     $data = Format-M365DSCTelemetryParameters -ResourceName $ResourceName `
         -CommandName $CommandName `
@@ -367,27 +357,9 @@ function Test-TargetResource
     Add-M365DSCTelemetryEvent -Data $data
     #endregion
 
-    Write-Verbose -Message 'Testing configuration of Teams Federation'
-
-    $CurrentValues = Get-TargetResource @PSBoundParameters
-
-    Write-Verbose -Message "Current Values: $(Convert-M365DscHashtableToString -Hashtable $CurrentValues)"
-    Write-Verbose -Message "Target Values: $(Convert-M365DscHashtableToString -Hashtable $PSBoundParameters)"
-
-    $ValuesToCheck = $PSBoundParameters
-    if ($ValuesToCheck.ContainsKey('AllowPublicUsers'))
-    {
-        $ValuesToCheck.Remove('AllowPublicUsers') | Out-Null
-    }
-
-    $TestResult = Test-M365DSCParameterState -CurrentValues $CurrentValues `
-        -Source $($MyInvocation.MyCommand.Source) `
-        -DesiredValues $PSBoundParameters `
-        -ValuesToCheck $ValuesToCheck.Keys
-
-    Write-Verbose -Message "Test-TargetResource returned $TestResult"
-
-    return $TestResult
+    $result = Test-M365DSCTargetResource -DesiredValues $PSBoundParameters `
+        -ResourceName $($MyInvocation.MyCommand.Source).Replace('MSFT_', '')
+    return $result
 }
 
 function Export-TargetResource
@@ -440,7 +412,7 @@ function Export-TargetResource
     {
         $dscContent = ''
         $params = @{
-            Identity              = 'Global'
+            IsSingleInstance      = 'Yes'
             Credential            = $Credential
             ApplicationId         = $ApplicationId
             TenantId              = $TenantId
@@ -448,6 +420,7 @@ function Export-TargetResource
             ManagedIdentity       = $ManagedIdentity.IsPresent
             AccessTokens          = $AccessTokens
         }
+        $Script:exportMode = $true
         $Results = Get-TargetResource @Params
         if ($Results -is [System.Collections.Hashtable] -and $Results.Count -gt 1)
         {
@@ -476,17 +449,14 @@ function Export-TargetResource
     }
     catch
     {
-        Write-M365DSCHost -Message $Global:M365DSCEmojiRedX -CommitWrite
-
         New-M365DSCLogEntry -Message 'Error during Export:' `
             -Exception $_ `
             -Source $($MyInvocation.MyCommand.Source) `
             -TenantId $TenantId `
             -Credential $Credential
 
-        return ''
+        throw
     }
 }
 
 Export-ModuleMember -Function *-TargetResource
-

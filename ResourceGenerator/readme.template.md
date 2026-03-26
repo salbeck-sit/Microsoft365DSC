@@ -1,6 +1,0 @@
-
-# <ResourceFriendlyName>
-
-## Description
-
-<ResourceDescription>

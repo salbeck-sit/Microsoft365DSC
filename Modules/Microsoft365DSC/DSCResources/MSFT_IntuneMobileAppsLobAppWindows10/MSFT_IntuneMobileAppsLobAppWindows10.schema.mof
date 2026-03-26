@@ -10,10 +10,10 @@ class MSFT_DeviceManagementMobileAppAssignment
     [Write, Description("Possible values for the install intent chosen by the admin."), ValueMap{"available", "required", "uninstall", "availableWithoutEnrollment"}, Values{"available", "required", "uninstall", "availableWithoutEnrollment"}] String intent;
 };
 
-[ClassVersion("1.0.0.0")]
+[ClassVersion("1.0.0.3")]
 class MSFT_DeviceManagementMobileAppAssignmentSettings
 {
-    [Write, Description("The odata type of the assignment type."), ValueMap{"#microsoft.graph.win32LobAppAssignmentSettings", "#microsoft.graph.windowsUniversalAppXAppAssignmentSettings"}, Values{"#microsoft.graph.win32LobAppAssignmentSettings", "#microsoft.graph.windowsUniversalAppXAppAssignmentSettings"}] String odataType;
+    [Required, Description("The odata type of the assignment type."), ValueMap{"#microsoft.graph.androidManagedStoreAppAssignmentSettings", "#microsoft.graph.iosStoreAppAssignmentSettings", "#microsoft.graph.iosLobAppAssignmentSettings", "#microsoft.graph.macOsLobAppAssignmentSettings", "#microsoft.graph.win32LobAppAssignmentSettings", "#microsoft.graph.winGetAppAssignmentSettings", "#microsoft.graph.windowsUniversalAppXAppAssignmentSettings"}, Values{"#microsoft.graph.androidManagedStoreAppAssignmentSettings", "#microsoft.graph.iosLobAppAssignmentSettings", "#microsoft.graph.iosStoreAppAssignmentSettings", "#microsoft.graph.macOsLobAppAssignmentSettings", "#microsoft.graph.win32LobAppAssignmentSettings", "#microsoft.graph.winGetAppAssignmentSettings", "#microsoft.graph.windowsUniversalAppXAppAssignmentSettings"}] String odataType;
 };
 
 [ClassVersion("1.0.0.0")]
@@ -58,7 +58,6 @@ class MSFT_IntuneMobileAppsLobAppWindows10 : OMI_BaseResource
     [Write, Description("The privacy statement Url.")] String PrivacyInformationUrl;
     [Write, Description("The publisher of the app.")] String Publisher;
     [Write, Description("List of scope tag ids for this mobile app.")] String RoleScopeTagIds[];
-
     [Write, Description("The list of categories for this app."), EmbeddedInstance("MSFT_DeviceManagementMobileAppCategory")] String Categories[];
     [Write, Description("Represents the assignment to the Intune policy."), EmbeddedInstance("MSFT_DeviceManagementMobileAppAssignment")] String Assignments[];
     [Write, Description("Present ensures the policy exists, absent ensures it is removed."), ValueMap{"Present","Absent"}, Values{"Present","Absent"}] string Ensure;

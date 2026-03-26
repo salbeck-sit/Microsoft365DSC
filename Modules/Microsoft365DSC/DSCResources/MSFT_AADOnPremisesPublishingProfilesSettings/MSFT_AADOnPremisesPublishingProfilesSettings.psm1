@@ -7,8 +7,9 @@ function Get-TargetResource
     param
     (
         [Parameter(Mandatory = $true)]
+        [ValidateSet('Yes')]
         [System.String]
-        $IsSingleInstance = 'Yes',
+        $IsSingleInstance,
 
         [Parameter()]
         [System.Boolean]
@@ -43,30 +44,27 @@ function Get-TargetResource
         $AccessTokens
     )
 
-    New-M365DSCConnection -Workload 'MicrosoftGraph' `
-        -InboundParameters $PSBoundParameters | Out-Null
+    Write-Verbose -Message 'Getting the AAD On-Premises Publishing Profiles Settings'
 
-    #Ensure the proper dependencies are installed in the current environment.
-    Confirm-M365DSCDependencies
-
-    #region Telemetry
-    $ResourceName = $MyInvocation.MyCommand.ModuleName.Replace('MSFT_', '')
-    $CommandName = $MyInvocation.MyCommand
-    $data = Format-M365DSCTelemetryParameters -ResourceName $ResourceName `
-        -CommandName $CommandName `
-        -Parameters $PSBoundParameters
-    Add-M365DSCTelemetryEvent -Data $data
-    #endregion
-
-    $nullResult = $PSBoundParameters
     try
     {
+        $null = New-M365DSCConnection -Workload 'MicrosoftGraph' `
+            -InboundParameters $PSBoundParameters
+
+        #Ensure the proper dependencies are installed in the current environment.
+        Confirm-M365DSCDependencies
+
+        #region Telemetry
+        $ResourceName = $MyInvocation.MyCommand.ModuleName.Replace('MSFT_', '')
+        $CommandName = $MyInvocation.MyCommand
+        $data = Format-M365DSCTelemetryParameters -ResourceName $ResourceName `
+            -CommandName $CommandName `
+            -Parameters $PSBoundParameters
+        Add-M365DSCTelemetryEvent -Data $data
+        #endregion
+
         $uri = (Get-MSCloudLoginConnectionProfile -Workload MicrosoftGraph).ResourceUrl + "beta/onPremisesPublishingProfiles('applicationProxy')"
         $instance = Invoke-MgGraphRequest -Uri $uri -Method Get
-        if ($null -eq $instance)
-        {
-            return $nullResult
-        }
 
         $results = @{
             IsSingleInstance      = 'Yes'
@@ -79,18 +77,17 @@ function Get-TargetResource
             ManagedIdentity       = $ManagedIdentity.IsPresent
             AccessTokens          = $AccessTokens
         }
-        return [System.Collections.Hashtable] $results
+        return $results
     }
     catch
     {
-        Write-Verbose -Message $_
         New-M365DSCLogEntry -Message 'Error retrieving data:' `
             -Exception $_ `
             -Source $($MyInvocation.MyCommand.Source) `
             -TenantId $TenantId `
             -Credential $Credential
 
-        return $nullResult
+        throw
     }
 }
 
@@ -100,8 +97,9 @@ function Set-TargetResource
     param
     (
         [Parameter(Mandatory = $true)]
+        [ValidateSet('Yes')]
         [System.String]
-        $IsSingleInstance = 'Yes',
+        $IsSingleInstance,
 
         [Parameter()]
         [System.Boolean]
@@ -135,6 +133,11 @@ function Set-TargetResource
         [System.String[]]
         $AccessTokens
     )
+
+    Write-Verbose -Message 'Setting the AAD On-Premises Publishing Profiles Settings'
+
+    $null = New-M365DSCConnection -Workload 'MicrosoftGraph' `
+        -InboundParameters $PSBoundParameters
 
     #Ensure the proper dependencies are installed in the current environment.
     Confirm-M365DSCDependencies
@@ -164,8 +167,9 @@ function Test-TargetResource
     param
     (
         [Parameter(Mandatory = $true)]
+        [ValidateSet('Yes')]
         [System.String]
-        $IsSingleInstance = 'Yes',
+        $IsSingleInstance,
 
         [Parameter()]
         [System.Boolean]
@@ -210,7 +214,7 @@ function Test-TargetResource
     #endregion
 
     $result = Test-M365DSCTargetResource -DesiredValues $PSBoundParameters `
-                                         -ResourceName $($MyInvocation.MyCommand.Source).Replace('MSFT_', '')
+        -ResourceName $($MyInvocation.MyCommand.Source).Replace('MSFT_', '')
     return $result
 }
 
@@ -300,17 +304,14 @@ function Export-TargetResource
     }
     catch
     {
-        Write-M365DSCHost -Message $Global:M365DSCEmojiRedX -CommitWrite
-
         New-M365DSCLogEntry -Message 'Error during Export:' `
             -Exception $_ `
             -Source $($MyInvocation.MyCommand.Source) `
             -TenantId $TenantId `
             -Credential $Credential
 
-        return ''
+        throw
     }
 }
 
 Export-ModuleMember -Function *-TargetResource
-

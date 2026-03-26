@@ -8,7 +8,7 @@ function Get-TargetResource
     (
         [Parameter(Mandatory = $true)]
         [ValidateSet('Yes')]
-        [String]
+        [System.String]
         $IsSingleInstance,
 
         [Parameter()]
@@ -77,10 +77,6 @@ function Get-TargetResource
 
         [Parameter()]
         [System.Boolean]
-        $MicrosoftVivaBriefingEmail,
-
-        [Parameter()]
-        [System.Boolean]
         $ToDoIsPushNotificationEnabled,
 
         [Parameter()]
@@ -127,11 +123,6 @@ function Get-TargetResource
         $InstallationOptionsAppsForMac,
 
         [Parameter()]
-        [ValidateSet('Present', 'Absent')]
-        [System.String]
-        $Ensure = 'Present',
-
-        [Parameter()]
         [System.Management.Automation.PSCredential]
         $Credential,
 
@@ -152,6 +143,14 @@ function Get-TargetResource
         $CertificateThumbprint,
 
         [Parameter()]
+        [System.String]
+        $CertificatePath,
+
+        [Parameter()]
+        [System.Management.Automation.PSCredential]
+        $CertificatePassword,
+
+        [Parameter()]
         [Switch]
         $ManagedIdentity,
 
@@ -160,107 +159,128 @@ function Get-TargetResource
         $AccessTokens
     )
 
-    $ConnectionMode = New-M365DSCConnection -Workload 'MicrosoftGraph' `
-        -InboundParameters $PSBoundParameters
+    Write-Verbose -Message 'Getting configuration of Office 365 Org Settings'
 
-    $ConnectionModeTasks = New-M365DSCConnection -Workload 'Tasks' `
-        -InboundParameters $PSBoundParameters
-
-    # Workaround for issue when if connected to S+C prior to calling cmdlet, an error about an invalid token is thrown.
-    # If connected to S+C, then we need to re-initialize the connection to EXO.
-    if ((Get-MSCloudLoginConnectionProfile -Workload SecurityComplianceCenter).Connected -and `
-            (Get-MSCloudLoginConnectionProfile -Workload ExchangeOnline).Connected)
-    {
-        Reset-MSCloudLoginConnectionProfileContext -Workload ExchangeOnline
-    }
-    $ConnectionMode = New-M365DSCConnection -Workload 'ExchangeOnline' `
-        -InboundParameters $PSBoundParameters
-
-    #Ensure the proper dependencies are installed in the current environment.
-    Confirm-M365DSCDependencies
-
-    #region Telemetry
-    $ResourceName = $MyInvocation.MyCommand.ModuleName -replace 'MSFT_', ''
-    $CommandName = $MyInvocation.MyCommand
-    $data = Format-M365DSCTelemetryParameters -ResourceName $ResourceName `
-        -CommandName $CommandName `
-        -Parameters $PSBoundParameters
-    Add-M365DSCTelemetryEvent -Data $data
-    #endregion
-
-    $nullReturn = @{
-        IsSingleInstance = $IsSingleInstance
-        Ensure           = 'Absent'
-    }
-
-    $results = @{
-        IsSingleInstance      = 'Yes'
-        Credential            = $Credential
-        ApplicationId         = $ApplicationId
-        TenantId              = $TenantId
-        ApplicationSecret     = $ApplicationSecret
-        CertificateThumbprint = $CertificateThumbprint
-        Managedidentity       = $ManagedIdentity.IsPresent
-        AccessTokens          = $AccessTokens
-    }
     try
     {
-        $OfficeOnlineId = 'c1f33bc0-bdb4-4248-ba9b-096807ddb43e'
-        $M365WebEnableUsersToOpenFilesFrom3PStorageValue = Get-MgServicePrincipal -Filter "appId eq '$OfficeOnlineId'" -Property 'AccountEnabled' -ErrorAction SilentlyContinue
-        if ($null -eq $M365WebEnableUsersToOpenFilesFrom3PStorageValue)
+
+        $null = New-M365DSCConnection -Workload 'MicrosoftGraph' `
+            -InboundParameters $PSBoundParameters
+
+        $ConnectionModeTasks = New-M365DSCConnection -Workload 'Tasks' `
+            -InboundParameters $PSBoundParameters
+
+        # Workaround for issue when if connected to S+C prior to calling cmdlet, an error about an invalid token is thrown.
+        # If connected to S+C, then we need to re-initialize the connection to EXO.
+        if ((Get-MSCloudLoginConnectionProfile -Workload SecurityComplianceCenter).Connected -and `
+            (Get-MSCloudLoginConnectionProfile -Workload ExchangeOnline).Connected)
         {
-            Write-Verbose -Message 'Registering the Office on the web Service Principal'
-            New-MgServicePrincipal -AppId 'c1f33bc0-bdb4-4248-ba9b-096807ddb43e' -ErrorAction Stop | Out-Null
-            $M365WebEnableUsersToOpenFilesFrom3PStorageValue = Get-MgServicePrincipal -Filter "appId eq '$OfficeOnlineId'" -Property 'AccountEnabled' -ErrorAction SilentlyContinue
+            Reset-MSCloudLoginConnectionProfileContext -Workload ExchangeOnline
+        }
+        $null = New-M365DSCConnection -Workload 'ExchangeOnline' `
+            -InboundParameters $PSBoundParameters
+
+        #Ensure the proper dependencies are installed in the current environment.
+        Confirm-M365DSCDependencies
+
+        #region Telemetry
+        $ResourceName = $MyInvocation.MyCommand.ModuleName -replace 'MSFT_', ''
+        $CommandName = $MyInvocation.MyCommand
+        $data = Format-M365DSCTelemetryParameters -ResourceName $ResourceName `
+            -CommandName $CommandName `
+            -Parameters $PSBoundParameters
+        Add-M365DSCTelemetryEvent -Data $data
+        #endregion
+
+        $results = @{
+            IsSingleInstance      = 'Yes'
+            Credential            = $Credential
+            ApplicationId         = $ApplicationId
+            TenantId              = $TenantId
+            ApplicationSecret     = $ApplicationSecret
+            CertificateThumbprint = $CertificateThumbprint
+            CertificatePath       = $CertificatePath
+            CertificatePassword   = $CertificatePassword
+            ManagedIdentity       = $ManagedIdentity.IsPresent
+            AccessTokens          = $AccessTokens
         }
 
-        if ($null -ne $M365WebEnableUsersToOpenFilesFrom3PStorageValue)
+        if ($PSBoundParameters.ContainsKey('M365WebEnableUsersToOpenFilesFrom3PStorage') -or `
+                $Script:exportedInstance)
         {
-            $results += @{
-                M365WebEnableUsersToOpenFilesFrom3PStorage = $M365WebEnableUsersToOpenFilesFrom3PStorageValue.AccountEnabled
+            $OfficeOnlineId = 'c1f33bc0-bdb4-4248-ba9b-096807ddb43e'
+            $M365WebEnableUsersToOpenFilesFrom3PStorageValue = Get-MgServicePrincipal -Filter "appId eq '$OfficeOnlineId'" -Property 'AccountEnabled' -ErrorAction SilentlyContinue
+            if ($null -eq $M365WebEnableUsersToOpenFilesFrom3PStorageValue)
+            {
+                Write-Verbose -Message 'Registering the Office on the web Service Principal'
+                New-MgServicePrincipal -AppId 'c1f33bc0-bdb4-4248-ba9b-096807ddb43e' -ErrorAction Stop | Out-Null
+                $M365WebEnableUsersToOpenFilesFrom3PStorageValue = Get-MgServicePrincipal -Filter "appId eq '$OfficeOnlineId'" -Property 'AccountEnabled' -ErrorAction SilentlyContinue
+            }
+
+            if ($null -ne $M365WebEnableUsersToOpenFilesFrom3PStorageValue)
+            {
+                $results += @{
+                    M365WebEnableUsersToOpenFilesFrom3PStorage = $M365WebEnableUsersToOpenFilesFrom3PStorageValue.AccountEnabled
+                }
             }
         }
 
         # Planner iCal settings
-        $PlannerSettings = Get-M365DSCO365OrgSettingsPlannerConfig
-        if ($null -ne $PlannerSettings)
+        if ($PSBoundParameters.ContainsKey('PlannerAllowCalendarSharing') -or `
+                $PSBoundParameters.ContainsKey('AllowPlannerCopilot') -or `
+                $Script:exportedInstance)
         {
-            $results += @{
-                PlannerAllowCalendarSharing = $PlannerSettings.allowCalendarSharing
-                AllowPlannerCopilot         = $PlannerSettings.allowPlannerCopilot
+            $PlannerSettings = Get-M365DSCO365OrgSettingsPlannerConfig
+            if ($null -ne $PlannerSettings)
+            {
+                $results += @{
+                    PlannerAllowCalendarSharing = $PlannerSettings.allowCalendarSharing
+                    AllowPlannerCopilot         = $PlannerSettings.allowPlannerCopilot
+                }
             }
         }
 
         # Cortana settings
-        $CortanaId = '0a0a29f9-0a25-49c7-94bf-c53c3f8fa69d'
-        $CortanaEnabledValue = Get-MgServicePrincipal -Filter "appId eq '$CortanaId'" -Property 'AccountEnabled'
-        if ($null -ne $CortanaEnabledValue)
+        if ($PSBoundParameters.ContainsKey('CortanaEnabled') -or `
+                $Script:exportedInstance)
         {
-            $results += @{
-                CortanaEnabled = $CortanaEnabledValue.AccountEnabled
+            $CortanaId = '0a0a29f9-0a25-49c7-94bf-c53c3f8fa69d'
+            $CortanaEnabledValue = Get-MgServicePrincipal -Filter "appId eq '$CortanaId'" -Property 'AccountEnabled'
+            if ($null -ne $CortanaEnabledValue)
+            {
+                $results += @{
+                    CortanaEnabled = $CortanaEnabledValue.AccountEnabled
+                }
             }
         }
 
         # Viva Insights settings
-        $currentVivaInsightsSettings = Get-DefaultTenantMyAnalyticsFeatureConfig
-        if ($null -ne $currentVivaInsightsSettings)
+        if ($PSBoundParameters.ContainsKey('VivaInsightsDigestEmail') -or `
+                $PSBoundParameters.ContainsKey('VivaInsightsOutlookAddInAndInlineSuggestions') -or `
+                $PSBoundParameters.ContainsKey('VivaInsightsScheduleSendSuggestions') -or `
+                $PSBoundParameters.ContainsKey('VivaInsightsWebExperience') -or `
+                $Script:exportedInstance)
         {
-            $results += @{
-                VivaInsightsDigestEmail                      = $currentVivaInsightsSettings.IsDigestEmailEnabled
-                VivaInsightsOutlookAddInAndInlineSuggestions = $currentVivaInsightsSettings.IsAddInEnabled
-                VivaInsightsScheduleSendSuggestions          = $currentVivaInsightsSettings.IsScheduleSendEnabled
-                VivaInsightsWebExperience                    = $currentVivaInsightsSettings.IsDashboardEnabled
+            $currentVivaInsightsSettings = Get-DefaultTenantMyAnalyticsFeatureConfig
+            if ($null -ne $currentVivaInsightsSettings)
+            {
+                $results += @{
+                    VivaInsightsDigestEmail                      = $currentVivaInsightsSettings.IsDigestEmailEnabled
+                    VivaInsightsOutlookAddInAndInlineSuggestions = $currentVivaInsightsSettings.IsAddInEnabled
+                    VivaInsightsScheduleSendSuggestions          = $currentVivaInsightsSettings.IsScheduleSendEnabled
+                    VivaInsightsWebExperience                    = $currentVivaInsightsSettings.IsDashboardEnabled
+                }
             }
         }
 
         $MRODeviceManagerService = 'ebe0c285-db95-403f-a1a3-a793bd6d7767'
         try
         {
-            $servicePrincipal = Get-MgServicePrincipal -Filter "appid eq 'ebe0c285-db95-403f-a1a3-a793bd6d7767'"
+            $servicePrincipal = Get-MgServicePrincipal -Filter "appid eq '$($MRODeviceManagerService)'"
             if ($null -eq $servicePrincipal)
             {
                 Write-Verbose -Message 'Registering the MRO Device Manager Service Principal'
-                New-MgServicePrincipal -AppId 'ebe0c285-db95-403f-a1a3-a793bd6d7767' -ErrorAction Stop | Out-Null
+                New-MgServicePrincipal -AppId $MRODeviceManagerService -ErrorAction Stop | Out-Null
             }
         }
         catch
@@ -269,86 +289,123 @@ function Get-TargetResource
         }
 
         # Reports Display Settings
-        $AdminCenterReportDisplayConcealedNamesValue = Get-M365DSCOrgSettingsAdminCenterReport
-        if ($null -ne $AdminCenterReportDisplayConcealedNamesValue)
+        if ($PSBoundParameters.ContainsKey('AdminCenterReportDisplayConcealedNames') -or `
+                $Script:exportedInstance)
         {
-            $results += @{
-                AdminCenterReportDisplayConcealedNames = $AdminCenterReportDisplayConcealedNamesValue.displayConcealedNames
+            $AdminCenterReportDisplayConcealedNamesValue = Get-M365DSCOrgSettingsAdminCenterReport
+            if ($null -ne $AdminCenterReportDisplayConcealedNamesValue)
+            {
+                $results += @{
+                    AdminCenterReportDisplayConcealedNames = $AdminCenterReportDisplayConcealedNamesValue.displayConcealedNames
+                }
             }
         }
 
         # Installation Options
-        $installationOptions = Get-M365DSCOrgSettingsInstallationOptions -AuthenticationOption $ConnectionModeTasks
-        if ($null -ne $installationOptions)
+        if ($PsBoundParameters.ContainsKey('InstallationOptionsUpdateChannel') -or `
+                $PsBoundParameters.ContainsKey('InstallationOptionsAppsForWindows') -or `
+                $PsBoundParameters.ContainsKey('InstallationOptionsAppsForMac') -or `
+                $Script:exportedInstance)
         {
-            $appsForWindowsValue = @()
-            foreach ($key in $installationOptions.appsForWindows.Keys)
+            $installationOptions = Get-M365DSCOrgSettingsInstallationOptions -AuthenticationOption $ConnectionModeTasks
+            if ($null -ne $installationOptions)
             {
-                if ($installationOptions.appsForWindows.$key)
+                $appsForWindowsValue = @()
+                foreach ($key in $installationOptions.appsForWindows.Keys)
                 {
-                    $appsForWindowsValue += $key
+                    if ($installationOptions.appsForWindows.$key)
+                    {
+                        $appsForWindowsValue += $key
+                    }
                 }
-            }
-            $appsForMacValue = @()
-            foreach ($key in $installationOptions.appsForMac.Keys)
-            {
-                if ($installationOptions.appsForMac.$key)
+                $appsForMacValue = @()
+                foreach ($key in $installationOptions.appsForMac.Keys)
                 {
-                    $appsForMacValue += $key
+                    if ($installationOptions.appsForMac.$key)
+                    {
+                        $appsForMacValue += $key
+                    }
                 }
-            }
 
-            $results += @{
-                InstallationOptionsUpdateChannel  = $installationOptions.updateChannel
-                InstallationOptionsAppsForWindows = $appsForWindowsValue
-                InstallationOptionsAppsForMac     = $appsForMacValue
+                $results += @{
+                    InstallationOptionsUpdateChannel  = $installationOptions.updateChannel
+                    InstallationOptionsAppsForWindows = @($appsForWindowsValue | Sort-Object)
+                    InstallationOptionsAppsForMac     = @($appsForMacValue | Sort-Object)
+                }
             }
         }
 
         # Forms
-        $FormsSettings = Get-M365DSCOrgSettingsForms
-        if ($null -ne $FormsSettings)
+        if ($PSBoundParameters.ContainsKey('FormsIsExternalSendFormEnabled') -or `
+                $PSBoundParameters.ContainsKey('FormsIsExternalShareCollaborationEnabled') -or `
+                $PSBoundParameters.ContainsKey('FormsIsExternalShareResultEnabled') -or `
+                $PSBoundParameters.ContainsKey('FormsIsExternalShareTemplateEnabled') -or `
+                $PSBoundParameters.ContainsKey('FormsIsRecordIdentityByDefaultEnabled') -or `
+                $PSBoundParameters.ContainsKey('FormsIsBingImageSearchEnabled') -or `
+                $PSBoundParameters.ContainsKey('FormsIsInOrgFormsPhishingScanEnabled') -or `
+                $Script:exportedInstance)
         {
-            $results += @{
-                FormsIsExternalSendFormEnabled           = $FormsSettings.isExternalSendFormEnabled
-                FormsIsExternalShareCollaborationEnabled = $FormsSettings.isExternalShareCollaborationEnabled
-                FormsIsExternalShareResultEnabled        = $FormsSettings.isExternalShareResultEnabled
-                FormsIsExternalShareTemplateEnabled      = $FormsSettings.isExternalShareTemplateEnabled
-                FormsIsRecordIdentityByDefaultEnabled    = $FormsSettings.isRecordIdentityByDefaultEnabled
-                FormsIsBingImageSearchEnabled            = $FormsSettings.isBingImageSearchEnabled
-                FormsIsInOrgFormsPhishingScanEnabled     = $FormsSettings.isInOrgFormsPhishingScanEnabled
+            $FormsSettings = Get-M365DSCOrgSettingsForms
+            if ($null -ne $FormsSettings)
+            {
+                $results += @{
+                    FormsIsExternalSendFormEnabled           = $FormsSettings.isExternalSendFormEnabled
+                    FormsIsExternalShareCollaborationEnabled = $FormsSettings.isExternalShareCollaborationEnabled
+                    FormsIsExternalShareResultEnabled        = $FormsSettings.isExternalShareResultEnabled
+                    FormsIsExternalShareTemplateEnabled      = $FormsSettings.isExternalShareTemplateEnabled
+                    FormsIsRecordIdentityByDefaultEnabled    = $FormsSettings.isRecordIdentityByDefaultEnabled
+                    FormsIsBingImageSearchEnabled            = $FormsSettings.isBingImageSearchEnabled
+                    FormsIsInOrgFormsPhishingScanEnabled     = $FormsSettings.isInOrgFormsPhishingScanEnabled
+                }
             }
         }
 
         # DynamicsCustomerVoice
-        $DynamicCustomerVoiceSettings = Get-M365DSCOrgSettingsDynamicsCustomerVoice
-        if ($null -ne $DynamicCustomerVoiceSettings)
+        if ($PSBoundParameters.ContainsKey('DynamicsCustomerVoiceIsRestrictedSurveyAccessEnabled') -or `
+                $PSBoundParameters.ContainsKey('DynamicsCustomerVoiceIsRecordIdentityByDefaultEnabled') -or `
+                $PSBoundParameters.ContainsKey('DynamicsCustomerVoiceIsInOrgFormsPhishingScanEnabled') -or `
+                $Script:exportedInstance)
         {
-            $results += @{
-                DynamicsCustomerVoiceIsRestrictedSurveyAccessEnabled  = $DynamicCustomerVoiceSettings.isRestrictedSurveyAccessEnabled
-                DynamicsCustomerVoiceIsRecordIdentityByDefaultEnabled = $DynamicCustomerVoiceSettings.isRecordIdentityByDefaultEnabled
-                DynamicsCustomerVoiceIsInOrgFormsPhishingScanEnabled  = $DynamicCustomerVoiceSettings.isInOrgFormsPhishingScanEnabled
+            $DynamicCustomerVoiceSettings = Get-M365DSCOrgSettingsDynamicsCustomerVoice
+            if ($null -ne $DynamicCustomerVoiceSettings)
+            {
+                $results += @{
+                    DynamicsCustomerVoiceIsRestrictedSurveyAccessEnabled  = $DynamicCustomerVoiceSettings.isRestrictedSurveyAccessEnabled
+                    DynamicsCustomerVoiceIsRecordIdentityByDefaultEnabled = $DynamicCustomerVoiceSettings.isRecordIdentityByDefaultEnabled
+                    DynamicsCustomerVoiceIsInOrgFormsPhishingScanEnabled  = $DynamicCustomerVoiceSettings.isInOrgFormsPhishingScanEnabled
+                }
             }
         }
 
         # Apps and Services
-        $AppsAndServicesSettings = Get-M365DSCOrgSettingsAppsAndServices
-        if ($null -ne $AppsAndServicesSettings)
+        if ($PSBoundParameters.ContainsKey('AppsAndServicesIsOfficeStoreEnabled') -or `
+                $PSBoundParameters.ContainsKey('AppsAndServicesIsAppAndServicesTrialEnabled') -or `
+                $Script:exportedInstance)
         {
-            $results += @{
-                AppsAndServicesIsOfficeStoreEnabled         = $AppsAndServicesSettings.isOfficeStoreEnabled
-                AppsAndServicesIsAppAndServicesTrialEnabled = $AppsAndServicesSettings.IsAppAndServicesTrialEnabled
+            $AppsAndServicesSettings = Get-M365DSCOrgSettingsAppsAndServices
+            if ($null -ne $AppsAndServicesSettings)
+            {
+                $results += @{
+                    AppsAndServicesIsOfficeStoreEnabled         = $AppsAndServicesSettings.isOfficeStoreEnabled
+                    AppsAndServicesIsAppAndServicesTrialEnabled = $AppsAndServicesSettings.IsAppAndServicesTrialEnabled
+                }
             }
         }
 
         # To do
-        $ToDoSettings = Get-M365DSCOrgSettingsToDo
-        if ($null -ne $ToDoSettings)
+        if ($PSBoundParameters.ContainsKey('ToDoIsPushNotificationEnabled') -or `
+                $PSBoundParameters.ContainsKey('ToDoIsExternalJoinEnabled') -or `
+                $PSBoundParameters.ContainsKey('ToDoIsExternalShareEnabled') -or `
+                $Script:exportedInstance)
         {
-            $results += @{
-                ToDoIsPushNotificationEnabled = $ToDoSettings.IsPushNotificationEnabled
-                ToDoIsExternalJoinEnabled     = $ToDoSettings.IsExternalJoinEnabled
-                ToDoIsExternalShareEnabled    = $ToDoSettings.IsExternalShareEnabled
+            $ToDoSettings = Get-M365DSCOrgSettingsToDo
+            if ($null -ne $ToDoSettings)
+            {
+                $results += @{
+                    ToDoIsPushNotificationEnabled = $ToDoSettings.IsPushNotificationEnabled
+                    ToDoIsExternalJoinEnabled     = $ToDoSettings.IsExternalJoinEnabled
+                    ToDoIsExternalShareEnabled    = $ToDoSettings.IsExternalShareEnabled
+                }
             }
         }
 
@@ -362,7 +419,7 @@ function Get-TargetResource
             -TenantId $TenantId `
             -Credential $Credential
 
-        return $nullReturn
+        throw
     }
 }
 
@@ -373,7 +430,7 @@ function Set-TargetResource
     (
         [Parameter(Mandatory = $true)]
         [ValidateSet('Yes')]
-        [String]
+        [System.String]
         $IsSingleInstance,
 
         [Parameter()]
@@ -442,10 +499,6 @@ function Set-TargetResource
 
         [Parameter()]
         [System.Boolean]
-        $MicrosoftVivaBriefingEmail,
-
-        [Parameter()]
-        [System.Boolean]
         $ToDoIsPushNotificationEnabled,
 
         [Parameter()]
@@ -492,11 +545,6 @@ function Set-TargetResource
         $InstallationOptionsAppsForMac,
 
         [Parameter()]
-        [ValidateSet('Present', 'Absent')]
-        [System.String]
-        $Ensure = 'Present',
-
-        [Parameter()]
         [System.Management.Automation.PSCredential]
         $Credential,
 
@@ -517,6 +565,14 @@ function Set-TargetResource
         $CertificateThumbprint,
 
         [Parameter()]
+        [System.String]
+        $CertificatePath,
+
+        [Parameter()]
+        [System.Management.Automation.PSCredential]
+        $CertificatePassword,
+
+        [Parameter()]
         [Switch]
         $ManagedIdentity,
 
@@ -525,10 +581,7 @@ function Set-TargetResource
         $AccessTokens
     )
 
-    if ($PSBoundParameters.ContainsKey('Ensure') -and $Ensure -eq 'Absent')
-    {
-        throw 'This resource is not able to remove the Org settings and therefore only accepts Ensure=Present.'
-    }
+    Write-Verbose -Message 'Setting configuration of Office 365 Org Settings'
 
     #Ensure the proper dependencies are installed in the current environment.
     Confirm-M365DSCDependencies
@@ -542,7 +595,7 @@ function Set-TargetResource
     Add-M365DSCTelemetryEvent -Data $data
     #endregion
 
-    $ConnectionMode = New-M365DSCConnection -Workload 'MicrosoftGraph' `
+    $null = New-M365DSCConnection -Workload 'MicrosoftGraph' `
         -InboundParameters $PSBoundParameters
     $currentValues = Get-TargetResource @PSBoundParameters
 
@@ -556,13 +609,13 @@ function Set-TargetResource
             -AccountEnabled:$M365WebEnableUsersToOpenFilesFrom3PStorage
     }
     if (($PSBoundParameters.ContainsKey('PlannerAllowCalendarSharing') -and `
-        ($PlannerAllowCalendarSharing -ne $currentValues.PlannerAllowCalendarSharing)) -or `
+            ($PlannerAllowCalendarSharing -ne $currentValues.PlannerAllowCalendarSharing)) -or `
         ($PSBoundParameters.ContainsKey('AllowPlannerCopilot') -and `
-        ($AllowPlannerCopilot -ne $currentValues.AllowPlannerCopilot)))
+            ($AllowPlannerCopilot -ne $currentValues.AllowPlannerCopilot)))
     {
         Write-Verbose -Message "Updating the Planner Allow Calendar Sharing setting to {$PlannerAllowCalendarSharing}"
         Set-M365DSCO365OrgSettingsPlannerConfig -AllowCalendarSharing $PlannerAllowCalendarSharing `
-                                                -AllowPlannerCopilot $AllowPlannerCopilot
+            -AllowPlannerCopilot $AllowPlannerCopilot
     }
 
     if ($PSBoundParameters.ContainsKey('CortanaEnabled') -and `
@@ -578,20 +631,6 @@ function Set-TargetResource
                 -AccountEnabled:$CortanaEnabled
         }
     }
-
-    # Microsoft Viva Briefing Email
-    if ($null -ne $MicrosoftVivaBriefingEmail)
-    {
-        Write-Verbose -Message 'DEPRECATED - The MicrosoftVivaBriefingEmail parameter is deprecated and will be ignored.'
-    }
-    #$briefingValue = 'opt-out'
-
-    <# DEPRECATED
-    if ($currentValues.MicrosoftVivaBriefingEmail -and $MicrosoftVivaBriefingEmail -ne $currentValues.MicrosoftVivaBriefingEmail)
-    {
-        Write-Verbose -Message "Updating Microsoft Viva Briefing Email settings."
-        Set-DefaultTenantBriefingConfig -IsEnabledByDefault $briefingValue | Out-Null
-    }#>
 
     # Viva Insights
     if ($PSBoundParameters.ContainsKey('VivaInsightsWebExperience') -and `
@@ -812,7 +851,7 @@ function Test-TargetResource
     (
         [Parameter(Mandatory = $true)]
         [ValidateSet('Yes')]
-        [String]
+        [System.String]
         $IsSingleInstance,
 
         [Parameter()]
@@ -881,10 +920,6 @@ function Test-TargetResource
 
         [Parameter()]
         [System.Boolean]
-        $MicrosoftVivaBriefingEmail,
-
-        [Parameter()]
-        [System.Boolean]
         $ToDoIsPushNotificationEnabled,
 
         [Parameter()]
@@ -931,11 +966,6 @@ function Test-TargetResource
         $InstallationOptionsAppsForMac,
 
         [Parameter()]
-        [ValidateSet('Present', 'Absent')]
-        [System.String]
-        $Ensure = 'Present',
-
-        [Parameter()]
         [System.Management.Automation.PSCredential]
         $Credential,
 
@@ -956,6 +986,14 @@ function Test-TargetResource
         $CertificateThumbprint,
 
         [Parameter()]
+        [System.String]
+        $CertificatePath,
+
+        [Parameter()]
+        [System.Management.Automation.PSCredential]
+        $CertificatePassword,
+
+        [Parameter()]
         [Switch]
         $ManagedIdentity,
 
@@ -974,8 +1012,7 @@ function Test-TargetResource
     #endregion
 
     $result = Test-M365DSCTargetResource -DesiredValues $PSBoundParameters `
-                                         -ResourceName $($MyInvocation.MyCommand.Source).Replace('MSFT_', '') `
-                                         -ExcludedProperties @('MicrosoftVivaBriefingEmail') # Deprecated parameter
+        -ResourceName $($MyInvocation.MyCommand.Source).Replace('MSFT_', '')
     return $result
 }
 
@@ -1006,6 +1043,14 @@ function Export-TargetResource
         $CertificateThumbprint,
 
         [Parameter()]
+        [System.String]
+        $CertificatePath,
+
+        [Parameter()]
+        [System.Management.Automation.PSCredential]
+        $CertificatePassword,
+
+        [Parameter()]
         [Switch]
         $ManagedIdentity,
 
@@ -1013,6 +1058,7 @@ function Export-TargetResource
         [System.String[]]
         $AccessTokens
     )
+
     $ConnectionMode = New-M365DSCConnection -Workload 'MicrosoftGraph' `
         -InboundParameters $PSBoundParameters
 
@@ -1042,10 +1088,13 @@ function Export-TargetResource
             TenantId              = $TenantId
             ApplicationSecret     = $ApplicationSecret
             CertificateThumbprint = $CertificateThumbprint
-            Managedidentity       = $ManagedIdentity.IsPresent
+            CertificatePath       = $CertificatePath
+            CertificatePassword   = $CertificatePassword
+            ManagedIdentity       = $ManagedIdentity.IsPresent
             AccessTokens          = $AccessTokens
         }
 
+        $Script:exportedInstance = $true
         $Results = Get-TargetResource @Params
         $dscContent = ''
         $currentDSCBlock = Get-M365DSCExportContentForResource -ResourceName $ResourceName `
@@ -1063,15 +1112,13 @@ function Export-TargetResource
     }
     catch
     {
-        Write-M365DSCHost -Message $Global:M365DSCEmojiRedX -CommitWrite
-
         New-M365DSCLogEntry -Message 'Error during Export:' `
             -Exception $_ `
             -Source $($MyInvocation.MyCommand.Source) `
             -TenantId $TenantId `
             -Credential $Credential
 
-        return ''
+        throw
     }
 }
 
@@ -1105,8 +1152,7 @@ function Get-M365DSCO365OrgSettingsPlannerConfig
                 -TenantId $TenantId `
                 -Credential $Credential
         }
-
-        return $null
+        throw $_
     }
 }
 
@@ -1166,7 +1212,13 @@ function Get-M365DSCOrgSettingsInstallationOptions
     catch
     {
         Write-Verbose -Message 'Not able to retrieve Office 365 Apps Installation Options. Please ensure correct permissions have been granted.'
-        return $null
+        New-M365DSCLogEntry -Message 'Error retrieving data:' `
+            -Exception $_ `
+            -Source $($MyInvocation.MyCommand.Source) `
+            -TenantId $TenantId `
+            -Credential $Credential
+
+        throw $_
     }
 }
 
@@ -1219,7 +1271,13 @@ function Get-M365DSCOrgSettingsForms
     catch
     {
         Write-Verbose -Message 'Not able to retrieve O365OrgSettings Forms Settings. Please ensure correct permissions have been granted.'
-        return $null
+        New-M365DSCLogEntry -Message 'Error retrieving data:' `
+            -Exception $_ `
+            -Source $($MyInvocation.MyCommand.Source) `
+            -TenantId $TenantId `
+            -Credential $Credential
+
+        throw $_
     }
 }
 
@@ -1264,7 +1322,13 @@ function Get-M365DSCOrgSettingsDynamicsCustomerVoice
     catch
     {
         Write-Verbose -Message 'Not able to retrieve O365OrgSettings Dynamics Customer Voice Settings. Please ensure correct permissions have been granted.'
-        return $null
+        New-M365DSCLogEntry -Message 'Error retrieving data:' `
+            -Exception $_ `
+            -Source $($MyInvocation.MyCommand.Source) `
+            -TenantId $TenantId `
+            -Credential $Credential
+
+        throw $_
     }
 }
 
@@ -1308,7 +1372,13 @@ function Get-M365DSCOrgSettingsAppsAndServices
     catch
     {
         Write-Verbose -Message 'Not able to retrieve O365OrgSettings Apps and Services Settings. Please ensure correct permissions have been granted.'
-        return $null
+        New-M365DSCLogEntry -Message 'Error retrieving data:' `
+            -Exception $_ `
+            -Source $($MyInvocation.MyCommand.Source) `
+            -TenantId $TenantId `
+            -Credential $Credential
+
+        throw $_
     }
 }
 
@@ -1351,7 +1421,13 @@ function Get-M365DSCOrgSettingsToDo
     catch
     {
         Write-Verbose -Message 'Not able to retrieve ToDo settings. Please ensure correct permissions have been granted.'
-        return $null
+        New-M365DSCLogEntry -Message 'Error retrieving data:' `
+            -Exception $_ `
+            -Source $($MyInvocation.MyCommand.Source) `
+            -TenantId $TenantId `
+            -Credential $Credential
+
+        throw $_
     }
 }
 
@@ -1396,7 +1472,13 @@ function Get-M365DSCOrgSettingsAdminCenterReport
     catch
     {
         Write-Verbose -Message 'Not able to retrieve Office 365 Report Settings. Please ensure correct permissions have been granted.'
-        return $null
+        New-M365DSCLogEntry -Message 'Error retrieving data:' `
+            -Exception $_ `
+            -Source $($MyInvocation.MyCommand.Source) `
+            -TenantId $TenantId `
+            -Credential $Credential
+
+        throw $_
     }
 }
 
@@ -1419,4 +1501,3 @@ function Update-M365DSCOrgSettingsAdminCenterReport
 }
 
 Export-ModuleMember -Function *-TargetResource
-

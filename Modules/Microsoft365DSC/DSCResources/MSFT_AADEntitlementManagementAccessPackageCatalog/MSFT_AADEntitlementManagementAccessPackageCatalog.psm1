@@ -32,8 +32,8 @@ function Get-TargetResource
         $IsExternallyVisible,
 
         [Parameter()]
+        [ValidateSet('Present', 'Absent')]
         [System.String]
-        [ValidateSet('Absent', 'Present')]
         $Ensure = 'Present',
 
         [Parameter()]
@@ -71,7 +71,7 @@ function Get-TargetResource
     {
         if (-not $Script:exportedInstance -or $Script:exportedInstance.Id -ne $Id)
         {
-            $ConnectionMode = New-M365DSCConnection -Workload 'MicrosoftGraph' `
+            $null = New-M365DSCConnection -Workload 'MicrosoftGraph' `
                 -InboundParameters $PSBoundParameters
 
             #Ensure the proper dependencies are installed in the current environment.
@@ -139,11 +139,11 @@ function Get-TargetResource
             TenantId              = $TenantId
             ApplicationSecret     = $ApplicationSecret
             CertificateThumbprint = $CertificateThumbprint
-            Managedidentity       = $ManagedIdentity.IsPresent
+            ManagedIdentity       = $ManagedIdentity.IsPresent
             AccessTokens          = $AccessTokens
         }
 
-        return [System.Collections.Hashtable] $results
+        return $results
     }
     catch
     {
@@ -153,7 +153,7 @@ function Get-TargetResource
             -TenantId $TenantId `
             -Credential $Credential
 
-        return $nullResult
+        throw
     }
 }
 
@@ -188,8 +188,8 @@ function Set-TargetResource
         $IsExternallyVisible,
 
         [Parameter()]
+        [ValidateSet('Present', 'Absent')]
         [System.String]
-        [ValidateSet('Absent', 'Present')]
         $Ensure = 'Present',
 
         [Parameter()]
@@ -223,16 +223,6 @@ function Set-TargetResource
 
     Write-Verbose -Message "Getting configuration of AzureAD Entitlement Management Access Package Catalog for DisplayName {$DisplayName}"
 
-    try
-    {
-        $ConnectionMode = New-M365DSCConnection -Workload 'MicrosoftGraph' `
-            -InboundParameters $PSBoundParameters
-    }
-    catch
-    {
-        Write-Verbose -Message $_
-    }
-
     #Ensure the proper dependencies are installed in the current environment.
     Confirm-M365DSCDependencies
 
@@ -247,24 +237,15 @@ function Set-TargetResource
 
     $currentInstance = Get-TargetResource @PSBoundParameters
 
-    $PSBoundParameters.Remove('Ensure') | Out-Null
-    $PSBoundParameters.Remove('Credential') | Out-Null
-    $PSBoundParameters.Remove('ApplicationId') | Out-Null
-    $PSBoundParameters.Remove('ApplicationSecret') | Out-Null
-    $PSBoundParameters.Remove('TenantId') | Out-Null
-    $PSBoundParameters.Remove('CertificateThumbprint') | Out-Null
-    $PSBoundParameters.Remove('ManagedIdentity') | Out-Null
-    $PSBoundParameters.Remove('AccessTokens') | Out-Null
-
     if ($Ensure -eq 'Present' -and $currentInstance.Ensure -eq 'Absent')
     {
         Write-Verbose -Message "Creating {$DisplayName}"
 
-        $CreateParameters = ([Hashtable]$PSBoundParameters).clone()
+        $CreateParameters = Remove-M365DSCAuthenticationParameter -BoundParameters $PSBoundParameters
         $CreateParameters.Remove('Id') | Out-Null
         $CreateParameters.Remove('Verbose') | Out-Null
 
-        $CreateParameters.add('@odata.type', '#microsoft.graph.accessPackageCatalog')
+        $CreateParameters.Add('@odata.type', '#microsoft.graph.accessPackageCatalog')
 
         #region resource generator code
         $policy = New-MgBetaEntitlementManagementAccessPackageCatalog -BodyParameter $CreateParameters
@@ -276,12 +257,12 @@ function Set-TargetResource
     {
         Write-Verbose -Message "Updating {$DisplayName}"
 
-        $UpdateParameters = ([Hashtable]$PSBoundParameters).clone()
+        $UpdateParameters = Remove-M365DSCAuthenticationParameter -BoundParameters $PSBoundParameters
 
         $UpdateParameters.Remove('Id') | Out-Null
         $UpdateParameters.Remove('Verbose') | Out-Null
 
-        $UpdateParameters.add('@odata.type', '#microsoft.graph.accessPackageCatalog')
+        $UpdateParameters.Add('@odata.type', '#microsoft.graph.accessPackageCatalog')
 
         #region resource generator code
         Update-MgBetaEntitlementManagementAccessPackageCatalog -BodyParameter $UpdateParameters `
@@ -330,8 +311,8 @@ function Test-TargetResource
         $IsExternallyVisible,
 
         [Parameter()]
+        [ValidateSet('Present', 'Absent')]
         [System.String]
-        [ValidateSet('Absent', 'Present')]
         $Ensure = 'Present',
 
         [Parameter()]
@@ -373,7 +354,7 @@ function Test-TargetResource
     #endregion
 
     $result = Test-M365DSCTargetResource -DesiredValues $PSBoundParameters `
-                                         -ResourceName $($MyInvocation.MyCommand.Source).Replace('MSFT_', '')
+        -ResourceName $($MyInvocation.MyCommand.Source).Replace('MSFT_', '')
     return $result
 }
 
@@ -383,6 +364,10 @@ function Export-TargetResource
     [OutputType([System.String])]
     param
     (
+        [Parameter()]
+        [System.String]
+        $Filter,
+
         [Parameter()]
         [System.Management.Automation.PSCredential]
         $Credential,
@@ -430,7 +415,7 @@ function Export-TargetResource
     try
     {
         #region resource generator code
-        [array]$getValue = (Get-MgBetaEntitlementManagementAccessPackage -All -ErrorAction Stop) | Select-Object -Unique CatalogId | Select-Object -ExpandProperty CatalogId
+        [array]$getValue = (Get-MgBetaEntitlementManagementAccessPackage -All -Filter $Filter -ErrorAction Stop) | Select-Object -Unique CatalogId | Select-Object -ExpandProperty CatalogId
         #endregion
         $i = 1
         $dscContent = ''
@@ -467,7 +452,7 @@ function Export-TargetResource
                 TenantId              = $TenantId
                 ApplicationSecret     = $ApplicationSecret
                 CertificateThumbprint = $CertificateThumbprint
-                Managedidentity       = $ManagedIdentity.IsPresent
+                ManagedIdentity       = $ManagedIdentity.IsPresent
                 AccessTokens          = $AccessTokens
             }
 
@@ -495,21 +480,19 @@ function Export-TargetResource
         if ($_.ErrorDetails.Message -like '*User is not authorized to perform the operation.*')
         {
             Write-M365DSCHost -Message "`r`n    $($Global:M365DSCEmojiYellowCircle) Tenant does not meet license requirement to extract this component."
+            return ''
         }
         else
         {
-            Write-M365DSCHost -Message $Global:M365DSCEmojiRedX -CommitWrite
-
             New-M365DSCLogEntry -Message 'Error during Export:' `
                 -Exception $_ `
                 -Source $($MyInvocation.MyCommand.Source) `
                 -TenantId $TenantId `
                 -Credential $Credential
-        }
 
-        return ''
+            throw
+        }
     }
 }
 
 Export-ModuleMember -Function *-TargetResource
-

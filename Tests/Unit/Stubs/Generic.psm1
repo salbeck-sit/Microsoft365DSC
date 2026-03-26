@@ -214,57 +214,57 @@ function Get-MgServicePrincipalOwner
         [String]
         $ServicePrincipalId,
 
-   	    [Parameter()]
-		[String[]]
-		$ExpandProperty,
+           [Parameter()]
+        [String[]]
+        $ExpandProperty,
 
-   	    [Parameter()]
-		[String]
-		$Filter,
+           [Parameter()]
+        [String]
+        $Filter,
 
-   	    [Parameter()]
-		[String[]]
-		$Property,
+           [Parameter()]
+        [String[]]
+        $Property,
 
-   	    [Parameter()]
-		[String]
-		$Search,
+           [Parameter()]
+        [String]
+        $Search,
 
-   	    [Parameter()]
-		[Int32]
-		$Skip,
+           [Parameter()]
+        [Int32]
+        $Skip,
 
-   	    [Parameter()]
-		[String[]]
-		$Sort,
+           [Parameter()]
+        [String[]]
+        $Sort,
 
-   	    [Parameter()]
-		[Int32]
-		$Top,
+           [Parameter()]
+        [Int32]
+        $Top,
 
-   	    [Parameter()]
-		[String]
-		$ConsistencyLevel,
+           [Parameter()]
+        [String]
+        $ConsistencyLevel,
 
-   	    [Parameter()]
-		[String]
-		$ResponseHeadersVariable,
+           [Parameter()]
+        [String]
+        $ResponseHeadersVariable,
 
-   	    [Parameter()]
-		[hashtable]
-		$Headers,
+           [Parameter()]
+        [hashtable]
+        $Headers,
 
-   	    [Parameter()]
-		[Int32]
-		$PageSize,
+           [Parameter()]
+        [Int32]
+        $PageSize,
 
         [Parameter()]
         [switch]
         $All,
 
         [Parameter()]
-		[String]
-		$CountVariable
+        [String]
+        $CountVariable
     )
 }
 
@@ -474,10 +474,6 @@ function Connect-M365Tenant
         $CertificatePath,
 
         [Parameter()]
-        [System.Boolean]
-        $SkipModuleReload = $false,
-
-        [Parameter()]
         [Switch]
         $Identity,
 
@@ -515,8 +511,8 @@ function New-M365DSCConnection
         $Url,
 
         [Parameter()]
-        [System.Boolean]
-        $SkipModuleReload
+        [switch]
+        $EnableSearchOnlySession
     )
 }
 
@@ -702,97 +698,7 @@ function Get-AllSPOPackages
     )
 }
 
-# EXOAddressBookPolicy cmdlets
-function Get-AddressBookPolicy
-{
-    [CmdletBinding()]
-    [OutputType([System.Collections.Hashtable])]
-    param
-    (
-
-    )
-}
-
 # EXOOfflineAddressBook cmdlets
-function Get-OfflineAddressBook
-{
-    [CmdletBinding()]
-    [OutputType([System.Collections.Hashtable])]
-    param
-    (
-
-    )
-}
-
-function Set-OfflineAddressBook
-{
-    [CmdletBinding()]
-    [OutputType([System.Collections.Hashtable])]
-    param
-    (
-        [Parameter(Mandatory = $true)]
-        [System.String]
-        $Identity,
-
-        [Parameter()]
-        [ValidateLength(1, 64)]
-        [System.String]
-        $Name,
-
-        [Parameter()]
-        [System.String[]]
-        $AddressLists = @(),
-
-        [Parameter()]
-        [System.String[]]
-        $ConfiguredAttributes = @(),
-
-        [Parameter()]
-        [System.String]
-        $DiffRetentionPeriod,
-
-        [Parameter()]
-        [System.Boolean]
-        $IsDefault,
-
-        [Parameter()]
-        [System.Boolean]
-        $Confirm
-    )
-}
-
-function New-OfflineAddressBook
-{
-    [CmdletBinding()]
-    [OutputType([System.Collections.Hashtable])]
-    param
-    (
-        [Parameter(Mandatory = $true)]
-        [ValidateLength(1, 64)]
-        [System.String]
-        $Name,
-
-        [Parameter()]
-        [System.String[]]
-        $AddressLists = @(),
-
-        [Parameter()]
-        [System.String[]]
-        $ConfiguredAttributes = @(),
-
-        [Parameter()]
-        [System.String]
-        $DiffRetentionPeriod,
-
-        [Parameter()]
-        [System.Boolean]
-        $IsDefault,
-
-        [Parameter()]
-        [System.Boolean]
-        $Confirm
-    )
-}
 function Set-AddressBookPolicy
 {
     [CmdletBinding()]
@@ -1071,16 +977,6 @@ function New-GlobalAddressList
         [Parameter()]
         [System.Boolean]
         $Confirm
-    )
-}
-# EXOAddressList cmdlets
-function Get-AddressList
-{
-    [CmdletBinding()]
-    [OutputType([System.Collections.Hashtable])]
-    param
-    (
-
     )
 }
 

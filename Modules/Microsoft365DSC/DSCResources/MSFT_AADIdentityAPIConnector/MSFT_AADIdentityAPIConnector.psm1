@@ -34,8 +34,8 @@ function Get-TargetResource
         #endregion
 
         [Parameter()]
+        [ValidateSet('Present', 'Absent')]
         [System.String]
-        [ValidateSet('Absent', 'Present')]
         $Ensure = 'Present',
 
         [Parameter()]
@@ -67,11 +67,13 @@ function Get-TargetResource
         $AccessTokens
     )
 
+    Write-Verbose -Message "Getting configuration for the Azure AD Identity API Connector with Id {$Id} and DisplayName {$DisplayName}"
+
     try
     {
         if (-not $Script:exportedInstance -or $Script:exportedInstance.Id -ne $Id)
         {
-            $ConnectionMode = New-M365DSCConnection -Workload 'MicrosoftGraph' `
+            $null = New-M365DSCConnection -Workload 'MicrosoftGraph' `
                 -InboundParameters $PSBoundParameters
 
             #Ensure the proper dependencies are installed in the current environment.
@@ -119,11 +121,9 @@ function Get-TargetResource
         Write-Verbose -Message "An Azure AD Identity API Connector with Id {$Id} and DisplayName {$DisplayName} was found"
 
         #region resource generator code
-        $complexAuthenticationConfiguration = @{}
         if ($null -ne $getValue.AuthenticationConfiguration.AdditionalProperties.password)
         {
             $securePassword = ConvertTo-SecureString $getValue.AuthenticationConfiguration.AdditionalProperties.password -AsPlainText -Force
-
             $Password = New-Object System.Management.Automation.PSCredential ('Password', $securePassword)
         }
 
@@ -131,7 +131,7 @@ function Get-TargetResource
         $complexCertificates = @()
         foreach ($currentCertificate in $getValue.AuthenticationConfiguration.AdditionalProperties.certificateList)
         {
-            $myCertificate = @{}
+            $myCertificate = [ordered]@{}
             $myCertificate.Add('Pkcs12Value', "New-Object System.Management.Automation.PSCredential('Password', (ConvertTo-SecureString ('Please insert a valid Pkcs12Value') -AsPlainText -Force))")
             $myCertificate.Add('Thumbprint', $currentCertificate.thumbprint)
             $myCertificate.Add('Password', "New-Object System.Management.Automation.PSCredential('Password', (ConvertTo-SecureString ('Please insert a valid Password for the certificate') -AsPlainText -Force))")
@@ -162,7 +162,7 @@ function Get-TargetResource
             #endregion
         }
 
-        return [System.Collections.Hashtable] $results
+        return $results
     }
     catch
     {
@@ -172,7 +172,7 @@ function Get-TargetResource
             -TenantId $TenantId `
             -Credential $Credential
 
-        return $nullResult
+        throw
     }
 }
 
@@ -209,8 +209,8 @@ function Set-TargetResource
         #endregion
 
         [Parameter()]
+        [ValidateSet('Present', 'Absent')]
         [System.String]
-        [ValidateSet('Absent', 'Present')]
         $Ensure = 'Present',
 
         [Parameter()]
@@ -255,11 +255,9 @@ function Set-TargetResource
     #endregion
 
     $currentInstance = Get-TargetResource @PSBoundParameters
-
     $BoundParameters = Remove-M365DSCAuthenticationParameter -BoundParameters $PSBoundParameters
 
-    # If the certificates array is not empty, then we need to create a new instance of New-MgBetaAADIdentityAPIConnector
-
+    # If the certificates array is not empty, then we need to create a new instance
     $needToUpdateCertificates = $false
     if ($null -ne $Certificates -and $Certificates.Count -gt 0)
     {
@@ -279,7 +277,7 @@ function Set-TargetResource
             $createParameters.Remove('Password') | Out-Null
             $createParameters.Remove('Pkcs12Value') | Out-Null
 
-            if ($username -ne $null)
+            if ($null -ne $username)
             {
                 $createParameters.Add('AuthenticationConfiguration', @{
                         '@odata.type' = 'microsoft.graph.basicAuthentication'
@@ -322,7 +320,6 @@ function Set-TargetResource
     }
     else
     {
-
         # Remove the existing instance if already present
         if ($currentInstance.Ensure -ne 'Absent')
         {
@@ -345,7 +342,7 @@ function Set-TargetResource
         $inactiveCertificates = @()
         foreach ($currentCertificate in $Certificates)
         {
-            $myCertificate = @{}
+            $myCertificate = [ordered]@{}
             $myCertificate.Add('Pkcs12Value', ($currentCertificate.Pkcs12Value).Password)
             $myCertificate.Add('Password', ($currentCertificate.Password).Password)
 
@@ -449,8 +446,8 @@ function Test-TargetResource
         #endregion
 
         [Parameter()]
+        [ValidateSet('Present', 'Absent')]
         [System.String]
-        [ValidateSet('Absent', 'Present')]
         $Ensure = 'Present',
 
         [Parameter()]
@@ -491,9 +488,10 @@ function Test-TargetResource
     Add-M365DSCTelemetryEvent -Data $data
     #endregion
 
+    $compareParameters = Get-CompareParameters
     $result = Test-M365DSCTargetResource -DesiredValues $PSBoundParameters `
-                                         -ResourceName $($MyInvocation.MyCommand.Source).Replace('MSFT_', '') `
-                                         -ExcludedProperties @('Password')
+        -ResourceName $($MyInvocation.MyCommand.Source).Replace('MSFT_', '') `
+        @compareParameters
     return $result
 }
 
@@ -631,7 +629,7 @@ function Export-TargetResource
             $currentDSCBlock = $currentDSCBlock.Replace('"New-Object System.', 'New-Object System.').Replace(') -AsPlainText -Force));";', ') -AsPlainText -Force));')
 
             # Replace the certificate variables.
-            $currentDSCBlock = $currentDSCBlock.Replace("'New-Object System.", "New-Object System.").Replace(" -Force))'", " -Force))")
+            $currentDSCBlock = $currentDSCBlock.Replace("'New-Object System.", 'New-Object System.').Replace(" -Force))'", ' -Force))')
             $currentDSCBlock = $currentDSCBlock.Replace("(ConvertTo-SecureString (''", "(ConvertTo-SecureString ('").Replace("''Password''", "'Password'").Replace("'') -AsPlainText", "') -AsPlainText")
             $currentDSCBlock = $currentDSCBlock.Replace(''') -AsPlainText -Force))"', "') -AsPlainText -Force))")
 
@@ -645,17 +643,25 @@ function Export-TargetResource
     }
     catch
     {
-        Write-M365DSCHost -Message $Global:M365DSCEmojiRedX -CommitWrite
-
         New-M365DSCLogEntry -Message 'Error during Export:' `
             -Exception $_ `
             -Source $($MyInvocation.MyCommand.Source) `
             -TenantId $TenantId `
             -Credential $Credential
 
-        return ''
+        throw
     }
 }
 
-Export-ModuleMember -Function *-TargetResource
+function Get-CompareParameters
+{
+    [CmdletBinding()]
+    [OutputType([System.Collections.Hashtable])]
+    param()
 
+    return @{
+        ExcludedProperties = @('Password')
+    }
+}
+
+Export-ModuleMember -Function @('*-TargetResource', 'Get-CompareParameters')

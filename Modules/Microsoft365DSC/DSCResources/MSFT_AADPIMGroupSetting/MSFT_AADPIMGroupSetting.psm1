@@ -216,10 +216,11 @@ function Get-TargetResource
         $AccessTokens
     )
 
+    Write-Verbose -Message "Getting configuration of AAD PIM Group Setting with Id {$Id} and DisplayName {$DisplayName}"
+
     if (-not $Script:exportedInstance -or $Script:exportedInstance.Id -ne $Id)
     {
-        Write-Verbose -Message "Getting configuration of Group: $DisplayName"
-        $ConnectionMode = New-M365DSCConnection -Workload 'MicrosoftGraph' `
+        $null = New-M365DSCConnection -Workload 'MicrosoftGraph' `
             -InboundParameters $PSBoundParameters
 
         #Ensure the proper dependencies are installed in the current environment.
@@ -235,10 +236,10 @@ function Get-TargetResource
         #endregion
 
         $Policy = $null
-        if([System.String]::IsNullOrEmpty($GroupId))
+        if ([System.String]::IsNullOrEmpty($GroupId))
         {
-            Write-Verbose "GroupID was NULL, looking up group"
-            $Filter = "DisplayName eq '" + $DisplayName + "'"
+            Write-Verbose 'GroupID was NULL, looking up group'
+            $Filter = "DisplayName eq '" + $($DisplayName -replace "'", "''") + "'"
             $GroupId = (Get-MgGroup -Filter $Filter).Id
         }
         if ($Id -notmatch '^Group_[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}_[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}_(owner|member)$')
@@ -266,7 +267,7 @@ function Get-TargetResource
 
     if ($null -eq $Policy.policy.rules)
     {
-        Write-Verbose "No Policy Rules found, returning null"
+        Write-Verbose 'No Policy Rules found, returning null'
         return $nullReturn
     }
 
@@ -450,7 +451,6 @@ function Get-TargetResource
             ManagedIdentity                                           = $ManagedIdentity.IsPresent
             AccessTokens                                              = $AccessTokens
         }
-        Write-Verbose -Message "Get-TargetResource Result: `n $(Convert-M365DscHashtableToString -Hashtable $result)"
         return $result
     }
     catch
@@ -461,7 +461,7 @@ function Get-TargetResource
             -TenantId $TenantId `
             -Credential $Credential
 
-        return $nullReturn
+        throw
     }
 }
 
@@ -696,13 +696,14 @@ function Set-TargetResource
     #endregion
     $Policy = $null
 
-    if([System.String]::IsNullOrEmpty($GroupId))
+    if ([System.String]::IsNullOrEmpty($GroupId))
     {
         $Filter = "DisplayName eq '" + $DisplayName + "'"
         $GroupId = (Get-MgGroup -Filter $Filter).Id
     }
 
-    if ($Id -notmatch '^Group_[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}_[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}_(owner|member)$') {
+    if ($Id -notmatch '^Group_[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}_[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}_(owner|member)$')
+    {
         $Policy = Get-MgPolicyRoleManagementPolicyAssignment `
             -All `
             -Filter "scopeId eq '$groupId' and scopeType eq 'Group' and roleDefinitionId eq '$RoleDefinitionId'" `
@@ -1017,7 +1018,7 @@ function Set-TargetResource
             {
                 Write-Verbose -Message 'Handle Activation: Require approval to activate / Approvers'
                 $isApprovalRequired = $ApprovaltoActivate
-                if ($ActivateApprover.count -gt 0)
+                if ($ActivateApprover.Count -gt 0)
                 {
                     $primaryApprovers = @()
                     foreach ($item in $ActivateApprover)
@@ -1424,13 +1425,9 @@ function Test-TargetResource
         [System.String[]]
         $AccessTokens
     )
-    $Script:ExportMode = $false
-
-    #Ensure the proper dependencies are installed in the current environment.
-    Confirm-M365DSCDependencies
 
     #region Telemetry
-    $ResourceName = $MyInvocation.MyCommand.ModuleName -replace 'MSFT_', ''
+    $ResourceName = $MyInvocation.MyCommand.ModuleName.Replace('MSFT_', '')
     $CommandName = $MyInvocation.MyCommand
     $data = Format-M365DSCTelemetryParameters -ResourceName $ResourceName `
         -CommandName $CommandName `
@@ -1438,23 +1435,9 @@ function Test-TargetResource
     Add-M365DSCTelemetryEvent -Data $data
     #endregion
 
-    Write-Verbose -Message "Testing configuration of Role Assignment: $DisplayName"
-
-    $CurrentValues = Get-TargetResource @PSBoundParameters
-
-    Write-Verbose -Message "Current Values: $(Convert-M365DscHashtableToString -Hashtable $CurrentValues)"
-    Write-Verbose -Message "Target Values: $(Convert-M365DscHashtableToString -Hashtable $PSBoundParameters)"
-
-    $ValuesToCheck = $PSBoundParameters
-
-    $TestResult = Test-M365DSCParameterState -CurrentValues $CurrentValues `
-        -Source $($MyInvocation.MyCommand.Source) `
-        -DesiredValues $PSBoundParameters `
-        -ValuesToCheck $ValuesToCheck.Keys
-
-    Write-Verbose -Message "Test-TargetResource returned $TestResult"
-
-    return $TestResult
+    $result = Test-M365DSCTargetResource -DesiredValues $PSBoundParameters `
+        -ResourceName $($MyInvocation.MyCommand.Source).Replace('MSFT_', '')
+    return $result
 }
 
 function Export-TargetResource
@@ -1511,7 +1494,7 @@ function Export-TargetResource
     Add-M365DSCTelemetryEvent -Data $data
     #endregion
 
-    if ($filter -notlike "*DynamicMembership*")
+    if ($filter -notlike '*DynamicMembership*')
     {
         if (-not [string]::IsNullOrEmpty($filter))
         {
@@ -1521,12 +1504,13 @@ function Export-TargetResource
     }
 
     $ExportParameters = @{
-        Filter      = $Filter
-        All         = [switch]$true
-        Property    = "displayname,Id"
-        CountVariable = "CountVar"
-        ConsistencyLevel = "eventual"
-        ErrorAction = 'Stop'
+        Filter           = $Filter
+        All              = [switch]$true
+        Property         = 'displayname,Id'
+        CountVariable    = 'CountVar'
+        ConsistencyLevel = 'eventual'
+        ErrorAction      = 'Stop'
+        Sort             = 'displayname'
     }
 
     try
@@ -1557,19 +1541,14 @@ function Export-TargetResource
             }
         }
 
-        $batchResponses = @()
-        for ($i = 0; $i -lt $batchRequests.Count; $i += 20)
-        {
-            $batchRequestSized = $batchRequests[$i..([Math]::Min($i + 19, $batchRequests.Count - 1))]
-            $batchResponses += Invoke-M365DSCGraphBatchRequest -Requests $batchRequestSized
-        }
+        $batchResponses = Invoke-M365DSCGraphBatchRequest -Requests $batchRequests
 
         $dscContent = ''
         foreach ($response in $batchResponses)
         {
             $getValue = $response.body.value
             $group = $Script:exportedGroups | Where-Object -FilterScript { $_.Id -eq $response.id }
-            Write-M365DSCHost -Message  "    |---[$j/$($Script:exportedGroups.Count)] $($group.DisplayName)" -DeferWrite
+            Write-M365DSCHost -Message "    |---[$j/$($Script:exportedGroups.Count)] $($group.DisplayName)" -DeferWrite
 
             $i = 1
 
@@ -1596,7 +1575,7 @@ function Export-TargetResource
                     ApplicationId         = $ApplicationId
                     TenantId              = $TenantId
                     CertificateThumbprint = $CertificateThumbprint
-                    Managedidentity       = $ManagedIdentity.IsPresent
+                    ManagedIdentity       = $ManagedIdentity.IsPresent
                     ApplicationSecret     = $ApplicationSecret
                     Credential            = $Credential
                     AccessTokens          = $AccessTokens
@@ -1624,17 +1603,14 @@ function Export-TargetResource
     }
     catch
     {
-        Write-M365DSCHost -Message $Global:M365DSCEmojiRedX -CommitWrite
-
         New-M365DSCLogEntry -Message 'Error during Export:' `
             -Exception $_ `
             -Source $($MyInvocation.MyCommand.Source) `
             -TenantId $TenantId `
             -Credential $Credential
 
-        return ''
+        throw
     }
 }
 
 Export-ModuleMember -Function *-TargetResource
-

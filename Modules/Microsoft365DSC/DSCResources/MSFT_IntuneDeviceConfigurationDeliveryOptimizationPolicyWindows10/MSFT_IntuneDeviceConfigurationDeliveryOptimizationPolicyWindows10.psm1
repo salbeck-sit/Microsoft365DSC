@@ -87,10 +87,6 @@ function Get-TargetResource
         $DisplayName,
 
         [Parameter()]
-        [System.Boolean]
-        $SupportsScopeTags,
-
-        [Parameter()]
         [System.String]
         $Id,
 
@@ -104,8 +100,8 @@ function Get-TargetResource
         #endregion
 
         [Parameter()]
+        [ValidateSet('Present', 'Absent')]
         [System.String]
-        [ValidateSet('Absent', 'Present')]
         $Ensure = 'Present',
 
         [Parameter()]
@@ -137,7 +133,7 @@ function Get-TargetResource
         $AccessTokens
     )
 
-    Write-Warning -Message "This resource is deprecated and will be removed in a future release. Please use the IntuneDeviceConfigurationDeliveryOptimizationPolicyWindows10V2 resource instead."
+    Write-Warning -Message 'This resource is deprecated and will be removed in a future release. Please use the IntuneDeviceConfigurationDeliveryOptimizationPolicyWindows10V2 resource instead.'
 
     Write-Verbose -Message "Getting configuration of the Intune Device Configuration Delivery Optimization Policy for Windows10 with Id {$Id} and DisplayName {$DisplayName}"
 
@@ -145,7 +141,7 @@ function Get-TargetResource
     {
         if (-not $Script:exportedInstance -or $Script:exportedInstance.DisplayName -ne $DisplayName)
         {
-            $ConnectionMode = New-M365DSCConnection -Workload 'MicrosoftGraph' `
+            $null = New-M365DSCConnection -Workload 'MicrosoftGraph' `
                 -InboundParameters $PSBoundParameters
 
             #Ensure the proper dependencies are installed in the current environment.
@@ -186,7 +182,7 @@ function Get-TargetResource
                         Write-Verbose -Message "Could not find an Intune Device Configuration Delivery Optimization Policy for Windows10 with DisplayName {$DisplayName}"
                         return $nullResult
                     }
-                    if (([array]$getValue).count -gt 1)
+                    if (([array]$getValue).Count -gt 1)
                     {
                         throw "A policy with a duplicated displayName {'$DisplayName'} was found - Ensure displayName is unique"
                     }
@@ -203,25 +199,25 @@ function Get-TargetResource
         Write-Verbose -Message "An Intune Device Configuration Delivery Optimization Policy for Windows10 with Id {$Id} and DisplayName {$DisplayName} was found."
 
         #region resource generator code
-        $complexBandwidthMode = @{}
+        $complexBandwidthMode = [ordered]@{}
         $complexBandwidthMode.Add('MaximumDownloadBandwidthInKilobytesPerSecond', $getValue.AdditionalProperties.bandwidthMode.maximumDownloadBandwidthInKilobytesPerSecond)
         $complexBandwidthMode.Add('MaximumUploadBandwidthInKilobytesPerSecond', $getValue.AdditionalProperties.bandwidthMode.maximumUploadBandwidthInKilobytesPerSecond)
-        $complexBandwidthBackgroundPercentageHours = @{}
+        $complexBandwidthBackgroundPercentageHours = [ordered]@{}
         $complexBandwidthBackgroundPercentageHours.Add('BandwidthBeginBusinessHours', $getValue.AdditionalProperties.bandwidthMode.bandwidthBackgroundPercentageHours.bandwidthBeginBusinessHours)
         $complexBandwidthBackgroundPercentageHours.Add('BandwidthEndBusinessHours', $getValue.AdditionalProperties.bandwidthMode.bandwidthBackgroundPercentageHours.bandwidthEndBusinessHours)
         $complexBandwidthBackgroundPercentageHours.Add('BandwidthPercentageDuringBusinessHours', $getValue.AdditionalProperties.bandwidthMode.bandwidthBackgroundPercentageHours.bandwidthPercentageDuringBusinessHours)
         $complexBandwidthBackgroundPercentageHours.Add('BandwidthPercentageOutsideBusinessHours', $getValue.AdditionalProperties.bandwidthMode.bandwidthBackgroundPercentageHours.bandwidthPercentageOutsideBusinessHours)
-        if ($complexBandwidthBackgroundPercentageHours.values.Where({ $null -ne $_ }).count -eq 0)
+        if ($complexBandwidthBackgroundPercentageHours.values.Where({ $null -ne $_ }).Count -eq 0)
         {
             $complexBandwidthBackgroundPercentageHours = $null
         }
         $complexBandwidthMode.Add('BandwidthBackgroundPercentageHours', $complexBandwidthBackgroundPercentageHours)
-        $complexBandwidthForegroundPercentageHours = @{}
+        $complexBandwidthForegroundPercentageHours = [ordered]@{}
         $complexBandwidthForegroundPercentageHours.Add('BandwidthBeginBusinessHours', $getValue.AdditionalProperties.bandwidthMode.bandwidthForegroundPercentageHours.bandwidthBeginBusinessHours)
         $complexBandwidthForegroundPercentageHours.Add('BandwidthEndBusinessHours', $getValue.AdditionalProperties.bandwidthMode.bandwidthForegroundPercentageHours.bandwidthEndBusinessHours)
         $complexBandwidthForegroundPercentageHours.Add('BandwidthPercentageDuringBusinessHours', $getValue.AdditionalProperties.bandwidthMode.bandwidthForegroundPercentageHours.bandwidthPercentageDuringBusinessHours)
         $complexBandwidthForegroundPercentageHours.Add('BandwidthPercentageOutsideBusinessHours', $getValue.AdditionalProperties.bandwidthMode.bandwidthForegroundPercentageHours.bandwidthPercentageOutsideBusinessHours)
-        if ($complexBandwidthForegroundPercentageHours.values.Where({ $null -ne $_ }).count -eq 0)
+        if ($complexBandwidthForegroundPercentageHours.values.Where({ $null -ne $_ }).Count -eq 0)
         {
             $complexBandwidthForegroundPercentageHours = $null
         }
@@ -230,36 +226,36 @@ function Get-TargetResource
         $complexBandwidthMode.Add('MaximumForegroundBandwidthPercentage', $getValue.AdditionalProperties.bandwidthMode.maximumForegroundBandwidthPercentage)
         if ($null -ne $getValue.AdditionalProperties.bandwidthMode.'@odata.type')
         {
-            $complexBandwidthMode.Add('odataType', $getValue.AdditionalProperties.bandwidthMode.'@odata.type'.toString())
+            $complexBandwidthMode.Add('odataType', $getValue.AdditionalProperties.bandwidthMode.'@odata.type'.ToString())
         }
-        if ($complexBandwidthMode.values.Where({ $null -ne $_ }).count -eq 0)
+        if ($complexBandwidthMode.values.Where({ $null -ne $_ }).Count -eq 0)
         {
             $complexBandwidthMode = $null
         }
 
-        $complexGroupIdSource = @{}
+        $complexGroupIdSource = [ordered]@{}
         $complexGroupIdSource.Add('GroupIdCustom', $getValue.AdditionalProperties.groupIdSource.groupIdCustom)
         if ($null -ne $getValue.AdditionalProperties.groupIdSource.groupIdSourceOption)
         {
-            $complexGroupIdSource.Add('GroupIdSourceOption', $getValue.AdditionalProperties.groupIdSource.groupIdSourceOption.toString())
+            $complexGroupIdSource.Add('GroupIdSourceOption', $getValue.AdditionalProperties.groupIdSource.groupIdSourceOption.ToString())
         }
         if ($null -ne $getValue.AdditionalProperties.groupIdSource.'@odata.type')
         {
-            $complexGroupIdSource.Add('odataType', $getValue.AdditionalProperties.groupIdSource.'@odata.type'.toString())
+            $complexGroupIdSource.Add('odataType', $getValue.AdditionalProperties.groupIdSource.'@odata.type'.ToString())
         }
-        if ($complexGroupIdSource.values.Where({ $null -ne $_ }).count -eq 0)
+        if ($complexGroupIdSource.values.Where({ $null -ne $_ }).Count -eq 0)
         {
             $complexGroupIdSource = $null
         }
 
-        $complexMaximumCacheSize = @{}
+        $complexMaximumCacheSize = [ordered]@{}
         $complexMaximumCacheSize.Add('MaximumCacheSizeInGigabytes', $getValue.AdditionalProperties.maximumCacheSize.maximumCacheSizeInGigabytes)
         $complexMaximumCacheSize.Add('MaximumCacheSizePercentage', $getValue.AdditionalProperties.maximumCacheSize.maximumCacheSizePercentage)
         if ($null -ne $getValue.AdditionalProperties.maximumCacheSize.'@odata.type')
         {
-            $complexMaximumCacheSize.Add('odataType', $getValue.AdditionalProperties.maximumCacheSize.'@odata.type'.toString())
+            $complexMaximumCacheSize.Add('odataType', $getValue.AdditionalProperties.maximumCacheSize.'@odata.type'.ToString())
         }
-        if ($complexMaximumCacheSize.values.Where({ $null -ne $_ }).count -eq 0)
+        if ($complexMaximumCacheSize.values.Where({ $null -ne $_ }).Count -eq 0)
         {
             $complexMaximumCacheSize = $null
         }
@@ -308,7 +304,6 @@ function Get-TargetResource
             VpnPeerCaching                                            = $enumVpnPeerCaching
             Description                                               = $getValue.Description
             DisplayName                                               = $getValue.DisplayName
-            SupportsScopeTags                                         = $getValue.SupportsScopeTags
             Id                                                        = $getValue.Id
             RoleScopeTagIds                                           = $getValue.RoleScopeTagIds
             Ensure                                                    = 'Present'
@@ -317,20 +312,20 @@ function Get-TargetResource
             TenantId                                                  = $TenantId
             ApplicationSecret                                         = $ApplicationSecret
             CertificateThumbprint                                     = $CertificateThumbprint
-            Managedidentity                                           = $ManagedIdentity.IsPresent
+            ManagedIdentity                                           = $ManagedIdentity.IsPresent
             AccessTokens                                              = $AccessTokens
             #endregion
         }
         $returnAssignments = @()
         $graphAssignments = Get-MgBetaDeviceManagementDeviceConfigurationAssignment -DeviceConfigurationId $Id
-        if ($graphAssignments.count -gt 0)
+        if ($graphAssignments.Count -gt 0)
         {
             $returnAssignments += ConvertFrom-IntunePolicyAssignment `
                 -IncludeDeviceFilter:$true `
                 -Assignments ($graphAssignments)
         }
         $results.Add('Assignments', $returnAssignments)
-        return [System.Collections.Hashtable] $results
+        return $results
     }
     catch
     {
@@ -340,7 +335,7 @@ function Get-TargetResource
             -TenantId $TenantId `
             -Credential $Credential
 
-        return $nullResult
+        throw
     }
 }
 
@@ -430,10 +425,6 @@ function Set-TargetResource
         $DisplayName,
 
         [Parameter()]
-        [System.Boolean]
-        $SupportsScopeTags,
-
-        [Parameter()]
         [System.String]
         $Id,
 
@@ -446,8 +437,8 @@ function Set-TargetResource
         $Assignments,
         #endregion
         [Parameter()]
+        [ValidateSet('Present', 'Absent')]
         [System.String]
-        [ValidateSet('Absent', 'Present')]
         $Ensure = 'Present',
 
         [Parameter()]
@@ -479,7 +470,7 @@ function Set-TargetResource
         $AccessTokens
     )
 
-    Write-Warning -Message "This resource is deprecated and will be removed in a future release. Please use the IntuneDeviceConfigurationDeliveryOptimizationPolicyWindows10V2 resource instead."
+    Write-Warning -Message 'This resource is deprecated and will be removed in a future release. Please use the IntuneDeviceConfigurationDeliveryOptimizationPolicyWindows10V2 resource instead.'
 
     #Ensure the proper dependencies are installed in the current environment.
     Confirm-M365DSCDependencies
@@ -501,18 +492,10 @@ function Set-TargetResource
         Write-Verbose -Message "Creating an Intune Device Configuration Delivery Optimization Policy for Windows10 with DisplayName {$DisplayName}"
         $PSBoundParameters.Remove('Assignments') | Out-Null
 
-        $CreateParameters = ([Hashtable]$PSBoundParameters).clone()
-        $CreateParameters = Rename-M365DSCCimInstanceParameter -Properties $CreateParameters
-        $CreateParameters.Remove('Id') | Out-Null
+        $CreateParameters = ([Hashtable]$PSBoundParameters).Clone()
+        $createParameters = Rename-M365DSCCimInstanceParameter -Properties $createParameters
+        $createParameters.Remove('Id') | Out-Null
 
-        $keys = (([Hashtable]$CreateParameters).clone()).Keys
-        foreach ($key in $keys)
-        {
-            if ($null -ne $CreateParameters.$key -and $CreateParameters.$key.getType().Name -like '*cimInstance*')
-            {
-                $CreateParameters.$key = Convert-M365DSCDRGComplexTypeToHashtable -ComplexObject $CreateParameters.$key
-            }
-        }
         #region resource generator code
         $CreateParameters.Add('@odata.type', '#microsoft.graph.windowsDeliveryOptimizationConfiguration')
         $policy = New-MgBetaDeviceManagementDeviceConfiguration -BodyParameter $CreateParameters
@@ -531,19 +514,10 @@ function Set-TargetResource
         Write-Verbose -Message "Updating the Intune Device Configuration Delivery Optimization Policy for Windows10 with Id {$($currentInstance.Id)}"
         $PSBoundParameters.Remove('Assignments') | Out-Null
 
-        $UpdateParameters = ([Hashtable]$PSBoundParameters).clone()
+        $UpdateParameters = ([Hashtable]$PSBoundParameters).Clone()
         $UpdateParameters = Rename-M365DSCCimInstanceParameter -Properties $UpdateParameters
-
         $UpdateParameters.Remove('Id') | Out-Null
 
-        $keys = (([Hashtable]$UpdateParameters).clone()).Keys
-        foreach ($key in $keys)
-        {
-            if ($null -ne $UpdateParameters.$key -and $UpdateParameters.$key.getType().Name -like '*cimInstance*')
-            {
-                $UpdateParameters.$key = Convert-M365DSCDRGComplexTypeToHashtable -ComplexObject $UpdateParameters.$key
-            }
-        }
         #region resource generator code
         $UpdateParameters.Add('@odata.type', '#microsoft.graph.windowsDeliveryOptimizationConfiguration')
         Update-MgBetaDeviceManagementDeviceConfiguration  `
@@ -651,10 +625,6 @@ function Test-TargetResource
         $DisplayName,
 
         [Parameter()]
-        [System.Boolean]
-        $SupportsScopeTags,
-
-        [Parameter()]
         [System.String]
         $Id,
 
@@ -668,8 +638,8 @@ function Test-TargetResource
         #endregion
 
         [Parameter()]
+        [ValidateSet('Present', 'Absent')]
         [System.String]
-        [ValidateSet('Absent', 'Present')]
         $Ensure = 'Present',
 
         [Parameter()]
@@ -701,10 +671,7 @@ function Test-TargetResource
         $AccessTokens
     )
 
-    Write-Warning -Message "This resource is deprecated and will be removed in a future release. Please use the IntuneDeviceConfigurationDeliveryOptimizationPolicyWindows10V2 resource instead."
-
-    #Ensure the proper dependencies are installed in the current environment.
-    Confirm-M365DSCDependencies
+    Write-Warning -Message 'This resource is deprecated and will be removed in a future release. Please use the IntuneDeviceConfigurationDeliveryOptimizationPolicyWindows10V2 resource instead.'
 
     #region Telemetry
     $ResourceName = $MyInvocation.MyCommand.ModuleName.Replace('MSFT_', '')
@@ -715,51 +682,9 @@ function Test-TargetResource
     Add-M365DSCTelemetryEvent -Data $data
     #endregion
 
-    Write-Verbose -Message "Testing configuration of the Intune Device Configuration Delivery Optimization Policy for Windows10 with Id {$Id} and DisplayName {$DisplayName}"
-
-    $CurrentValues = Get-TargetResource @PSBoundParameters
-
-    $ValuesToCheck = ([Hashtable]$PSBoundParameters).Clone()
-    $ValuesToCheck = Remove-M365DSCAuthenticationParameter -BoundParameters $ValuesToCheck
-    $ValuesToCheck.Remove('Id') | Out-Null
-    $testResult = $true
-
-    #Compare Cim instances
-    foreach ($key in $PSBoundParameters.Keys)
-    {
-        $source = $PSBoundParameters.$key
-        $target = $CurrentValues.$key
-        if ($source.GetType().Name -like '*CimInstance*')
-        {
-            $testResult = Compare-M365DSCComplexObject `
-                -Source ($source) `
-                -Target ($target)
-
-            if (-Not $testResult)
-            {
-                $testResult = $false
-                break
-            }
-
-            $ValuesToCheck.Remove($key) | Out-Null
-
-        }
-    }
-
-    Write-Verbose -Message "Current Values: $(Convert-M365DscHashtableToString -Hashtable $CurrentValues)"
-    Write-Verbose -Message "Target Values: $(Convert-M365DscHashtableToString -Hashtable $ValuesToCheck)"
-
-    if ($testResult)
-    {
-        $testResult = Test-M365DSCParameterState -CurrentValues $CurrentValues `
-            -Source $($MyInvocation.MyCommand.Source) `
-            -DesiredValues $PSBoundParameters `
-            -ValuesToCheck $ValuesToCheck.Keys
-    }
-
-    Write-Verbose -Message "Test-TargetResource returned $testResult"
-
-    return $testResult
+    $result = Test-M365DSCTargetResource -DesiredValues $PSBoundParameters `
+        -ResourceName $($MyInvocation.MyCommand.Source).Replace('MSFT_', '')
+    return $result
 }
 
 function Export-TargetResource
@@ -858,7 +783,7 @@ function Export-TargetResource
                 TenantId              = $TenantId
                 ApplicationSecret     = $ApplicationSecret
                 CertificateThumbprint = $CertificateThumbprint
-                Managedidentity       = $ManagedIdentity.IsPresent
+                ManagedIdentity       = $ManagedIdentity.IsPresent
                 AccessTokens          = $AccessTokens
             }
 
@@ -889,7 +814,7 @@ function Export-TargetResource
                     -CIMInstanceName 'MicrosoftGraphdeliveryOptimizationBandwidth' `
                     -ComplexTypeMapping $complexMapping
 
-                if (-Not [String]::IsNullOrWhiteSpace($complexTypeStringResult))
+                if (-not [String]::IsNullOrWhiteSpace($complexTypeStringResult))
                 {
                     $Results.BandwidthMode = $complexTypeStringResult
                 }
@@ -903,7 +828,7 @@ function Export-TargetResource
                 $complexTypeStringResult = Get-M365DSCDRGComplexTypeToString `
                     -ComplexObject $Results.GroupIdSource `
                     -CIMInstanceName 'MicrosoftGraphdeliveryOptimizationGroupIdSource'
-                if (-Not [String]::IsNullOrWhiteSpace($complexTypeStringResult))
+                if (-not [String]::IsNullOrWhiteSpace($complexTypeStringResult))
                 {
                     $Results.GroupIdSource = $complexTypeStringResult
                 }
@@ -917,7 +842,7 @@ function Export-TargetResource
                 $complexTypeStringResult = Get-M365DSCDRGComplexTypeToString `
                     -ComplexObject $Results.MaximumCacheSize `
                     -CIMInstanceName 'MicrosoftGraphdeliveryOptimizationMaxCacheSize'
-                if (-Not [String]::IsNullOrWhiteSpace($complexTypeStringResult))
+                if (-not [String]::IsNullOrWhiteSpace($complexTypeStringResult))
                 {
                     $Results.MaximumCacheSize = $complexTypeStringResult
                 }
@@ -962,16 +887,14 @@ function Export-TargetResource
         }
         else
         {
-            Write-M365DSCHost -Message $Global:M365DSCEmojiRedX -CommitWrite
-
             New-M365DSCLogEntry -Message 'Error during Export:' `
                 -Exception $_ `
                 -Source $($MyInvocation.MyCommand.Source) `
                 -TenantId $TenantId `
                 -Credential $Credential
-        }
 
-        return ''
+            throw
+        }
     }
 }
 

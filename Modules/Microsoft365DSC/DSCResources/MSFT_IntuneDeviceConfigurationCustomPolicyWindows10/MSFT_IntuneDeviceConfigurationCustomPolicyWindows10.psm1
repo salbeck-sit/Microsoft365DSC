@@ -24,10 +24,6 @@ function Get-TargetResource
         $RoleScopeTagIds,
 
         [Parameter()]
-        [System.Boolean]
-        $SupportsScopeTags,
-
-        [Parameter()]
         [System.String]
         $Id,
 
@@ -37,8 +33,8 @@ function Get-TargetResource
         #endregion
 
         [Parameter()]
+        [ValidateSet('Present', 'Absent')]
         [System.String]
-        [ValidateSet('Absent', 'Present')]
         $Ensure = 'Present',
 
         [Parameter()]
@@ -76,7 +72,7 @@ function Get-TargetResource
     {
         if (-not $Script:exportedInstance -or $Script:exportedInstance.DisplayName -ne $DisplayName)
         {
-            $ConnectionMode = New-M365DSCConnection -Workload 'MicrosoftGraph' `
+            $null = New-M365DSCConnection -Workload 'MicrosoftGraph' `
                 -InboundParameters $PSBoundParameters
 
             #Ensure the proper dependencies are installed in the current environment.
@@ -105,7 +101,7 @@ function Get-TargetResource
             {
                 Write-Verbose -Message "Could not find an Intune Device Configuration Custom Policy for Windows10 with Id {$Id}"
 
-                if (-Not [string]::IsNullOrEmpty($DisplayName))
+                if (-not [string]::IsNullOrEmpty($DisplayName))
                 {
                     $getValue = Get-MgBetaDeviceManagementDeviceConfiguration `
                         -All `
@@ -120,7 +116,7 @@ function Get-TargetResource
                         Write-Verbose -Message "Could not find an Intune Device Configuration Custom Policy for Windows10 with DisplayName {$DisplayName}"
                         return $nullResult
                     }
-                    if (([array]$getValue).count -gt 1)
+                    if (([array]$getValue).Count -gt 1)
                     {
                         throw "A policy with a duplicated displayName {'$DisplayName'} was found - Ensure displayName is unique"
                     }
@@ -140,7 +136,7 @@ function Get-TargetResource
         $complexOmaSettings = @()
         foreach ($currentomaSettings in $getValue.AdditionalProperties.omaSettings)
         {
-            $myomaSettings = @{}
+            $myomaSettings = [ordered]@{}
 
             if ($currentomaSettings.isEncrypted -eq $true)
             {
@@ -169,9 +165,9 @@ function Get-TargetResource
             }
             if ($null -ne $currentomaSettings.'@odata.type')
             {
-                $myomaSettings.Add('odataType', $currentomaSettings.'@odata.type'.toString())
+                $myomaSettings.Add('odataType', $currentomaSettings.'@odata.type'.ToString())
             }
-            if ($myomaSettings.values.Where({ $null -ne $_ }).count -gt 0)
+            if ($myomaSettings.values.Where({ $null -ne $_ }).Count -gt 0)
             {
                 $complexOmaSettings += $myomaSettings
             }
@@ -184,7 +180,6 @@ function Get-TargetResource
             Description           = $getValue.Description
             DisplayName           = $getValue.DisplayName
             RoleScopeTagIds       = $getValue.RoleScopeTagIds
-            SupportsScopeTags     = $getValue.SupportsScopeTags
             Id                    = $getValue.Id
             Ensure                = 'Present'
             Credential            = $Credential
@@ -199,7 +194,7 @@ function Get-TargetResource
 
         $returnAssignments = @()
         $graphAssignments = Get-MgBetaDeviceManagementDeviceConfigurationAssignment -DeviceConfigurationId $Id
-        if ($graphAssignments.count -gt 0)
+        if ($graphAssignments.Count -gt 0)
         {
             $returnAssignments += ConvertFrom-IntunePolicyAssignment `
                 -IncludeDeviceFilter:$true `
@@ -207,7 +202,7 @@ function Get-TargetResource
         }
         $results.Add('Assignments', $returnAssignments)
 
-        return [System.Collections.Hashtable] $results
+        return $results
     }
     catch
     {
@@ -217,7 +212,7 @@ function Get-TargetResource
             -TenantId $TenantId `
             -Credential $Credential
 
-        return $nullResult
+        throw
     }
 }
 
@@ -244,10 +239,6 @@ function Set-TargetResource
         $RoleScopeTagIds,
 
         [Parameter()]
-        [System.Boolean]
-        $SupportsScopeTags,
-
-        [Parameter()]
         [System.String]
         $Id,
 
@@ -256,8 +247,8 @@ function Set-TargetResource
         $Assignments,
         #endregion
         [Parameter()]
+        [ValidateSet('Present', 'Absent')]
         [System.String]
-        [ValidateSet('Absent', 'Present')]
         $Ensure = 'Present',
 
         [Parameter()]
@@ -303,40 +294,22 @@ function Set-TargetResource
 
     $currentInstance = Get-TargetResource @PSBoundParameters
 
-    $PSBoundParameters.Remove('Ensure') | Out-Null
-    $PSBoundParameters.Remove('Credential') | Out-Null
-    $PSBoundParameters.Remove('ApplicationId') | Out-Null
-    $PSBoundParameters.Remove('ApplicationSecret') | Out-Null
-    $PSBoundParameters.Remove('TenantId') | Out-Null
-    $PSBoundParameters.Remove('CertificateThumbprint') | Out-Null
-    $PSBoundParameters.Remove('ManagedIdentity') | Out-Null
-    $PSBoundParameters.Remove('Verbose') | Out-Null
-    $PSBoundParameters.Remove('AccessTokens') | Out-Null
-
     if ($Ensure -eq 'Present' -and $currentInstance.Ensure -eq 'Absent')
     {
         Write-Verbose -Message "Creating an Intune Device Configuration Custom Policy for Windows10 with DisplayName {$DisplayName}"
         $PSBoundParameters.Remove('Assignments') | Out-Null
 
-        $CreateParameters = ([Hashtable]$PSBoundParameters).clone()
-        $CreateParameters = Rename-M365DSCCimInstanceParameter -Properties $CreateParameters
-        $CreateParameters.Remove('Id') | Out-Null
+        $CreateParameters = Remove-M365DSCAuthenticationParameter -BoundParameters $PSBoundParameters
+        $createParameters = Rename-M365DSCCimInstanceParameter -Properties $createParameters
+        $createParameters.Remove('Id') | Out-Null
 
-        $keys = (([Hashtable]$CreateParameters).clone()).Keys
-        foreach ($key in $keys)
-        {
-            if ($null -ne $CreateParameters.$key -and $CreateParameters.$key.getType().Name -like '*cimInstance*')
-            {
-                $CreateParameters.$key = Convert-M365DSCDRGComplexTypeToHashtable -ComplexObject $CreateParameters.$key
-            }
-        }
         #region resource generator code
         $CreateParameters.Add('@odata.type', '#microsoft.graph.windows10CustomConfiguration')
         foreach ($omaSetting in $CreateParameters.OmaSettings)
         {
             if ($omaSetting.'@odata.type' -ne '#microsoft.graph.omaSettingInteger')
             {
-                $omaSetting.remove('isReadOnly')
+                $omaSetting.Remove('isReadOnly')
             }
             if ($omaSetting.'@odata.type' -eq '#microsoft.graph.omaSettingStringXml')
             {
@@ -361,19 +334,10 @@ function Set-TargetResource
         Write-Verbose -Message "Updating the Intune Device Configuration Custom Policy for Windows10 with Id {$($currentInstance.Id)}"
         $PSBoundParameters.Remove('Assignments') | Out-Null
 
-        $UpdateParameters = ([Hashtable]$PSBoundParameters).clone()
+        $UpdateParameters = Remove-M365DSCAuthenticationParameter -BoundParameters $PSBoundParameters
         $UpdateParameters = Rename-M365DSCCimInstanceParameter -Properties $UpdateParameters
-
         $UpdateParameters.Remove('Id') | Out-Null
 
-        $keys = (([Hashtable]$UpdateParameters).clone()).Keys
-        foreach ($key in $keys)
-        {
-            if ($null -ne $UpdateParameters.$key -and $UpdateParameters.$key.getType().Name -like '*cimInstance*')
-            {
-                $UpdateParameters.$key = Convert-M365DSCDRGComplexTypeToHashtable -ComplexObject $UpdateParameters.$key
-            }
-        }
         #region resource generator code
         $UpdateParameters.Add('@odata.type', '#microsoft.graph.windows10CustomConfiguration')
 
@@ -381,7 +345,7 @@ function Set-TargetResource
         {
             if ($omaSetting.'@odata.type' -ne '#microsoft.graph.omaSettingInteger')
             {
-                $omaSetting.remove('isReadOnly')
+                $omaSetting.Remove('isReadOnly')
             }
             if ($omaSetting.'@odata.type' -eq '#microsoft.graph.omaSettingStringXml')
             {
@@ -432,10 +396,6 @@ function Test-TargetResource
         $RoleScopeTagIds,
 
         [Parameter()]
-        [System.Boolean]
-        $SupportsScopeTags,
-
-        [Parameter()]
         [System.String]
         $Id,
 
@@ -445,8 +405,8 @@ function Test-TargetResource
         #endregion
 
         [Parameter()]
+        [ValidateSet('Present', 'Absent')]
         [System.String]
-        [ValidateSet('Absent', 'Present')]
         $Ensure = 'Present',
 
         [Parameter()]
@@ -478,9 +438,6 @@ function Test-TargetResource
         $AccessTokens
     )
 
-    #Ensure the proper dependencies are installed in the current environment.
-    Confirm-M365DSCDependencies
-
     #region Telemetry
     $ResourceName = $MyInvocation.MyCommand.ModuleName.Replace('MSFT_', '')
     $CommandName = $MyInvocation.MyCommand
@@ -490,50 +447,9 @@ function Test-TargetResource
     Add-M365DSCTelemetryEvent -Data $data
     #endregion
 
-    Write-Verbose -Message "Testing configuration of the Intune Device Configuration Custom Policy for Windows10 with Id {$Id} and DisplayName {$DisplayName}"
-
-    $CurrentValues = Get-TargetResource @PSBoundParameters
-
-    $ValuesToCheck = ([Hashtable]$PSBoundParameters).Clone()
-    $testResult = $true
-
-    #Compare Cim instances
-    foreach ($key in $PSBoundParameters.Keys)
-    {
-        $source = $PSBoundParameters.$key
-        $target = $CurrentValues.$key
-        if ($source.GetType().Name -like '*CimInstance*')
-        {
-            $testResult = Compare-M365DSCComplexObject `
-                -Source ($source) `
-                -Target ($target)
-
-            if (-Not $testResult)
-            {
-                $testResult = $false
-                break
-            }
-
-            $ValuesToCheck.Remove($key) | Out-Null
-        }
-    }
-
-    $ValuesToCheck.Remove('Id') | Out-Null
-
-    Write-Verbose -Message "Current Values: $(Convert-M365DscHashtableToString -Hashtable $CurrentValues)"
-    Write-Verbose -Message "Target Values: $(Convert-M365DscHashtableToString -Hashtable $ValuesToCheck)"
-
-    if ($testResult)
-    {
-        $testResult = Test-M365DSCParameterState -CurrentValues $CurrentValues `
-            -Source $($MyInvocation.MyCommand.Source) `
-            -DesiredValues $PSBoundParameters `
-            -ValuesToCheck $ValuesToCheck.Keys
-    }
-
-    Write-Verbose -Message "Test-TargetResource returned $testResult"
-
-    return $testResult
+    $result = Test-M365DSCTargetResource -DesiredValues $PSBoundParameters `
+        -ResourceName $($MyInvocation.MyCommand.Source).Replace('MSFT_', '')
+    return $result
 }
 
 function Export-TargetResource
@@ -644,7 +560,7 @@ function Export-TargetResource
                 $complexTypeStringResult = Get-M365DSCDRGComplexTypeToString `
                     -ComplexObject $Results.OmaSettings `
                     -CIMInstanceName 'MicrosoftGraphomaSetting'
-                if (-Not [String]::IsNullOrWhiteSpace($complexTypeStringResult))
+                if (-not [String]::IsNullOrWhiteSpace($complexTypeStringResult))
                 {
                     $Results.OmaSettings = $complexTypeStringResult
                 }
@@ -689,18 +605,15 @@ function Export-TargetResource
         }
         else
         {
-            Write-M365DSCHost -Message $Global:M365DSCEmojiRedX -CommitWrite
-
             New-M365DSCLogEntry -Message 'Error during Export:' `
                 -Exception $_ `
                 -Source $($MyInvocation.MyCommand.Source) `
                 -TenantId $TenantId `
                 -Credential $Credential
-        }
 
-        return ''
+            throw
+        }
     }
 }
 
 Export-ModuleMember -Function *-TargetResource
-

@@ -68,12 +68,13 @@ function Get-TargetResource
         $AccessTokens
     )
 
+    Write-Verbose -Message "Getting configuration of Office 365 Shared Mailbox $DisplayName"
+
     try
     {
         if (-not $Script:exportedInstance -or $Script:exportedInstance.DisplayName -ne $DisplayName)
         {
-            Write-Verbose -Message "Getting configuration of Office 365 Shared Mailbox $DisplayName"
-            $ConnectionMode = New-M365DSCConnection -Workload 'ExchangeOnline' `
+            $null = New-M365DSCConnection -Workload 'ExchangeOnline' `
                 -InboundParameters $PSBoundParameters
 
             #Ensure the proper dependencies are installed in the current environment.
@@ -95,18 +96,18 @@ function Get-TargetResource
             {
                 if (-not [System.String]::IsNullOrEmpty($Identity))
                 {
-                    $mailbox = $mailbox = Get-Mailbox -Identity $Identity `
+                    $mailbox = Get-Mailbox -Identity $Identity `
                         -RecipientTypeDetails 'SharedMailbox' `
                         -ResultSize Unlimited `
-                        -ErrorAction Stop
+                        -ErrorAction SilentlyContinue
                 }
 
                 if ($null -eq $mailbox)
                 {
-                    $mailbox = $mailbox = Get-Mailbox -Identity $DisplayName `
+                    $mailbox = Get-Mailbox -Identity $DisplayName `
                         -RecipientTypeDetails 'SharedMailbox' `
                         -ResultSize Unlimited `
-                        -ErrorAction Stop
+                        -ErrorAction SilentlyContinue
                 }
             }
             catch
@@ -151,7 +152,7 @@ function Get-TargetResource
             CertificateThumbprint = $CertificateThumbprint
             CertificatePath       = $CertificatePath
             CertificatePassword   = $CertificatePassword
-            Managedidentity       = $ManagedIdentity.IsPresent
+            ManagedIdentity       = $ManagedIdentity.IsPresent
             TenantId              = $TenantId
             AccessTokens          = $AccessTokens
         }
@@ -167,7 +168,7 @@ function Get-TargetResource
             -TenantId $TenantId `
             -Credential $Credential
 
-        return $nullReturn
+        throw
     }
 }
 
@@ -264,8 +265,6 @@ function Set-TargetResource
     #endregion
 
     $CurrentParameters = $PSBoundParameters
-    $ConnectionMode = New-M365DSCConnection -Workload 'ExchangeOnline' `
-        -InboundParameters $PSBoundParameters
 
     # CASE: Mailbox doesn't exist but should;
     if ($Ensure -eq 'Present' -and $currentMailbox.Ensure -eq 'Absent')
@@ -277,7 +276,7 @@ function Set-TargetResource
             $emails += $secondaryAlias + ','
         }
         $emails += $PrimarySMTPAddress
-        $proxyAddresses = $emails -Split ','
+        $proxyAddresses = $emails -split ','
         $CurrentParameters.EmailAddresses = $proxyAddresses
         $NewMailBoxParameters = @{
             Name               = $DisplayName
@@ -319,7 +318,7 @@ function Set-TargetResource
                     $emailsToAdd += $secondaryAlias.InputObject + ','
                 }
                 $emailsToAdd += $PrimarySMTPAddress
-                $proxyAddresses = $emailsToAdd -Split ','
+                $proxyAddresses = $emailsToAdd -split ','
 
                 Write-Verbose -Message "Adding the following EmailAddresses: $emailsToAdd"
                 Set-Mailbox -Identity $DisplayName -EmailAddresses @{add = $proxyAddresses }
@@ -334,7 +333,7 @@ function Set-TargetResource
                     $emailsToRemoved += $secondaryAlias.InputObject + ','
                 }
                 $emailsToRemoved += $PrimarySMTPAddress
-                $proxyAddresses = $emailsToRemoved -Split ','
+                $proxyAddresses = $emailsToRemoved -split ','
 
                 Write-Verbose -Message "Removing the following EmailAddresses: $emailsToRemoved"
                 Set-Mailbox -Identity $DisplayName -EmailAddresses @{remove = $proxyAddresses }
@@ -426,11 +425,9 @@ function Test-TargetResource
         [System.String[]]
         $AccessTokens
     )
-    #Ensure the proper dependencies are installed in the current environment.
-    Confirm-M365DSCDependencies
 
     #region Telemetry
-    $ResourceName = $MyInvocation.MyCommand.ModuleName -replace 'MSFT_', ''
+    $ResourceName = $MyInvocation.MyCommand.ModuleName.Replace('MSFT_', '')
     $CommandName = $MyInvocation.MyCommand
     $data = Format-M365DSCTelemetryParameters -ResourceName $ResourceName `
         -CommandName $CommandName `
@@ -438,25 +435,11 @@ function Test-TargetResource
     Add-M365DSCTelemetryEvent -Data $data
     #endregion
 
-    Write-Verbose -Message "Testing configuration of Office 365 Shared Mailbox $DisplayName"
-
-    $CurrentValues = Get-TargetResource @PSBoundParameters
-
-    Write-Verbose -Message "Current Values: $(Convert-M365DscHashtableToString -Hashtable $CurrentValues)"
-    Write-Verbose -Message "Target Values: $(Convert-M365DscHashtableToString -Hashtable $PSBoundParameters)"
-
-    $TestResult = Test-M365DSCParameterState -CurrentValues $CurrentValues `
-        -Source $($MyInvocation.MyCommand.Source) `
-        -DesiredValues $PSBoundParameters `
-        -ValuesToCheck @('Ensure', `
-            'DisplayName', `
-            'Alias', `
-            'PrimarySMTPAddress',
-        'EmailAddresses')
-
-    Write-Verbose -Message "Test-TargetResource returned $TestResult"
-
-    return $TestResult
+    $compareParameters = Get-CompareParameters
+    $result = Test-M365DSCTargetResource -DesiredValues $PSBoundParameters `
+        -ResourceName $($MyInvocation.MyCommand.Source).Replace('MSFT_', '') `
+        @compareParameters
+    return $result
 }
 
 function Export-TargetResource
@@ -497,9 +480,9 @@ function Export-TargetResource
         [System.String[]]
         $AccessTokens
     )
+
     $ConnectionMode = New-M365DSCConnection -Workload 'ExchangeOnline' `
-        -InboundParameters $PSBoundParameters `
-        -SkipModuleReload $true
+        -InboundParameters $PSBoundParameters
 
     #Ensure the proper dependencies are installed in the current environment.
     Confirm-M365DSCDependencies
@@ -549,7 +532,7 @@ function Export-TargetResource
                     TenantId              = $TenantId
                     CertificateThumbprint = $CertificateThumbprint
                     CertificatePassword   = $CertificatePassword
-                    Managedidentity       = $ManagedIdentity.IsPresent
+                    ManagedIdentity       = $ManagedIdentity.IsPresent
                     CertificatePath       = $CertificatePath
                     AccessTokens          = $AccessTokens
                 }
@@ -571,17 +554,25 @@ function Export-TargetResource
     }
     catch
     {
-        Write-M365DSCHost -Message $Global:M365DSCEmojiRedX -CommitWrite
-
         New-M365DSCLogEntry -Message 'Error during Export:' `
             -Exception $_ `
             -Source $($MyInvocation.MyCommand.Source) `
             -TenantId $TenantId `
             -Credential $Credential
 
-        return ''
+        throw
     }
 }
 
-Export-ModuleMember -Function *-TargetResource
+function Get-CompareParameters
+{
+    [CmdletBinding()]
+    [OutputType([System.Collections.Hashtable])]
+    param()
 
+    return @{
+        IncludedProperties = @('DisplayName')
+    }
+}
+
+Export-ModuleMember -Function @('*-TargetResource', 'Get-CompareParameters')

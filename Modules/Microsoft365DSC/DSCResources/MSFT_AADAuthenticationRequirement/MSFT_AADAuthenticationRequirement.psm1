@@ -15,6 +15,11 @@ function Get-TargetResource
         [System.String]
         $UserPrincipalName,
 
+        [Parameter(Mandatory = $true)]
+        [ValidateSet('Yes')]
+        [System.String]
+        $IsSingleInstance,
+
         [Parameter()]
         [System.Management.Automation.PSCredential]
         $Credential,
@@ -50,7 +55,7 @@ function Get-TargetResource
     {
         if (-not $Script:exportedInstance -or $Script:exportedInstance.UserPrincipalName -ne $UserPrincipalName)
         {
-            $ConnectionMode = New-M365DSCConnection -Workload 'MicrosoftGraph' `
+            $null = New-M365DSCConnection -Workload 'MicrosoftGraph' `
                 -InboundParameters $PSBoundParameters
 
             #Ensure the proper dependencies are installed in the current environment.
@@ -65,16 +70,13 @@ function Get-TargetResource
             Add-M365DSCTelemetryEvent -Data $data
             #endregion
 
-            $nullResult = $PSBoundParameters
-
             $getValue = $null
             $url = (Get-MSCloudLoginConnectionProfile -Workload MicrosoftGraph).ResourceUrl + "beta/users/$UserPrincipalName/authentication/requirements"
             $getValue = Invoke-MgGraphRequest -Method Get -Uri $url
 
             if ($null -eq $getValue)
             {
-                Write-Verbose -Message "Could not find an Azure AD Authentication Requirement for user with UPN {$UserPrincipalName}"
-                return $nullResult
+                throw "Could not find an Azure AD Authentication Requirement for user with UPN {$UserPrincipalName}"
             }
         }
         else
@@ -87,16 +89,17 @@ function Get-TargetResource
         $results = @{
             PerUserMfaState       = $getValue.perUserMfaState
             UserPrincipalName     = $UserPrincipalName
+            IsSingleInstance      = 'Yes'
             Credential            = $Credential
             ApplicationId         = $ApplicationId
             TenantId              = $TenantId
             ApplicationSecret     = $ApplicationSecret
             CertificateThumbprint = $CertificateThumbprint
-            Managedidentity       = $ManagedIdentity.IsPresent
+            ManagedIdentity       = $ManagedIdentity.IsPresent
             AccessTokens          = $AccessTokens
         }
 
-        return [System.Collections.Hashtable] $results
+        return $results
     }
     catch
     {
@@ -106,7 +109,7 @@ function Get-TargetResource
             -TenantId $TenantId `
             -Credential $Credential
 
-        return $nullResult
+        throw
     }
 }
 
@@ -123,6 +126,11 @@ function Set-TargetResource
         [Parameter(Mandatory = $true)]
         [System.String]
         $UserPrincipalName,
+
+        [Parameter(Mandatory = $true)]
+        [ValidateSet('Yes')]
+        [System.String]
+        $IsSingleInstance,
 
         [Parameter()]
         [System.Management.Automation.PSCredential]
@@ -184,6 +192,7 @@ function Set-TargetResource
         }
     }
 
+    $params.Remove('IsSingleInstance') | Out-Null
     $jsonParams = $params | ConvertTo-Json
 
     Invoke-MgGraphRequest -Method PATCH -Uri $url -Body $jsonParams
@@ -203,6 +212,11 @@ function Test-TargetResource
         [Parameter(Mandatory = $true)]
         [System.String]
         $UserPrincipalName,
+
+        [Parameter(Mandatory = $true)]
+        [ValidateSet('Yes')]
+        [System.String]
+        $IsSingleInstance,
 
         [Parameter()]
         [System.Management.Automation.PSCredential]
@@ -243,7 +257,7 @@ function Test-TargetResource
     #endregion
 
     $result = Test-M365DSCTargetResource -DesiredValues $PSBoundParameters `
-                                         -ResourceName $($MyInvocation.MyCommand.Source).Replace('MSFT_', '')
+        -ResourceName $($MyInvocation.MyCommand.Source).Replace('MSFT_', '')
     return $result
 }
 
@@ -300,7 +314,7 @@ function Export-TargetResource
     try
     {
         [array]$getValue = Get-MgUser -Filter "userType eq 'member'" -All -ErrorAction Stop | Where-Object -FilterScript {
-            $null -ne $_.Id -and $_.UserPrincipalName -notlike "*#EXT#*"
+            $null -ne $_.Id -and $_.UserPrincipalName -notlike '*#EXT#*'
         }
 
         $i = 1
@@ -329,17 +343,18 @@ function Export-TargetResource
             Write-M365DSCHost -Message "    |---[$i/$($getValue.Count)] $displayedKey" -DeferWrite
             $params = @{
                 UserPrincipalName     = $config.UserPrincipalName
+                IsSingleInstance      = 'Yes'
                 Credential            = $Credential
                 ApplicationId         = $ApplicationId
                 TenantId              = $TenantId
                 ApplicationSecret     = $ApplicationSecret
                 CertificateThumbprint = $CertificateThumbprint
-                Managedidentity       = $ManagedIdentity.IsPresent
+                ManagedIdentity       = $ManagedIdentity.IsPresent
                 AccessTokens          = $AccessTokens
             }
 
             $Script:exportedInstance = $config
-            $Results = Get-TargetResource @Params
+            $Results = Get-TargetResource @params
             $currentDSCBlock = Get-M365DSCExportContentForResource -ResourceName $ResourceName `
                 -ConnectionMode $ConnectionMode `
                 -ModulePath $PSScriptRoot `
@@ -356,17 +371,14 @@ function Export-TargetResource
     }
     catch
     {
-        Write-M365DSCHost -Message $Global:M365DSCEmojiRedX -CommitWrite
-
         New-M365DSCLogEntry -Message 'Error during Export:' `
             -Exception $_ `
             -Source $($MyInvocation.MyCommand.Source) `
             -TenantId $TenantId `
             -Credential $Credential
 
-        return ''
+        throw
     }
 }
 
 Export-ModuleMember -Function *-TargetResource
-

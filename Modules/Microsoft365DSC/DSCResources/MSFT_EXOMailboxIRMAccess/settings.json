@@ -10,27 +10,43 @@
     ]
   },
   "permissions": {
-    "graph": {
-      "delegated": {
-        "read": [],
-        "update": []
-      },
+    "Office 365 Exchange Online": {
       "application": {
-        "read": [],
-        "update": []
+        "read": [
+          {
+            "name": "Exchange.ManageAsApp"
+          }
+        ],
+        "update": [
+          {
+            "name": "Exchange.ManageAsApp"
+          }
+        ]
       }
     },
     "exchange": {
-      "requiredroles": [
-        "Hygiene Management",
-        "Compliance Management",
-        "Organization Management",
-        "View-Only Organization Management"
-      ],
-      "requiredrolegroups": [
-        "Organization Management"
-      ]
+      "requiredroles": {
+        "read": [
+          "View-Only Recipients"
+        ],
+        "update": [
+          "Mail Recipients"
+        ]
+      },
+      "requiredrolegroups": {
+        "read": [
+          "View-Only Organization Management"
+        ],
+        "update": [
+          "Recipient Management"
+        ]
+      }
     }
   },
-  "requiredModules": []
+  "requiredModules": [],
+  "supportedEnvironments": [
+    "Global",
+    "USGov"
+  ],
+  "mode": "Configuration"
 }

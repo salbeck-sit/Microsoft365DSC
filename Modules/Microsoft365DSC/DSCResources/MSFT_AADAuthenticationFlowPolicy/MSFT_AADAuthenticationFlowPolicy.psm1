@@ -7,6 +7,7 @@ function Get-TargetResource
     param
     (
         [Parameter(Mandatory = $true)]
+        [ValidateSet('Yes')]
         [System.String]
         $IsSingleInstance,
 
@@ -57,27 +58,23 @@ function Get-TargetResource
 
     Write-Verbose -Message 'Getting configuration of Authentication Flow Policy'
 
-    $ConnectionMode = New-M365DSCConnection -Workload 'MicrosoftGraph' `
-        -InboundParameters $PSBoundParameters
-
-    #Ensure the proper dependencies are installed in the current environment.
-    Confirm-M365DSCDependencies
-
-    #region Telemetry
-    $ResourceName = $MyInvocation.MyCommand.ModuleName -replace 'MSFT_', ''
-    $CommandName = $MyInvocation.MyCommand
-    $data = Format-M365DSCTelemetryParameters -ResourceName $ResourceName `
-        -CommandName $CommandName `
-        -Parameters $PSBoundParameters
-    Add-M365DSCTelemetryEvent -Data $data
-    #endregion
-
-    $nullReturn = @{
-        IsSingleInstance = 'Yes'
-    }
-
     try
     {
+        $null = New-M365DSCConnection -Workload 'MicrosoftGraph' `
+            -InboundParameters $PSBoundParameters
+
+        #Ensure the proper dependencies are installed in the current environment.
+        Confirm-M365DSCDependencies
+
+        #region Telemetry
+        $ResourceName = $MyInvocation.MyCommand.ModuleName -replace 'MSFT_', ''
+        $CommandName = $MyInvocation.MyCommand
+        $data = Format-M365DSCTelemetryParameters -ResourceName $ResourceName `
+            -CommandName $CommandName `
+            -Parameters $PSBoundParameters
+        Add-M365DSCTelemetryEvent -Data $data
+        #endregion
+
         $flowPolicy = Get-MgBetaPolicyAuthenticationFlowPolicy -ErrorAction 'SilentlyContinue'
 
         if ($null -eq $flowPolicy)
@@ -98,10 +95,9 @@ function Get-TargetResource
                 TenantId                 = $TenantId
                 ApplicationSecret        = $ApplicationSecret
                 CertificateThumbprint    = $CertificateThumbprint
-                Managedidentity          = $ManagedIdentity.IsPresent
+                ManagedIdentity          = $ManagedIdentity.IsPresent
                 AccessTokens             = $AccessTokens
             }
-            Write-Verbose -Message "Get-TargetResource Result: `n $(Convert-M365DscHashtableToString -Hashtable $result)"
             return $result
         }
     }
@@ -113,7 +109,7 @@ function Get-TargetResource
             -TenantId $TenantId `
             -Credential $Credential
 
-        return $nullReturn
+        throw
     }
 }
 
@@ -123,6 +119,7 @@ function Set-TargetResource
     param
     (
         [Parameter(Mandatory = $true)]
+        [ValidateSet('Yes')]
         [System.String]
         $IsSingleInstance,
 
@@ -173,7 +170,7 @@ function Set-TargetResource
 
     Write-Verbose -Message 'Setting configuration of Authentication flow policy.'
 
-    $ConnectionMode = New-M365DSCConnection -Workload 'MicrosoftGraph' `
+    $null = New-M365DSCConnection -Workload 'MicrosoftGraph' `
         -InboundParameters $PSBoundParameters
 
     #Ensure the proper dependencies are installed in the current environment.
@@ -210,6 +207,7 @@ function Test-TargetResource
     param
     (
         [Parameter(Mandatory = $true)]
+        [ValidateSet('Yes')]
         [System.String]
         $IsSingleInstance,
 
@@ -268,7 +266,7 @@ function Test-TargetResource
     #endregion
 
     $result = Test-M365DSCTargetResource -DesiredValues $PSBoundParameters `
-                                         -ResourceName $($MyInvocation.MyCommand.Source).Replace('MSFT_', '')
+        -ResourceName $($MyInvocation.MyCommand.Source).Replace('MSFT_', '')
     return $result
 }
 
@@ -306,6 +304,7 @@ function Export-TargetResource
         [System.String[]]
         $AccessTokens
     )
+
     $ConnectionMode = New-M365DSCConnection -Workload 'MicrosoftGraph' `
         -InboundParameters $PSBoundParameters
 
@@ -363,17 +362,14 @@ function Export-TargetResource
     }
     catch
     {
-        Write-M365DSCHost -Message $Global:M365DSCEmojiRedX -CommitWrite
-
         New-M365DSCLogEntry -Message 'Error during Export:' `
             -Exception $_ `
             -Source $($MyInvocation.MyCommand.Source) `
             -TenantId $TenantId `
             -Credential $Credential
 
-        return ''
+        throw
     }
 }
 
 Export-ModuleMember -Function *-TargetResource
-

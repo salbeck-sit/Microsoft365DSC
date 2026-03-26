@@ -34,6 +34,22 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             Mock -CommandName Get-MSCloudLoginConnectionProfile -MockWith {
             }
 
+            Mock -CommandName Invoke-MgGraphRequest -MockWith {
+                return @{
+                    UserPrincipalName   = "user@test.com"
+                    PerUserMfaState     = 'Enabled'
+                    Credential          = $Credential;
+                }
+            }
+
+            Mock -CommandName Get-MgUser -MockWith {
+                return @{
+                    Id                  = "98ceffcc-7c54-4227-8844-835af5a023ce"
+                    UserPrincipalName   = "user@test.com"
+                    Credential          = $Credential;
+                }
+            }
+
             Mock -CommandName New-M365DSCConnection -MockWith {
                 return "Credentials"
             }
@@ -48,17 +64,10 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
         Context -Name "The instance exists and values are already in the desired state" -Fixture {
             BeforeAll {
                 $testParams = @{
+                    IsSingleInstance    = 'Yes'
                     UserPrincipalName   = "user@test.com"
                     PerUserMfaState     = 'Enabled'
                     Credential          = $Credential;
-                }
-
-                Mock -CommandName Invoke-MgGraphRequest -MockWith {
-                    return @{
-                        UserPrincipalName   = "user@test.com"
-                        PerUserMfaState     = 'Enabled'
-                        Credential          = $Credential;
-                    }
                 }
             }
 
@@ -70,6 +79,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
         Context -Name "The instance exists and values are NOT in the desired state - Enable" -Fixture {
             BeforeAll {
                 $testParams = @{
+                    IsSingleInstance    = 'Yes'
                     UserPrincipalName   = "user@test.com"
                     PerUserMfaState     = 'Enabled'
                     Credential          = $Credential;
@@ -101,17 +111,10 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
         Context -Name "The instance exists and values are NOT in the desired state - Disable" -Fixture {
             BeforeAll {
                 $testParams = @{
+                    IsSingleInstance    = 'Yes'
                     UserPrincipalName   = "user@test.com"
-                    PerUserMfaState     = 'Disabled'
+                    PerUserMfaState     = 'Disabled' # Drift
                     Credential          = $Credential;
-                }
-
-                Mock -CommandName Invoke-MgGraphRequest -MockWith {
-                    return @{
-                        UserPrincipalName   = "user@test.com"
-                        PerUserMfaState     = 'Enabled'
-                        Credential          = $Credential;
-                    }
                 }
             }
 
@@ -135,22 +138,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                 $Global:PartialExportFileName = "$(New-Guid).partial.ps1"
                 $testParams = @{
                     Credential  = $Credential;
-                }
-
-                Mock -CommandName Invoke-MgGraphRequest -MockWith {
-                    return @{
-                        UserPrincipalName   = "user@test.com"
-                        PerUserMfaState     = 'Enabled'
-                        Credential          = $Credential;
-                    }
-                }
-
-                Mock -CommandName Get-MgUser -MockWith {
-                    return @{
-                        Id                  = "98ceffcc-7c54-4227-8844-835af5a023ce"
-                        UserPrincipalName   = "user@test.com"
-                        Credential          = $Credential;
-                    }
                 }
             }
             It 'Should Reverse Engineer resource from the Export method' {

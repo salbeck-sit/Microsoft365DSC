@@ -29,8 +29,8 @@ function Get-TargetResource
         #endregion
 
         [Parameter()]
+        [ValidateSet('Present', 'Absent')]
         [System.String]
-        [ValidateSet('Absent', 'Present')]
         $Ensure = 'Present',
 
         [Parameter()]
@@ -68,7 +68,7 @@ function Get-TargetResource
     {
         if (-not $Script:exportedInstance -or $Script:exportedInstance.Id -ne $Id)
         {
-            $ConnectionMode = New-M365DSCConnection -Workload 'MicrosoftGraph' `
+            $null = New-M365DSCConnection -Workload 'MicrosoftGraph' `
                 -InboundParameters $PSBoundParameters
 
             #Ensure the proper dependencies are installed in the current environment.
@@ -89,40 +89,54 @@ function Get-TargetResource
 
             if (-not [System.String]::IsNullOrEmpty($Id))
             {
-                $getValue = Get-MgBetaRoleManagementEntitlementManagementRoleAssignment -UnifiedRoleAssignmentId $Id
+                $getValue = Get-MgBetaRoleManagementEntitlementManagementRoleAssignment -UnifiedRoleAssignmentId $Id `
+                    -ExpandProperty 'Principal' `
+                    -ErrorAction SilentlyContinue
             }
-
-            $user = Get-MgUser -UserId $Principal
-            $roleInfo = Get-MgBetaRoleManagementEntitlementManagementRoleDefinition -Filter "DisplayName eq '$($RoleDefinition -replace "'", "''")'"
 
             if ($null -eq $getValue)
             {
-                if (-not [System.String]::IsNullOrEmpty($Id))
+                if ($null -eq $Script:AllRoleAssignments)
                 {
-                    Write-Verbose -Message "Nothing with id {$Id} was found"
+                    $Script:AllRoleAssignments = Get-MgBetaRoleManagementEntitlementManagementRoleAssignment `
+                        -ExpandProperty 'Principal' `
+                        -All
+                }
+                if ($null -eq $Script:AllRoleDefinitions)
+                {
+                    [array]$Script:AllRoleDefinitions = Get-MgBetaRoleManagementEntitlementManagementRoleDefinition -All
+                    $Script:AllRoleDefinitions += @{
+                        Id          = 'e65cf63f-9cc2-4b48-8871-cb667e9d90fb'
+                        DisplayName = 'Connected organization administrator'
+                    }
                 }
 
-                if (-not [string]::IsNullOrEmpty($Principal))
-                {
-                    $PrincipalId = $null
-                    if ($null -ne $user)
-                    {
-                        $PrincipalId = $user.Id
-                    }
-
-                    $RoleDefinitionId = $null
-                    if ($null -ne $roleInfo)
-                    {
-                        $RoleDefinitionId = $roleInfo.Id
-                    }
-                    $getValue = Get-MgBetaRoleManagementEntitlementManagementRoleAssignment -Filter "PrincipalId eq '$PrincipalId' and RoleDefinitionId eq '$RoleDefinitionId'"
+                Write-Verbose -Message "Getting role assignment for Principal {$Principal}"
+                $getValue = $Script:AllRoleAssignments | Where-Object {
+                    ($_.Principal.AdditionalProperties.displayName -eq $Principal -or $_.Principal.AdditionalProperties.userPrincipalName -eq $Principal -or $_.Principal.Id -eq $Principal) `
+                        -and ($_.RoleDefinitionId -eq $($Script:AllRoleDefinitions | Where-Object { $_.DisplayName -eq $RoleDefinition }).Id)
                 }
             }
         }
         else
         {
             $getValue = $Script:exportedInstance
-            $user = Get-MgUser -UserId $Principal
+        }
+
+        switch ($getValue.Principal.AdditionalProperties)
+        {
+            '#microsoft.graph.user'
+            {
+                $principalName = $getValue.Principal.AdditionalProperties.userPrincipalName
+            }
+            '#microsoft.graph.group'
+            {
+                $principalName = Get-MgGroup -GroupId $getValue.PrincipalId
+            }
+            '#microsoft.graph.servicePrincipal'
+            {
+                $principalName = $getValue.Principal.AdditionalProperties.displayName
+            }
         }
 
         if ($null -eq $getValue)
@@ -135,8 +149,8 @@ function Get-TargetResource
 
         $results = @{
             Id                    = $getValue.Id
-            Principal             = $user.UserPrincipalName
-            RoleDefinition        = $roleInfo.DisplayName
+            Principal             = $principalName
+            RoleDefinition        = $RoleDefinition
             DisplayName           = $getValue.DisplayName
             AppScopeId            = $getValue.AppScopeId
             DirectoryScopeId      = $getValue.DirectoryScopeId
@@ -146,11 +160,11 @@ function Get-TargetResource
             TenantId              = $TenantId
             ApplicationSecret     = $ApplicationSecret
             CertificateThumbprint = $CertificateThumbprint
-            Managedidentity       = $ManagedIdentity.IsPresent
+            ManagedIdentity       = $ManagedIdentity.IsPresent
             AccessTokens          = $AccessTokens
         }
 
-        return [System.Collections.Hashtable] $results
+        return $results
     }
     catch
     {
@@ -160,7 +174,7 @@ function Get-TargetResource
             -TenantId $TenantId `
             -Credential $Credential
 
-        return $nullResult
+        throw
     }
 }
 
@@ -192,8 +206,8 @@ function Set-TargetResource
         #endregion
 
         [Parameter()]
+        [ValidateSet('Present', 'Absent')]
         [System.String]
-        [ValidateSet('Absent', 'Present')]
         $Ensure = 'Present',
 
         [Parameter()]
@@ -225,17 +239,7 @@ function Set-TargetResource
         $AccessTokens
     )
 
-    Write-Verbose -Message "Getting configuration of AzureAD Entitlement Management Role Assignment for Principal {$Principal}"
-
-    try
-    {
-        $ConnectionMode = New-M365DSCConnection -Workload 'MicrosoftGraph' `
-            -InboundParameters $PSBoundParameters
-    }
-    catch
-    {
-        Write-Verbose -Message $_
-    }
+    Write-Verbose -Message "Setting configuration of AzureAD Entitlement Management Role Assignment for Principal {$Principal}"
 
     #Ensure the proper dependencies are installed in the current environment.
     Confirm-M365DSCDependencies
@@ -250,20 +254,41 @@ function Set-TargetResource
     #endregion
 
     $currentInstance = Get-TargetResource @PSBoundParameters
+    $setParameters = Remove-M365DSCAuthenticationParameter -BoundParameters $PSBoundParameters
 
-    $PSBoundParameters.Remove('Ensure') | Out-Null
-    $PSBoundParameters.Remove('Credential') | Out-Null
-    $PSBoundParameters.Remove('ApplicationId') | Out-Null
-    $PSBoundParameters.Remove('ApplicationSecret') | Out-Null
-    $PSBoundParameters.Remove('TenantId') | Out-Null
-    $PSBoundParameters.Remove('CertificateThumbprint') | Out-Null
-    $PSBoundParameters.Remove('ManagedIdentity') | Out-Null
-    $PSBoundParameters.Remove('AccessTokens') | Out-Null
+    $batchRequests = @(
+        @{
+            id     = 'user'
+            method = 'GET'
+            url    = "/users/$($Principal)&`$select=id,userPrincipalName,displayName"
+        }
+        @{
+            id     = 'group'
+            method = 'GET'
+            url    = "/groups?`$filter=displayName eq '$($Principal -replace "'", "''")'&`$select=id,displayName"
+        }
+        @{
+            id     = 'servicePrincipal'
+            method = 'GET'
+            url    = "/servicePrincipals?`$filter=displayName eq '$($Principal -replace "'", "''")'&`$select=id,displayName"
+        }
+    )
+    $batchResponses = Invoke-M365DSCGraphBatchRequest -Requests $batchRequests
 
-    $setParameters = ([Hashtable]$PSBoundParameters).clone()
-    $userInfo = Get-MgUser -UserId $Principal
+    $objectId = $batchResponses.body.value.id
+    if ($null -eq $objectId)
+    {
+        throw "Principal '$Principal' not found. Ensure the Principal exists and is correctly specified."
+    }
+    if ($objectId -is [array] -and $objectId.Count -gt 1)
+    {
+        throw "Multiple objects found for Principal '$Principal'. Please specify a unique identifier."
+    }
+
+    $setParameters = Remove-M365DSCAuthenticationParameter -BoundParameters $PSBoundParameters
+
     $roleInfo = Get-MgBetaRoleManagementEntitlementManagementRoleDefinition -Filter "DisplayName eq '$($RoleDefinition -replace "'", "''")'"
-    $setParameters.Add('PrincipalId', $userInfo.Id)
+    $setParameters.Add('PrincipalId', $objectId)
     $setParameters.Add('RoleDefinitionId', $roleInfo.Id)
     $setParameters.Remove('Principal') | Out-Null
     $setParameters.Remove('RoleDefinition') | Out-Null
@@ -312,8 +337,8 @@ function Test-TargetResource
         #endregion
 
         [Parameter()]
+        [ValidateSet('Present', 'Absent')]
         [System.String]
-        [ValidateSet('Absent', 'Present')]
         $Ensure = 'Present',
 
         [Parameter()]
@@ -355,7 +380,7 @@ function Test-TargetResource
     #endregion
 
     $result = Test-M365DSCTargetResource -DesiredValues $PSBoundParameters `
-                                         -ResourceName $($MyInvocation.MyCommand.Source).Replace('MSFT_', '')
+        -ResourceName $($MyInvocation.MyCommand.Source).Replace('MSFT_', '')
     return $result
 }
 
@@ -365,6 +390,10 @@ function Export-TargetResource
     [OutputType([System.String])]
     param
     (
+        [Parameter()]
+        [System.String]
+        $Filter,
+
         [Parameter()]
         [System.Management.Automation.PSCredential]
         $Credential,
@@ -411,10 +440,11 @@ function Export-TargetResource
 
     try
     {
-
         #region resource generator code
         [array]$getValue = Get-MgBetaRoleManagementEntitlementManagementRoleAssignment `
             -All `
+            -ExpandProperty 'Principal' `
+            -Filter $Filter `
             -ErrorAction Stop
 
         #endregion
@@ -435,23 +465,47 @@ function Export-TargetResource
                 $Global:M365DSCExportResourceInstancesCount++
             }
 
+            if ($null -eq $Script:AllRoleDefinitions)
+            {
+                [array]$Script:AllRoleDefinitions = Get-MgBetaRoleManagementEntitlementManagementRoleDefinition -All
+                $Script:AllRoleDefinitions += @{
+                    Id          = 'e65cf63f-9cc2-4b48-8871-cb667e9d90fb'
+                    DisplayName = 'Connected organization administrator'
+                }
+            }
+
             $displayedKey = $config.id
             if (-not [String]::IsNullOrEmpty($config.displayName))
             {
                 $displayedKey = $config.displayName
             }
             Write-M365DSCHost -Message "    |---[$i/$($getValue.Count)] $displayedKey" -DeferWrite
-            $roleInfo = Get-MgBetaRoleManagementEntitlementManagementRoleDefinition -UnifiedRoleDefinitionId $config.RoleDefinitionId
+            $roleInfo = $Script:AllRoleDefinitions | Where-Object { $_.Id -eq $config.RoleDefinitionId }
+            switch ($config.Principal.AdditionalProperties.'@odata.type')
+            {
+                '#microsoft.graph.user'
+                {
+                    $principalName = $config.Principal.AdditionalProperties.userPrincipalName
+                }
+                $null
+                {
+                    $principalName = (Get-MgGroup -GroupId $config.PrincipalId).DisplayName
+                }
+                '#microsoft.graph.servicePrincipal'
+                {
+                    $principalName = $config.Principal.AdditionalProperties.displayName
+                }
+            }
             $params = @{
                 Id                    = $config.Id
-                Principal             = $config.PrincipalId
+                Principal             = $principalName
                 RoleDefinition        = $roleInfo.DisplayName
                 Credential            = $Credential
                 ApplicationId         = $ApplicationId
                 TenantId              = $TenantId
                 ApplicationSecret     = $ApplicationSecret
                 CertificateThumbprint = $CertificateThumbprint
-                Managedidentity       = $ManagedIdentity.IsPresent
+                ManagedIdentity       = $ManagedIdentity.IsPresent
                 AccessTokens          = $AccessTokens
             }
 
@@ -482,18 +536,15 @@ function Export-TargetResource
         }
         else
         {
-            Write-M365DSCHost -Message $Global:M365DSCEmojiRedX -CommitWrite
-
             New-M365DSCLogEntry -Message 'Error during Export:' `
                 -Exception $_ `
                 -Source $($MyInvocation.MyCommand.Source) `
                 -TenantId $TenantId `
                 -Credential $Credential
-        }
 
-        return ''
+            throw
+        }
     }
 }
 
 Export-ModuleMember -Function *-TargetResource
-

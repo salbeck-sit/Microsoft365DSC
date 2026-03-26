@@ -27,6 +27,8 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
 
             $Global:PartialExportFileName = 'c:\TestPath'
 
+            Mock -ModuleName M365DSCUtil -CommandName Confirm-M365DSCDependencies -MockWith {
+            }
 
             Mock -CommandName Save-M365DSCPartialExport -MockWith {
             }
@@ -48,7 +50,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     AllowShareFile                   = $True
                     AllowSkypeBusinessInterop        = $True
                     ContentPin                       = 'RequiredOutsideScheduleMeeting'
-                    Identity                         = 'Global'
+                    IsSingleInstance                 = 'Yes'
                     ResourceAccountContentAccess     = 'NoAccess'
                     RestrictedSenderList             = @('john.smith@contoso.com')
                 }
@@ -80,7 +82,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     AllowSkypeBusinessInterop        = $True
                     ContentPin                       = 'RequiredOutsideScheduleMeeting'
                     Credential                       = $Credential
-                    Identity                         = 'Global'
+                    IsSingleInstance                 = 'Yes'
                     ResourceAccountContentAccess     = 'NoAccess'
                     RestrictedSenderList             = @('john.smith@contoso.com')
                 }
@@ -114,7 +116,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     AllowSkypeBusinessInterop        = $True
                     ContentPin                       = 'RequiredOutsideScheduleMeeting'
                     Credential                       = $Credential
-                    Identity                         = 'Global'
+                    IsSingleInstance                 = 'Yes'
                     ResourceAccountContentAccess     = 'NoAccess'
                     RestrictedSenderList             = @('john.smith@contoso.com', 'test@contoso.com')
                 }

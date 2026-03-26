@@ -8,7 +8,7 @@ function Get-StringFirstCharacterToUpper
         $Value
     )
 
-    return $Value.Substring(0,1).ToUpper() + $Value.Substring(1,$Value.length-1)
+    return $Value.Substring(0, 1).ToUpper() + $Value.Substring(1, $Value.Length - 1)
 }
 
 function Get-StringFirstCharacterToLower
@@ -21,37 +21,20 @@ function Get-StringFirstCharacterToLower
         $Value
     )
 
-    return $Value.Substring(0,1).ToLower() + $Value.Substring(1,$Value.length-1)
-}
-
-function Remove-M365DSCCimInstanceTrailingCharacterFromExport
-{
-    [CmdletBinding()]
-    [OutputType([System.String])]
-    param(
-        [Parameter(Mandatory = $true)]
-        [System.String]
-        $DSCBlock
-    )
-
-    $DSCBlock = $DSCBlock.Replace("    ,`r`n" , "    `r`n" )
-    $DSCBlock = $DSCBlock.Replace("`r`n;`r`n" , "`r`n" )
-    $DSCBlock = $DSCBlock.Replace("`r`n,`r`n" , "`r`n" )
-
-    return $DSCBlock
+    return $Value.Substring(0, 1).ToLower() + $Value.Substring(1, $Value.Length - 1)
 }
 
 function Rename-M365DSCCimInstanceParameter
 {
     [CmdletBinding()]
-    [OutputType([System.Collections.Hashtable], [System.Collections.Hashtable[]])]
+    [OutputType([System.Collections.Hashtable], [System.Object[]])]
     param(
         [Parameter(Mandatory = $true)]
         $Properties,
 
         [Parameter(Mandatory = $false)]
         [System.Collections.Hashtable]
-        $KeyMapping = @{'odataType' = '@odata.type'}
+        $KeyMapping = @{ 'odataType' = '@odata.type' }
     )
 
     $result = $Properties
@@ -62,18 +45,26 @@ function Rename-M365DSCCimInstanceParameter
         $values = @()
         foreach ($item in $Properties)
         {
-            try
+            $itemType = $item.GetType().FullName
+            if ($itemType -like '*Hashtable*' -or $itemType -like '*CimInstance*' -or $itemType -like '*Object*')
             {
-                $values += Rename-M365DSCCimInstanceParameter -Properties $item -KeyMapping $KeyMapping
+                try
+                {
+                    $values += Rename-M365DSCCimInstanceParameter -Properties $item -KeyMapping $KeyMapping
+                }
+                catch
+                {
+                    Write-Verbose -Message "Error getting values for item {$item}"
+                }
             }
-            catch
+            else
             {
-                Write-Verbose -Message "Error getting values for item {$item}"
+                $values += $item
             }
         }
         $result = $values
 
-        return , $result
+        return ,$result
     }
     #endregion
 
@@ -86,11 +77,11 @@ function Rename-M365DSCCimInstanceParameter
     if ($type -like '*CimInstance*' -or $type -like '*Hashtable*' -or $type -like '*Object*')
     {
         $hashProperties = Get-M365DSCDRGComplexTypeToHashtable -ComplexObject $result
-        $keys = ($hashProperties.Clone()).keys
+        $keys = ($hashProperties.Clone()).Keys
 
         foreach ($key in $keys)
         {
-            $keyName = $key.Substring(0, 1).Tolower() + $key.Substring(1, $key.length - 1)
+            $keyName = $key.Substring(0, 1).ToLower() + $key.Substring(1, $key.Length - 1)
             if ($key -in $KeyMapping.Keys)
             {
                 $keyName = $KeyMapping.$key
@@ -125,7 +116,7 @@ function Rename-M365DSCCimInstanceParameter
 function Get-M365DSCDRGComplexTypeToHashtable
 {
     [CmdletBinding()]
-    [OutputType([hashtable], [hashtable[]])]
+    [OutputType([System.Collections.Hashtable], [System.Collections.Hashtable[]])]
     param(
         [Parameter()]
         $ComplexObject
@@ -152,14 +143,14 @@ function Get-M365DSCDRGComplexTypeToHashtable
         # PowerShell returns all non-captured stream output, not just the argument of the return statement.
         #An empty array is mangled into $null in the process.
         #However, an array can be preserved on return by prepending it with the array construction operator (,)
-        return , [hashtable[]]$results
+        return ,[System.Collections.Hashtable[]]$results
     }
 
     if ($ComplexObject.GetType().FullName -like '*Dictionary*')
     {
         $results = @{}
 
-        $ComplexObject = [hashtable]::new($ComplexObject)
+        $ComplexObject = [hashtable]$ComplexObject
         $keys = $ComplexObject.Keys
 
         foreach ($key in $keys)
@@ -171,7 +162,6 @@ function Get-M365DSCDRGComplexTypeToHashtable
                 if ($keyType -like '*CimInstance*' -or $keyType -like '*Dictionary*' -or $keyType -like 'Microsoft.Graph.PowerShell.Models.*' -or $keyType -like 'Microsoft.Graph.Beta.PowerShell.Models.*' -or $keyType -like '*[[\]]')
                 {
                     $hash = Get-M365DSCDRGComplexTypeToHashtable -ComplexObject $ComplexObject.$key
-
                     $results.Add($keyName, $hash)
                 }
                 else
@@ -180,11 +170,10 @@ function Get-M365DSCDRGComplexTypeToHashtable
                 }
             }
         }
-        return [hashtable]$results
+        return $results
     }
 
     $results = @{}
-
     if ($ComplexObject.GetType().Fullname -like '*hashtable')
     {
         $keys = $ComplexObject.Keys
@@ -209,9 +198,16 @@ function Get-M365DSCDRGComplexTypeToHashtable
             {
                 $hash = Get-M365DSCDRGComplexTypeToHashtable -ComplexObject $ComplexObject.$keyName
 
-                if ($null -ne $hash -and $hash.Keys.Count -gt 0)
+                if ($null -ne $hash -and ($hash.Keys.Count -gt 0 -or $hash.GetType().FullName -like '*[[\]]'))
                 {
-                    $results.Add($keyName, $hash)
+                    if ($ComplexObject.$keyName.GetType().FullName -like '*[[\]]')
+                    {
+                        $results.Add($keyName, @($hash))
+                    }
+                    else
+                    {
+                        $results.Add($keyName, $hash)
+                    }
                 }
             }
             else
@@ -220,7 +216,7 @@ function Get-M365DSCDRGComplexTypeToHashtable
             }
         }
     }
-    return [hashtable]$results
+    return $results
 }
 
 <#
@@ -333,7 +329,7 @@ function Get-M365DSCDRGComplexTypeToString
     $indent = '    ' * $IndentLevel
     $keyNotNull = 0
 
-    $keys = $ComplexObject.Keys
+    $keys = $ComplexObject.Keys | Sort-Object
     if ($ComplexObject.Keys.Count -eq 0)
     {
         $properties = $ComplexObject | Get-Member -MemberType Properties
@@ -460,7 +456,7 @@ function Get-M365DSCDRGComplexTypeToString
                 {
                     if ($currentValue.GetType().Name -eq 'String')
                     {
-                         $currentValue = $currentValue.Replace("'", "''").Replace("�", "''")
+                        $currentValue = $currentValue.Replace('�', "''")
                     }
                     $currentProperty += Get-M365DSCDRGSimpleObjectTypeToString -Key $key -Value $currentValue -Space ($indent)
                 }
@@ -485,7 +481,7 @@ function Get-M365DSCDRGComplexTypeToString
     }
 
     $indent = ''
-    $indent = '    ' * ($IndentLevel -1)
+    $indent = '    ' * ($IndentLevel - 1)
 
     if ($key -in $ComplexTypeMapping.Name -and -not $currentProperty.EndsWith("`r`n"))
     {
@@ -581,7 +577,7 @@ function Get-M365DSCDRGSimpleObjectTypeToString
             $returnValue = $Space + $key + ' = @('
             $whitespace = ''
             $newline = ''
-            if ($Value.count -gt 1)
+            if ($Value.Count -gt 1)
             {
                 $returnValue += "`r`n"
                 $whitespace = $Space + '    '
@@ -600,7 +596,7 @@ function Get-M365DSCDRGSimpleObjectTypeToString
                     {
                         $returnValue += "$whitespace""$item""$newline"
                     }
-                    Default
+                    default
                     {
                         $returnValue += "$whitespace$item$newline"
                     }
@@ -617,7 +613,7 @@ function Get-M365DSCDRGSimpleObjectTypeToString
 
             }
         }
-        Default
+        default
         {
             $returnValue = $Space + $Key + ' = ' + $Value + "`r`n"
         }
@@ -626,303 +622,95 @@ function Get-M365DSCDRGSimpleObjectTypeToString
     return $returnValue
 }
 
+function Test-IsCimInstance
+{
+    [CmdletBinding()]
+    [OutputType([System.Boolean])]
+    param (
+        [Parameter(Mandatory = $true)]
+        [AllowEmptyCollection()]
+        [AllowEmptyString()]
+        [AllowNull()]
+        [System.Object]
+        $Object
+    )
+
+    return $null -ne $Object -and $Object.GetType().FullName -like '*CimInstance*'
+}
+
+function Test-IsHashtable
+{
+    [CmdletBinding()]
+    [OutputType([System.Boolean])]
+    param (
+        [Parameter(Mandatory = $true)]
+        [AllowEmptyCollection()]
+        [AllowEmptyString()]
+        [AllowNull()]
+        [System.Object]
+        $Object
+    )
+
+    return $null -ne $Object -and ($Object.GetType().FullName -like '*Hashtable' -or $Object.GetType().FullName -like '*OrderedDictionary')
+}
+
+function Test-IsObjectArray
+{
+    [CmdletBinding()]
+    [OutputType([System.Boolean])]
+    param (
+        [Parameter(Mandatory = $true)]
+        [AllowEmptyCollection()]
+        [AllowEmptyString()]
+        [AllowNull()]
+        [System.Object]
+        $Object
+    )
+
+    return $null -ne $Object -and $Object.GetType().Name -eq 'Object[]'
+}
+
+function Test-IsComplexArrayCandidate
+{
+    [CmdletBinding()]
+    param (
+        [Parameter(Mandatory = $true)]
+        [AllowEmptyCollection()]
+        [AllowEmptyString()]
+        [AllowNull()]
+        [System.Object]
+        $Object
+    )
+
+    if ($null -eq $Object)
+    {
+        return $false
+    }
+
+    $typeName = $Object.GetType().FullName
+    if ($typeName -like '*CimInstance[[\]]' -or $typeName -like '*Hashtable[[\]]')
+    {
+        return $true
+    }
+
+    if ($typeName -like '*Object[[\]]' -and $Object.Count -gt 0)
+    {
+        return ($Object[0].GetType().FullName -like '*CimInstance*' -or $Object[0].GetType().FullName -like '*Hashtable*')
+    }
+
+    return $false
+}
+
 function Compare-M365DSCComplexObject
 {
     [CmdletBinding()]
     [OutputType([System.Boolean])]
-    param(
+    param
+    (
         [Parameter()]
         $Source,
+
         [Parameter()]
-        $Target
-    )
-    #Comparing full objects
-    if ($null -eq $Source -and $null -eq $Target)
-    {
-        return $true
-    }
-
-    $sourceValue = ''
-    $targetValue = ''
-    if (($null -eq $Source) -xor ($null -eq $Target))
-    {
-        if ($null -eq $Source)
-        {
-            $sourceValue = 'Source is null'
-        }
-
-        if ($null -eq $Target)
-        {
-            $targetValue = 'Target is null'
-        }
-        Write-Verbose -Message "Configuration drift - Complex object: {$sourceValue$targetValue}"
-        return $false
-    }
-
-    if ($Source.GetType().FullName -like '*CimInstance[[\]]' -or $Source.GetType().FullName -like '*Hashtable[[\]]')
-    {
-        if ($Source.Length -ne $Target.Length)
-        {
-            Write-Verbose -Message "Configuration drift - The complex array have different number of items: Source {$($Source.Length)}, Target {$($Target.Length)}"
-            return $false
-        }
-        if ($Source.Length -eq 0)
-        {
-            return $true
-        }
-
-        if ($Source[0].CimClass.CimClassName -eq 'MSFT_DeviceManagementConfigurationPolicyAssignments' -or
-            $Source[0].CimClass.CimClassName -eq 'MSFT_DeviceManagementMobileAppAssignment' -or
-            ($Source[0].CimClass.CimClassName -like 'MSFT_Intune*Assignments' -and
-            $Source[0].CimClass.CimClassName -ne 'MSFT_IntuneDeviceRemediationPolicyAssignments'))
-        {
-            $compareResult = Compare-M365DSCIntunePolicyAssignment `
-                -Source @($Source) `
-                -Target @($Target)
-
-            if (-not $compareResult)
-            {
-                Write-Verbose -Message "Configuration drift - Intune Policy Assignment: $key"
-                Write-Verbose -Message "Source {$Source}"
-                Write-Verbose -Message "Target {$Target}"
-                return $false
-            }
-
-            return $true
-        }
-
-        foreach ($item in $Source)
-        {
-            $foundMatch = $false
-            foreach ($targetItem in $Target)
-            {
-                if (-not $foundMatch)
-                {
-                    $compareResult = Compare-M365DSCComplexObject `
-                        -Source $item `
-                        -Target $targetItem
-
-                    if ($compareResult)
-                    {
-                        $foundMatch = $true
-                    }
-                }
-            }
-
-            if (-not $foundMatch)
-            {
-                Write-Verbose -Message 'Configuration drift - The complex array items are not identical'
-                return $false
-            }
-        }
-
-        # Do the opposite check
-        foreach ($item in $target)
-        {
-            $foundMatch = $false
-            foreach ($targetItem in $Source)
-            {
-                if (-not $foundMatch)
-                {
-                    $compareResult = Compare-M365DSCComplexObject `
-                        -Source $item `
-                        -Target $targetItem
-
-                    if ($compareResult)
-                    {
-                        $foundMatch = $true
-                    }
-                }
-            }
-
-            if (-not $foundMatch)
-            {
-                Write-Verbose -Message 'Configuration drift - The complex array items are not identical'
-                return $false
-            }
-        }
-
-        return $true
-    }
-
-    if ($Source.GetType().FullName -like "*CimInstance")
-    {
-        $keys = @()
-        $Source.CimInstanceProperties | Foreach-Object {
-            if ($_.Name -notin @('PSComputerName', 'CimClass', 'CimInstanceProperties', 'CimSystemProperties') `
-                -and $_.IsValueModified)
-            {
-                $keys += $_.Name
-            }
-        }
-    }
-    else
-    {
-        $keys = $Source.Keys | Where-Object -FilterScript { $_ -ne 'PSComputerName' }
-    }
-
-    if ($Target.GetType().FullName -like "*CimInstance")
-    {
-        $targetKeys = @()
-        $Target.CimInstanceProperties | Foreach-Object {
-            if ($_.Name -notin @('PSComputerName', 'CimClass', 'CimInstanceProperties', 'CimSystemProperties') `
-                -and $_.IsValueModified)
-            {
-                $targetKeys += $_.Name
-            }
-        }
-    }
-    elseif ($Target.GetType().FullName -like "*Hashtable")
-    {
-        $targetKeys = $Target.Keys | Where-Object -FilterScript { $_ -ne 'PSComputerName' }
-    }
-    else # Most likely a Microsoft Graph Model
-    {
-        $Target = Get-M365DSCDRGComplexTypeToHashtable -ComplexObject $Target
-        $targetKeys = $Target.Keys | Where-Object -FilterScript { $_ -ne 'PSComputerName' }
-    }
-
-    foreach ($key in $keys)
-    {
-        if (($target.GetType().Name -eq 'Hashtable' -and $target.ContainsKey($key)) -or `
-            ($target.GetType().Name -eq 'CIMInstance' -and $null -ne $target.$key))
-        {
-            #Matching possible key names between Source and Target
-            $sourceValue = $Source.$key
-
-            # Some classes might contain default properties that have the same name as the key,
-            # so we need to check if the key is present in the target object --> Hashtable <-> IsReadOnly property
-            if ($key -in $targetKeys)
-            {
-                $targetValue = $Target.$key
-            }
-            else
-            {
-                $targetValue = $null
-            }
-
-            #One of the item is null and not the other
-            if (($Source.$key.Length -eq 0) -xor ($targetValue.Length -eq 0))
-            {
-                if ($null -eq $Source.$key)
-                {
-                    $sourceValue = 'null'
-                }
-
-                if ($null -eq $targetValue)
-                {
-                    $targetValue = 'null'
-                }
-
-                Write-Verbose -Message "Configuration drift - key: $key"
-                Write-Verbose -Message "Source {$sourceValue}"
-                Write-Verbose -Message "Target {$targetValue}"
-                return $false
-            }
-
-            #Both keys aren't null or empty
-            if (($null -ne $Source.$key) -and ($null -ne $Target.$key))
-            {
-                if ($Source.$key.GetType().FullName -like '*CimInstance*' -or $Source.$key.GetType().FullName -like '*hashtable*' -or `
-                    $Source.$key.GetType().Name -eq 'Object[]')
-                {
-                    if ($Source.$key.GetType().FullName -like '*CimInstance' -and (
-                            $Source.$key.CimClass.CimClassName -eq 'MSFT_DeviceManagementConfigurationPolicyAssignments' -or
-                            $Source.$key.CimClass.CimClassName -like 'MSFT_DeviceManagementMobileAppAssignment' -or
-                            $Source.$key.CimClass.CimClassName -like 'MSFT_Intune*Assignments'
-                        ))
-                    {
-                        $compareResult = Compare-M365DSCIntunePolicyAssignment `
-                            -Source @($Source.$key) `
-                            -Target @($Target.$key)
-                    }
-                    else
-                    {
-                        #Recursive call for complex object
-                        $compareResult = Compare-M365DSCComplexObject `
-                            -Source $Source.$key `
-                            -Target $Target.$key
-                    }
-
-                    if (-not $compareResult)
-                    {
-                        Write-Verbose -Message "Configuration drift - complex object key: $key"
-                        Write-Verbose -Message "Source {$sourceValue}"
-                        Write-Verbose -Message "Target {$targetValue}"
-                        return $false
-                    }
-                }
-                else
-                {
-                    #Simple object comparison
-                    $referenceObject = $Target.$key
-                    $differenceObject = $Source.$key
-
-                    #Identifying date from the current values
-                    $targetType = ($Target.$key.GetType()).Name
-                    if ($targetType -like '*Date*')
-                    {
-                        $compareResult = $true
-                        $sourceDate = [DateTime]$Source.$key
-                        if ($sourceDate -ne $targetType)
-                        {
-                            $compareResult = $null
-                        }
-                    }
-                    elseif ($targetType -eq 'String')
-                    {
-                        # Align line breaks
-                        if (-not [System.String]::IsNullOrEmpty($referenceObject))
-                        {
-                            $referenceObject = $referenceObject.Replace("`r`n", "`n")
-                        }
-
-                        if (-not [System.String]::IsNullOrEmpty($differenceObject))
-                        {
-                            $differenceObject = $differenceObject.Replace("`r`n", "`n")
-                        }
-
-                        $compareResult = $true
-                        $ordinalComparison = [System.String]::Equals($referenceObject, $differenceObject, [System.StringComparison]::OrdinalIgnoreCase)
-                        if (-not $ordinalComparison)
-                        {
-                            $compareResult = $false
-                        }
-                        elseif ($ordinalComparison)
-                        {
-                            $compareResult = $null
-                        }
-                    }
-                    else
-                    {
-                        $compareResult = Compare-Object `
-                            -ReferenceObject ($referenceObject) `
-                            -DifferenceObject ($differenceObject) -PassThru
-                    }
-
-                    if ($null -ne $compareResult -and $compareResult.Length -gt 0)
-                    {
-                        Write-Verbose -Message "Configuration drift - simple object key: $key"
-                        Write-Verbose -Message "Source {$sourceValue}"
-                        Write-Verbose -Message "Target {$targetValue}"
-                        return $false
-                    }
-                }
-            }
-        }
-    }
-    return $true
-}
-
-function Compare-M365DSCComplexObjectV2
-{
-    [CmdletBinding()]
-    [OutputType([System.Boolean])]
-    param(
-        [Parameter(Mandatory = $true)]
-        $Source,
-
-        [Parameter(Mandatory = $true)]
         $Target,
 
         [Parameter(Mandatory = $true)]
@@ -938,259 +726,96 @@ function Compare-M365DSCComplexObjectV2
         $NoDriftReport
     )
 
-    $returnValue = $true
-    # Comparing full objects
-    if ($null -eq $Source -and $null -eq $Target)
+    # Check if global drift variables are initialized. This is usually done in Compare-M365DSCResourceState,
+    # but if this function is called directly, they must be initialized to avoid issues when referincing them in ComparePairIterative
+    if ($null -eq $Global:AllDrifts)
     {
-        return $true
+        $Global:AllDrifts = @{
+            DriftInfo     = @()
+            CurrentValues = @{}
+            DesiredValues = @{}
+        }
+        $Global:PotentialDrifts = @()
     }
 
-    $sourceValue = 'Desired value is NOT null'
-    $targetValue = 'Current value is NOT null'
-    if (($null -eq $Source) -xor ($null -eq $Target))
+    # Compare two arbitrary objects iteratively (no recursion). Returns $true if identical (no drift).
+    # This function will append potential drifts to $Global:PotentialDrifts if $NoDriftReport is $true, otherwise will append to $Global:AllDrifts.DriftInfo on real drifts.
+    function ComparePairIterative
     {
-        if ($null -eq $Source)
-        {
-            $sourceValue = 'Desired value is null'
-        }
+        param
+        (
+            [Parameter()]
+            $Left,
 
-        if ($null -eq $Target)
-        {
-            $targetValue = 'Current value is null'
-        }
+            [Parameter()]
+            $Right,
 
-        Write-Verbose -Message "Configuration drift - Complex object: {$sourceValue$targetValue}"
-        $drift = @{
-            PropertyName = $PropertyName
-            CurrentValue = $targetValue
-            DesiredValue = $sourceValue
-        }
-        if (-not $NoDriftReport)
-        {
-            $Global:AllDrifts.DriftInfo += $drift
-        }
-        else
-        {
-            $Global:PotentialDrifts += $drift
-        }
+            [Parameter()]
+            [System.String]
+            $PropName,
 
+            [Parameter()]
+            [switch]
+            $LocalNoDriftReport
+        )
 
-        return $false
-    }
+        # Use a stack of frames. Each frame describes a comparison that needs processing.
+        # Frame fields:
+        #   Left, Right, PropName, Stage, KeysEnumerator, TargetKeys, ArrayState
+        $workStack = [System.Collections.Stack]::new()
 
-    if ($Source.GetType().FullName -like '*CimInstance[[\]]' -or $Source.GetType().FullName -like '*Hashtable[[\]]')
-    {
-        if ($Source.Length -ne $Target.Length)
+        $workStack.Push(@{
+            Left     = $Left
+            Right    = $Right
+            PropName = $PropName
+            # Stage describes what to do: 'compare' for top-level handling
+            Stage    = 'compare'
+        })
+
+        # result means: if we encounter an unrecoverable drift we return $false
+        $result = $true
+
+        while ($workStack.Count -gt 0 -and $result)
         {
-            Write-Verbose -Message "Configuration drift - The complex array have different number of items: Source {$($Source.Length)}, Target {$($Target.Length)}"
-            $Global:AllDrifts.DriftInfo += @{
-                PropertyName = $PropertyName
-                CurrentValue = "Current value has {$($Source.Length)} items"
-                DesiredValue = "Desired value has {$($Target.Length)} items"
+            $frame = $workStack.Pop()
+            $l = $frame.Left
+            $r = $frame.Right
+            $p = $frame.PropName
+
+            # Both null => identical for this frame
+            if ($null -eq $l -and $null -eq $r)
+            {
+                continue
             }
 
-            $returnValue = $false
-        }
-
-        if ($Source[0].CimClass.CimClassName -eq 'MSFT_DeviceManagementConfigurationPolicyAssignments' -or
-            $Source[0].CimClass.CimClassName -eq 'MSFT_DeviceManagementMobileAppAssignment' -or
-            ($Source[0].CimClass.CimClassName -like 'MSFT_Intune*Assignments' -and
-            $Source[0].CimClass.CimClassName -ne 'MSFT_IntuneDeviceRemediationPolicyAssignments'))
-        {
-            $compareResult = Compare-M365DSCIntunePolicyAssignment `
-                -Source @($Source) `
-                -Target @($Target)
-
-            if (-not $compareResult)
+            # One null and the other not => drift
+            if (($null -eq $l) -xor ($null -eq $r))
             {
-                Write-Verbose -Message "Configuration drift - Intune Policy Assignment: $key"
-                Write-Verbose -Message "Source {$Source}"
-                Write-Verbose -Message "Target {$Target}"
-
-                $Global:AllDrifts.DriftInfo += @{
-                    PropertyName = ($PropertyName + "." + $key)
-                    CurrentValue = $Target
-                    DesiredValue = $Source
-                }
-
-                $returnValue = $false
-            }
-
-            return $returnValue
-        }
-
-        $compareResult = $null
-        for ($counter = 0; $counter -lt $Source.Count; $counter++)
-        {
-            $item = $Source[$counter]
-            $foundMatch = $false
-            foreach ($targetItem in $Target)
-            {
-                if (-not $foundMatch)
+                $sourceValue = if ($null -eq $l)
                 {
-                    $compareResult = Compare-M365DSCComplexObjectV2 `
-                        -Source $item `
-                        -Target $targetItem `
-                        -PropertyName ("$PropertyName[$counter]") `
-                        -NoDriftReport
-
-                    if ($compareResult)
-                    {
-                        $foundMatch = $true
-                        break
-                    }
-                }
-            }
-
-            if (-not $foundMatch)
-            {
-                Write-Verbose -Message 'Configuration drift - The complex array items are not identical'
-                if ($null -eq $compareResult) # The loop contained no elements, no potential drifts
-                {
-                    $Global:AllDrifts.DriftInfo += @{
-                        PropertyName = ("$PropertyName[$counter]")
-                        CurrentValue = $Target
-                        DesiredValue = $Source
-                    }
+                    'Desired value is null'
                 }
                 else
                 {
-                    $Global:AllDrifts.DriftInfo += $Global:PotentialDrifts[-1]
-                    $Global:PotentialDrifts = @()
+                    'Desired value is NOT null'
                 }
-
-                return $false
-            }
-        }
-
-        # Do the opposite check
-        $compareResult = $null
-        for ($counter = 0; $counter -lt $Target.Count; $counter++)
-        {
-            $item = $Target[$counter]
-            $foundMatch = $false
-            foreach ($targetItem in $Source)
-            {
-                if (-not $foundMatch)
+                $targetValue = if ($null -eq $r)
                 {
-                    $compareResult = Compare-M365DSCComplexObjectV2 `
-                        -Source $item `
-                        -Target $targetItem `
-                        -PropertyName ("$PropertyName[$counter]") `
-                        -NoDriftReport
-
-                    if ($compareResult)
-                    {
-                        $foundMatch = $true
-                    }
+                    'Current value is null'
                 }
-            }
-
-            if (-not $foundMatch -and $Target.GetType().Name -ne 'Hashtable' -and $Target.GetType().Name -ne 'Object[]')
-            {
-                Write-Verbose -Message 'Configuration drift - The complex array items are not identical'
-                if (-not $NoDriftReport)
+                else
                 {
-                    if ($null -eq $compareResult) # The loop contained no elements, no potential drifts
-                    {
-                        $Global:AllDrifts.DriftInfo += @{
-                            PropertyName = ("$PropertyName[$counter]")
-                            CurrentValue = $Target
-                            DesiredValue = $Source
-                        }
-                    }
-                    else
-                    {
-                        $Global:AllDrifts.DriftInfo += $Global:PotentialDrifts[-1]
-                        $Global:PotentialDrifts = @()
-                    }
+                    'Current value is NOT null'
                 }
 
-                return $false
-            }
-        }
-
-        return $returnValue
-    }
-
-    if ($Source.GetType().FullName -like "*CimInstance")
-    {
-        $keys = @()
-        $Source.CimInstanceProperties | Foreach-Object {
-            if ($_.Name -notin @('PSComputerName', 'CimClass', 'CimInstanceProperties', 'CimSystemProperties') `
-                -and $_.IsValueModified)
-            {
-                $keys += $_.Name
-            }
-        }
-    }
-    else
-    {
-        $keys = $Source.Keys | Where-Object -FilterScript { $_ -ne 'PSComputerName' }
-    }
-
-    if ($Target.GetType().FullName -like "*CimInstance")
-    {
-        $targetKeys = @()
-        $Target.CimInstanceProperties | Foreach-Object {
-            if ($_.Name -notin @('PSComputerName', 'CimClass', 'CimInstanceProperties', 'CimSystemProperties') `
-                -and $_.IsValueModified)
-            {
-                $targetKeys += $_.Name
-            }
-        }
-    }
-    elseif ($Target.GetType().FullName -like "*Hashtable")
-    {
-        $targetKeys = $Target.Keys | Where-Object -FilterScript { $_ -ne 'PSComputerName' }
-    }
-    else # Most likely a Microsoft Graph Model
-    {
-        $Target = Get-M365DSCDRGComplexTypeToHashtable -ComplexObject $Target
-        $targetKeys = $Target.Keys | Where-Object -FilterScript { $_ -ne 'PSComputerName' }
-    }
-
-    foreach ($key in $keys)
-    {
-        if (($target.GetType().Name -eq 'Hashtable' -and $target.ContainsKey($key)) -or `
-            ($target.GetType().Name -eq 'CIMInstance' -and $null -ne $target.$key))
-        {
-            # Matching possible key names between Source and Target
-            $sourceValue = $Source.$key
-
-            # Some classes might contain default properties that have the same name as the key,
-            # so we need to check if the key is present in the target object --> Hashtable <-> IsReadOnly property
-            if ($key -in $targetKeys)
-            {
-                $targetValue = $Target.$key
-            }
-            else
-            {
-                $targetValue = $null
-            }
-
-            # One of the item is null and not the other
-            if (($Source.$key.Length -eq 0) -xor ($targetValue.Length -eq 0))
-            {
-                if ($null -eq $Source.$key)
-                {
-                    $sourceValue = 'null'
-                }
-
-                if ($null -eq $targetValue)
-                {
-                    $targetValue = 'null'
-                }
-
-                Write-Verbose -Message "Configuration drift - key: $key"
-                Write-Verbose -Message "Source {$sourceValue}"
-                Write-Verbose -Message "Target {$targetValue}"
+                Write-Verbose -Message "Configuration drift - Complex object: {$sourceValue$targetValue}"
                 $drift = @{
-                    PropertyName = $PropertyName + "." + $key
+                    PropertyName = $p
                     CurrentValue = $targetValue
                     DesiredValue = $sourceValue
                 }
-                if (-not $NoDriftReport)
+
+                if (-not $LocalNoDriftReport)
                 {
                     $Global:AllDrifts.DriftInfo += $drift
                 }
@@ -1199,121 +824,330 @@ function Compare-M365DSCComplexObjectV2
                     $Global:PotentialDrifts += $drift
                 }
 
-                $returnValue = $false
+                $result = $false
+                break
             }
 
-            # Both keys aren't null or empty
-            if (($null -ne $Source.$key) -and ($null -ne $Target.$key))
+            # If left is an array of complex objects, handle array logic (order-insensitive)
+            if (Test-IsComplexArrayCandidate -Object $l)
             {
-                if ($Source.$key.GetType().FullName -like '*CimInstance*' -or $Source.$key.GetType().FullName -like '*hashtable*' -or `
-                    $Source.$key.GetType().Name -eq 'Object[]')
+                # If counts differ, record drift (original did that)
+                if ($l.Count -ne $r.Count)
                 {
-                    if ($Source.$key.GetType().FullName -like '*CimInstance' -and (
-                            $Source.$key.CimClass.CimClassName -eq 'MSFT_DeviceManagementConfigurationPolicyAssignments' -or
-                            $Source.$key.CimClass.CimClassName -like 'MSFT_DeviceManagementMobileAppAssignment' -or
-                            $Source.$key.CimClass.CimClassName -like 'MSFT_Intune*Assignments'
-                        ))
-                    {
-                        $compareResult = Compare-M365DSCIntunePolicyAssignment `
-                            -Source @($Source.$key) `
-                            -Target @($Target.$key)
+                    Write-Verbose -Message "Configuration drift - The complex array have different number of items: Source {$($l.Count)}, Target {$($r.Count)}"
+                    $Global:AllDrifts.DriftInfo += @{
+                        PropertyName = $p
+                        CurrentValue = "Current value has {$($r.Count)} items"
+                        DesiredValue = "Desired value has {$($l.Count)} items"
                     }
-                    else
-                    {
-                        # Recursive call for complex object
-                        $compareResult = Compare-M365DSCComplexObjectV2 `
-                            -Source $Source.$key `
-                            -Target $Target.$key `
-                            -PropertyName ($PropertyName + "." + $key) `
-                            -NoDriftReport:$NoDriftReport
-                    }
+                    $result = $false
+                    break
+                }
 
-                    if (-not $compareResult -and $targetValue.GetType().Name -ne "Hashtable" -and $targetValue.GetType().Name -ne 'Object[]')
+                # Intune special-case: original did type-specific handling
+                if ((Test-IsCimInstance $l[0]) -and `
+                    ($l[0].CimClass.CimClassName -eq 'MSFT_DeviceManagementConfigurationPolicyAssignments' -or `
+                            $l[0].CimClass.CimClassName -eq 'MSFT_DeviceManagementMobileAppAssignment' -or `
+                        ($l[0].CimClass.CimClassName -like 'MSFT_Intune*Assignments' -and `
+                                $l[0].CimClass.CimClassName -ne 'MSFT_IntuneDeviceRemediationPolicyAssignments')))
+                {
+                    $compareResult = Compare-M365DSCIntunePolicyAssignment -Source @($l) -Target @($r)
+                    if (-not $compareResult)
                     {
-                        Write-Verbose -Message "Configuration drift - complex object key: $key"
-                        Write-Verbose -Message "Source {$sourceValue}"
-                        Write-Verbose -Message "Target {$targetValue}"
-                        $drift = @{
-                            PropertyName = ($PropertyName + "." + $key)
-                            CurrentValue = $targetValue
-                            DesiredValue = $sourceValue
+                        Write-Verbose -Message "Configuration drift - Intune Policy Assignment: $p"
+                        $Global:AllDrifts.DriftInfo += @{
+                            PropertyName = $p
+                            CurrentValue = $r
+                            DesiredValue = $l
                         }
-                        if (-not $NoDriftReport)
+                        $result = $false
+                    }
+                    continue
+                }
+
+                # For arrays: we must find for each source element a matching distinct target element
+                # We'll keep a boolean array for consumed target elements
+                $consumed = [bool[]]::CreateInstance([bool], $r.Count)
+                for ($i = 0; $i -lt $l.Count; $i++)
+                {
+                    $srcItem = $l[$i]
+                    $found = $false
+                    $lastCompareResult = $null
+
+                    for ($j = 0; $j -lt $r.Count; $j++)
+                    {
+                        if ($consumed[$j])
                         {
-                            $Global:AllDrifts.DriftInfo += $drift
+                            continue
+                        }
+                        $tgtItem = $r[$j]
+
+                        # snapshot potential drifts count so we can rollback/preserve them according to outcome
+                        if ($null -eq $Global:PotentialDrifts)
+                        {
+                            $potentialStart = 0
                         }
                         else
                         {
-                            $Global:PotentialDrifts += $drift
+                            $potentialStart = $Global:PotentialDrifts.Count
                         }
 
-                        $returnValue = $false
+                        # Compare srcItem vs tgtItem using a *fresh* iterative compare that records potential drifts
+                        $pairEqual = ComparePairIterativeInner -Left $srcItem -Right $tgtItem -PropName ("$p[$i]") -LocalNoDriftReport:$true
+
+                        $lastCompareResult = $pairEqual
+
+                        if ($pairEqual)
+                        {
+                            # Consume this target element
+                            $consumed[$j] = $true
+                            # Remove any potential drifts produced during this successful attempt
+                            if ($Global:PotentialDrifts.Count -gt $potentialStart)
+                            {
+                                # Delete the appended entries from potential drifts (they were false alarms)
+                                $Global:PotentialDrifts = $Global:PotentialDrifts[0..($potentialStart - 1)]
+                            }
+                            $found = $true
+                            break
+                        }
+                        else
+                        {
+                            # Attempt failed: if there were potential drifts appended during attempt, promote last to AllDrifts (original logic)
+                            if ($Global:PotentialDrifts.Count -gt $potentialStart)
+                            {
+                                $lastIndex = $Global:PotentialDrifts.Count - 1
+                                if ($null -ne $Global:PotentialDrifts[$lastIndex])
+                                {
+                                    $Global:AllDrifts.DriftInfo += $Global:PotentialDrifts[$lastIndex]
+                                }
+                                # reset potential drifts
+                                $Global:PotentialDrifts = @()
+                            }
+                            # try next candidate
+                        }
                     }
 
-                    if ($compareResult -eq $false)
+                    if (-not $found)
                     {
-                        $returnValue = $false
+                        Write-Verbose -Message 'Configuration drift - The complex array items are not identical'
+                        # If no attempts happened (r was empty) or lastCompareResult is $null, record AllDrifts as original did
+                        if ($null -eq $lastCompareResult)
+                        {
+                            $Global:AllDrifts.DriftInfo += @{
+                                PropertyName = ("$p[$i]")
+                                CurrentValue = $r
+                                DesiredValue = $l
+                            }
+                        }
+                        $result = $false
+                        break
                     }
                 }
-                else
-                {
-                    # Simple object comparison
-                    $referenceObject = $Target.$key
-                    $differenceObject = $Source.$key
 
-                    # Identifying date from the current values
-                    $targetType = ($Target.$key.GetType()).Name
+                # After finishing array matching loop, continue to next frame
+                continue
+            }
+
+            # Now handle non-array (single) complex objects or simple objects
+            # Build keys for Left (source)
+            if (Test-IsCimInstance -Object $l)
+            {
+                $keys = @()
+                $l.CimInstanceProperties | ForEach-Object {
+                    if ($_.Name -notin @('PSComputerName', 'CimClass', 'CimInstanceProperties', 'CimSystemProperties') -and $_.IsValueModified)
+                    {
+                        $keys += $_.Name
+                    }
+                }
+            }
+            else
+            {
+                # hashtable or ordered dictionary
+                $keys = $l.Keys | Where-Object { $_ -ne 'PSComputerName' }
+            }
+
+            # Determine keys for Right (target)
+            if (Test-IsCimInstance -Object $r)
+            {
+                $targetKeys = @()
+                $r.CimInstanceProperties | ForEach-Object {
+                    if ($_.Name -notin @('PSComputerName', 'CimClass', 'CimInstanceProperties', 'CimSystemProperties') -and $_.IsValueModified)
+                    {
+                        $targetKeys += $_.Name
+                    }
+                }
+            }
+            elseif (Test-IsHashtable -Object $r)
+            {
+                $targetKeys = $r.Keys | Where-Object { $_ -ne 'PSComputerName' }
+            }
+            else
+            {
+                # Fallback, possibly Microsoft Graph model -> convert
+                $r = Get-M365DSCDRGComplexTypeToHashtable -ComplexObject $r
+                $targetKeys = $r.Keys | Where-Object { $_ -ne 'PSComputerName' }
+            }
+
+            foreach ($key in $keys)
+            {
+                # Check presence in target
+                $keyExistsInTarget = (
+                    ($r.GetType().Name -eq 'Hashtable' -and $r.ContainsKey($key)) -or `
+                    ($r.GetType().Name -eq 'OrderedDictionary' -and $r.Contains($key)) -or `
+                    ($r.GetType().Name -eq 'CIMInstance' -and $null -ne $r.$key)
+                )
+
+                if (-not $keyExistsInTarget)
+                {
+                    continue
+                }
+
+                $sourceValue = $l.$key
+                $targetValue = $null
+                if ($key -in $targetKeys)
+                {
+                    $targetValue = $r.$key
+                }
+
+                # One null and the other not => drift
+                if (($null -eq $sourceValue) -xor ($null -eq $targetValue))
+                {
+                    if ($null -eq $sourceValue)
+                    {
+                        $sv = 'null'
+                    }
+                    else
+                    {
+                        $sv = $sourceValue
+                    }
+                    if ($null -eq $targetValue)
+                    {
+                        $tv = 'null'
+                    }
+                    else
+                    {
+                        $tv = $targetValue
+                    }
+                    Write-Verbose -Message "Configuration drift - key: $key"
+                    Write-Verbose -Message "Source {$sv}"
+                    Write-Verbose -Message "Target {$tv}"
+                    $drift = @{
+                        PropertyName = $p + '.' + $key
+                        CurrentValue = $targetValue
+                        DesiredValue = $sourceValue
+                    }
+                    if (-not $LocalNoDriftReport)
+                    {
+                        $Global:AllDrifts.DriftInfo += $drift
+                    }
+                    else
+                    {
+                        $Global:PotentialDrifts += $drift
+                    }
+                    $result = $false
+                    break
+                }
+
+                if ($null -ne $sourceValue -and $null -ne $targetValue)
+                {
+                    # complex nested types
+                    if ((Test-IsCimInstance -Object $sourceValue) -or (Test-IsHashtable -Object $sourceValue) -or $sourceValue.GetType().FullName -like '*OrderedDictionary*' -or (Test-IsObjectArray -Object $sourceValue))
+                    {
+                        # Intune assignment special-case
+                        if ((Test-IsCimInstance -Object $sourceValue) -and (
+                                $sourceValue.CimClass.CimClassName -eq 'MSFT_DeviceManagementConfigurationPolicyAssignments' -or
+                                $sourceValue.CimClass.CimClassName -eq 'MSFT_DeviceManagementMobileAppAssignment' -or
+                                $sourceValue.CimClass.CimClassName -like 'MSFT_Intune*Assignments'
+                            ))
+                        {
+                            $compareResult = Compare-M365DSCIntunePolicyAssignment -Source @($sourceValue) -Target @($targetValue)
+                            if (-not $compareResult)
+                            {
+                                Write-Verbose -Message "Configuration drift - Intune Policy Assignment key: $key"
+                                $Global:AllDrifts.DriftInfo += @{
+                                    PropertyName = ($p + '.' + $key)
+                                    CurrentValue = $targetValue
+                                    DesiredValue = $sourceValue
+                                }
+                                $result = $false
+                                break
+                            }
+                            else
+                            {
+                                continue
+                            }
+                        }
+                        else
+                        {
+                            # push a new frame to compare nested complex objects
+                            $workStack.Push(@{
+                                    Left     = $sourceValue
+                                    Right    = $targetValue
+                                    PropName = ($p + '.' + $key)
+                                    Stage    = 'compare'
+                                })
+                            continue
+                        }
+                    }
+
+                    # Simple types: do comparisons similar to original
+                    $referenceObject = $targetValue
+                    $differenceObject = $sourceValue
+
+                    $sourceType = ($sourceValue.GetType()).Name
+                    $targetType = ($targetValue.GetType()).Name
+
+                    $compareResult = $null
+
                     if ($targetType -like '*Date*')
                     {
-                        $compareResult = $true
-                        $sourceDate = [DateTime]$Source.$key
-                        if ($sourceDate -ne $targetType)
+                        try
+                        {
+                            $compareResult = ([DateTime]$sourceValue) -eq ([DateTime]$targetValue)
+                        }
+                        catch
                         {
                             $compareResult = $null
                         }
                     }
                     elseif ($targetType -eq 'String')
                     {
-                        # Align line breaks
                         if (-not [System.String]::IsNullOrEmpty($referenceObject))
                         {
                             $referenceObject = $referenceObject.Replace("`r`n", "`n")
                         }
-
-                        if (-not [System.String]::IsNullOrEmpty($differenceObject))
+                        if (-not [System.String]::IsNullOrEmpty($differenceObject) -and $sourceType -eq 'String')
                         {
                             $differenceObject = $differenceObject.Replace("`r`n", "`n")
                         }
 
-                        $compareResult = $true
                         $ordinalComparison = [System.String]::Equals($referenceObject, $differenceObject, [System.StringComparison]::OrdinalIgnoreCase)
                         if (-not $ordinalComparison)
                         {
                             $compareResult = $false
                         }
-                        elseif ($ordinalComparison)
+                        else
                         {
-                            $compareResult = $null
+                            $compareResult = $true
                         }
                     }
                     else
                     {
-                        $compareResult = Compare-Object `
-                            -ReferenceObject ($referenceObject) `
-                            -DifferenceObject ($differenceObject)
+                        $diff = Compare-Object -ReferenceObject $referenceObject -DifferenceObject $differenceObject -PassThru
+                        $compareResult = $diff.Count -eq 0
                     }
 
-                    if ($null -ne $compareResult -and $compareResult.Length -gt 0)
+                    if ($null -ne $compareResult -and -not $compareResult)
                     {
                         Write-Verbose -Message "Configuration drift - simple object key: $key"
                         Write-Verbose -Message "Source {$sourceValue}"
                         Write-Verbose -Message "Target {$targetValue}"
                         $drift = @{
-                            PropertyName = ($PropertyName + "." + $key)
+                            PropertyName = ($p + '.' + $key)
                             CurrentValue = $targetValue
                             DesiredValue = $sourceValue
                         }
-                        if (-not $NoDriftReport)
+                        if (-not $LocalNoDriftReport)
                         {
                             $Global:AllDrifts.DriftInfo += $drift
                         }
@@ -1321,21 +1155,47 @@ function Compare-M365DSCComplexObjectV2
                         {
                             $Global:PotentialDrifts += $drift
                         }
-
-                        return $false
+                        $result = $false
+                        break
                     }
+                } # end both non-null branch
+            } # end foreach key
+        } # end while stack
 
-                    if ($compareResult -eq $false)
-                    {
-                        $returnValue = $false
-                    }
-                }
-            }
-        }
+        return $result
+    } # end ComparePairIterative
+
+    #
+    # Inner worker used for attempts when matching array elements.
+    # Important: this is an inner isolated iterator that behaves exactly like ComparePairIterative but is referenced by name so we can call it repeatedly.
+    #
+    function ComparePairIterativeInner
+    {
+        param(
+            [Parameter()]
+            $Left,
+
+            [Parameter()]
+            $Right,
+
+            [Parameter()]
+            [System.String]
+            $PropName,
+
+            [Parameter()]
+            [switch]
+            $LocalNoDriftReport
+        )
+
+        return (ComparePairIterative -Left $Left -Right $Right -PropName $PropName -LocalNoDriftReport:$LocalNoDriftReport)
     }
 
-    return $returnValue
+    # Start the top-level comparison using the iterative comparator
+    $final = ComparePairIterative -Left $Source -Right $Target -PropName $PropertyName -LocalNoDriftReport:$NoDriftReport
+
+    return $final
 }
+
 
 function Write-M365DSCDriftsToEventLog
 {
@@ -1370,22 +1230,29 @@ function Write-M365DSCDriftsToEventLog
         $LCMState = $null
         try
         {
-            $LCMInfo = Get-DscLocalConfigurationManager -ErrorAction Stop
+            if (([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator))
+            {
+                $LCMInfo = Get-DscLocalConfigurationManager -ErrorAction Stop
 
-            if ($LCMInfo.LCMStateDetail -eq 'LCM is performing a consistency check.' -or `
-                    $LCMInfo.LCMStateDetail -eq 'LCM exécute une vérification de cohérence.' -or `
-                    $LCMInfo.LCMStateDetail -eq 'LCM führt gerade eine Konsistenzüberprüfung durch.')
-            {
-                $LCMState = 'ConsistencyCheck'
+                if ($LCMInfo.LCMStateDetail -eq 'LCM is performing a consistency check.' -or `
+                        $LCMInfo.LCMStateDetail -eq 'LCM exécute une vérification de cohérence.' -or `
+                        $LCMInfo.LCMStateDetail -eq 'LCM führt gerade eine Konsistenzüberprüfung durch.')
+                {
+                    $LCMState = 'ConsistencyCheck'
+                }
+                elseif ($LCMInfo.LCMStateDetail -eq 'LCM is testing node against the configuration.')
+                {
+                    $LCMState = 'ManualTestDSCConfiguration'
+                }
+                elseif ($LCMInfo.LCMStateDetail -eq 'LCM is applying a new configuration.' -or `
+                        $LCMInfo.LCMStateDetail -eq 'LCM applique une nouvelle configuration.')
+                {
+                    $LCMState = 'Initial'
+                }
             }
-            elseif ($LCMInfo.LCMStateDetail -eq 'LCM is testing node against the configuration.')
+            else
             {
-                $LCMState = 'ManualTestDSCConfiguration'
-            }
-            elseif ($LCMInfo.LCMStateDetail -eq 'LCM is applying a new configuration.' -or `
-                    $LCMInfo.LCMStateDetail -eq 'LCM applique une nouvelle configuration.')
-            {
-                $LCMState = 'Initial'
+                $LCMState = 'Unauthorized'
             }
         }
         catch
@@ -1395,7 +1262,7 @@ function Write-M365DSCDriftsToEventLog
 
         if (-not $ResourceName.StartsWith('MSFT_'))
         {
-            $ResourceName = "MSFT_" + $ResourceName
+            $ResourceName = 'MSFT_' + $ResourceName
         }
 
         $EventMessage = [System.Text.StringBuilder]::new()
@@ -1436,6 +1303,7 @@ function Write-M365DSCDriftsToEventLog
         }
         $EventMessage.Append("    </CurrentValues>`r`n") | Out-Null
         $EventMessage.Append('</M365DSCEvent>') | Out-Null
+        Write-Verbose -Message $EventMessage.ToString()
         Add-M365DSCEvent -Message $EventMessage.ToString() -EventType 'Drift' -EntryType 'Warning' `
             -EventID 1 -Source $ResourceName
     }
@@ -1444,7 +1312,7 @@ function Write-M365DSCDriftsToEventLog
 function Convert-M365DSCDRGComplexTypeToHashtable
 {
     [CmdletBinding()]
-    [OutputType([hashtable], [hashtable[]])]
+    [OutputType([System.Collections.Hashtable], [System.Collections.Hashtable[]])]
     param(
         [Parameter(Mandatory = $true)]
         [AllowNull()]
@@ -1477,7 +1345,7 @@ function Convert-M365DSCDRGComplexTypeToHashtable
         # PowerShell returns all non-captured stream output, not just the argument of the return statement.
         #An empty array is mangled into $null in the process.
         #However, an array can be preserved on return by prepending it with the array construction operator (,)
-        return , [hashtable[]]$results
+        return ,[System.Collections.Hashtable[]]$results
     }
 
     if ($SingleLevel)
@@ -1494,7 +1362,7 @@ function Convert-M365DSCDRGComplexTypeToHashtable
             $propertyValue = $ComplexObject.$($key.Name)
             $returnObject.Add($propertyName, $propertyValue)
         }
-        return [hashtable]$returnObject
+        return $returnObject
     }
 
     $hashComplexObject = Get-M365DSCDRGComplexTypeToHashtable -ComplexObject $ComplexObject
@@ -1504,7 +1372,7 @@ function Convert-M365DSCDRGComplexTypeToHashtable
         $results = $hashComplexObject.Clone()
         if ($SingleLevel)
         {
-            return [hashtable]$results
+            return $results
         }
 
         $keys = $hashComplexObject.Keys | Where-Object -FilterScript { $_ -ne 'PSComputerName' }
@@ -1524,7 +1392,7 @@ function Convert-M365DSCDRGComplexTypeToHashtable
         }
     }
 
-    return [hashtable]$results
+    return $results
 }
 
 function ConvertFrom-IntunePolicyAssignment
@@ -1545,7 +1413,7 @@ function ConvertFrom-IntunePolicyAssignment
     {
         $Script:IntuneAssignmentFilters = Get-MgBetaDeviceManagementAssignmentFilter -All -ErrorAction SilentlyContinue | ForEach-Object {
             @{
-                FilterId = $_.Id
+                FilterId    = $_.Id
                 DisplayName = $_.DisplayName
             }
         }
@@ -1554,7 +1422,7 @@ function ConvertFrom-IntunePolicyAssignment
     $assignmentResult = @()
     foreach ($assignment in $Assignments)
     {
-        $hashAssignment = @{}
+        $hashAssignment = [ordered]@{}
         if ($null -ne $assignment.Target.'@odata.type')
         {
             $dataType = $assignment.Target.'@odata.type'
@@ -1582,7 +1450,7 @@ function ConvertFrom-IntunePolicyAssignment
             $collectionId = $assignment.Target.AdditionalProperties.collectionId
         }
 
-        $hashAssignment.Add('dataType',$dataType)
+        $hashAssignment.Add('dataType', $dataType)
         if (-not [string]::IsNullOrEmpty($groupId))
         {
             $hashAssignment.Add('groupId', $groupId)
@@ -1592,10 +1460,6 @@ function ConvertFrom-IntunePolicyAssignment
             {
                 $groupDisplayName = $group.DisplayName
             }
-        }
-        if (-not [string]::IsNullOrEmpty($collectionId))
-        {
-            $hashAssignment.Add('collectionId', $collectionId)
         }
         if ($dataType -eq '#microsoft.graph.allLicensedUsersAssignmentTarget')
         {
@@ -1608,6 +1472,10 @@ function ConvertFrom-IntunePolicyAssignment
         if ($null -ne $groupDisplayName)
         {
             $hashAssignment.Add('groupDisplayName', $groupDisplayName)
+        }
+        if (-not [string]::IsNullOrEmpty($collectionId))
+        {
+            $hashAssignment.Add('collectionId', $collectionId)
         }
         if ($IncludeDeviceFilter)
         {
@@ -1626,7 +1494,7 @@ function ConvertFrom-IntunePolicyAssignment
         $assignmentResult += $hashAssignment
     }
 
-    return ,$assignmentResult
+    return ,[System.Collections.Hashtable[]]$assignmentResult
 }
 
 function ConvertTo-IntunePolicyAssignment
@@ -1647,7 +1515,7 @@ function ConvertTo-IntunePolicyAssignment
     {
         $Script:IntuneAssignmentFilters = Get-MgBetaDeviceManagementAssignmentFilter -All -ErrorAction SilentlyContinue | ForEach-Object {
             @{
-                FilterId = $_.Id
+                FilterId    = $_.Id
                 DisplayName = $_.DisplayName
             }
         }
@@ -1661,7 +1529,9 @@ function ConvertTo-IntunePolicyAssignment
     $assignmentResult = @()
     foreach ($assignment in $Assignments)
     {
-        $target = @{"@odata.type" = $assignment.dataType}
+        $target = @{
+            '@odata.type' = $assignment.dataType
+        }
         if ($IncludeDeviceFilter)
         {
             if ($null -ne $assignment.DeviceAndAppManagementAssignmentFilterType -and $assignment.DeviceAndAppManagementAssignmentFilterType -ne 'none')
@@ -1694,45 +1564,36 @@ function ConvertTo-IntunePolicyAssignment
             {
                 $group = Get-MgGroup -GroupId ($assignment.groupId) -ErrorAction SilentlyContinue
             }
-            if ($null -eq $group)
+            if ($null -eq $group -and -not [System.String]::IsNullOrEmpty($assignment.groupDisplayName))
             {
-                if ($assignment.groupDisplayName)
+                $escapedName = $assignment.groupDisplayName -replace "'", "''"
+                $group = Get-MgGroup -Filter "DisplayName eq '$escapedName'" -All -ErrorAction SilentlyContinue
+                if ($null -eq $group)
                 {
-                    $group = Get-MgGroup -Filter "DisplayName eq '$($assignment.groupDisplayName -replace "'", "''")'" -ErrorAction SilentlyContinue
-                    if ($null -eq $group)
-                    {
-                        $message = "Skipping assignment for the group with DisplayName {$($assignment.groupDisplayName)} as it could not be found in the directory.`r`n"
-                        $message += "Please update your DSC resource extract with the correct groupId or groupDisplayName."
-                        Write-Warning -Message $message
-                        $target = $null
-                    }
-                    if ($group -and $group.Count -gt 1)
-                    {
-                        $message = "Skipping assignment for the group with DisplayName {$($assignment.groupDisplayName)} as it is not unique in the directory.`r`n"
-                        $message += "Please update your DSC resource extract with the correct groupId or a unique group DisplayName."
-                        Write-Warning -Message $message
-                        $group = $null
-                        $target = $null
-                    }
+                    Write-Warning "Skipping assignment: groupDisplayName '{$($assignment.groupDisplayName)}' not found."
+                    $target = $null
                 }
-                else
+                elseif ($group.Count -gt 1)
                 {
-                    $message = "Skipping assignment for the group with Id {$($assignment.groupId)} as it could not be found in the directory.`r`n"
-                    $message += "Please update your DSC resource extract with the correct groupId or a unique group DisplayName."
-                    Write-Warning -Message $message
+                    Write-Warning "Skipping assignment: groupDisplayName '{$($assignment.groupDisplayName)}' is not unique."
                     $target = $null
                 }
             }
-            #Skipping assignment if group not found from either groupId or groupDisplayName
+            # If group found, add its ID
             if ($null -ne $group)
             {
                 $target.Add('groupId', $group.Id)
+            }
+            elseif ($null -eq $group -and [System.String]::IsNullOrEmpty($assignment.groupDisplayName))
+            {
+                Write-Warning 'Skipping assignment: missing both groupId and groupDisplayName.'
+                $target = $null
             }
         }
 
         if ($target)
         {
-            $assignmentResult += @{target = $target}
+            $assignmentResult += @{ target = $target }
         }
     }
 
@@ -1757,7 +1618,7 @@ function ConvertFrom-IntuneMobileAppAssignment
     {
         $Script:IntuneAssignmentFilters = Get-MgBetaDeviceManagementAssignmentFilter -All -ErrorAction SilentlyContinue | ForEach-Object {
             @{
-                FilterId = $_.Id
+                FilterId    = $_.Id
                 DisplayName = $_.DisplayName
             }
         }
@@ -1835,7 +1696,7 @@ function ConvertFrom-IntuneMobileAppAssignment
         $assignmentResult += $hashAssignment
     }
 
-    return ,$assignmentResult
+    return ,[System.Collections.Hashtable[]]$assignmentResult
 }
 
 function ConvertTo-IntuneMobileAppAssignment
@@ -1856,7 +1717,7 @@ function ConvertTo-IntuneMobileAppAssignment
     {
         $Script:IntuneAssignmentFilters = Get-MgBetaDeviceManagementAssignmentFilter -All -ErrorAction SilentlyContinue | ForEach-Object {
             @{
-                FilterId = $_.Id
+                FilterId    = $_.Id
                 DisplayName = $_.DisplayName
             }
         }
@@ -1871,18 +1732,24 @@ function ConvertTo-IntuneMobileAppAssignment
     foreach ($assignment in $Assignments)
     {
         $formattedAssignment = @{}
-        $target = @{"@odata.type" = $assignment.dataType}
+        $target = @{
+            '@odata.type' = $assignment.dataType
+        }
+
+        # Handle Device Filters
         if ($IncludeDeviceFilter)
         {
-            if ($null -ne $assignment.DeviceAndAppManagementAssignmentFilterType -and $assignment.DeviceAndAppManagementAssignmentFilterType -ne 'none')
+            if ($null -ne $assignment.DeviceAndAppManagementAssignmentFilterType -and
+                $assignment.DeviceAndAppManagementAssignmentFilterType -ne 'none')
             {
-                $filter = $Script:IntuneAssignmentFilters | Where-Object -FilterScript { $_.FilterId -eq $assignment.DeviceAndAppManagementAssignmentFilterId }
+                $filter = $Script:IntuneAssignmentFilters | Where-Object {
+                    $_.FilterId -eq $assignment.DeviceAndAppManagementAssignmentFilterId
+                }
+
                 if ($null -eq $filter)
                 {
-                    $filter = $Script:IntuneAssignmentFilters | Where-Object -FilterScript { $_.DisplayName -eq $assignment.DeviceAndAppManagementAssignmentFilterDisplayName }
-                    if ($null -eq $filter)
-                    {
-                        Write-Warning -Message "Assignment filter with DisplayName {$($assignment.DeviceAndAppManagementAssignmentFilterDisplayName)} not found in the directory. Please update your DSC resource extract with the correct filterId or filterDisplayName."
+                    $filter = $Script:IntuneAssignmentFilters | Where-Object {
+                        $_.DisplayName -eq $assignment.DeviceAndAppManagementAssignmentFilterDisplayName
                     }
                 }
 
@@ -1891,54 +1758,56 @@ function ConvertTo-IntuneMobileAppAssignment
                     $target.Add('deviceAndAppManagementAssignmentFilterType', $assignment.DeviceAndAppManagementAssignmentFilterType)
                     $target.Add('deviceAndAppManagementAssignmentFilterId', $filter.FilterId)
                 }
+                else
+                {
+                    Write-Warning "Assignment filter with DisplayName {$($assignment.DeviceAndAppManagementAssignmentFilterDisplayName)} not found."
+                }
             }
         }
 
+        # Add intent (required for app assignments)
         $formattedAssignment.Add('intent', $assignment.intent)
 
         if ($assignment.dataType -like '*groupAssignmentTarget')
         {
-            $group = Get-MgGroup -GroupId ($assignment.groupId) -ErrorAction SilentlyContinue
-            if ($null -eq $group)
+            $group = $null
+            if (-not [System.String]::IsNullOrEmpty($assignment.groupId))
             {
-                if ($assignment.groupDisplayName)
+                $group = Get-MgGroup -GroupId $assignment.groupId -ErrorAction SilentlyContinue
+            }
+            # If groupId lookup failed, try by display name
+            if ($null -eq $group -and -not [System.String]::IsNullOrEmpty($assignment.groupDisplayName))
+            {
+                $escapedName = $assignment.groupDisplayName -replace "'", "''"
+                $group = Get-MgGroup -Filter "DisplayName eq '$escapedName'" -All -ErrorAction SilentlyContinue
+                if ($null -eq $group)
                 {
-                    $group = Get-MgGroup -Filter "DisplayName eq '$($assignment.groupDisplayName -replace "'", "''")'" -ErrorAction SilentlyContinue
-                    if ($null -eq $group)
-                    {
-                        $message = "Skipping assignment for the group with DisplayName {$($assignment.groupDisplayName)} as it could not be found in the directory.`r`n"
-                        $message += "Please update your DSC resource extract with the correct groupId or groupDisplayName."
-                        Write-Warning -Message $message
-                        $target = $null
-                    }
-                    if ($group -and $group.Count -gt 1)
-                    {
-                        $message = "Skipping assignment for the group with DisplayName {$($assignment.groupDisplayName)} as it is not unique in the directory.`r`n"
-                        $message += "Please update your DSC resource extract with the correct groupId or a unique group DisplayName."
-                        Write-Warning -Message $message
-                        $group = $null
-                        $target = $null
-                    }
+                    Write-Warning "Skipping assignment: groupDisplayName '{$($assignment.groupDisplayName)}' not found."
+                    $target = $null
                 }
-                else
+                elseif ($group.Count -gt 1)
                 {
-                    $message = "Skipping assignment for the group with Id {$($assignment.groupId)} as it could not be found in the directory.`r`n"
-                    $message += "Please update your DSC resource extract with the correct groupId or a unique group DisplayName."
-                    Write-Warning -Message $message
+                    Write-Warning "Skipping assignment: groupDisplayName '{$($assignment.groupDisplayName)}' is not unique."
                     $target = $null
                 }
             }
-            else {
-                #Skipping assignment if group not found from either groupId or groupDisplayName
+            # If group found, add its ID
+            if ($null -ne $group)
+            {
                 $target.Add('groupId', $group.Id)
             }
+            elseif ($null -eq $group -and [System.String]::IsNullOrEmpty($assignment.groupDisplayName))
+            {
+                Write-Warning 'Skipping assignment: missing both groupId and groupDisplayName.'
+                $target = $null
+            }
         }
-
+        # Add target if valid
         if ($target)
         {
             $formattedAssignment.Add('target', $target)
         }
-
+        # Add assignment settings if present
         if ($null -ne $assignment.assignmentSettings)
         {
             $settings = Convert-M365DSCDRGComplexTypeToHashtable -ComplexObject $assignment.assignmentSettings
@@ -1948,7 +1817,6 @@ function ConvertTo-IntuneMobileAppAssignment
         }
         $assignmentResult += $formattedAssignment
     }
-
     return ,$assignmentResult
 }
 
@@ -1970,8 +1838,8 @@ function Compare-M365DSCIntunePolicyAssignment
     $testResult = $Source.Count -eq $Target.Count
     if (-not $testResult)
     {
-        $DriftObject.DriftInfo.Add("Assignments.Count", @{
-            PropertyName = "Assignments.Count"
+        $DriftObject.DriftInfo.Add('Assignments.Count', @{
+            PropertyName = 'Assignments.Count'
             CurrentValue = $Source.Count
             DesiredValue = $Target.Count
         })
@@ -1996,8 +1864,8 @@ function Compare-M365DSCIntunePolicyAssignment
 
                     if (-not $testResult)
                     {
-                        $DriftObject.DriftInfo.Add("Assignments.GroupDisplayName", @{
-                            PropertyName = "Assignments.GroupDisplayName"
+                        $DriftObject.DriftInfo.Add('Assignments.GroupDisplayName', @{
+                            PropertyName = 'Assignments.GroupDisplayName'
                             CurrentValue = $assignment.groupDisplayName
                             DesiredValue = $null
                         })
@@ -2008,9 +1876,9 @@ function Compare-M365DSCIntunePolicyAssignment
                 {
                     Write-Verbose 'Group found by groupId or groupDisplayName, checking filters'
                     $isFilterTypeSpecified = ($null -ne $assignment.deviceAndAppManagementAssignmentFilterType -and $assignment.deviceAndAppManagementAssignmentFilterType -ne 'none') -or `
-                        ($null -ne $assignmentTarget.deviceAndAppManagementAssignmentFilterType -and $assignmentTarget.deviceAndAppManagementAssignmentFilterType -ne 'none')
+                    ($null -ne $assignmentTarget.deviceAndAppManagementAssignmentFilterType -and $assignmentTarget.deviceAndAppManagementAssignmentFilterType -ne 'none')
                     $isFilterIdSpecified = ($null -ne $assignment.deviceAndAppManagementAssignmentFilterId -and $assignment.deviceAndAppManagementAssignmentFilterId -ne '00000000-0000-0000-0000-000000000000') -or `
-                        ($null -ne $assignmentTarget.deviceAndAppManagementAssignmentFilterId -and $assignmentTarget.deviceAndAppManagementAssignmentFilterId -ne '00000000-0000-0000-0000-000000000000')
+                    ($null -ne $assignmentTarget.deviceAndAppManagementAssignmentFilterId -and $assignmentTarget.deviceAndAppManagementAssignmentFilterId -ne '00000000-0000-0000-0000-000000000000')
                     if ($isFilterTypeSpecified)
                     {
                         Write-Verbose 'FilterType specified, checking filterType'
@@ -2029,8 +1897,8 @@ function Compare-M365DSCIntunePolicyAssignment
                     }
                     if (-not $testResult)
                     {
-                        $DriftObject.DriftInfo.Add("Assignments.Filters", @{
-                            PropertyName = "Assignments.Filters"
+                        $DriftObject.DriftInfo.Add('Assignments.Filters', @{
+                            PropertyName = 'Assignments.Filters'
                             CurrentValue = $assignment.deviceAndAppManagementAssignmentFilterType
                             DesiredValue = $assignmentTarget.deviceAndAppManagementAssignmentFilterType
                         })
@@ -2043,8 +1911,8 @@ function Compare-M365DSCIntunePolicyAssignment
                     $testResult = $assignment.collectionId -eq $assignmentTarget.collectionId
                     if (-not $testResult)
                     {
-                        $DriftObject.DriftInfo.Add("Assignments.collectionId", @{
-                            PropertyName = "Assignments.collectionId"
+                        $DriftObject.DriftInfo.Add('Assignments.collectionId', @{
+                            PropertyName = 'Assignments.collectionId'
                             CurrentValue = $assignment.collectionId
                             DesiredValue = $assignmentTarget.collectionId
                         })
@@ -2056,15 +1924,18 @@ function Compare-M365DSCIntunePolicyAssignment
                 $testResult = $null -ne ($Target | Where-Object -FilterScript { $_.dataType -eq $assignment.DataType })
                 if (-not $testResult)
                 {
-                    $DriftObject.DriftInfo.Add("Assignments.collectionId", @{
-                        PropertyName = "Assignments.DataType"
+                    $DriftObject.DriftInfo.Add('Assignments.collectionId', @{
+                        PropertyName = 'Assignments.DataType'
                         CurrentValue = $assignment.DataType
                         DesiredValue = $null
                     })
                 }
             }
             $Global:CCMCurrentDriftInfo = $DriftObject
-            if (-not $testResult) { break }
+            if (-not $testResult)
+            {
+                break
+            }
         }
     }
 
@@ -2090,7 +1961,7 @@ function Update-DeviceConfigurationPolicyAssignment
         $Repository = 'deviceManagement/configurationPolicies',
 
         [Parameter()]
-        [ValidateSet('v1.0','beta')]
+        [ValidateSet('v1.0', 'beta')]
         [System.String]
         $APIVersion = 'beta',
 
@@ -2106,15 +1977,23 @@ function Update-DeviceConfigurationPolicyAssignment
 
         foreach ($target in $targets)
         {
+            $targetAssignment = @{}
+            $formattedTarget = @{'@odata.type' = $target.dataType }
+            if ($null -ne $target.runRemediationScript)
+            {
+                $targetAssignment.Add('runRemediationScript', $target.runRemediationScript)
+            }
+            if ($null -ne $target.runSchedule)
+            {
+                $targetAssignment.Add('runSchedule', $target.runSchedule)
+            }
             if ($target.target -is [hashtable])
             {
                 $target = $target.target
             }
-
-            $formattedTarget = @{"@odata.type" = $target.dataType}
-            if(-not $formattedTarget."@odata.type" -and $target."@odata.type")
+            if (-not $formattedTarget.'@odata.type' -and $target.'@odata.type')
             {
-                $formattedTarget."@odata.type" = $target."@odata.type"
+                $formattedTarget.'@odata.type' = $target.'@odata.type'
             }
             if ($target.groupId)
             {
@@ -2123,18 +2002,18 @@ function Update-DeviceConfigurationPolicyAssignment
                 {
                     if ($target.groupDisplayName)
                     {
-                        $group = Get-MgGroup -Filter "DisplayName eq '$($target.groupDisplayName -replace "'", "''")'" -ErrorAction SilentlyContinue
+                        $group = Get-MgGroup -Filter "DisplayName eq '$($target.groupDisplayName -replace "'", "''")'" -All -ErrorAction SilentlyContinue
                         if ($null -eq $group)
                         {
                             $message = "Skipping assignment for the group with DisplayName {$($target.groupDisplayName)} as it could not be found in the directory.`r`n"
-                            $message += "Please update your DSC resource extract with the correct groupId or groupDisplayName."
+                            $message += 'Please update your DSC resource extract with the correct groupId or groupDisplayName.'
                             Write-Warning -Message $message
                             $target = $null
                         }
-                        if ($group -and $group.count -gt 1)
+                        if ($group -and $group.Count -gt 1)
                         {
                             $message = "Skipping assignment for the group with DisplayName {$($target.groupDisplayName)} as it is not unique in the directory.`r`n"
-                            $message += "Please update your DSC resource extract with the correct groupId or a unique group DisplayName."
+                            $message += 'Please update your DSC resource extract with the correct groupId or a unique group DisplayName.'
                             Write-Warning -Message $message
                             $group = $null
                             $target = $null
@@ -2143,7 +2022,7 @@ function Update-DeviceConfigurationPolicyAssignment
                     else
                     {
                         $message = "Skipping assignment for the group with Id {$($target.groupId)} as it could not be found in the directory.`r`n"
-                        $message += "Please update your DSC resource extract with the correct groupId or a unique group DisplayName."
+                        $message += 'Please update your DSC resource extract with the correct groupId or a unique group DisplayName.'
                         Write-Warning -Message $message
                         $target = $null
                     }
@@ -2151,25 +2030,26 @@ function Update-DeviceConfigurationPolicyAssignment
                 #Skipping assignment if group not found from either groupId or groupDisplayName
                 if ($null -ne $group)
                 {
-                    $formattedTarget.Add('groupId',$group.Id)
+                    $formattedTarget.Add('groupId', $group.Id)
                 }
             }
             if ($target.collectionId)
             {
-                $formattedTarget.Add('collectionId',$target.collectionId)
+                $formattedTarget.Add('collectionId', $target.collectionId)
             }
             if ($target.deviceAndAppManagementAssignmentFilterType)
             {
-                $formattedTarget.Add('deviceAndAppManagementAssignmentFilterType',$target.deviceAndAppManagementAssignmentFilterType)
+                $formattedTarget.Add('deviceAndAppManagementAssignmentFilterType', $target.deviceAndAppManagementAssignmentFilterType)
             }
             if ($target.deviceAndAppManagementAssignmentFilterId)
             {
-                $formattedTarget.Add('deviceAndAppManagementAssignmentFilterId',$target.deviceAndAppManagementAssignmentFilterId)
+                $formattedTarget.Add('deviceAndAppManagementAssignmentFilterId', $target.deviceAndAppManagementAssignmentFilterId)
             }
-            $deviceManagementPolicyAssignments += @{'target' = $formattedTarget}
+            $targetAssignment.Add('target', $formattedTarget)
+            $deviceManagementPolicyAssignments += $targetAssignment
         }
 
-        $body = @{$RootIdentifier = $deviceManagementPolicyAssignments} | ConvertTo-Json -Depth 20
+        $body = @{$RootIdentifier = $deviceManagementPolicyAssignments } | ConvertTo-Json -Depth 20
         Write-Verbose -Message $body
 
         Invoke-MgGraphRequest -Method POST -Uri $Uri -Body $body -ErrorAction Stop
@@ -2204,7 +2084,7 @@ function Update-DeviceAppManagementPolicyAssignment
         $Repository = 'deviceAppManagement/mobileApps',
 
         [Parameter()]
-        [ValidateSet('v1.0','beta')]
+        [ValidateSet('v1.0', 'beta')]
         [System.String]
         $APIVersion = 'beta',
 
@@ -2222,9 +2102,9 @@ function Update-DeviceAppManagementPolicyAssignment
         {
             $formattedAssignment = @{
                 '@odata.type' = '#microsoft.graph.mobileAppAssignment'
-                intent = $assignment.intent
+                intent        = $assignment.intent
             }
-            if ($assigment.settings)
+            if ($assignment.settings)
             {
                 $formattedAssignment.Add('settings', $assignment.settings)
             }
@@ -2234,10 +2114,10 @@ function Update-DeviceAppManagementPolicyAssignment
                 $target = $assignment.target
             }
 
-            $formattedTarget = @{"@odata.type" = $target.dataType}
-            if(-not $formattedTarget."@odata.type" -and $target."@odata.type")
+            $formattedTarget = @{'@odata.type' = $target.dataType }
+            if (-not $formattedTarget.'@odata.type' -and $target.'@odata.type')
             {
-                $formattedTarget."@odata.type" = $target."@odata.type"
+                $formattedTarget.'@odata.type' = $target.'@odata.type'
             }
             if ($target.groupId)
             {
@@ -2246,18 +2126,18 @@ function Update-DeviceAppManagementPolicyAssignment
                 {
                     if ($target.groupDisplayName)
                     {
-                        $group = Get-MgGroup -Filter "DisplayName eq '$($target.groupDisplayName -replace "'", "''")'" -ErrorAction SilentlyContinue
+                        $group = Get-MgGroup -Filter "DisplayName eq '$($target.groupDisplayName -replace "'", "''")'" -All -ErrorAction SilentlyContinue
                         if ($null -eq $group)
                         {
                             $message = "Skipping assignment for the group with DisplayName {$($target.groupDisplayName)} as it could not be found in the directory.`r`n"
-                            $message += "Please update your DSC resource extract with the correct groupId or groupDisplayName."
+                            $message += 'Please update your DSC resource extract with the correct groupId or groupDisplayName.'
                             Write-Warning -Message $message
                             $target = $null
                         }
-                        if ($group -and $group.count -gt 1)
+                        if ($group -and $group.Count -gt 1)
                         {
                             $message = "Skipping assignment for the group with DisplayName {$($target.groupDisplayName)} as it is not unique in the directory.`r`n"
-                            $message += "Please update your DSC resource extract with the correct groupId or a unique group DisplayName."
+                            $message += 'Please update your DSC resource extract with the correct groupId or a unique group DisplayName.'
                             Write-Warning -Message $message
                             $group = $null
                             $target = $null
@@ -2266,7 +2146,7 @@ function Update-DeviceAppManagementPolicyAssignment
                     else
                     {
                         $message = "Skipping assignment for the group with Id {$($target.groupId)} as it could not be found in the directory.`r`n"
-                        $message += "Please update your DSC resource extract with the correct groupId or a unique group DisplayName."
+                        $message += 'Please update your DSC resource extract with the correct groupId or a unique group DisplayName.'
                         Write-Warning -Message $message
                         $target = $null
                     }
@@ -2274,26 +2154,22 @@ function Update-DeviceAppManagementPolicyAssignment
                 #Skipping assignment if group not found from either groupId or groupDisplayName
                 if ($null -ne $group)
                 {
-                    $formattedTarget.Add('groupId',$group.Id)
+                    $formattedTarget.Add('groupId', $group.Id)
                 }
             }
             if ($target.deviceAndAppManagementAssignmentFilterType)
             {
-                $formattedTarget.Add('deviceAndAppManagementAssignmentFilterType',$target.deviceAndAppManagementAssignmentFilterType)
+                $formattedTarget.Add('deviceAndAppManagementAssignmentFilterType', $target.deviceAndAppManagementAssignmentFilterType)
             }
             if ($target.deviceAndAppManagementAssignmentFilterId)
             {
-                $formattedTarget.Add('deviceAndAppManagementAssignmentFilterId',$target.deviceAndAppManagementAssignmentFilterId)
+                $formattedTarget.Add('deviceAndAppManagementAssignmentFilterId', $target.deviceAndAppManagementAssignmentFilterId)
             }
             $formattedAssignment.Add('target', $formattedTarget)
-            if ($assignment.settings)
-            {
-                $formattedAssignment.Add('settings', $assignment.settings)
-            }
             $appManagementPolicyAssignments += $formattedAssignment
         }
 
-        $body = @{$RootIdentifier = $appManagementPolicyAssignments} | ConvertTo-Json -Depth 20
+        $body = @{$RootIdentifier = $appManagementPolicyAssignments } | ConvertTo-Json -Depth 20
         Write-Verbose -Message $body
 
         Invoke-MgGraphRequest -Method POST -Uri $Uri -Body $body -ErrorAction Stop
@@ -2490,7 +2366,7 @@ function Get-OmaSettingPlainTextValue
 {
     [CmdletBinding()]
     [OutputType([System.String])]
-    Param(
+    param(
         [Parameter(Mandatory = $true)]
         [System.String]
         $SecretReferenceValueId,
@@ -2507,7 +2383,7 @@ function Get-OmaSettingPlainTextValue
             e.g. PolicyId for SecretReferenceValueId '35ea58ec-2a79-471d-8eea-7e28e6cd2722_bdf6c690-05fb-4d02-835d-5a7406c35d58_abe32712-2255-445f-a35e-0c6f143d82ca'
             is 'bdf6c690-05fb-4d02-835d-5a7406c35d58'
         #>
-        $SplitSecretReferenceValueId = $SecretReferenceValueId.Split("_")
+        $SplitSecretReferenceValueId = $SecretReferenceValueId.Split('_')
         if ($SplitSecretReferenceValueId.Count -eq 3)
         {
             $PolicyId = $SplitSecretReferenceValueId[1]
@@ -2531,7 +2407,7 @@ function Get-OmaSettingPlainTextValue
     }
     catch
     {
-        $Message = "Error decrypting OmaSetting with SecretReferenceValueId {0}:" -f $SecretReferenceValueId
+        $Message = 'Error decrypting OmaSetting with SecretReferenceValueId {0}:' -f $SecretReferenceValueId
         New-M365DSCLogEntry -Message $Message `
             -Exception $_ `
             -Source $($MyInvocation.MyCommand.Source) `
@@ -2544,7 +2420,9 @@ function Get-OmaSettingPlainTextValue
     if (![String]::IsNullOrEmpty($Result.Value))
     {
         return $Result.Value
-    } else {
+    }
+    else
+    {
         return $null
     }
 }
@@ -2552,7 +2430,7 @@ function Get-OmaSettingPlainTextValue
 function Get-IntuneSettingCatalogPolicySetting
 {
     [CmdletBinding()]
-    [OutputType([System.Array])]
+    [OutputType([System.Object[]])]
     param (
         [Parameter(Mandatory = $true)]
         [System.Collections.Hashtable]
@@ -2597,11 +2475,11 @@ function Get-IntuneSettingCatalogPolicySetting
 
         if ($ContainsDeviceAndUserSettings)
         {
-            $deviceSettingTemplates = $SettingTemplates | Where-object -FilterScript {
-                $_.SettingInstanceTemplate.SettingDefinitionId.StartsWith("device_")
+            $deviceSettingTemplates = $SettingTemplates | Where-Object -FilterScript {
+                $_.SettingInstanceTemplate.SettingDefinitionId.StartsWith('device_')
             }
-            $userSettingTemplates = $SettingTemplates | Where-object -FilterScript {
-                $_.SettingInstanceTemplate.SettingDefinitionId.StartsWith("user_")
+            $userSettingTemplates = $SettingTemplates | Where-Object -FilterScript {
+                $_.SettingInstanceTemplate.SettingDefinitionId.StartsWith('user_')
             }
             $deviceDscParams = Convert-M365DSCDRGComplexTypeToHashtable -ComplexObject $DSCParams.DeviceSettings -SingleLevel -ExcludeUnchangedProperties
             $userDscParams = Convert-M365DSCDRGComplexTypeToHashtable -ComplexObject $DSCParams.UserSettings -SingleLevel -ExcludeUnchangedProperties
@@ -2638,11 +2516,16 @@ function Get-IntuneSettingCatalogPolicySetting
             $settingInstance.Add('settingInstanceTemplateReference', @{'settingInstanceTemplateId' = $settingInstanceTemplate.settingInstanceTemplateId })
         }
         $settingValueName = $settingType.Replace('#microsoft.graph.deviceManagementConfiguration', '').Replace('Instance', 'Value')
-        $settingValueName = $settingValueName.Substring(0, 1).ToLower() + $settingValueName.Substring(1, $settingValueName.length - 1 )
+        $settingValueName = $settingValueName.Substring(0, 1).ToLower() + $settingValueName.Substring(1, $settingValueName.Length - 1 )
         [string]$settingValueType = $settingInstanceTemplate.AdditionalProperties."$($settingValueName)Template".'@odata.type' | Select-Object -Unique
         if (-not [System.String]::IsNullOrEmpty($settingValueType))
         {
             $settingValueType = $settingValueType.Replace('ValueTemplate', 'Value')
+        }
+        if ([System.String]::IsNullOrEmpty($settingValueType) -and $settingValueName -eq 'choiceSettingValue')
+        {
+            # Special case for ChoiceSettingValue which does not have a ValueTemplate property
+            $settingValueType = '#microsoft.graph.deviceManagementConfigurationChoiceSettingValue'
         }
 
         $settingValueTemplateId = $settingInstanceTemplate.AdditionalProperties."$($settingValueName)Template".settingValueTemplateId
@@ -2754,12 +2637,12 @@ function Get-IntuneSettingCatalogPolicySettingInstanceValue
 
             $instanceCount = 1
             if (($Level -gt 1 -and $groupSettingCollectionDefinitionChildren.Count -gt 1) -or
-                ($Level -eq 1 -and $SettingDefinition.AdditionalProperties.maximumCount -gt 1 -and $groupSettingCollectionDefinitionChildren.Count -ge 1 -and $groupSettingCollectionDefinitionChildren.AdditionalProperties.'@odata.type' -notcontains "#microsoft.graph.deviceManagementConfigurationSettingGroupCollectionDefinition"))
+                ($Level -eq 1 -and $SettingDefinition.AdditionalProperties.maximumCount -gt 1 -and $groupSettingCollectionDefinitionChildren.Count -ge 1 -and $groupSettingCollectionDefinitionChildren.AdditionalProperties.'@odata.type' -notcontains '#microsoft.graph.deviceManagementConfigurationSettingGroupCollectionDefinition'))
             {
                 $SettingInstanceName += Get-SettingsCatalogSettingName -SettingDefinition $SettingDefinition -AllSettingDefinitions $AllSettingDefinitions
-                $settingInstanceNameAlternate = $SettingInstanceName + "_Intune"
+                $settingInstanceNameAlternate = $SettingInstanceName + '_Intune'
                 $cimDSCParams = @()
-                $cimDSCParamsName = ""
+                $cimDSCParamsName = ''
                 $DSCParams.GetEnumerator() | ForEach-Object {
                     if ($_.Value.CimClass.CimClassName -eq $SettingInstanceName -or $_.Value.CimClass.CimClassName -like "$settingInstanceNameAlternate*")
                     {
@@ -2770,10 +2653,12 @@ function Get-IntuneSettingCatalogPolicySettingInstanceValue
                 $newDSCParams = @{
                     $cimDSCParamsName = @()
                 }
-                foreach ($instance in $cimDSCParams) {
+                foreach ($instance in $cimDSCParams)
+                {
                     $newInstanceDSCParams = @{}
                     # Preserve CIM instances when converting to hashtable
-                    foreach ($property in $instance.CimInstanceProperties) {
+                    foreach ($property in $instance.CimInstanceProperties)
+                    {
                         if ($property.IsValueModified)
                         {
                             $newInstanceDSCParams.Add($property.Name, $property.Value)
@@ -2783,7 +2668,14 @@ function Get-IntuneSettingCatalogPolicySettingInstanceValue
                 }
                 $instanceCount = $newDSCParams.$cimDSCParamsName.Count
                 $DSCParams = @{
-                    $cimDSCParamsName = if ($instanceCount -eq 1) { $newDSCParams.$cimDSCParamsName[0] } else { $newDSCParams.$cimDSCParamsName }
+                    $cimDSCParamsName = if ($instanceCount -eq 1)
+                    {
+                        $newDSCParams.$cimDSCParamsName[0]
+                    }
+                    else
+                    {
+                        $newDSCParams.$cimDSCParamsName
+                    }
                 }
                 $AllSettingDefinitions = $groupSettingCollectionDefinitionChildren + $SettingDefinition
             }
@@ -2791,16 +2683,25 @@ function Get-IntuneSettingCatalogPolicySettingInstanceValue
             for ($i = 0; $i -lt $instanceCount; $i++)
             {
                 $groupSettingCollectionValueChildren = @()
-                $currentDSCParams = if ($instanceCount -eq 1) {
-                    if (-not [System.String]::IsNullOrEmpty($cimDSCParamsName)) {
+                $currentDSCParams = if ($instanceCount -eq 1)
+                {
+                    if (-not [System.String]::IsNullOrEmpty($cimDSCParamsName))
+                    {
                         $DSCParams.$cimDSCParamsName
-                    } else {
+                    }
+                    else
+                    {
                         $DSCParams
                     }
-                } else {
-                    if (-not [System.String]::IsNullOrEmpty($cimDSCParamsName)) {
+                }
+                else
+                {
+                    if (-not [System.String]::IsNullOrEmpty($cimDSCParamsName))
+                    {
                         $DSCParams.$cimDSCParamsName[$i]
-                    } else {
+                    }
+                    else
+                    {
                         $DSCParams[$i]
                     }
                 }
@@ -2815,10 +2716,13 @@ function Get-IntuneSettingCatalogPolicySettingInstanceValue
                     $childSettingType = $childDefinition.AdditionalProperties.'@odata.type'.Replace('Definition', 'Instance').Replace('SettingGroup', 'GroupSetting')
                     $childSettingValueName = $childSettingType.Replace('#microsoft.graph.deviceManagementConfiguration', '').Replace('Instance', 'Value')
                     $childSettingValueType = "#microsoft.graph.deviceManagementConfiguration$($childSettingValueName)"
-                    $childSettingValueName = $childSettingValueName.Substring(0, 1).ToLower() + $childSettingValueName.Substring(1, $childSettingValueName.length - 1 )
-                    $childSettingInstanceTemplate = if ($null -ne $SettingInstanceTemplate.AdditionalProperties) {
+                    $childSettingValueName = $childSettingValueName.Substring(0, 1).ToLower() + $childSettingValueName.Substring(1, $childSettingValueName.Length - 1 )
+                    $childSettingInstanceTemplate = if ($null -ne $SettingInstanceTemplate.AdditionalProperties)
+                    {
                         $SettingInstanceTemplate.AdditionalProperties.groupSettingCollectionValueTemplate.children | Where-Object { $_.settingDefinitionId -eq $childDefinition.Id } | Select-Object -First 1
-                    } else {
+                    }
+                    else
+                    {
                         $SettingInstanceTemplate.groupSettingCollectionValueTemplate.children | Where-Object { $_.settingDefinitionId -eq $childDefinition.Id } | Select-Object -First 1
                     }
 
@@ -2854,13 +2758,13 @@ function Get-IntuneSettingCatalogPolicySettingInstanceValue
                                 }
                                 $childSettingValueItem.Add('@odata.type', $childSettingType)
                                 $childSettingValueInner.children += @{
-                                    '@odata.type' = '#microsoft.graph.deviceManagementConfigurationGroupSettingCollectionInstance'
+                                    '@odata.type'               = '#microsoft.graph.deviceManagementConfigurationGroupSettingCollectionInstance'
                                     groupSettingCollectionValue = @(
                                         @{
                                             children = $childSettingValueItem.children
                                         }
                                     )
-                                    settingDefinitionId = $childDefinition.Id
+                                    settingDefinitionId         = $childDefinition.Id
                                 }
                                 <# GroupSettingCollection do not have a setting instance template reference
                                 if (-not [string]::IsNullOrEmpty($childSettingInstanceTemplate.settingInstanceTemplateId))
@@ -2901,7 +2805,8 @@ function Get-IntuneSettingCatalogPolicySettingInstanceValue
                 }
             }
 
-            if ($groupSettingCollectionDefinitionChildren.Count -gt 0 -and $groupSettingCollectionValue.Count -gt 0) {
+            if ($groupSettingCollectionDefinitionChildren.Count -gt 0 -and $groupSettingCollectionValue.Count -gt 0)
+            {
                 $settingValuesToReturn.Add('groupSettingCollectionValue', @($groupSettingCollectionValue))
             }
         }
@@ -2927,9 +2832,12 @@ function Get-IntuneSettingCatalogPolicySettingInstanceValue
                 $childSettingValueName = $childSettingType.Replace('#microsoft.graph.deviceManagementConfiguration', '').Replace('Instance', 'Value')
                 $childSettingValueType = "#microsoft.graph.deviceManagementConfiguration$($childSettingValueName)"
                 $childSettingValueName = $childSettingValueName.Substring(0, 1).ToLower() + $childSettingValueName.Substring(1, $childSettingValueName.Length - 1 )
-                $childSettingInstanceTemplate = if ($null -ne $SettingInstanceTemplate.AdditionalProperties) {
+                $childSettingInstanceTemplate = if ($null -ne $SettingInstanceTemplate.AdditionalProperties)
+                {
                     $SettingInstanceTemplate.AdditionalProperties.choiceSettingValueTemplate.children | Where-Object { $_.settingDefinitionId -eq $childDefinition.Id }
-                } else {
+                }
+                else
+                {
                     $SettingInstanceTemplate.choiceSettingValueTemplate.children | Where-Object { $_.settingDefinitionId -eq $childDefinition.Id }
                 }
                 $childSettingValueTemplateId = $childSettingInstanceTemplate."$($childSettingValueName)Template" | Where-Object {
@@ -2967,9 +2875,12 @@ function Get-IntuneSettingCatalogPolicySettingInstanceValue
             }
 
             # Depending on the children count, we add the children to the choice setting or an empty array since the children property is required
-            if ($choiceSettingDefinitionChildren.Count -gt 0) {
+            if ($choiceSettingDefinitionChildren.Count -gt 0)
+            {
                 $choiceSettingValue.Add('children', $choiceSettingValueChildren)
-            } else {
+            }
+            else
+            {
                 $choiceSettingValue.Add('children', @())
             }
 
@@ -3018,8 +2929,8 @@ function Get-IntuneSettingCatalogPolicySettingInstanceValue
                 foreach ($value in $values)
                 {
                     $choiceSettingValueCollection += @{
-                        value    = $value
-                        children = @()
+                        value         = $value
+                        children      = @()
                         '@odata.type' = '#microsoft.graph.deviceManagementConfigurationChoiceSettingValue'
                     }
                 }
@@ -3052,12 +2963,13 @@ function Get-IntuneSettingCatalogPolicySettingInstanceValue
                     '@odata.type' = $SettingValueType
                 }
             }
-            if ($settingValueCollection.Count -gt 0) {
+            if ($settingValueCollection.Count -gt 0)
+            {
                 $settingValuesToReturn.Add($SettingValueName, $settingValueCollection)
             }
         }
         # For all other types, e.g. Integer or String, we add the value directly
-        Default
+        default
         {
             $valueResult = Get-IntuneSettingCatalogPolicySettingDSCValue `
                 -SettingValueType $SettingValueType `
@@ -3079,7 +2991,7 @@ function Get-IntuneSettingCatalogPolicySettingInstanceValue
             {
                 if ($SettingDefinition.AdditionalProperties.valueDefinition.isSecret)
                 {
-                    $SettingValueType = "#microsoft.graph.deviceManagementConfigurationSecretSettingValue"
+                    $SettingValueType = '#microsoft.graph.deviceManagementConfigurationSecretSettingValue'
                     $settingValue.Add('valueState', 'NotEncrypted')
                 }
                 $settingValue.Add('@odata.type', $SettingValueType)
@@ -3103,7 +3015,7 @@ function Get-IntuneSettingCatalogPolicySettingDSCValue
     (
         [Parameter()]
         [System.String]
-        $SettingValueType = "",
+        $SettingValueType = '',
 
         [Parameter()]
         $SettingDefinition,
@@ -3135,42 +3047,67 @@ function Get-IntuneSettingCatalogPolicySettingDSCValue
     }
 
     $isArray = $false
-    if ($SettingValueType -like "*Simple*")
+    if ($SettingValueType -like '*Simple*')
     {
         if ($DSCParams[$key] -is [System.String])
         {
-            $SettingValueType = "#microsoft.graph.deviceManagementConfigurationStringSettingValue"
+            $SettingValueType = '#microsoft.graph.deviceManagementConfigurationStringSettingValue'
         }
         elseif ($DSCParams[$key] -is [System.Int32])
         {
-            $SettingValueType = "#microsoft.graph.deviceManagementConfigurationIntegerSettingValue"
+            $SettingValueType = '#microsoft.graph.deviceManagementConfigurationIntegerSettingValue'
         }
         elseif ($DSCParams[$key] -is [System.String[]])
         {
-            $SettingValueType = "#microsoft.graph.deviceManagementConfigurationStringSettingValue"
+            $SettingValueType = '#microsoft.graph.deviceManagementConfigurationStringSettingValue'
             $isArray = $true
         }
         elseif ($DSCParams[$key] -is [System.Int32[]])
         {
-            $SettingValueType = "#microsoft.graph.deviceManagementConfigurationIntegerSettingValue"
+            $SettingValueType = '#microsoft.graph.deviceManagementConfigurationIntegerSettingValue'
             $isArray = $true
         }
     }
 
-    if ($SettingValueType -like "*Simple*" -or $SettingValueType -in @("#microsoft.graph.deviceManagementConfigurationIntegerSettingValue", "#microsoft.graph.deviceManagementConfigurationStringSettingValue"))
+    if ($SettingValueType -like '*Simple*' -or $SettingValueType -in @('#microsoft.graph.deviceManagementConfigurationIntegerSettingValue', '#microsoft.graph.deviceManagementConfigurationStringSettingValue'))
     {
         return @{
             SettingDefinition = $SettingDefinition
-            SettingValueType = $SettingValueType
-            Value = if ($isArray) { ,$DSCParams[$key] } else { $DSCParams[$key] }
+            SettingValueType  = $SettingValueType
+            Value             = if ($isArray)
+            {
+                , $DSCParams[$key]
+            }
+            else
+            {
+                $DSCParams[$key]
+            }
         }
     }
-    elseif ($SettingValueType -like "*ChoiceSettingCollection*")
+    elseif ($SettingValueType -like '*ChoiceSetting*' -and $SettingValueType -notlike '*Collection*')
+    {
+        $settingValue = ($SettingDefinition.AdditionalProperties.options | Where-Object { $_.optionValue.value -eq $($DSCParams[$key]) }).itemId
+        if ([System.String]::IsNullOrEmpty($settingValue))
+        {
+            $settingValue = ($SettingDefinition.AdditionalProperties.options | Where-Object { $_.itemId -eq "$($SettingDefinition.Id)_$($DSCParams[$key])" }).itemId
+        }
+        return @{
+            SettingDefinition = $SettingDefinition
+            SettingValueType  = $SettingValueType
+            Value             = $settingValue
+        }
+    }
+    elseif ($SettingValueType -like '*ChoiceSettingCollection*')
     {
         $values = @()
         foreach ($value in $DSCParams[$key])
         {
-            $values += "$($SettingDefinition.Id)_$value"
+            $valueToAdd = ($SettingDefinition.AdditionalProperties.options | Where-Object { $_.optionValue.value -eq "$value" }).itemId
+            if ([System.String]::IsNullOrEmpty($valueToAdd))
+            {
+                $valueToAdd = ($SettingDefinition.AdditionalProperties.options | Where-Object { $_.itemId -eq "$($SettingDefinition.Id)_$value" }).itemId
+            }
+            $values += $valueToAdd
         }
 
         return @{
@@ -3181,8 +3118,8 @@ function Get-IntuneSettingCatalogPolicySettingDSCValue
     {
         return @{
             SettingDefinition = $SettingDefinition
-            SettingValueType = $SettingValueType
-            Value = "$($SettingDefinition.Id)_$($DSCParams[$key])"
+            SettingValueType  = $SettingValueType
+            Value             = "$($SettingDefinition.Id)_$($DSCParams[$key])"
         }
     }
 }
@@ -3235,14 +3172,13 @@ function Export-IntuneSettingCatalogPolicySettings
         )]
         [switch]$ContainsDeviceAndUserSettings
     )
-
     if ($PSCmdlet.ParameterSetName -eq 'Start')
     {
         if ($ContainsDeviceAndUserSettings)
         {
             $deviceSettingsReturnHashtable = @{}
             $deviceSettings = $Settings | Where-Object -FilterScript {
-                $_.SettingInstance.settingDefinitionId.StartsWith("device_")
+                $_.SettingInstance.settingDefinitionId.StartsWith('device_')
             }
             if ($AllSettingDefinitions.Count -eq 0)
             {
@@ -3251,7 +3187,7 @@ function Export-IntuneSettingCatalogPolicySettings
             else
             {
                 $allDeviceSettingDefinitions = $AllSettingDefinitions | Where-Object -FilterScript {
-                    $_.Id.StartsWith("device_")
+                    $_.Id.StartsWith('device_')
                 }
             }
             foreach ($setting in $deviceSettings)
@@ -3261,7 +3197,7 @@ function Export-IntuneSettingCatalogPolicySettings
 
             $userSettingsReturnHashtable = @{}
             $userSettings = $Settings | Where-Object -FilterScript {
-                $_.SettingInstance.settingDefinitionId.StartsWith("user_")
+                $_.SettingInstance.settingDefinitionId.StartsWith('user_')
             }
             if ($AllSettingDefinitions.Count -eq 0)
             {
@@ -3270,7 +3206,7 @@ function Export-IntuneSettingCatalogPolicySettings
             else
             {
                 $allUserSettingDefinitions = $AllSettingDefinitions | Where-Object -FilterScript {
-                    $_.Id.StartsWith("user_")
+                    $_.Id.StartsWith('user_')
                 }
             }
 
@@ -3305,12 +3241,26 @@ function Export-IntuneSettingCatalogPolicySettings
     $addToParameters = $true
     $settingDefinition = $SettingDefinitions | Where-Object -FilterScript { $_.Id -eq $SettingInstance.settingDefinitionId }
     $settingName = Get-SettingsCatalogSettingName -SettingDefinition $settingDefinition -AllSettingDefinitions $AllSettingDefinitions
-    $odataType = if ($IsRoot) { $SettingInstance.AdditionalProperties.'@odata.type' } else { $SettingInstance.'@odata.type' }
+    $odataType = if ($IsRoot)
+    {
+        $SettingInstance.AdditionalProperties.'@odata.type'
+    }
+    else
+    {
+        $SettingInstance.'@odata.type'
+    }
     switch ($odataType)
     {
         '#microsoft.graph.deviceManagementConfigurationSimpleSettingInstance'
         {
-            $simpleSetting = if ($IsRoot) { $SettingInstance.AdditionalProperties.simpleSettingValue } else { $SettingInstance.simpleSettingValue }
+            $simpleSetting = if ($IsRoot)
+            {
+                $SettingInstance.AdditionalProperties.simpleSettingValue
+            }
+            else
+            {
+                $SettingInstance.simpleSettingValue
+            }
             if ($simpleSetting.'@odata.type' -eq '#microsoft.graph.deviceManagementConfigurationIntegerSettingValue')
             {
                 $settingValue = [int]$simpleSetting.value
@@ -3322,9 +3272,31 @@ function Export-IntuneSettingCatalogPolicySettings
         }
         '#microsoft.graph.deviceManagementConfigurationChoiceSettingInstance'
         {
-            $settingValue = if ($IsRoot) { $SettingInstance.AdditionalProperties.choiceSettingValue.value } else { $SettingInstance.choiceSettingValue.value }
-            $settingValue = $settingValue.Split('_') | Select-Object -Last 1
-            $childSettings = if ($IsRoot) { $SettingInstance.AdditionalProperties.choiceSettingValue.children } else { $SettingInstance.choiceSettingValue.children }
+            $options = $settingDefinition.AdditionalProperties.options
+            $beforeSettingValue = if ($IsRoot)
+            {
+                $SettingInstance.AdditionalProperties.choiceSettingValue.value
+            }
+            else
+            {
+                $SettingInstance.choiceSettingValue.value
+            }
+
+            $settingValue = ($options | Where-Object { $_.itemId -eq $beforeSettingValue }).optionValue.value
+            if ($settingValue -like '*=*' -or $settingValue -like '*{*}*')
+            {
+                # The value is not an actual value, but rather an assignment string. Fall back to the itemId and strip the prefix
+                # Examples are IntuneFirewallPolicyWindows10 -> target is a GUID, IntuneAntivirusPolicyWindows10ConfigMgr -> *Severity* is an assignment, e.g. 2=2
+                $settingValue = ($options | Where-Object { $_.itemId -eq $beforeSettingValue }).itemId.Replace("$($settingDefinition.Id)_", '')
+            }
+            $childSettings = if ($IsRoot)
+            {
+                $SettingInstance.AdditionalProperties.choiceSettingValue.children
+            }
+            else
+            {
+                $SettingInstance.choiceSettingValue.children
+            }
             foreach ($childSetting in $childSettings)
             {
                 Export-IntuneSettingCatalogPolicySettings -SettingInstance $childSetting -SettingDefinitions $SettingDefinitions -ReturnHashtable $ReturnHashtable -AllSettingDefinitions $AllSettingDefinitions
@@ -3333,16 +3305,46 @@ function Export-IntuneSettingCatalogPolicySettings
         '#microsoft.graph.deviceManagementConfigurationChoiceSettingCollectionInstance'
         {
             $values = @()
-            $childValues = if ($IsRoot) { $SettingInstance.AdditionalProperties.choiceSettingCollectionValue.value } else { $SettingInstance.choiceSettingCollectionValue.value }
+            $options = $settingDefinition.AdditionalProperties.options
+            $childValues = if ($IsRoot)
+            {
+                $SettingInstance.AdditionalProperties.choiceSettingCollectionValue.value
+            }
+            else
+            {
+                $SettingInstance.choiceSettingCollectionValue.value
+            }
             foreach ($value in $childValues)
             {
-                $values += $value.Split('_') | Select-Object -Last 1
+                $valueToReturn = ($options | Where-Object { $_.itemId -eq $value }).optionValue.value
+                if ($valueToReturn -like '*=*' -or $valueToReturn -like '*{*}*')
+                {
+                    # The value is not an actual value, but rather an assignment string. Fall back to the itemId and strip the prefix
+                    # Examples are IntuneFirewallPolicyWindows10 -> target is a GUID, IntuneAntivirusPolicyWindows10ConfigMgr -> *Severity* is an assignment, e.g. 2=2
+                    $valueToReturn = ($options | Where-Object { $_.itemId -eq $value }).itemId.Replace("$($settingDefinition.Id)_", '')
+                }
+                $values += $valueToReturn
+            }
+            if ($options[0].optionValue.'@odata.type' -like '*Integer*')
+            {
+                $values = [int[]]$values
+            }
+            elseif ($options[0].optionValue.'@odata.type' -like '*String*')
+            {
+                $values = [string[]]$values
             }
             $settingValue = $values
         }
         '#microsoft.graph.deviceManagementConfigurationGroupSettingCollectionInstance'
         {
-            $groupSettingCollectionValue = if ($IsRoot) { $SettingInstance.AdditionalProperties.groupSettingCollectionValue } else { $SettingInstance.groupSettingCollectionValue }
+            $groupSettingCollectionValue = if ($IsRoot)
+            {
+                $SettingInstance.AdditionalProperties.groupSettingCollectionValue
+            }
+            else
+            {
+                $SettingInstance.groupSettingCollectionValue
+            }
             [array]$childSettingDefinitions = $SettingDefinitions | Where-Object -FilterScript {
                 $settingDefinition.AdditionalProperties.childIds -contains $_.Id
             }
@@ -3392,7 +3394,14 @@ function Export-IntuneSettingCatalogPolicySettings
                     }
                     $childValue += $childHashtable
                 }
-                $settingValue = if ($null -eq $childValue) { $childHashtable } else { ,$childValue }
+                $settingValue = if ($null -eq $childValue)
+                {
+                    $childHashtable
+                }
+                else
+                {
+                    , $childValue
+                }
             }
             else
             {
@@ -3408,7 +3417,14 @@ function Export-IntuneSettingCatalogPolicySettings
         '#microsoft.graph.deviceManagementConfigurationSimpleSettingCollectionInstance'
         {
             $values = @()
-            $childValues = if ($IsRoot) { $SettingInstance.AdditionalProperties.simpleSettingCollectionValue } else { $SettingInstance.simpleSettingCollectionValue }
+            $childValues = if ($IsRoot)
+            {
+                $SettingInstance.AdditionalProperties.simpleSettingCollectionValue
+            }
+            else
+            {
+                $SettingInstance.simpleSettingCollectionValue
+            }
             foreach ($value in $childValues)
             {
                 if ($value.'@odata.type' -eq '#microsoft.graph.deviceManagementConfigurationIntegerSettingValue')
@@ -3422,7 +3438,7 @@ function Export-IntuneSettingCatalogPolicySettings
             }
             $settingValue = $values
         }
-        Default
+        default
         {
             if ($SettingInstance.'@odata.type' -eq '#microsoft.graph.deviceManagementConfigurationIntegerSettingValue')
             {
@@ -3480,8 +3496,17 @@ function Update-IntuneDeviceConfigurationPolicy
         $TemplateReferenceId,
 
         [Parameter()]
+        [AllowNull()]
+        [System.String]
+        $CreationSource,
+
+        [Parameter()]
         [Array]
-        $Settings
+        $Settings,
+
+        [Parameter()]
+        [System.String[]]
+        $RoleScopeTagIds
     )
 
     try
@@ -3489,12 +3514,22 @@ function Update-IntuneDeviceConfigurationPolicy
         $Uri = (Get-MSCloudLoginConnectionProfile -Workload MicrosoftGraph).ResourceUrl + "beta/deviceManagement/configurationPolicies/$DeviceConfigurationPolicyId"
 
         $policy = @{
-            'name'              = $Name
-            'description'       = $Description
-            'platforms'         = $Platforms
-            'templateReference' = @{'templateId' = $TemplateReferenceId }
-            'technologies'      = $Technologies
-            'settings'          = $Settings
+            'name'            = $Name
+            'description'     = $Description
+            'platforms'       = $Platforms
+            'technologies'    = $Technologies
+            'settings'        = $Settings
+            'roleScopeTagIds' = $RoleScopeTagIds
+        }
+
+        if ($PSBoundParameters.ContainsKey('TemplateReferenceId'))
+        {
+            $policy.Add('templateReference', @{ 'templateId' = $TemplateReferenceId })
+        }
+
+        if ($PSBoundParameters.ContainsKey('CreationSource') -and -not [System.String]::IsNullOrEmpty($CreationSource))
+        {
+            $policy.Add('creationSource', $CreationSource)
         }
 
         $body = $policy | ConvertTo-Json -Depth 20
@@ -3538,8 +3573,8 @@ function Remove-ComplexFunctionsFromFilterQuery
     )
 
     $complexFunctionsRegex = "startswith\((.*?),\s*'(.*?)'\)|endswith\((.*?),\s*'(.*?)'\)|contains\((.*?),\s*'(.*?)'\)"
-    $basicFilterQuery = [regex]::Replace($FilterQuery, $complexFunctionsRegex, "").Trim()
-    $basicFilterQuery = $basicFilterQuery -replace "^and\s","" -replace "\sand$","" -replace "\sand\s+", " and " -replace "\sor\s+", " or "
+    $basicFilterQuery = [regex]::Replace($FilterQuery, $complexFunctionsRegex, '').Trim()
+    $basicFilterQuery = $basicFilterQuery -replace '^and\s', '' -replace '\sand$', '' -replace '\sand\s+', ' and ' -replace '\sor\s+', ' or '
 
     return $basicFilterQuery
 }
@@ -3553,16 +3588,22 @@ function Find-GraphDataUsingComplexFunctions
         [array]$ComplexFunctions
     )
 
-    foreach ($function in $ComplexFunctions) {
-        if ($function -match "startswith\((.*?),\s*'(.*?)'") {
+    foreach ($function in $ComplexFunctions)
+    {
+        if ($function -match "startswith\((.*?),\s*'(.*?)'")
+        {
             $property = $matches[1]
             $value = $matches[2]
             $Policies = $Policies | Where-Object { $_.$property -like "$value*" }
-        } elseif ($function -match "endswith\((.*?),\s*'(.*?)'") {
+        }
+        elseif ($function -match "endswith\((.*?),\s*'(.*?)'")
+        {
             $property = $matches[1]
             $value = $matches[2]
             $Policies = $Policies | Where-Object { $_.$property -like "*$value" }
-        } elseif ($function -match "contains\((.*?),\s*'(.*?)'") {
+        }
+        elseif ($function -match "contains\((.*?),\s*'(.*?)'")
+        {
             $property = $matches[1]
             $value = $matches[2]
             $Policies = $Policies | Where-Object { $_.$property -like "*$value*" }
@@ -3596,35 +3637,38 @@ function Invoke-M365DSCIntuneMobileAppInitialUpload
     $manifest = $null
     $size = 1
     $sizeEncrypted = 64
-    $base64File = "+drh1SKfuLjdp37gfv8EuWqOTt06m0TirqJJ0xQvrd5sm6NkiYBY8vBkFM+9ZwHRskO83NEfsLPtTzLB9FFsKA=="
-    $fileDigest = "ypeBEsobvcr6wjGzmiPcTaeG7/gUfE5yuYB3ha/uSLs="
-    $mac = "+drh1SKfuLjdp37gfv8EuWqOTt06m0TirqJJ0xQvrd4="
+    $base64File = '+drh1SKfuLjdp37gfv8EuWqOTt06m0TirqJJ0xQvrd5sm6NkiYBY8vBkFM+9ZwHRskO83NEfsLPtTzLB9FFsKA=='
+    $fileDigest = 'ypeBEsobvcr6wjGzmiPcTaeG7/gUfE5yuYB3ha/uSLs='
+    $mac = '+drh1SKfuLjdp37gfv8EuWqOTt06m0TirqJJ0xQvrd4='
     switch ($OdataType)
     {
-        "microsoft.graph.androidLobApp" {
+        'microsoft.graph.androidLobApp'
+        {
             $size = 3425
             $sizeEncrypted = 3488
             $manifest = $([System.Convert]::ToBase64String([System.Text.Encoding]::UTF8.GetBytes('<?xml version="1.0" encoding="utf-8"?><AndroidManifestProperties xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"><Package>b.a</Package><PackageVersionCode>1</PackageVersionCode><PackageVersionName></PackageVersionName><ApplicationName>Sample.apk</ApplicationName><MinSdkVersion>3</MinSdkVersion><AWTVersion></AWTVersion></AndroidManifestProperties>')))
-            $base64File = "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"
-            $fileDigest = "rCQEPUja3DkId6YVFRVWWx/cHasCjuLZXYC9gAhdk3Y="
-            $mac = "OXtq10WM7mpJAnbN2AU/cqvKGYeKfTfJirK3weR6Y08="
+            $base64File = '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'
+            $fileDigest = 'rCQEPUja3DkId6YVFRVWWx/cHasCjuLZXYC9gAhdk3Y='
+            $mac = 'OXtq10WM7mpJAnbN2AU/cqvKGYeKfTfJirK3weR6Y08='
         }
-        "microsoft.graph.windowsMobileMSI" {
+        'microsoft.graph.windowsMobileMSI'
+        {
             $manifest = $([System.Convert]::ToBase64String([System.Text.Encoding]::UTF8.GetBytes('<MobileMsiData MsiExecutionContext="User" MsiRequiresReboot="false" MsiUpgradeCode="{00000000-0000-0000-0000-000000000000}" MsiIsMachineInstall="false" MsiIsUserInstall="true" MsiRequiresLogon="true" MsiIncludesServices="false" MsiContainsSystemRegistryKeys="false" MsiContainsSystemFolders="false"></MobileMsiData>')))
         }
-        "microsoft.graph.windowsUniversalAppx" {
+        'microsoft.graph.windowsUniversalAppx'
+        {
             $manifest = $([System.Convert]::ToBase64String([System.Text.Encoding]::UTF8.GetBytes("Sample.$($FileExtension)".ToUpper())))
         }
     }
 
     $fileUri = "beta/deviceAppManagement/mobileApps/$($AppId)/$OdataType/contentVersions/$($contentVersion.id)/files"
     $manifest = $null
-    if ($OdataType -eq "microsoft.graph.windowsUniversalAppx")
+    if ($OdataType -eq 'microsoft.graph.windowsUniversalAppx')
     {
         # Manifest is required for Windows Universal Appx
         $manifest = $([System.Convert]::ToBase64String([System.Text.Encoding]::UTF8.GetBytes("Sample.$($FileExtension)".ToUpper())))
     }
-    elseif ($OdataType -eq "microsoft.graph.windowsMobileMSI")
+    elseif ($OdataType -eq 'microsoft.graph.windowsMobileMSI')
     {
         # Manifest is required for Windows Mobile MSI
         $manifest = $([System.Convert]::ToBase64String([System.Text.Encoding]::UTF8.GetBytes('<MobileMsiData MsiExecutionContext="User" MsiRequiresReboot="false" MsiUpgradeCode="{00000000-0000-0000-0000-000000000000}" MsiIsMachineInstall="false" MsiIsUserInstall="true" MsiRequiresLogon="true" MsiIncludesServices="false" MsiContainsSystemRegistryKeys="false" MsiContainsSystemFolders="false"></MobileMsiData>')))
@@ -3632,15 +3676,15 @@ function Invoke-M365DSCIntuneMobileAppInitialUpload
     $file = Invoke-MgGraphRequest -Method POST `
         -Uri $fileUri `
         -Body @{
-            '@odata.type' = "#microsoft.graph.mobileAppContentFile"
-            name = "Sample.$($FileExtension)"
-            size = $size
-            sizeEncrypted = $sizeEncrypted
-            isDependency = $false
-            manifest = $manifest
-        }
+        '@odata.type' = '#microsoft.graph.mobileAppContentFile'
+        name          = "Sample.$($FileExtension)"
+        size          = $size
+        sizeEncrypted = $sizeEncrypted
+        isDependency  = $false
+        manifest      = $manifest
+    }
 
-    $file = Wait-ForFileProcessing -AppId $AppId -OdataType $OdataType -FileId $file.id -ContentVersionId $contentVersion.id -UploadStatePrefix "AzureStorageUriRequest"
+    $file = Wait-ForFileProcessing -AppId $AppId -OdataType $OdataType -FileId $file.id -ContentVersionId $contentVersion.id -UploadStatePrefix 'AzureStorageUriRequest'
 
     # Upload the encrypted Sample file to Azure Storage
     $success = $false
@@ -3650,18 +3694,20 @@ function Invoke-M365DSCIntuneMobileAppInitialUpload
         try
         {
             Write-Verbose "Uploading file to Azure Storage: $($file.azureStorageUri)"
-            $base64File = "+drh1SKfuLjdp37gfv8EuWqOTt06m0TirqJJ0xQvrd5sm6NkiYBY8vBkFM+9ZwHRskO83NEfsLPtTzLB9FFsKA=="
+            $base64File = '+drh1SKfuLjdp37gfv8EuWqOTt06m0TirqJJ0xQvrd5sm6NkiYBY8vBkFM+9ZwHRskO83NEfsLPtTzLB9FFsKA=='
             $sasUri = $file.azureStorageUri
             $uri = "$($sasUri)&comp=block&blockid=0001"
-            $iso = [System.Text.Encoding]::GetEncoding("iso-8859-1");
+            $iso = [System.Text.Encoding]::GetEncoding('iso-8859-1')
             $body = [System.Convert]::FromBase64String($base64File)
             $encodedBody = $iso.GetString($body)
             Invoke-WebRequest -Uri $uri -Method PUT -Body $encodedBody -Headers @{
-                "x-ms-blob-type" = "BlockBlob"
-            } -ErrorAction Stop | Out-Null
-            Write-Verbose "File uploaded successfully to Azure Storage." -Verbose
+                'x-ms-blob-type' = 'BlockBlob'
+            } -ErrorAction Stop -UseBasicParsing | Out-Null
+            Write-Verbose 'File uploaded successfully to Azure Storage.' -Verbose
             $success = $true
-        } catch {
+        }
+        catch
+        {
             Write-Warning -Message "Failed to upload file to Azure Storage: $($_.Exception.Message)" -Verbose
             Start-Sleep -Seconds 2
         }
@@ -3675,23 +3721,23 @@ function Invoke-M365DSCIntuneMobileAppInitialUpload
     # Commit the file and update the app
     $jsonCommit = @{
         fileEncryptionInfo = @{
-            fileDigestAlgorithm  = "SHA256"
-            encryptionKey        = "yqjlzT5KYpwU0wkr5eJGGukMB0Ar8iGqYX3B0lJJnKk="
-            initializationVector = "bJujZImAWPLwZBTPvWcB0Q=="
+            fileDigestAlgorithm  = 'SHA256'
+            encryptionKey        = 'yqjlzT5KYpwU0wkr5eJGGukMB0Ar8iGqYX3B0lJJnKk='
+            initializationVector = 'bJujZImAWPLwZBTPvWcB0Q=='
             fileDigest           = $fileDigest
             mac                  = $mac
-            profileIdentifier    = "ProfileVersion1"
-            macKey               = "mGfhTn/0AB3fftWzENQcoU34xghAfvVq23PoiBD81tM="
+            profileIdentifier    = 'ProfileVersion1'
+            macKey               = 'mGfhTn/0AB3fftWzENQcoU34xghAfvVq23PoiBD81tM='
         }
     }
     $commitUri = "beta/deviceAppManagement/mobileApps/$AppId/$OdataType/contentVersions/$($contentVersion.id)/files/$($file.id)/commit"
     Invoke-MgGraphRequest -Method POST -Uri $commitUri -Body $($jsonCommit | ConvertTo-Json -Depth 10)
 
-    Wait-ForFileProcessing -AppId $AppId -OdataType $OdataType -FileId $file.id -ContentVersionId $contentVersion.id -UploadStatePrefix "CommitFile"
+    Wait-ForFileProcessing -AppId $AppId -OdataType $OdataType -FileId $file.id -ContentVersionId $contentVersion.id -UploadStatePrefix 'CommitFile'
 
     # Update the app with the committed content version
     Invoke-MgGraphRequest -Method PATCH -Uri "beta/deviceAppManagement/mobileApps/$AppId" -Body @{
-        '@odata.type' = "#$OdataType"
+        '@odata.type'           = "#$OdataType"
         committedContentVersion = '1'
     }
 }
@@ -3729,7 +3775,7 @@ function Wait-ForFileProcessing
 
     while ($file.uploadState -ne "$($UploadStatePrefix)Success")
     {
-        if ($file.uploadState -like "*Failed")
+        if ($file.uploadState -like '*Failed')
         {
             throw "File upload failed with state: $($file.uploadState). Please check the file and try again."
         }

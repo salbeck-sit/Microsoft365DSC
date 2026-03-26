@@ -36,8 +36,8 @@ function Get-TargetResource
         $InternalSponsors,
 
         [Parameter()]
+        [ValidateSet('Present', 'Absent')]
         [System.String]
-        [ValidateSet('Absent', 'Present')]
         $Ensure = 'Present',
 
         [Parameter()]
@@ -75,7 +75,7 @@ function Get-TargetResource
     {
         if (-not $Script:exportedInstance -or $Script:exportedInstance.Id -ne $Id)
         {
-            $ConnectionMode = New-M365DSCConnection -Workload 'MicrosoftGraph' `
+            $null = New-M365DSCConnection -Workload 'MicrosoftGraph' `
                 -InboundParameters $PSBoundParameters
 
             #Ensure the proper dependencies are installed in the current environment.
@@ -130,7 +130,7 @@ function Get-TargetResource
         Write-Verbose -Message "Entitlement Management Connected Organization with id {$($getValue.id)} and displayName {$($getValue.DisplayName)} was found."
         [Array]$getExternalSponsors = Get-MgBetaEntitlementManagementConnectedOrganizationExternalSponsor -ConnectedOrganizationId $getValue.id
 
-        if ($null -ne $getExternalSponsors -and $getExternalSponsors.count -gt 0)
+        if ($null -ne $getExternalSponsors -and $getExternalSponsors.Count -gt 0)
         {
             $sponsors = @()
             foreach ($sponsor in $getExternalSponsors)
@@ -142,7 +142,7 @@ function Get-TargetResource
 
         [Array]$getInternalSponsors = Get-MgBetaEntitlementManagementConnectedOrganizationInternalSponsor -ConnectedOrganizationId $getValue.id
 
-        if ($null -ne $getInternalSponsors -and $getInternalSponsors.count -gt 0)
+        if ($null -ne $getInternalSponsors -and $getInternalSponsors.Count -gt 0)
         {
             $sponsors = @()
             foreach ($sponsor in $getInternalSponsors)
@@ -248,11 +248,11 @@ function Get-TargetResource
             TenantId              = $TenantId
             ApplicationSecret     = $ApplicationSecret
             CertificateThumbprint = $CertificateThumbprint
-            Managedidentity       = $ManagedIdentity.IsPresent
+            ManagedIdentity       = $ManagedIdentity.IsPresent
             AccessTokens          = $AccessTokens
         }
 
-        return [System.Collections.Hashtable] $results
+        return $results
     }
     catch
     {
@@ -262,7 +262,7 @@ function Get-TargetResource
             -TenantId $TenantId `
             -Credential $Credential
 
-        return $nullResult
+        throw
     }
 }
 
@@ -301,8 +301,8 @@ function Set-TargetResource
         $InternalSponsors,
 
         [Parameter()]
+        [ValidateSet('Present', 'Absent')]
         [System.String]
-        [ValidateSet('Absent', 'Present')]
         $Ensure = 'Present',
 
         [Parameter()]
@@ -349,16 +349,6 @@ function Set-TargetResource
     #endregion
 
     $currentInstance = Get-TargetResource @PSBoundParameters
-
-    $PSBoundParameters.Remove('Ensure') | Out-Null
-    $PSBoundParameters.Remove('Credential') | Out-Null
-    $PSBoundParameters.Remove('ApplicationId') | Out-Null
-    $PSBoundParameters.Remove('ApplicationSecret') | Out-Null
-    $PSBoundParameters.Remove('TenantId') | Out-Null
-    $PSBoundParameters.Remove('CertificateThumbprint') | Out-Null
-    $PSBoundParameters.Remove('ManagedIdentity') | Out-Null
-    $PSBoundParameters.Remove('Verbose') | Out-Null
-    $PSBoundParameters.Remove('AccessTokens') | Out-Null
 
     $keyToRename = @{
         'odataType'        = '@odata.type'
@@ -431,21 +421,13 @@ function Set-TargetResource
     {
         Write-Verbose -Message "Creating a new Entitlement Management Connected Organization {$DisplayName}"
 
-        $CreateParameters = ([Hashtable]$PSBoundParameters).clone()
+        $CreateParameters = Remove-M365DSCAuthenticationParameter -BoundParameters $PSBoundParameters
         $CreateParameters = Rename-M365DSCCimInstanceParameter -Properties $CreateParameters -KeyMapping $keyToRename
 
         $CreateParameters.Remove('Id') | Out-Null
         $CreateParameters.Remove('ExternalSponsors') | Out-Null
         $CreateParameters.Remove('InternalSponsors') | Out-Null
 
-        $keys = (([Hashtable]$CreateParameters).clone()).Keys
-        foreach ($key in $keys)
-        {
-            if ($null -ne $CreateParameters.$key -and $CreateParameters.$key.getType().Name -like '*cimInstance*')
-            {
-                $CreateParameters.$key = Convert-M365DSCDRGComplexTypeToHashtable -ComplexObject $CreateParameters.$key
-            }
-        }
         Write-Verbose -Message "Create Parameters: $(Convert-M365DscHashtableToString -Hashtable $CreateParameters)"
         $TenantIdValue = $CreateParameters.IdentitySources.TenantId
         $url = (Get-MSCloudLoginConnectionProfile -Workload MicrosoftGraph).ResourceUrl + "beta/tenantRelationships/microsoft.graph.findTenantInformationByTenantId(tenantId='$TenantIdValue')"
@@ -456,7 +438,7 @@ function Set-TargetResource
         {
             $directoryObject = Get-MgBetaDirectoryObject -DirectoryObjectId $sponsor
             $directoryObjectType = $directoryObject.AdditionalProperties.'@odata.type'
-            $directoryObjectType = ($directoryObject.AdditionalProperties.'@odata.type').split('.') | Select-Object -Last 1
+            $directoryObjectType = ($directoryObject.AdditionalProperties.'@odata.type').Split('.') | Select-Object -Last 1
             $directoryObjectRef = @{
                 '@odata.id' = (Get-MSCloudLoginConnectionProfile -Workload MicrosoftGraph).ResourceUrl + "beta/$($directoryObjectType)s/$($sponsor)"
             }
@@ -469,7 +451,7 @@ function Set-TargetResource
         foreach ($sponsor in $InternalSponsors)
         {
             $directoryObject = Get-MgBetaDirectoryObject -DirectoryObjectId $sponsor
-            $directoryObjectType = ($directoryObject.AdditionalProperties.'@odata.type').split('.') | Select-Object -Last 1
+            $directoryObjectType = ($directoryObject.AdditionalProperties.'@odata.type').Split('.') | Select-Object -Last 1
             $directoryObjectRef = @{
                 '@odata.id' = (Get-MSCloudLoginConnectionProfile -Workload MicrosoftGraph).ResourceUrl + "beta/$($directoryObjectType)s/$($sponsor)"
             }
@@ -484,22 +466,12 @@ function Set-TargetResource
     {
         Write-Verbose -Message "Updating a new Entitlement Management Connected Organization {$($currentInstance.Id)}"
 
-        $UpdateParameters = ([Hashtable]$PSBoundParameters).clone()
+        $UpdateParameters = Remove-M365DSCAuthenticationParameter -BoundParameters $PSBoundParameters
         $UpdateParameters = Rename-M365DSCCimInstanceParameter -Properties $UpdateParameters -KeyMapping $keyToRename
 
         $UpdateParameters.Remove('Id') | Out-Null
         $UpdateParameters.Remove('ExternalSponsors') | Out-Null
         $UpdateParameters.Remove('InternalSponsors') | Out-Null
-
-
-        $keys = (([Hashtable]$UpdateParameters).clone()).Keys
-        foreach ($key in $keys)
-        {
-            if ($null -ne $UpdateParameters.$key -and $UpdateParameters.$key.getType().Name -like '*cimInstance*')
-            {
-                $UpdateParameters.$key = Convert-M365DSCDRGComplexTypeToHashtable -ComplexObject $UpdateParameters.$key
-            }
-        }
 
         Update-MgBetaEntitlementManagementConnectedOrganization -BodyParameter $UpdateParameters `
             -ConnectedOrganizationId $currentInstance.Id
@@ -525,7 +497,7 @@ function Set-TargetResource
         {
             $directoryObject = Get-MgBetaDirectoryObject -DirectoryObjectId $sponsor
             $directoryObjectType = $directoryObject.AdditionalProperties.'@odata.type'
-            $directoryObjectType = ($directoryObject.AdditionalProperties.'@odata.type').split('.') | Select-Object -Last 1
+            $directoryObjectType = ($directoryObject.AdditionalProperties.'@odata.type').Split('.') | Select-Object -Last 1
             $directoryObjectRef = @{
                 '@odata.id' = (Get-MSCloudLoginConnectionProfile -Workload MicrosoftGraph).ResourceUrl + "beta/$($directoryObjectType)s/$($sponsor)"
             }
@@ -563,7 +535,7 @@ function Set-TargetResource
         {
             $directoryObject = Get-MgBetaDirectoryObject -DirectoryObjectId $sponsor
             $directoryObjectType = $directoryObject.AdditionalProperties.'@odata.type'
-            $directoryObjectType = ($directoryObject.AdditionalProperties.'@odata.type').split('.') | Select-Object -Last 1
+            $directoryObjectType = ($directoryObject.AdditionalProperties.'@odata.type').Split('.') | Select-Object -Last 1
             $directoryObjectRef = @{
                 '@odata.id' = (Get-MSCloudLoginConnectionProfile -Workload MicrosoftGraph).ResourceUrl + "beta/$($directoryObjectType)s/$($sponsor)"
             }
@@ -623,8 +595,8 @@ function Test-TargetResource
         $InternalSponsors,
 
         [Parameter()]
+        [ValidateSet('Present', 'Absent')]
         [System.String]
-        [ValidateSet('Absent', 'Present')]
         $Ensure = 'Present',
 
         [Parameter()]
@@ -666,7 +638,7 @@ function Test-TargetResource
     #endregion
 
     $result = Test-M365DSCTargetResource -DesiredValues $PSBoundParameters `
-                                         -ResourceName $($MyInvocation.MyCommand.Source).Replace('MSFT_', '')
+        -ResourceName $($MyInvocation.MyCommand.Source).Replace('MSFT_', '')
     return $result
 }
 
@@ -676,6 +648,10 @@ function Export-TargetResource
     [OutputType([System.String])]
     param
     (
+        [Parameter()]
+        [System.String]
+        $Filter,
+
         [Parameter()]
         [System.Management.Automation.PSCredential]
         $Credential,
@@ -725,8 +701,9 @@ function Export-TargetResource
 
         #region resource generator code
         [array]$getValue = Get-MgBetaEntitlementManagementConnectedOrganization `
-            -ErrorAction Stop `
-            -All
+            -All `
+            -Filter $Filter `
+            -ErrorAction Stop
         #endregion
 
         $i = 1
@@ -761,7 +738,7 @@ function Export-TargetResource
                 TenantId              = $TenantId
                 ApplicationSecret     = $ApplicationSecret
                 CertificateThumbprint = $CertificateThumbprint
-                Managedidentity       = $ManagedIdentity.IsPresent
+                ManagedIdentity       = $ManagedIdentity.IsPresent
                 AccessTokens          = $AccessTokens
             }
 
@@ -801,21 +778,19 @@ function Export-TargetResource
         if ($_.ErrorDetails.Message -like '*User is not authorized to perform the operation.*')
         {
             Write-M365DSCHost -Message "`r`n    $($Global:M365DSCEmojiYellowCircle) Tenant does not meet license requirement to extract this component."
+            return ''
         }
         else
         {
-            Write-M365DSCHost -Message $Global:M365DSCEmojiRedX -CommitWrite
-
             New-M365DSCLogEntry -Message 'Error during Export:' `
                 -Exception $_ `
                 -Source $($MyInvocation.MyCommand.Source) `
                 -TenantId $TenantId `
                 -Credential $Credential
-        }
 
-        return ''
+            throw
+        }
     }
 }
 
 Export-ModuleMember -Function *-TargetResource
-

@@ -7,6 +7,7 @@ function Get-TargetResource
     param
     (
         [Parameter(Mandatory = $true)]
+        [ValidateSet('Yes')]
         [System.String]
         $IsSingleInstance,
 
@@ -56,53 +57,42 @@ function Get-TargetResource
     )
 
     Write-Verbose -Message 'Getting configuration of AzureAD Tenant Details'
-    $ConnectionMode = New-M365DSCConnection -Workload 'MicrosoftGraph' `
-        -InboundParameters $PSBoundParameters
-
-    #Ensure the proper dependencies are installed in the current environment.
-    Confirm-M365DSCDependencies
-
-    #region Telemetry
-    $ResourceName = $MyInvocation.MyCommand.ModuleName -replace 'MSFT_', ''
-    $CommandName = $MyInvocation.MyCommand
-    $data = Format-M365DSCTelemetryParameters -ResourceName $ResourceName `
-        -CommandName $CommandName `
-        -Parameters $PSBoundParameters
-    Add-M365DSCTelemetryEvent -Data $data
-    #endregion
-
-    $nullReturn = @{
-        IsSingleInstance = 'Yes'
-    }
 
     try
     {
-        $AADTenantDetails = Get-MgBetaOrganization -ErrorAction 'SilentlyContinue'
+        $null = New-M365DSCConnection -Workload 'MicrosoftGraph' `
+            -InboundParameters $PSBoundParameters
 
-        if ($null -eq $AADTenantDetails)
-        {
-            throw 'Could not retrieve AzureAD Tenant Details'
+        #Ensure the proper dependencies are installed in the current environment.
+        Confirm-M365DSCDependencies
+
+        #region Telemetry
+        $ResourceName = $MyInvocation.MyCommand.ModuleName -replace 'MSFT_', ''
+        $CommandName = $MyInvocation.MyCommand
+        $data = Format-M365DSCTelemetryParameters -ResourceName $ResourceName `
+            -CommandName $CommandName `
+            -Parameters $PSBoundParameters
+        Add-M365DSCTelemetryEvent -Data $data
+        #endregion
+
+        $aadTenantDetails = Get-MgBetaOrganization -ErrorAction Stop
+
+        Write-Verbose -Message 'Found existing AzureAD Tenant Details'
+        $result = @{
+            IsSingleInstance                     = 'Yes'
+            MarketingNotificationEmails          = $aadTenantDetails.MarketingNotificationEmails
+            SecurityComplianceNotificationMails  = $aadTenantDetails.SecurityComplianceNotificationMails
+            SecurityComplianceNotificationPhones = $aadTenantDetails.SecurityComplianceNotificationPhones
+            TechnicalNotificationMails           = $aadTenantDetails.TechnicalNotificationMails
+            Credential                           = $Credential
+            ApplicationId                        = $ApplicationId
+            TenantId                             = $TenantId
+            ApplicationSecret                    = $ApplicationSecret
+            CertificateThumbprint                = $CertificateThumbprint
+            ManagedIdentity                      = $ManagedIdentity.IsPresent
+            AccessTokens                         = $AccessTokens
         }
-        else
-        {
-            Write-Verbose -Message 'Found existing AzureAD Tenant Details'
-            $result = @{
-                IsSingleInstance                     = 'Yes'
-                MarketingNotificationEmails          = $AADTenantDetails.MarketingNotificationEmails
-                SecurityComplianceNotificationMails  = $AADTenantDetails.SecurityComplianceNotificationMails
-                SecurityComplianceNotificationPhones = $AADTenantDetails.SecurityComplianceNotificationPhones
-                TechnicalNotificationMails           = $AADTenantDetails.TechnicalNotificationMails
-                Credential                           = $Credential
-                ApplicationId                        = $ApplicationId
-                TenantId                             = $TenantId
-                ApplicationSecret                    = $ApplicationSecret
-                CertificateThumbprint                = $CertificateThumbprint
-                ManagedIdentity                      = $ManagedIdentity.IsPresent
-                AccessTokens                         = $AccessTokens
-            }
-            Write-Verbose -Message "Get-TargetResource Result: `n $(Convert-M365DscHashtableToString -Hashtable $result)"
-            return $result
-        }
+        return $result
     }
     catch
     {
@@ -112,7 +102,7 @@ function Get-TargetResource
             -TenantId $TenantId `
             -Credential $Credential
 
-        return $nullReturn
+        throw
     }
 }
 
@@ -122,6 +112,7 @@ function Set-TargetResource
     param
     (
         [Parameter(Mandatory = $true)]
+        [ValidateSet('Yes')]
         [System.String]
         $IsSingleInstance,
 
@@ -171,7 +162,8 @@ function Set-TargetResource
     )
 
     Write-Verbose -Message 'Setting configuration of AzureAD Tenant Details'
-    $ConnectionMode = New-M365DSCConnection -Workload 'MicrosoftGraph' `
+
+    $null = New-M365DSCConnection -Workload 'MicrosoftGraph' `
         -InboundParameters $PSBoundParameters
 
     #Ensure the proper dependencies are installed in the current environment.
@@ -187,35 +179,10 @@ function Set-TargetResource
     #endregion
 
 
-    $currentParameters = $PSBoundParameters
+    $currentParameters = Remove-M365DSCAuthenticationParameter -BoundParameters $PSBoundParameters
     $currentParameters.Remove('IsSingleInstance') | Out-Null
-
-    if ($currentParameters.ContainsKey('Credential'))
-    {
-        $currentParameters.Remove('Credential') | Out-Null
-    }
-    if ($currentParameters.ContainsKey('ApplicationId'))
-    {
-        $currentParameters.Remove('ApplicationId') | Out-Null
-    }
-    if ($currentParameters.ContainsKey('ApplicationSecret'))
-    {
-        $currentParameters.Remove('ApplicationSecret') | Out-Null
-    }
-    if ($currentParameters.ContainsKey('TenantId'))
-    {
-        $currentParameters.Remove('TenantId') | Out-Null
-    }
-    if ($currentParameters.ContainsKey('CertificateThumbprint'))
-    {
-        $currentParameters.Remove('CertificateThumbprint') | Out-Null
-    }
-    if ($currentParameters.ContainsKey('ManagedIdentity'))
-    {
-        $currentParameters.Remove('ManagedIdentity') | Out-Null
-    }
-    $currentParameters.Remove('AccessTokens') | Out-Null
     $currentParameters.Add('OrganizationId', $(Get-MgBetaOrganization).Id)
+
     try
     {
         Write-Verbose -Message 'Calling Update-MGBetaOrganization with parameters:'
@@ -235,6 +202,7 @@ function Test-TargetResource
     param
     (
         [Parameter(Mandatory = $true)]
+        [ValidateSet('Yes')]
         [System.String]
         $IsSingleInstance,
 
@@ -293,7 +261,7 @@ function Test-TargetResource
     #endregion
 
     $result = Test-M365DSCTargetResource -DesiredValues $PSBoundParameters `
-                                         -ResourceName $($MyInvocation.MyCommand.Source).Replace('MSFT_', '')
+        -ResourceName $($MyInvocation.MyCommand.Source).Replace('MSFT_', '')
     return $result
 }
 
@@ -331,6 +299,7 @@ function Export-TargetResource
         [System.String[]]
         $AccessTokens
     )
+
     $ConnectionMode = New-M365DSCConnection -Workload 'MicrosoftGraph' `
         -InboundParameters $PSBoundParameters
 
@@ -354,13 +323,13 @@ function Export-TargetResource
             $Global:M365DSCExportResourceInstancesCount++
         }
 
-        $AADTenantDetails = Get-MgBetaOrganization -ErrorAction Stop
+        $aadTenantDetails = Get-MgBetaOrganization -ErrorAction Stop
 
         $Params = @{
-            MarketingNotificationEmails          = $AADTenantDetails.MarketingNotificationEmails
-            SecurityComplianceNotificationMails  = $AADTenantDetails.SecurityComplianceNotificationMails
-            SecurityComplianceNotificationPhones = $AADTenantDetails.SecurityComplianceNotificationPhones
-            TechnicalNotificationMails           = $AADTenantDetails.TechnicalNotificationMails
+            MarketingNotificationEmails          = $aadTenantDetails.MarketingNotificationEmails
+            SecurityComplianceNotificationMails  = $aadTenantDetails.SecurityComplianceNotificationMails
+            SecurityComplianceNotificationPhones = $aadTenantDetails.SecurityComplianceNotificationPhones
+            TechnicalNotificationMails           = $aadTenantDetails.TechnicalNotificationMails
             Credential                           = $Credential
             ApplicationId                        = $ApplicationId
             ApplicationSecret                    = $ApplicationSecret
@@ -394,17 +363,14 @@ function Export-TargetResource
     }
     catch
     {
-        Write-M365DSCHost -Message $Global:M365DSCEmojiRedX -CommitWrite
-
         New-M365DSCLogEntry -Message 'Error during Export:' `
             -Exception $_ `
             -Source $($MyInvocation.MyCommand.Source) `
             -TenantId $TenantId `
             -Credential $Credential
 
-        return ''
+        throw
     }
 }
 
 Export-ModuleMember -Function *-TargetResource
-

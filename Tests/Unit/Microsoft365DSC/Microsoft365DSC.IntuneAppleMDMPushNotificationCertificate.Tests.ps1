@@ -28,7 +28,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             $secpasswd = ConvertTo-SecureString (New-Guid | Out-String) -AsPlainText -Force
             $Credential = New-Object System.Management.Automation.PSCredential ('tenantadmin@mydomain.com', $secpasswd)
 
-            Mock -CommandName Confirm-M365DSCDependencies -MockWith {
+            Mock -ModuleName M365DSCUtil -CommandName Confirm-M365DSCDependencies -MockWith {
             }
 
             Mock -CommandName Get-MSCloudLoginConnectionProfile -MockWith {
@@ -43,15 +43,24 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             }
 
             Mock -CommandName Get-MgBetaDeviceManagementApplePushNotificationCertificate -MockWith {
+                return @{
+                    AppleIdentifier          = "Apple ID";
+                    Certificate              = "Test cert";
+                    Id                       = "66f4ec83-754f-4a59-a73d-e3182cc636a5";
+                }
+            }
+
+            Mock -CommandName Get-MgBetaDeviceManagementDataSharingConsent -MockWith {
+                return @{
+                    DataSharingConsentId = "appleMDMPushCertificate"
+                    Granted              = $True;
+                }
             }
 
             Mock -CommandName Update-MgBetaDeviceManagementApplePushNotificationCertificate -MockWith {
             }
 
-            Mock -CommandName Get-MgBetaDeviceManagementDataSharingConsent -MockWith {
-            }
-
-            $Script:exportedInstances =$null
+            $Script:exportedInstance = $null
             $Script:ExportMode = $false
         }
 
@@ -61,10 +70,8 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             BeforeAll {
                 $testParams = @{
                     AppleIdentifier         = "Apple ID";
-                    Certificate 	        = "Test cert";
-                    Id                      = "66f4ec83-754f-4a59-a73d-e3182cc636a5";
+                    Certificate             = "Test cert";
                     DataSharingConsetGranted = $True;
-
                     Ensure                  = 'Present';
                     Credential              = $Credential;
                 }
@@ -94,27 +101,10 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             BeforeAll {
                 $testParams = @{
                     AppleIdentifier             = "Apple ID";
-                    Certificate             	= "Test cert";
-                    Id                          = "66f4ec83-754f-4a59-a73d-e3182cc636a5";
+                    Certificate                 = "Test cert";
                     DataSharingConsetGranted    = $True;
-
                     Ensure          = 'Absent'
                     Credential      = $Credential
-                }
-
-                Mock -CommandName Get-MgBetaDeviceManagementApplePushNotificationCertificate -MockWith {
-                    return @{
-                        AppleIdentifier          = "Patched cert";
-                        Certificate 	         = "Test cert";
-                        Id                       = "66f4ec83-754f-4a59-a73d-e3182cc636a5";
-                    }
-                }
-
-                Mock -CommandName Get-MgBetaDeviceManagementDataSharingConsent -MockWith {
-                    return @{
-                        DataSharingConsentId = "appleMDMPushCertificate"
-                        Granted              = $True;
-                    }
                 }
             }
 
@@ -134,27 +124,10 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             BeforeAll {
                 $testParams = @{
                     AppleIdentifier             = "Apple ID";
-                    Certificate             	= "Test cert";
-                    Id                          = "66f4ec83-754f-4a59-a73d-e3182cc636a5";
+                    Certificate                 = "Test cert";
                     DataSharingConsetGranted    = $True;
-
                     Ensure                  = 'Present'
                     Credential              = $Credential
-                }
-
-                Mock -CommandName Get-MgBetaDeviceManagementApplePushNotificationCertificate -MockWith {
-                    return @{
-                        AppleIdentifier          = "Apple ID";
-                        Certificate 	         = "Test cert";
-                        Id                       = "66f4ec83-754f-4a59-a73d-e3182cc636a5";
-                    }
-                }
-
-                Mock -CommandName Get-MgBetaDeviceManagementDataSharingConsent -MockWith {
-                    return @{
-                        DataSharingConsentId = "appleMDMPushCertificate"
-                        Granted              = $True;
-                    }
                 }
             }
 
@@ -166,28 +139,11 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
         Context -Name '4. The instance exists and values are NOT in the desired state' -Fixture {
             BeforeAll {
                 $testParams = @{
-                    AppleIdentifier             = "Apple ID";
-                    Certificate             	= "Test cert";
-                    Id                          = "66f4ec83-754f-4a59-a73d-e3182cc636a5";
-                    DataSharingConsetGranted    = $True;
-
+                    AppleIdentifier          = "Apple ID";
+                    Certificate              = "Patched cert"; # Updated property
+                    DataSharingConsetGranted = $True;
                     Ensure                   = 'Present'
                     Credential               = $Credential
-                }
-
-                Mock -CommandName Get-MgBetaDeviceManagementApplePushNotificationCertificate -MockWith {
-                    return @{
-                        AppleIdentifier          = "Apple ID"; #drift
-                        Certificate 	         = "Patched cert base64 string"; #drift
-                        Id                       = "66f4ec83-754f-4a59-a73d-e3182cc636a5";
-                    }
-                }
-
-                Mock -CommandName Get-MgBetaDeviceManagementDataSharingConsent -MockWith {
-                    return @{
-                        DataSharingConsentId = "appleMDMPushCertificate"
-                        Granted              = $True;
-                    }
                 }
             }
 
@@ -211,21 +167,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                 $Global:PartialExportFileName = "$(New-Guid).partial.ps1"
                 $testParams = @{
                     Credential  = $Credential
-                }
-
-                Mock -CommandName Get-MgBetaDeviceManagementApplePushNotificationCertificate -MockWith {
-                    return @{
-                        AppleIdentifier          = "Apple ID";
-                        Certificate 	         = "Test cert";
-                        Id                       = "66f4ec83-754f-4a59-a73d-e3182cc636a5";
-                    }
-                }
-
-                Mock -CommandName Get-MgBetaDeviceManagementDataSharingConsent -MockWith {
-                    return @{
-                        DataSharingConsentId = "appleMDMPushCertificate"
-                        Granted              = $True;
-                    }
                 }
             }
 

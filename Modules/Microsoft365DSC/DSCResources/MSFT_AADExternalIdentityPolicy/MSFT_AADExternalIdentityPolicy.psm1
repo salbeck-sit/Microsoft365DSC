@@ -7,8 +7,8 @@ function Get-TargetResource
     param
     (
         [Parameter(Mandatory = $true)]
-        [System.String]
         [ValidateSet('Yes')]
+        [System.String]
         $IsSingleInstance,
 
         [Parameter()]
@@ -49,55 +49,26 @@ function Get-TargetResource
     )
 
     Write-Verbose -Message 'Getting configuration of External Identity Policy'
-    $ConnectionMode = New-M365DSCConnection -Workload 'MicrosoftGraph' `
-        -InboundParameters $PSBoundParameters
-
-    #Ensure the proper dependencies are installed in the current environment.
-    Confirm-M365DSCDependencies
-
-    #region Telemetry
-    $ResourceName = $MyInvocation.MyCommand.ModuleName -replace 'MSFT_', ''
-    $CommandName = $MyInvocation.MyCommand
-    $data = Format-M365DSCTelemetryParameters -ResourceName $ResourceName `
-        -CommandName $CommandName `
-        -Parameters $PSBoundParameters
-    Add-M365DSCTelemetryEvent -Data $data
-    #endregion
-
-    $nullReturn = @{
-        IsSingleInstance = 'Yes'
-    }
 
     try
     {
+        $null = New-M365DSCConnection -Workload 'MicrosoftGraph' `
+            -InboundParameters $PSBoundParameters
+
+        #Ensure the proper dependencies are installed in the current environment.
+        Confirm-M365DSCDependencies
+
+        #region Telemetry
+        $ResourceName = $MyInvocation.MyCommand.ModuleName -replace 'MSFT_', ''
+        $CommandName = $MyInvocation.MyCommand
+        $data = Format-M365DSCTelemetryParameters -ResourceName $ResourceName `
+            -CommandName $CommandName `
+            -Parameters $PSBoundParameters
+        Add-M365DSCTelemetryEvent -Data $data
+        #endregion
+
         $Policy = Get-MgBetaPolicyExternalIdentityPolicy -ErrorAction Stop
-    }
-    catch
-    {
-        $message = 'Could not find existing external identity policy'
 
-        New-M365DSCLogEntry -Message $message `
-            -Exception $_ `
-            -Source $($MyInvocation.MyCommand.Source) `
-            -TenantId $TenantId `
-            -Credential $Credential
-
-        return $nullReturn
-    }
-
-    if ($null -eq $Policy)
-    {
-        $message = 'Existing External Identity Policy was not found'
-
-        New-M365DSCLogEntry -Message $message `
-            -Source $($MyInvocation.MyCommand.Source) `
-            -TenantId $TenantId `
-            -Credential $Credential
-
-        return $nullReturn
-    }
-    else
-    {
         $result = @{
             IsSingleInstance                  = 'Yes'
             AllowDeletedIdentitiesDataRemoval = $Policy.allowDeletedIdentitiesDataRemoval
@@ -107,12 +78,21 @@ function Get-TargetResource
             ApplicationId                     = $ApplicationId
             TenantId                          = $TenantId
             CertificateThumbprint             = $CertificateThumbprint
-            Managedidentity                   = $ManagedIdentity.IsPresent
+            ManagedIdentity                   = $ManagedIdentity.IsPresent
             AccessTokens                      = $AccessTokens
         }
 
-        Write-Verbose -Message "Get-TargetResource Result: `n $(Convert-M365DscHashtableToString -Hashtable $result)"
         return $result
+    }
+    catch
+    {
+        New-M365DSCLogEntry -Message 'Error retrieving data:' `
+            -Exception $_ `
+            -Source $($MyInvocation.MyCommand.Source) `
+            -TenantId $TenantId `
+            -Credential $Credential
+
+        throw
     }
 }
 
@@ -122,8 +102,8 @@ function Set-TargetResource
     param
     (
         [Parameter(Mandatory = $true)]
-        [System.String]
         [ValidateSet('Yes')]
+        [System.String]
         $IsSingleInstance,
 
         [Parameter()]
@@ -162,6 +142,7 @@ function Set-TargetResource
         [System.String[]]
         $AccessTokens
     )
+
     Write-Verbose -Message 'Setting configuration for External Identity Policy'
 
     #Ensure the proper dependencies are installed in the current environment.
@@ -176,15 +157,8 @@ function Set-TargetResource
     Add-M365DSCTelemetryEvent -Data $data
     #endregion
 
-    $desiredParameters = ([hashtable]$PSBoundParameters).Clone()
+    $desiredParameters = Remove-M365DSCAuthenticationParameter -BoundParameters $PSBoundParameters
     $desiredParameters.Remove('IsSingleInstance') | Out-Null
-    $desiredParameters.Remove('ApplicationId') | Out-Null
-    $desiredParameters.Remove('TenantId') | Out-Null
-    $desiredParameters.Remove('CertificateThumbprint') | Out-Null
-    $desiredParameters.Remove('ApplicationSecret') | Out-Null
-    $desiredParameters.Remove('Credential') | Out-Null
-    $desiredParameters.Remove('ManagedIdentity') | Out-Null
-    $desiredParameters.Remove('AccessTokens') | Out-Null
 
     try
     {
@@ -212,8 +186,8 @@ function Test-TargetResource
     param
     (
         [Parameter(Mandatory = $true)]
-        [System.String]
         [ValidateSet('Yes')]
+        [System.String]
         $IsSingleInstance,
 
         [Parameter()]
@@ -263,7 +237,7 @@ function Test-TargetResource
     #endregion
 
     $result = Test-M365DSCTargetResource -DesiredValues $PSBoundParameters `
-                                         -ResourceName $($MyInvocation.MyCommand.Source).Replace('MSFT_', '')
+        -ResourceName $($MyInvocation.MyCommand.Source).Replace('MSFT_', '')
     return $result
 }
 
@@ -360,17 +334,14 @@ function Export-TargetResource
     }
     catch
     {
-        Write-M365DSCHost -Message $Global:M365DSCEmojiRedX -CommitWrite
-
         New-M365DSCLogEntry -Message 'Error during Export:' `
             -Exception $_ `
             -Source $($MyInvocation.MyCommand.Source) `
             -TenantId $TenantId `
             -Credential $Credential
 
-        return ''
+        throw
     }
 }
 
 Export-ModuleMember -Function *-TargetResource
-

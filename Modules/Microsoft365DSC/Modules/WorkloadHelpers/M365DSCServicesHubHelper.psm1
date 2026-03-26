@@ -29,15 +29,14 @@ function Invoke-M365DSCServicesHubWebRequest
     try
     {
         $response = Invoke-WebRequest -Method $Method `
-                                      -Uri $Uri `
-                                      -Headers $headers `
-                                      -Body $bodyValue `
-                                      -ContentType 'application/json; charset=utf-8' `
-                                      -UseBasicParsing
+            -Uri $Uri `
+            -Headers $headers `
+            -Body $bodyValue `
+            -ContentType 'application/json; charset=utf-8' `
+            -UseBasicParsing
     }
     catch
     {
-        $statusCode = $_.Exception.Response.StatusCode
         $streamReader = [System.IO.StreamReader]::new($_.Exception.Response.GetResponseStream())
         $ErrResp = $streamReader.ReadToEnd() | ConvertFrom-Json
         $streamReader.Close()

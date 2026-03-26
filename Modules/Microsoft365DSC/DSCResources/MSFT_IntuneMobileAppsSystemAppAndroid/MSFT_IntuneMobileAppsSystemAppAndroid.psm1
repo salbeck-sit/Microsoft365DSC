@@ -1,4 +1,4 @@
-Confirm-M365DSCModuleDependency -ModuleName "MSFT_IntuneMobileAppsSystemAppAndroid"
+Confirm-M365DSCModuleDependency -ModuleName 'MSFT_IntuneMobileAppsSystemAppAndroid'
 
 function Get-TargetResource
 {
@@ -33,8 +33,8 @@ function Get-TargetResource
         #endregion
 
         [Parameter()]
+        [ValidateSet('Present', 'Absent')]
         [System.String]
-        [ValidateSet('Absent', 'Present')]
         $Ensure = 'Present',
 
         [Parameter()]
@@ -73,7 +73,7 @@ function Get-TargetResource
         if (-not $Script:exportedInstance -or $Script:exportedInstance.DisplayName -ne $DisplayName)
         {
 
-            $ConnectionMode = New-M365DSCConnection -Workload 'MicrosoftGraph' `
+            $null = New-M365DSCConnection -Workload 'MicrosoftGraph' `
                 -InboundParameters $PSBoundParameters
 
             #Ensure the proper dependencies are installed in the current environment.
@@ -119,11 +119,11 @@ function Get-TargetResource
                 return $nullResult
             }
 
-            $getValue = Get-MgBetadeviceAppManagementMobileApp -MobileAppId $getValue.Id
+            $getValue = Get-MgBetaDeviceAppManagementMobileApp -MobileAppId $getValue.Id
         }
         else
         {
-            $getValue = $getValue = Get-MgBetadeviceAppManagementMobileApp -MobileAppId $Script:exportedInstance.Id
+            $getValue = $getValue = Get-MgBetaDeviceAppManagementMobileApp -MobileAppId $Script:exportedInstance.Id
         }
         $Id = $getValue.Id
         Write-Verbose -Message "An Intune Mobile Apps System App for Android with Id {$Id} and DisplayName {$DisplayName} was found"
@@ -152,7 +152,7 @@ function Get-TargetResource
         }
         $results.Add('Assignments', $assignmentResult)
 
-        return [System.Collections.Hashtable] $results
+        return $results
     }
     catch
     {
@@ -162,7 +162,7 @@ function Get-TargetResource
             -TenantId $TenantId `
             -Credential $Credential
 
-        return $nullResult
+        throw
     }
 }
 
@@ -198,8 +198,8 @@ function Set-TargetResource
         #endregion
 
         [Parameter()]
+        [ValidateSet('Present', 'Absent')]
         [System.String]
-        [ValidateSet('Absent', 'Present')]
         $Ensure = 'Present',
 
         [Parameter()]
@@ -246,30 +246,21 @@ function Set-TargetResource
     #endregion
 
     $currentInstance = Get-TargetResource @PSBoundParameters
-
-    $boundParameters = Remove-M365DSCAuthenticationParameter -BoundParameters $PSBoundParameters
+    $BoundParameters = Remove-M365DSCAuthenticationParameter -BoundParameters $PSBoundParameters
 
 
     if ($Ensure -eq 'Present' -and $currentInstance.Ensure -eq 'Absent')
     {
         Write-Verbose -Message "Creating an Intune Mobile Apps System App for Android with DisplayName {$DisplayName}"
-        $boundParameters.Remove("Assignments") | Out-Null
+        $boundParameters.Remove('Assignments') | Out-Null
 
         $createParameters = ([Hashtable]$boundParameters).Clone()
         $createParameters = Rename-M365DSCCimInstanceParameter -Properties $createParameters
         $createParameters.Remove('Id') | Out-Null
 
-        $keys = (([Hashtable]$createParameters).Clone()).Keys
-        foreach ($key in $keys)
-        {
-            if ($null -ne $createParameters.$key -and $createParameters.$key.GetType().Name -like '*CimInstance*')
-            {
-                $createParameters.$key = Convert-M365DSCDRGComplexTypeToHashtable -ComplexObject $createParameters.$key
-            }
-        }
         #region resource generator code
-        $createParameters.Add("@odata.type", "#microsoft.graph.androidManagedStoreApp")
-        $createParameters.Add("isSystemApp", $true)
+        $createParameters.Add('@odata.type', '#microsoft.graph.androidManagedStoreApp')
+        $createParameters.Add('isSystemApp', $true)
         $policy = Invoke-MgGraphRequest -Method POST -Uri '/beta/deviceAppManagement/mobileApps' -Body $($createParameters | ConvertTo-Json -Depth 10)
 
         if ($policy.Id)
@@ -284,25 +275,15 @@ function Set-TargetResource
     elseif ($Ensure -eq 'Present' -and $currentInstance.Ensure -eq 'Present')
     {
         Write-Verbose -Message "Updating the Intune Mobile Apps System App for Android with Id {$($currentInstance.Id)}"
-        $boundParameters.Remove("Assignments") | Out-Null
+        $boundParameters.Remove('Assignments') | Out-Null
 
         $updateParameters = ([Hashtable]$boundParameters).Clone()
         $updateParameters = Rename-M365DSCCimInstanceParameter -Properties $updateParameters
-
         $updateParameters.Remove('Id') | Out-Null
         $updateParameters.Remove('AppIdentifier') | Out-Null
 
-        $keys = (([Hashtable]$updateParameters).Clone()).Keys
-        foreach ($key in $keys)
-        {
-            if ($null -ne $pdateParameters.$key -and $updateParameters.$key.GetType().Name -like '*CimInstance*')
-            {
-                $updateParameters.$key = Convert-M365DSCDRGComplexTypeToHashtable -ComplexObject $updateParameters.MobileAppId
-            }
-        }
-
         #region resource generator code
-        $updateParameters.Add("@odata.type", "#microsoft.graph.androidManagedStoreApp")
+        $updateParameters.Add('@odata.type', '#microsoft.graph.androidManagedStoreApp')
         Update-MgBetaDeviceAppManagementMobileApp `
             -MobileAppId $currentInstance.Id `
             -BodyParameter $UpdateParameters
@@ -355,8 +336,8 @@ function Test-TargetResource
         #endregion
 
         [Parameter()]
+        [ValidateSet('Present', 'Absent')]
         [System.String]
-        [ValidateSet('Absent', 'Present')]
         $Ensure = 'Present',
 
         [Parameter()]
@@ -398,7 +379,7 @@ function Test-TargetResource
     #endregion
 
     $result = Test-M365DSCTargetResource -DesiredValues $PSBoundParameters `
-                                         -ResourceName $($MyInvocation.MyCommand.Source).Replace('MSFT_', '')
+        -ResourceName $($MyInvocation.MyCommand.Source).Replace('MSFT_', '')
     return $result
 }
 
@@ -546,15 +527,13 @@ function Export-TargetResource
     }
     catch
     {
-        Write-M365DSCHost -Message $Global:M365DSCEmojiRedX -CommitWrite
-
         New-M365DSCLogEntry -Message 'Error during Export:' `
             -Exception $_ `
             -Source $($MyInvocation.MyCommand.Source) `
             -TenantId $TenantId `
             -Credential $Credential
 
-        return ''
+        throw
     }
 }
 

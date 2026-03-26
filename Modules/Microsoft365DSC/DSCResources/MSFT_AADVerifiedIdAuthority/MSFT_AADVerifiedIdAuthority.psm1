@@ -26,8 +26,8 @@ function Get-TargetResource
         $KeyVaultMetadata,
 
         [Parameter()]
+        [ValidateSet('Present', 'Absent')]
         [System.String]
-        [ValidateSet('Absent', 'Present')]
         $Ensure = 'Present',
 
         [Parameter()]
@@ -59,25 +59,28 @@ function Get-TargetResource
         $AccessTokens
     )
 
-    $ConnectionMode = New-M365DSCConnection -Workload 'AdminAPI' `
-        -InboundParameters $PSBoundParameters
+    Write-Verbose -Message "Getting configuration for the AAD VerifiedId Authority with LinkedDomainUrl {$LinkedDomainUrl}"
 
-    #Ensure the proper dependencies are installed in the current environment.
-    Confirm-M365DSCDependencies
-
-    #region Telemetry
-    $ResourceName = $MyInvocation.MyCommand.ModuleName.Replace('MSFT_', '')
-    $CommandName = $MyInvocation.MyCommand
-    $data = Format-M365DSCTelemetryParameters -ResourceName $ResourceName `
-        -CommandName $CommandName `
-        -Parameters $PSBoundParameters
-    Add-M365DSCTelemetryEvent -Data $data
-    #endregion
-
-    $nullResult = $PSBoundParameters
-    $nullResult.Ensure = 'Absent'
     try
     {
+        $null = New-M365DSCConnection -Workload 'AdminAPI' `
+            -InboundParameters $PSBoundParameters
+
+        #Ensure the proper dependencies are installed in the current environment.
+        Confirm-M365DSCDependencies
+
+        #region Telemetry
+        $ResourceName = $MyInvocation.MyCommand.ModuleName.Replace('MSFT_', '')
+        $CommandName = $MyInvocation.MyCommand
+        $data = Format-M365DSCTelemetryParameters -ResourceName $ResourceName `
+            -CommandName $CommandName `
+            -Parameters $PSBoundParameters
+        Add-M365DSCTelemetryEvent -Data $data
+        #endregion
+
+        $nullResult = $PSBoundParameters
+        $nullResult.Ensure = 'Absent'
+
         if ($null -ne $Script:exportedInstances -and $Script:ExportMode)
         {
             $instances = $Script:exportedInstances
@@ -113,7 +116,7 @@ function Get-TargetResource
             ApplicationSecret     = $ApplicationSecret
             AccessTokens          = $AccessTokens
         }
-        return [System.Collections.Hashtable] $results
+        return $results
 
     }
     catch
@@ -124,7 +127,7 @@ function Get-TargetResource
             -TenantId $TenantId `
             -Credential $Credential
 
-        return $nullResult
+        throw
     }
 }
 
@@ -153,8 +156,8 @@ function Set-TargetResource
         $KeyVaultMetadata,
 
         [Parameter()]
+        [ValidateSet('Present', 'Absent')]
         [System.String]
-        [ValidateSet('Absent', 'Present')]
         $Ensure = 'Present',
 
         [Parameter()]
@@ -198,13 +201,9 @@ function Set-TargetResource
     Add-M365DSCTelemetryEvent -Data $data
     #endregion
 
-    New-M365DSCConnection -Workload 'AdminAPI' `
-        -InboundParameters $PSBoundParameters | Out-Null
-
     $currentInstance = Get-TargetResource @PSBoundParameters
 
     Write-Verbose -Message "Retrieved current instance: $($currentInstance.Name) with Id $($currentInstance.Id)"
-    $BoundParameters = Remove-M365DSCAuthenticationParameter -BoundParameters $PSBoundParameters
 
     $uri = 'https://verifiedid.did.msidentity.com/v1.0/verifiableCredentials/authorities/' + $currentInstance.Id
 
@@ -273,8 +272,8 @@ function Test-TargetResource
         $KeyVaultMetadata,
 
         [Parameter()]
+        [ValidateSet('Present', 'Absent')]
         [System.String]
-        [ValidateSet('Absent', 'Present')]
         $Ensure = 'Present',
 
         [Parameter()]
@@ -316,7 +315,7 @@ function Test-TargetResource
     #endregion
 
     $result = Test-M365DSCTargetResource -DesiredValues $PSBoundParameters `
-                                         -ResourceName $($MyInvocation.MyCommand.Source).Replace('MSFT_', '')
+        -ResourceName $($MyInvocation.MyCommand.Source).Replace('MSFT_', '')
     return $result
 }
 
@@ -395,7 +394,7 @@ function Export-TargetResource
                 CertificateThumbprint = $CertificateThumbprint
                 ApplicationSecret     = $ApplicationSecret
                 Credential            = $Credential
-                Managedidentity       = $ManagedIdentity.IsPresent
+                ManagedIdentity       = $ManagedIdentity.IsPresent
                 AccessTokens          = $AccessTokens
             }
             $Results = Get-TargetResource @Params
@@ -444,15 +443,13 @@ function Export-TargetResource
     }
     catch
     {
-        Write-M365DSCHost -Message $Global:M365DSCEmojiRedX -CommitWrite
-
         New-M365DSCLogEntry -Message 'Error during Export:' `
             -Exception $_ `
             -Source $($MyInvocation.MyCommand.Source) `
             -TenantId $TenantId `
             -Credential $Credential
 
-        return ''
+        throw
     }
 }
 
@@ -535,4 +532,3 @@ function Invoke-M365DSCVerifiedIdWebRequest
 }
 
 Export-ModuleMember -Function *-TargetResource
-

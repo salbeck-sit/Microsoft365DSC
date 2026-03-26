@@ -10,47 +10,44 @@
     ]
   },
   "permissions": {
-    "graph": {
-      "delegated": {
-        "read": [],
-        "update": []
-      },
+    "Office 365 Exchange Online": {
       "application": {
-        "read": [],
-        "update": []
+        "read": [
+          {
+            "name": "Exchange.ManageAsApp"
+          }
+        ],
+        "update": [
+          {
+            "name": "Exchange.ManageAsApp"
+          }
+        ]
       }
     },
     "exchange": {
-      "requiredroles": [
-        "Mail Enabled Public Folders",
-        "MyName",
-        "Public Folders",
-        "Compliance Admin",
-        "User Options",
-        "Message Tracking",
-        "View-Only Recipients",
-        "Role Management",
-        "Legal Hold",
-        "Audit Logs",
-        "Retention Management",
-        "Distribution Groups",
-        "Move Mailboxes",
-        "Information Rights Management",
-        "Mail Recipient Creation",
-        "Reset Password",
-        "View-Only Audit Logs",
-        "Mail Recipients",
-        "Mailbox Search",
-        "UM Mailboxes",
-        "Security Group Creation and Membership",
-        "Mailbox Import Export",
-        "MyMailboxDelegation",
-        "MyDisplayName"
-      ],
-      "requiredrolegroups": [
-        "Organization Management"
-      ]
+      "requiredroles": {
+        "read": [
+          "View-Only Recipients"
+        ],
+        "update": [
+          "Mail Recipient Creation",
+          "Mail Recipients"
+        ]
+      },
+      "requiredrolegroups": {
+        "read": [
+          "View-Only Organization Management"
+        ],
+        "update": [
+          "Recipient Management"
+        ]
+      }
     }
   },
-  "requiredModules": []
+  "requiredModules": [],
+  "supportedEnvironments": [
+    "Global",
+    "USGov"
+  ],
+  "mode": "Configuration"
 }

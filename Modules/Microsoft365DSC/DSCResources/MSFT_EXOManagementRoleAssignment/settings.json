@@ -10,24 +10,37 @@
     ]
   },
   "permissions": {
-    "graph": {
-      "delegated": {
-        "read": [],
-        "update": []
-      },
+    "Office 365 Exchange Online": {
       "application": {
-        "read": [],
-        "update": []
+        "read": [
+          {
+            "name": "Exchange.ManageAsApp"
+          }
+        ],
+        "update": [
+          {
+            "name": "Exchange.ManageAsApp"
+          }
+        ]
       }
     },
     "exchange": {
-      "requiredroles": [
-        "Role Management",
-        "View-Only Configuration"
-      ],
-      "requiredrolegroups": [
-        "Organization Management"
-      ]
+      "requiredroles": {
+        "read": [
+          "View-Only Configuration"
+        ],
+        "update": [
+          "Role Management"
+        ]
+      },
+      "requiredrolegroups": {
+        "read": [
+          "View-Only Organization Management"
+        ],
+        "update": [
+          "Organization Management"
+        ]
+      }
     }
   },
   "requiredModules": [
@@ -35,5 +48,24 @@
     "Microsoft.Graph.Identity.DirectoryManagement",
     "Microsoft.Graph.Users",
     "MSCloudLoginAssistant"
+  ],
+  "supportedEnvironments": [
+    "Global",
+    "USGov"
+  ],
+  "mode": "Data",
+  "commands": [
+    {
+      "module": "Microsoft.Graph.Identity.DirectoryManagement",
+      "cmdlets": [
+        "Get-MgDirectoryAdministrativeUnit"
+      ]
+    },
+    {
+      "module": "Microsoft.Graph.Users",
+      "cmdlets": [
+        "Get-MgUser"
+      ]
+    }
   ]
 }

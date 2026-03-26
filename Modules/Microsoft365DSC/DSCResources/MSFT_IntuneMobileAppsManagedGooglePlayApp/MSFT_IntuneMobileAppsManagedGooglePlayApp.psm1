@@ -1,3 +1,5 @@
+Confirm-M365DSCModuleDependency -ModuleName 'MSFT_IntuneMobileAppsManagedGooglePlayApp'
+
 function Get-TargetResource
 {
     [CmdletBinding()]
@@ -27,8 +29,8 @@ function Get-TargetResource
         #endregion
 
         [Parameter()]
+        [ValidateSet('Present', 'Absent')]
         [System.String]
-        [ValidateSet('Absent', 'Present')]
         $Ensure = 'Present',
 
         [Parameter()]
@@ -67,7 +69,7 @@ function Get-TargetResource
         if (-not $Script:exportedInstance -or $Script:exportedInstance.DisplayName -ne $DisplayName)
         {
 
-            $ConnectionMode = New-M365DSCConnection -Workload 'MicrosoftGraph' `
+            $null = New-M365DSCConnection -Workload 'MicrosoftGraph' `
                 -InboundParameters $PSBoundParameters
 
             #Ensure the proper dependencies are installed in the current environment.
@@ -113,7 +115,7 @@ function Get-TargetResource
                 return $nullResult
             }
 
-            $getValue = Get-MgBetadeviceAppManagementMobileApp -MobileAppId $getValue.Id
+            $getValue = Get-MgBetaDeviceAppManagementMobileApp -MobileAppId $getValue.Id
         }
         else
         {
@@ -145,7 +147,7 @@ function Get-TargetResource
         }
         $results.Add('Assignments', $assignmentResult)
 
-        return [System.Collections.Hashtable] $results
+        return $results
     }
     catch
     {
@@ -155,7 +157,7 @@ function Get-TargetResource
             -TenantId $TenantId `
             -Credential $Credential
 
-        return $nullResult
+        throw
     }
 }
 
@@ -187,8 +189,8 @@ function Set-TargetResource
         #endregion
 
         [Parameter()]
+        [ValidateSet('Present', 'Absent')]
         [System.String]
-        [ValidateSet('Absent', 'Present')]
         $Ensure = 'Present',
 
         [Parameter()]
@@ -235,7 +237,6 @@ function Set-TargetResource
     #endregion
 
     $currentInstance = Get-TargetResource @PSBoundParameters
-
     $BoundParameters = Remove-M365DSCAuthenticationParameter -BoundParameters $PSBoundParameters
 
     if ($Ensure -eq 'Present' -and $currentInstance.Ensure -eq 'Absent')
@@ -265,19 +266,9 @@ function Set-TargetResource
 
         $updateParameters = ([Hashtable]$boundParameters).Clone()
         $updateParameters = Rename-M365DSCCimInstanceParameter -Properties $updateParameters
-
         $updateParameters.Remove('Id') | Out-Null
         $updateParameters.Remove('DisplayName') | Out-Null
         $updateParameters.Remove('PackageId') | Out-Null
-
-        $keys = (([Hashtable]$updateParameters).Clone()).Keys
-        foreach ($key in $keys)
-        {
-            if ($null -ne $updateParameters.$key -and $updateParameters.$key.GetType().Name -like '*CimInstance*')
-            {
-                $updateParameters.$key = Convert-M365DSCDRGComplexTypeToHashtable -ComplexObject $updateParameters.$key
-            }
-        }
 
         $updateParameters.Add('@odata.type', '#microsoft.graph.macOSLobApp')
         Invoke-MgGraphRequest -Method PATCH -Uri "/beta/deviceAppManagement/mobileApps/$($currentInstance.Id)" -Body $($updateParameters | ConvertTo-Json -Depth 10)
@@ -326,8 +317,8 @@ function Test-TargetResource
         #endregion
 
         [Parameter()]
+        [ValidateSet('Present', 'Absent')]
         [System.String]
-        [ValidateSet('Absent', 'Present')]
         $Ensure = 'Present',
 
         [Parameter()]
@@ -368,9 +359,10 @@ function Test-TargetResource
     Add-M365DSCTelemetryEvent -Data $data
     #endregion
 
+    $compareParameters = Get-CompareParameters
     $result = Test-M365DSCTargetResource -DesiredValues $PSBoundParameters `
-                                         -ExcludedProperties @('PackageId') `
-                                         -ResourceName $($MyInvocation.MyCommand.Source).Replace('MSFT_', '')
+        -ResourceName $($MyInvocation.MyCommand.Source).Replace('MSFT_', '') `
+        @compareParameters
     return $result
 }
 
@@ -489,7 +481,17 @@ function Export-TargetResource
 
             if ($Results.Assignments)
             {
-                $complexTypeStringResult = Get-M365DSCDRGComplexTypeToString -ComplexObject $Results.Assignments -CIMInstanceName DeviceManagementMobileAppAssignment
+                $complexMapping = @(
+                    @{
+                        Name            = 'AssignmentSettings'
+                        CIMInstanceName = 'DeviceManagementManagedGooglePlayMobileAppAssignmentSettings'
+                        IsRequired      = $false
+                    }
+                )
+                $complexTypeStringResult = Get-M365DSCDRGComplexTypeToString `
+                    -ComplexObject $Results.Assignments `
+                    -CIMInstanceName DeviceManagementManagedGooglePlayMobileAppAssignment `
+                    -ComplexTypeMapping $complexMapping
                 if ($complexTypeStringResult)
                 {
                     $Results.Assignments = $complexTypeStringResult
@@ -516,16 +518,25 @@ function Export-TargetResource
     }
     catch
     {
-        Write-M365DSCHost -Message $Global:M365DSCEmojiRedX -CommitWrite
-
         New-M365DSCLogEntry -Message 'Error during Export:' `
             -Exception $_ `
             -Source $($MyInvocation.MyCommand.Source) `
             -TenantId $TenantId `
             -Credential $Credential
 
-        return ''
+        throw
     }
 }
 
-Export-ModuleMember -Function *-TargetResource
+function Get-CompareParameters
+{
+    [CmdletBinding()]
+    [OutputType([System.Collections.Hashtable])]
+    param()
+
+    return @{
+        ExcludedProperties = @('PackageId')
+    }
+}
+
+Export-ModuleMember -Function @('*-TargetResource', 'Get-CompareParameters')

@@ -56,40 +56,41 @@ function Get-TargetResource
         $AccessTokens
     )
 
+    Write-Verbose -Message "Getting configuration of the AAD User Flow Attribute with Id {$Id} and DisplayName {$DisplayName}"
+
     try
     {
         if (-not $Script:exportedInstance -or $Script:exportedInstance.Id -ne $Id)
         {
-        Write-Verbose -Message "Getting configuration of user flow attribute: $DisplayName"
-        $ConnectionMode = New-M365DSCConnection -Workload 'MicrosoftGraph' `
-            -InboundParameters $PSBoundParameters
+            $null = New-M365DSCConnection -Workload 'MicrosoftGraph' `
+                -InboundParameters $PSBoundParameters
 
-        Write-Verbose -Message 'Getting configuration of user flow attribute'
+            Write-Verbose -Message 'Getting configuration of user flow attribute'
 
-        #Ensure the proper dependencies are installed in the current environment.
-        Confirm-M365DSCDependencies
+            #Ensure the proper dependencies are installed in the current environment.
+            Confirm-M365DSCDependencies
 
-        #region Telemetry
-        $ResourceName = $MyInvocation.MyCommand.ModuleName -replace 'MSFT_', ''
-        $CommandName = $MyInvocation.MyCommand
-        $data = Format-M365DSCTelemetryParameters -ResourceName $ResourceName `
-            -CommandName $CommandName `
-            -Parameters $PSBoundParameters
-        Add-M365DSCTelemetryEvent -Data $data
-        #endregion
+            #region Telemetry
+            $ResourceName = $MyInvocation.MyCommand.ModuleName -replace 'MSFT_', ''
+            $CommandName = $MyInvocation.MyCommand
+            $data = Format-M365DSCTelemetryParameters -ResourceName $ResourceName `
+                -CommandName $CommandName `
+                -Parameters $PSBoundParameters
+            Add-M365DSCTelemetryEvent -Data $data
+            #endregion
 
-        $nullReturn = $PSBoundParameters
-        $nullReturn.Ensure = 'Absent'
+            $nullReturn = $PSBoundParameters
+            $nullReturn.Ensure = 'Absent'
 
-        if (-not [System.String]::IsNullOrEmpty($Id))
-        {
-            $UserFlowAttribute = Get-MgBetaIdentityUserFlowAttribute -IdentityUserFlowAttributeId $Id -ErrorAction SilentlyContinue
-        }
+            if (-not [System.String]::IsNullOrEmpty($Id))
+            {
+                $UserFlowAttribute = Get-MgBetaIdentityUserFlowAttribute -IdentityUserFlowAttributeId $Id -ErrorAction SilentlyContinue
+            }
 
-        if ($null -eq $UserFlowAttribute -and -not [System.String]::IsNullOrEmpty($DisplayName))
-        {
-            $UserFlowAttribute = Get-MgBetaIdentityUserFlowAttribute -Filter "DisplayName eq '$($DisplayName -replace "'", "''")'"
-        }
+            if ($null -eq $UserFlowAttribute -and -not [System.String]::IsNullOrEmpty($DisplayName))
+            {
+                $UserFlowAttribute = Get-MgBetaIdentityUserFlowAttribute -Filter "DisplayName eq '$($DisplayName -replace "'", "''")'"
+            }
         }
         else
         {
@@ -115,7 +116,6 @@ function Get-TargetResource
             ManagedIdentity       = $ManagedIdentity.IsPresent
             AccessTokens          = $AccessTokens
         }
-        Write-Verbose -Message "Get-TargetResource Result: `n $(Convert-M365DscHashtableToString -Hashtable $result)"
         return $result
     }
     catch
@@ -126,7 +126,7 @@ function Get-TargetResource
             -TenantId $TenantId `
             -Credential $Credential
 
-        return $nullReturn
+        throw
     }
 }
 
@@ -301,7 +301,7 @@ function Test-TargetResource
     #endregion
 
     $result = Test-M365DSCTargetResource -DesiredValues $PSBoundParameters `
-                                         -ResourceName $($MyInvocation.MyCommand.Source).Replace('MSFT_', '')
+        -ResourceName $($MyInvocation.MyCommand.Source).Replace('MSFT_', '')
     return $result
 }
 
@@ -378,7 +378,7 @@ function Export-TargetResource
                 ApplicationId         = $ApplicationId
                 TenantId              = $TenantId
                 CertificateThumbprint = $CertificateThumbprint
-                Managedidentity       = $ManagedIdentity.IsPresent
+                ManagedIdentity       = $ManagedIdentity.IsPresent
                 ApplicationSecret     = $ApplicationSecret
                 Credential            = $Credential
                 AccessTokens          = $AccessTokens
@@ -405,17 +405,14 @@ function Export-TargetResource
 
     catch
     {
-        Write-M365DSCHost -Message $Global:M365DSCEmojiRedX -CommitWrite
-
         New-M365DSCLogEntry -Message 'Error during Export:' `
             -Exception $_ `
             -Source $($MyInvocation.MyCommand.Source) `
             -TenantId $TenantId `
             -Credential $Credential
 
-        return ''
+        throw
     }
 }
 
 Export-ModuleMember -Function *-TargetResource
-

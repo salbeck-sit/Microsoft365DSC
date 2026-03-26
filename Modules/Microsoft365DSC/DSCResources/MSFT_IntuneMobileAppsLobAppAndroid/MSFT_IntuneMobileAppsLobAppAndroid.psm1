@@ -1,3 +1,5 @@
+Confirm-M365DSCModuleDependency -ModuleName 'MSFT_IntuneMobileAppsLobAppAndroid'
+
 function Get-TargetResource
 {
     [CmdletBinding()]
@@ -22,7 +24,7 @@ function Get-TargetResource
         $PackageId,
 
         [Parameter()]
-        [ValidateSet('androidDeviceAdministrator','androidOpenSourceProject')]
+        [ValidateSet('androidDeviceAdministrator', 'androidOpenSourceProject')]
         [System.String]
         $TargetedPlatforms,
 
@@ -80,8 +82,8 @@ function Get-TargetResource
         #endregion
 
         [Parameter()]
+        [ValidateSet('Present', 'Absent')]
         [System.String]
-        [ValidateSet('Absent', 'Present')]
         $Ensure = 'Present',
 
         [Parameter()]
@@ -119,8 +121,7 @@ function Get-TargetResource
     {
         if (-not $Script:exportedInstance -or $Script:exportedInstance.DisplayName -ne $DisplayName)
         {
-
-            $ConnectionMode = New-M365DSCConnection -Workload 'MicrosoftGraph' `
+            $null = New-M365DSCConnection -Workload 'MicrosoftGraph' `
                 -InboundParameters $PSBoundParameters
 
             #Ensure the proper dependencies are installed in the current environment.
@@ -176,7 +177,7 @@ function Get-TargetResource
         $complexCategories = @()
         foreach ($category in $getValue.Categories)
         {
-            $myCategory = @{}
+            $myCategory = [ordered]@{}
             $myCategory.Add('Id', $category.id)
             $myCategory.Add('DisplayName', $category.displayName)
             $complexCategories += $myCategory
@@ -211,7 +212,7 @@ function Get-TargetResource
         $complexLargeIcon = $null
         if ($null -ne $getValue.LargeIcon.Value)
         {
-            $complexLargeIcon = @{}
+            $complexLargeIcon = [ordered]@{}
             $complexLargeIcon.Add('Type', $getValue.LargeIcon.Type)
             $complexLargeIcon.Add('Value', [System.Convert]::ToBase64String($getValue.LargeIcon.Value))
         }
@@ -227,7 +228,7 @@ function Get-TargetResource
 
         $results = @{
             #region resource generator code
-            Categories                      = $complexCategories;
+            Categories                      = $complexCategories
             MinimumSupportedOperatingSystem = $complexMinimumSupportedOperatingSystem
             PackageId                       = $getValue.AdditionalProperties.packageId
             TargetedPlatforms               = $enumTargetedPlatforms
@@ -261,7 +262,7 @@ function Get-TargetResource
         }
         $results.Add('Assignments', $assignmentResult)
 
-        return [System.Collections.Hashtable] $results
+        return $results
     }
     catch
     {
@@ -271,7 +272,7 @@ function Get-TargetResource
             -TenantId $TenantId `
             -Credential $Credential
 
-        return $nullResult
+        throw
     }
 }
 
@@ -298,7 +299,7 @@ function Set-TargetResource
         $PackageId,
 
         [Parameter()]
-        [ValidateSet('androidDeviceAdministrator','androidOpenSourceProject')]
+        [ValidateSet('androidDeviceAdministrator', 'androidOpenSourceProject')]
         [System.String]
         $TargetedPlatforms,
 
@@ -356,8 +357,8 @@ function Set-TargetResource
         #endregion
 
         [Parameter()]
+        [ValidateSet('Present', 'Absent')]
         [System.String]
-        [ValidateSet('Absent', 'Present')]
         $Ensure = 'Present',
 
         [Parameter()]
@@ -404,34 +405,25 @@ function Set-TargetResource
     #endregion
 
     $currentInstance = Get-TargetResource @PSBoundParameters
-
-    $boundParameters = Remove-M365DSCAuthenticationParameter -BoundParameters $PSBoundParameters
+    $BoundParameters = Remove-M365DSCAuthenticationParameter -BoundParameters $PSBoundParameters
     $boundParameters.Remove('Categories') | Out-Null
 
     if ($Ensure -eq 'Present' -and $currentInstance.Ensure -eq 'Absent')
     {
         Write-Verbose -Message "Creating an Intune Mobile Apps Lob App for Android with DisplayName {$DisplayName}"
-        $boundParameters.Remove("Assignments") | Out-Null
+        $boundParameters.Remove('Assignments') | Out-Null
 
         $createParameters = ([Hashtable]$boundParameters).Clone()
         $createParameters = Rename-M365DSCCimInstanceParameter -Properties $createParameters
         $createParameters.Remove('Id') | Out-Null
 
-        $keys = (([Hashtable]$createParameters).Clone()).Keys
-        foreach ($key in $keys)
-        {
-            if ($null -ne $createParameters.$key -and $createParameters.$key.GetType().Name -like '*CimInstance*')
-            {
-                $createParameters.$key = Convert-M365DSCDRGComplexTypeToHashtable -ComplexObject $createParameters.$key
-            }
-        }
         #region resource generator code
-        $createParameters.Add("@odata.type", "#microsoft.graph.androidLobApp")
+        $createParameters.Add('@odata.type', '#microsoft.graph.androidLobApp')
         $createParameters.Add('versionCode', '20250000')
         $createParameters.Add('versionName', '1.0.0')
-        $policy = Invoke-MgGraphRequest -Method POST -Uri "/beta/deviceAppManagement/mobileApps" -Body ($createParameters | ConvertTo-Json -Depth 10)
+        $policy = Invoke-MgGraphRequest -Method POST -Uri '/beta/deviceAppManagement/mobileApps' -Body ($createParameters | ConvertTo-Json -Depth 10)
 
-        Invoke-M365DSCIntuneMobileAppInitialUpload -AppId $policy.Id -OdataType "#microsoft.graph.androidLobApp" -FileExtension "apk"
+        Invoke-M365DSCIntuneMobileAppInitialUpload -AppId $policy.Id -OdataType '#microsoft.graph.androidLobApp' -FileExtension 'apk'
 
         if ($PSBoundParameters.ContainsKey('Categories'))
         {
@@ -450,25 +442,15 @@ function Set-TargetResource
     elseif ($Ensure -eq 'Present' -and $currentInstance.Ensure -eq 'Present')
     {
         Write-Verbose -Message "Updating the Intune Mobile Apps Lob App for Android with Id {$($currentInstance.Id)}"
-        $boundParameters.Remove("Assignments") | Out-Null
+        $boundParameters.Remove('Assignments') | Out-Null
 
         $updateParameters = ([Hashtable]$boundParameters).Clone()
         $updateParameters = Rename-M365DSCCimInstanceParameter -Properties $updateParameters
-
         $updateParameters.Remove('Id') | Out-Null
         $updateParameters.Remove('TargetedPlatforms') | Out-Null
 
-        $keys = (([Hashtable]$updateParameters).Clone()).Keys
-        foreach ($key in $keys)
-        {
-            if ($null -ne $updateParameters.$key -and $updateParameters.$key.GetType().Name -like '*CimInstance*')
-            {
-                $updateParameters.$key = Convert-M365DSCDRGComplexTypeToHashtable -ComplexObject $updateParameters.$key
-            }
-        }
-
         #region resource generator code
-        $updateParameters.Add("@odata.type", "#microsoft.graph.androidLobApp")
+        $updateParameters.Add('@odata.type', '#microsoft.graph.androidLobApp')
         Invoke-MgGraphRequest -Method PATCH -Uri "/beta/deviceAppManagement/mobileApps/$($currentInstance.Id)" -Body ($updateParameters | ConvertTo-Json -Depth 10)
 
         if ($PSBoundParameters.ContainsKey('Categories'))
@@ -515,7 +497,7 @@ function Test-TargetResource
         $PackageId,
 
         [Parameter()]
-        [ValidateSet('androidDeviceAdministrator','androidOpenSourceProject')]
+        [ValidateSet('androidDeviceAdministrator', 'androidOpenSourceProject')]
         [System.String]
         $TargetedPlatforms,
 
@@ -573,8 +555,8 @@ function Test-TargetResource
         #endregion
 
         [Parameter()]
+        [ValidateSet('Present', 'Absent')]
         [System.String]
-        [ValidateSet('Absent', 'Present')]
         $Ensure = 'Present',
 
         [Parameter()]
@@ -606,9 +588,6 @@ function Test-TargetResource
         $AccessTokens
     )
 
-    #Ensure the proper dependencies are installed in the current environment.
-    Confirm-M365DSCDependencies
-
     #region Telemetry
     $ResourceName = $MyInvocation.MyCommand.ModuleName.Replace('MSFT_', '')
     $CommandName = $MyInvocation.MyCommand
@@ -618,50 +597,11 @@ function Test-TargetResource
     Add-M365DSCTelemetryEvent -Data $data
     #endregion
 
-    Write-Verbose -Message "Testing configuration of the Intune Mobile Apps Lob App for Android with Id {$Id} and DisplayName {$DisplayName}"
-
-    $CurrentValues = Get-TargetResource @PSBoundParameters
-    $ValuesToCheck = ([hashtable]$PSBoundParameters).Clone()
-    $testResult = $true
-
-    #Compare Cim instances
-    foreach ($key in $PSBoundParameters.Keys)
-    {
-        $source = $PSBoundParameters.$key
-        $target = $CurrentValues.$key
-        if ($null -ne $source -and $source.GetType().Name -like '*CimInstance*')
-        {
-            $testResult = Compare-M365DSCComplexObject `
-                -Source ($source) `
-                -Target ($target)
-
-            if (-not $testResult)
-            {
-                break
-            }
-
-            $ValuesToCheck.Remove($key) | Out-Null
-        }
-    }
-
-    $ValuesToCheck.Remove('Id') | Out-Null
-    $ValuesToCheck.Remove('TargetedPlatforms') | Out-Null
-    $ValuesToCheck = Remove-M365DSCAuthenticationParameter -BoundParameters $ValuesToCheck
-
-    Write-Verbose -Message "Current Values: $(Convert-M365DscHashtableToString -Hashtable $CurrentValues)"
-    Write-Verbose -Message "Target Values: $(Convert-M365DscHashtableToString -Hashtable $ValuesToCheck)"
-
-    if ($testResult)
-    {
-        $testResult = Test-M365DSCParameterState -CurrentValues $CurrentValues `
-            -Source $($MyInvocation.MyCommand.Source) `
-            -DesiredValues $PSBoundParameters `
-            -ValuesToCheck $ValuesToCheck.Keys
-    }
-
-    Write-Verbose -Message "Test-TargetResource returned $testResult"
-
-    return $testResult
+    $compareParameters = Get-CompareParameters
+    $result = Test-M365DSCTargetResource -DesiredValues $PSBoundParameters `
+        -ResourceName $($MyInvocation.MyCommand.Source).Replace('MSFT_', '') `
+        @compareParameters
+    return $result
 }
 
 function Export-TargetResource
@@ -846,16 +786,25 @@ function Export-TargetResource
     }
     catch
     {
-        Write-M365DSCHost -Message $Global:M365DSCEmojiRedX -CommitWrite
-
         New-M365DSCLogEntry -Message 'Error during Export:' `
             -Exception $_ `
             -Source $($MyInvocation.MyCommand.Source) `
             -TenantId $TenantId `
             -Credential $Credential
 
-        return ''
+        throw
     }
 }
 
-Export-ModuleMember -Function *-TargetResource
+function Get-CompareParameters
+{
+    [CmdletBinding()]
+    [OutputType([System.Collections.Hashtable])]
+    param()
+
+    return @{
+        ExcludedProperties = @('TargetedPlatforms')
+    }
+}
+
+Export-ModuleMember -Function @('*-TargetResource', 'Get-CompareParameters')

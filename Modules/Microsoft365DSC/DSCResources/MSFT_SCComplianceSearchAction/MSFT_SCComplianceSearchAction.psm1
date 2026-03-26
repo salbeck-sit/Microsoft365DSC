@@ -78,12 +78,14 @@ function Get-TargetResource
         [System.String[]]
         $AccessTokens
     )
+
+    Write-Verbose -Message "Getting configuration of SCComplianceSearchAction for $SearchName - $Action"
+
     try
     {
-         if (-not $Script:exportedInstance -or $Script:exportedInstance.Action -ne $Action)
-         {
-            Write-Verbose -Message "Getting configuration of SCComplianceSearchAction for $SearchName - $Action"
-            $ConnectionMode = New-M365DSCConnection -Workload 'SecurityComplianceCenter' `
+        if (-not $Script:exportedInstance -or $Script:exportedInstance.Action -ne $Action)
+        {
+            $null = New-M365DSCConnection -Workload 'SecurityComplianceCenter' `
                 -InboundParameters $PSBoundParameters
 
             #Ensure the proper dependencies are installed in the current environment.
@@ -197,7 +199,6 @@ function Get-TargetResource
         }
 
         Write-Verbose "Found existing $Action SCComplianceSearchAction for Search $SearchName"
-        Write-Verbose -Message "Get-TargetResource Result: `n $(Convert-M365DscHashtableToString -Hashtable $result)"
 
         return $result
     }
@@ -209,7 +210,7 @@ function Get-TargetResource
             -TenantId $TenantId `
             -Credential $Credential
 
-        return $nullReturn
+        throw
     }
 }
 
@@ -305,27 +306,12 @@ function Set-TargetResource
     Add-M365DSCTelemetryEvent -Data $data
     #endregion
 
-    $ConnectionMode = New-M365DSCConnection -Workload 'SecurityComplianceCenter' `
-        -InboundParameters $PSBoundParameters
-
     $CurrentAction = Get-TargetResource @PSBoundParameters
 
     # Calling the New-ComplianceSearchAction if the action already exists, updates it.
     if ('Present' -eq $Ensure)
     {
-        $CreationParams = $PSBoundParameters
-        $CreationParams.Remove('Ensure')
-
-        # Remove authentication parameters
-        $CreationParams.Remove('Credential') | Out-Null
-        $CreationParams.Remove('ApplicationId') | Out-Null
-        $CreationParams.Remove('TenantId') | Out-Null
-        $CreationParams.Remove('CertificatePath') | Out-Null
-        $CreationParams.Remove('CertificatePassword') | Out-Null
-        $CreationParams.Remove('CertificateThumbprint') | Out-Null
-        $CreationParams.Remove('ManagedIdentity') | Out-Null
-        $CreationParams.Remove('ApplicationSecret') | Out-Null
-        $CreationParams.Remove('AccessTokens') | Out-Null
+        $CreationParams = Remove-M365DSCAuthenticationParameter -BoundParameters $PSBoundParameters
 
         if ($null -ne $ActionScope)
         {
@@ -490,32 +476,19 @@ function Test-TargetResource
         [System.String[]]
         $AccessTokens
     )
-    #Ensure the proper dependencies are installed in the current environment.
-    Confirm-M365DSCDependencies
 
     #region Telemetry
-    $ResourceName = $MyInvocation.MyCommand.ModuleName -replace 'MSFT_', ''
+    $ResourceName = $MyInvocation.MyCommand.ModuleName.Replace('MSFT_', '')
     $CommandName = $MyInvocation.MyCommand
     $data = Format-M365DSCTelemetryParameters -ResourceName $ResourceName `
         -CommandName $CommandName `
         -Parameters $PSBoundParameters
     Add-M365DSCTelemetryEvent -Data $data
     #endregion
-    Write-Verbose -Message 'Testing configuration of SCComplianceSearchAction'
 
-    $CurrentValues = Get-TargetResource @PSBoundParameters
-    Write-Verbose -Message "Target Values: $(Convert-M365DscHashtableToString -Hashtable $PSBoundParameters)"
-
-    $ValuesToCheck = $PSBoundParameters
-
-    $TestResult = Test-M365DSCParameterState -CurrentValues $CurrentValues `
-        -Source $($MyInvocation.MyCommand.Source) `
-        -DesiredValues $PSBoundParameters `
-        -ValuesToCheck $ValuesToCheck.Keys
-
-    Write-Verbose -Message "Test-TargetResource returned $TestResult"
-
-    return $TestResult
+    $result = Test-M365DSCTargetResource -DesiredValues $PSBoundParameters `
+        -ResourceName $($MyInvocation.MyCommand.Source).Replace('MSFT_', '')
+    return $result
 }
 
 function Export-TargetResource
@@ -552,6 +525,7 @@ function Export-TargetResource
         [System.String[]]
         $AccessTokens
     )
+
     $ConnectionMode = New-M365DSCConnection -Workload 'SecurityComplianceCenter' `
         -InboundParameters $PSBoundParameters
 
@@ -655,15 +629,13 @@ function Export-TargetResource
     }
     catch
     {
-        Write-M365DSCHost -Message $Global:M365DSCEmojiRedX -CommitWrite
-
         New-M365DSCLogEntry -Message 'Error during Export:' `
             -Exception $_ `
             -Source $($MyInvocation.MyCommand.Source) `
             -TenantId $TenantId `
             -Credential $Credential
 
-        return ''
+        throw
     }
 }
 
@@ -771,4 +743,3 @@ function Get-CurrentAction
 }
 
 Export-ModuleMember -Function *-TargetResource
-

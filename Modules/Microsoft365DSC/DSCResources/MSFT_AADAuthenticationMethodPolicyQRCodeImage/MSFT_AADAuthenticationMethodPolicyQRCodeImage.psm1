@@ -28,7 +28,7 @@ function Get-TargetResource
         $StandardQRCodeLifetimeInDays,
 
         [Parameter()]
-        [ValidateRange(8,20)]
+        [ValidateRange(8, 20)]
         [System.UInt32]
         $PinLength,
 
@@ -68,8 +68,8 @@ function Get-TargetResource
     {
         if (-not $Script:exportedInstance -or $Script:exportedInstance.Id -ne $Id)
         {
-            $ConnectionMode = New-M365DSCConnection -Workload 'MicrosoftGraph' `
-                -InboundParameters $PSBoundParameters | Out-Null
+            $null = New-M365DSCConnection -Workload 'MicrosoftGraph' `
+                -InboundParameters $PSBoundParameters
 
             #Ensure the proper dependencies are installed in the current environment.
             Confirm-M365DSCDependencies
@@ -86,7 +86,7 @@ function Get-TargetResource
             $nullResult = $PSBoundParameters
             $nullResult.Ensure = 'Absent'
 
-            $uri = (Get-MSCloudLoginConnectionProfile -Workload MicrosoftGraph).ResourceUrl + "beta/policies/authenticationMethodsPolicy/authenticationMethodConfigurations/qrCodePin"
+            $uri = (Get-MSCloudLoginConnectionProfile -Workload MicrosoftGraph).ResourceUrl + 'beta/policies/authenticationMethodsPolicy/authenticationMethodConfigurations/qrCodePin'
             $response = Invoke-MgGraphRequest -Uri $uri -Method GET
             $instance = $response
         }
@@ -103,24 +103,15 @@ function Get-TargetResource
         $complexExcludeTargets = @()
         foreach ($currentExcludeTargets in $instance.excludeTargets)
         {
-            $myExcludeTargets = @{}
+            $myExcludeTargets = [ordered]@{}
             if ($currentExcludeTargets.id -ne 'all_users')
             {
-                try
+                $myExcludeTargetsDisplayName = Get-M365DSCGroupDisplayNameById -GroupId $currentExcludeTargets.Id
+                if ($null -eq $myExcludeTargetsDisplayName)
                 {
-                    $myExcludeTargetsDisplayName = Get-MgGroup -GroupId $currentExcludeTargets.id -ErrorAction Stop
-                    $myExcludeTargets.Add('Id', $myExcludeTargetsDisplayName.DisplayName)
-                }
-                catch
-                {
-                    $message = "Could not find a group with id $($currentExcludeTargets.id) specified in ExcludeTargets. Skipping group!"
-                    New-M365DSCLogEntry -Message $message `
-                        -Exception $_ `
-                        -Source $($MyInvocation.MyCommand.Source) `
-                        -TenantId $TenantId `
-                        -Credential $Credential
                     continue
                 }
+                $myExcludeTargets.Add('Id', $myExcludeTargetsDisplayName)
             }
             else
             {
@@ -129,52 +120,42 @@ function Get-TargetResource
 
             if ($null -ne $currentExcludeTargets.targetType)
             {
-                $myExcludeTargets.Add('TargetType', $currentExcludeTargets.targetType.toString())
+                $myExcludeTargets.Add('TargetType', $currentExcludeTargets.targetType.ToString())
             }
 
-            if ($myExcludeTargets.values.Where({ $null -ne $_ }).count -gt 0)
+            if ($myExcludeTargets.values.Where({ $null -ne $_ }).Count -gt 0)
             {
                 $complexExcludeTargets += $myExcludeTargets
             }
         }
         #endregion
 
-        $complexincludeTargets = @()
-        foreach ($currentincludeTargets in $instance.includeTargets)
+        $complexIncludeTargets = @()
+        foreach ($currentIncludeTargets in $instance.includeTargets)
         {
-            $myincludeTargets = @{}
+            $myIncludeTargets = [ordered]@{}
             if ($currentIncludeTargets.id -ne 'all_users')
             {
-                try
+                $myIncludeTargetsDisplayName = Get-M365DSCGroupDisplayNameById -GroupId $currentIncludeTargets.Id
+                if ($null -eq $myIncludeTargetsDisplayName)
                 {
-                    $myIncludeTargetsDisplayName = Get-MgGroup -GroupId $currentIncludeTargets.id -ErrorAction Stop
-                    $myIncludeTargets.Add('Id', $myIncludeTargetsDisplayName.DisplayName)
-
-                }
-                catch
-                {
-                    $message = "Could not find a group with id $($currentIncludeTargets.id) specified in IncludeTargets. Skipping group!"
-                    New-M365DSCLogEntry -Message $message `
-                        -Exception $_ `
-                        -Source $($MyInvocation.MyCommand.Source) `
-                        -TenantId $TenantId `
-                        -Credential $Credential
                     continue
                 }
+                $myIncludeTargets.Add('Id', $myIncludeTargetsDisplayName)
             }
             else
             {
                 $myIncludeTargets.Add('Id', $currentIncludeTargets.id)
             }
 
-            if ($null -ne $currentincludeTargets.targetType)
+            if ($null -ne $currentIncludeTargets.targetType)
             {
-                $myincludeTargets.Add('TargetType', $currentincludeTargets.targetType.toString())
+                $myIncludeTargets.Add('TargetType', $currentIncludeTargets.targetType.ToString())
             }
 
-            if ($myincludeTargets.values.Where({ $null -ne $_ }).count -gt 0)
+            if ($myIncludeTargets.values.Where({ $null -ne $_ }).Count -gt 0)
             {
-                $complexincludeTargets += $myincludeTargets
+                $complexIncludeTargets += $myIncludeTargets
             }
         }
 
@@ -182,7 +163,7 @@ function Get-TargetResource
             Id                           = $response.Id
             State                        = $response.State
             ExcludeTargets               = $complexExcludeTargets
-            IncludeTargets               = $complexincludeTargets
+            IncludeTargets               = $complexIncludeTargets
             StandardQRCodeLifetimeInDays = $response.StandardQRCodeLifetimeInDays
             PinLength                    = $response.PinLength
             Ensure                       = 'Present'
@@ -193,18 +174,17 @@ function Get-TargetResource
             ManagedIdentity              = $ManagedIdentity.IsPresent
             AccessTokens                 = $AccessTokens
         }
-        return [System.Collections.Hashtable] $results
+        return $results
     }
     catch
     {
-        Write-Verbose -Message $_
         New-M365DSCLogEntry -Message 'Error retrieving data:' `
             -Exception $_ `
             -Source $($MyInvocation.MyCommand.Source) `
             -TenantId $TenantId `
             -Credential $Credential
 
-        return $nullResult
+        throw
     }
 }
 
@@ -235,7 +215,7 @@ function Set-TargetResource
         $StandardQRCodeLifetimeInDays,
 
         [Parameter()]
-        [ValidateRange(8,20)]
+        [ValidateRange(8, 20)]
         [System.UInt32]
         $PinLength,
 
@@ -284,52 +264,19 @@ function Set-TargetResource
     #endregion
 
     $currentInstance = Get-TargetResource @PSBoundParameters
-
     $BoundParameters = Remove-M365DSCAuthenticationParameter -BoundParameters $PSBoundParameters
 
     if ($Ensure -eq 'Present')
     {
         Write-Verbose -Message "Updating the Azure AD Authentication Method Policy QR Code Image with Id {$($currentInstance.Id)}"
 
-        $UpdateParameters = ([Hashtable]$BoundParameters).clone()
+        $UpdateParameters = ([Hashtable]$BoundParameters).Clone()
         $UpdateParameters = Rename-M365DSCCimInstanceParameter -Properties $UpdateParameters
-
         $UpdateParameters.Remove('Id') | Out-Null
 
-        $keys = (([Hashtable]$UpdateParameters).clone()).Keys
-        foreach ($key in $keys)
-        {
-            if ($null -ne $UpdateParameters.$key -and $UpdateParameters.$key.getType().Name -like '*cimInstance*')
-            {
-                $UpdateParameters.$key = Convert-M365DSCDRGComplexTypeToHashtable -ComplexObject $UpdateParameters.$key
-            }
-            if ($key -eq 'IncludeTargets')
-            {
-                $i = 0
-                foreach ($entry in $UpdateParameters.$key)
-                {
-                    if ($entry.id -notmatch '^[0-9a-f]{8}-([0-9a-f]{4}-){3}[0-9a-f]{12}$|all_users')
-                    {
-                        $Filter = "DisplayName eq '$($entry.id -replace "'", "''")'" | Out-String
-                        $UpdateParameters.$key[$i].foreach('id', (Get-MgGroup -Filter $Filter).id.ToString())
-                    }
-                    $i++
-                }
-            }
-            if ($key -eq 'ExcludeTargets')
-            {
-                $i = 0
-                foreach ($entry in $UpdateParameters.$key)
-                {
-                    if ($entry.id -notmatch '^[0-9a-f]{8}-([0-9a-f]{4}-){3}[0-9a-f]{12}$|all_users')
-                    {
-                        $Filter = "DisplayName eq '$($entry.id -replace "'", "''")'" | Out-String
-                        $UpdateParameters.$key[$i].foreach('id', (Get-MgGroup -Filter $Filter).id.ToString())
-                    }
-                    $i++
-                }
-            }
-        }
+        Update-M365DSCAuthenticationTargets -Targets $UpdateParameters.ExcludeTargets
+        Update-M365DSCAuthenticationTargets -Targets $UpdateParameters.IncludeTargets
+
         #region resource generator code
         $UpdateParameters.Add('@odata.type', '#microsoft.graph.qrCodePinAuthenticationMethodConfiguration')
         Update-MgBetaPolicyAuthenticationMethodPolicyAuthenticationMethodConfiguration  `
@@ -374,7 +321,7 @@ function Test-TargetResource
         $StandardQRCodeLifetimeInDays,
 
         [Parameter()]
-        [ValidateRange(8,20)]
+        [ValidateRange(8, 20)]
         [System.UInt32]
         $PinLength,
 
@@ -408,9 +355,6 @@ function Test-TargetResource
         $AccessTokens
     )
 
-    #Ensure the proper dependencies are installed in the current environment.
-    Confirm-M365DSCDependencies
-
     #region Telemetry
     $ResourceName = $MyInvocation.MyCommand.ModuleName.Replace('MSFT_', '')
     $CommandName = $MyInvocation.MyCommand
@@ -420,20 +364,9 @@ function Test-TargetResource
     Add-M365DSCTelemetryEvent -Data $data
     #endregion
 
-    $CurrentValues = Get-TargetResource @PSBoundParameters
-    $ValuesToCheck = ([Hashtable]$PSBoundParameters).Clone()
-
-    Write-Verbose -Message "Current Values: $(Convert-M365DscHashtableToString -Hashtable $CurrentValues)"
-    Write-Verbose -Message "Target Values: $(Convert-M365DscHashtableToString -Hashtable $ValuesToCheck)"
-
-    $testResult = Test-M365DSCParameterState -CurrentValues $CurrentValues `
-        -Source $($MyInvocation.MyCommand.Source) `
-        -DesiredValues $PSBoundParameters `
-        -ValuesToCheck $ValuesToCheck.Keys
-
-    Write-Verbose -Message "Test-TargetResource returned $testResult"
-
-    return $testResult
+    $result = Test-M365DSCTargetResource -DesiredValues $PSBoundParameters `
+        -ResourceName $($MyInvocation.MyCommand.Source).Replace('MSFT_', '')
+    return $result
 }
 
 function Export-TargetResource
@@ -488,14 +421,14 @@ function Export-TargetResource
 
     try
     {
-        $uri = (Get-MSCloudLoginConnectionProfile -Workload MicrosoftGraph).ResourceUrl + "beta/policies/authenticationMethodsPolicy/authenticationMethodConfigurations/qrCodePin"
+        $uri = (Get-MSCloudLoginConnectionProfile -Workload MicrosoftGraph).ResourceUrl + 'beta/policies/authenticationMethodsPolicy/authenticationMethodConfigurations/qrCodePin'
         $response = Invoke-MgGraphRequest -Uri $uri -Method GET
         [array] $Script:exportedInstances = $response
         $i = 1
         $dscContent = ''
         if ($Script:exportedInstances.Length -eq 0)
         {
-            Write-M365DSCHost -Message $Global:M365DSCEmojiGreenCheckMark
+            Write-M365DSCHost -Message $Global:M365DSCEmojiGreenCheckMark -CommitWrite
         }
         else
         {
@@ -527,7 +460,7 @@ function Export-TargetResource
                 $complexTypeStringResult = Get-M365DSCDRGComplexTypeToString `
                     -ComplexObject $Results.ExcludeTargets `
                     -CIMInstanceName 'AADAuthenticationMethodPolicyQRCodeImageExcludeTarget'
-                if (-Not [String]::IsNullOrWhiteSpace($complexTypeStringResult))
+                if (-not [String]::IsNullOrWhiteSpace($complexTypeStringResult))
                 {
                     $Results.ExcludeTargets = $complexTypeStringResult
                 }
@@ -542,7 +475,7 @@ function Export-TargetResource
                 $complexTypeStringResult = Get-M365DSCDRGComplexTypeToString `
                     -ComplexObject $Results.IncludeTargets `
                     -CIMInstanceName 'AADAuthenticationMethodPolicyQRCodeImageIncludeTarget'
-                if (-Not [String]::IsNullOrWhiteSpace($complexTypeStringResult))
+                if (-not [String]::IsNullOrWhiteSpace($complexTypeStringResult))
                 {
                     $Results.IncludeTargets = $complexTypeStringResult
                 }
@@ -569,17 +502,14 @@ function Export-TargetResource
     }
     catch
     {
-        Write-M365DSCHost -Message $Global:M365DSCEmojiRedX -CommitWrite
-
         New-M365DSCLogEntry -Message 'Error during Export:' `
             -Exception $_ `
             -Source $($MyInvocation.MyCommand.Source) `
             -TenantId $TenantId `
             -Credential $Credential
 
-        return ''
+        throw
     }
 }
 
 Export-ModuleMember -Function *-TargetResource
-

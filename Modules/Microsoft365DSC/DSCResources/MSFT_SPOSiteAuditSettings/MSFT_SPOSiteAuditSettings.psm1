@@ -4,7 +4,8 @@ function Get-TargetResource
 {
     [CmdletBinding()]
     [OutputType([System.Collections.Hashtable])]
-    param (
+    param
+    (
         [Parameter(Mandatory = $true)]
         [System.String]
         $Url,
@@ -55,7 +56,7 @@ function Get-TargetResource
 
     try
     {
-        $ConnectionMode = New-M365DSCConnection -Workload 'PNP' `
+        $null = New-M365DSCConnection -Workload 'PNP' `
             -InboundParameters $PSBoundParameters `
             -Url $Url -ErrorAction SilentlyContinue
 
@@ -70,10 +71,6 @@ function Get-TargetResource
             -Parameters $PSBoundParameters
         Add-M365DSCTelemetryEvent -Data $data
         #endregion
-
-        $nullReturn = @{
-            IsSingleInstance = 'Yes'
-        }
 
         $auditSettings = Get-PnPAuditing -ErrorAction Stop
         $auditFlag = $auditSettings.AuditFlags
@@ -91,31 +88,27 @@ function Get-TargetResource
             CertificatePassword   = $CertificatePassword
             CertificatePath       = $CertificatePath
             CertificateThumbprint = $CertificateThumbprint
-            Managedidentity       = $ManagedIdentity.IsPresent
+            ManagedIdentity       = $ManagedIdentity.IsPresent
             AccessTokens          = $AccessTokens
         }
     }
     catch
     {
-        if ($error[0].Exception.Message -like 'No connection available')
-        {
-            Write-Verbose -Message 'Make sure that you are connected to your PnPConnection'
-        }
-
         New-M365DSCLogEntry -Message 'Error retrieving data:' `
             -Exception $_ `
             -Source $($MyInvocation.MyCommand.Source) `
             -TenantId $TenantId `
             -Credential $Credential
 
-        return $nullReturn
+        throw
     }
 }
 
 function Set-TargetResource
 {
     [CmdletBinding()]
-    param (
+    param
+    (
         [Parameter(Mandatory = $true)]
         [System.String]
         $Url,
@@ -177,7 +170,7 @@ function Set-TargetResource
     Add-M365DSCTelemetryEvent -Data $data
     #endregion
 
-    $ConnectionMode = New-M365DSCConnection -Workload 'PNP' `
+    $null = New-M365DSCConnection -Workload 'PNP' `
         -InboundParameters $PSBoundParameters `
         -Url $Url
 
@@ -195,7 +188,8 @@ function Test-TargetResource
 {
     [CmdletBinding()]
     [OutputType([System.Boolean])]
-    param (
+    param
+    (
         [Parameter(Mandatory = $true)]
         [System.String]
         $Url,
@@ -241,11 +235,9 @@ function Test-TargetResource
         [System.String[]]
         $AccessTokens
     )
-    #Ensure the proper dependencies are installed in the current environment.
-    Confirm-M365DSCDependencies
 
     #region Telemetry
-    $ResourceName = $MyInvocation.MyCommand.ModuleName -replace 'MSFT_', ''
+    $ResourceName = $MyInvocation.MyCommand.ModuleName.Replace('MSFT_', '')
     $CommandName = $MyInvocation.MyCommand
     $data = Format-M365DSCTelemetryParameters -ResourceName $ResourceName `
         -CommandName $CommandName `
@@ -253,20 +245,11 @@ function Test-TargetResource
     Add-M365DSCTelemetryEvent -Data $data
     #endregion
 
-    Write-Verbose -Message "Testing audit settings for {$Url}"
-    $CurrentValues = Get-TargetResource @PSBoundParameters
-
-    Write-Verbose -Message "Current Values: $(Convert-M365DscHashtableToString -Hashtable $CurrentValues)"
-    Write-Verbose -Message "Target Values: $(Convert-M365DscHashtableToString -Hashtable $PSBoundParameters)"
-
-    $TestResult = Test-M365DSCParameterState -CurrentValues $CurrentValues `
-        -Source $($MyInvocation.MyCommand.Source) `
-        -DesiredValues $PSBoundParameters `
-        -ValuesToCheck @('AuditFlags')
-
-    Write-Verbose -Message "Test-TargetResource returned $TestResult"
-
-    return $TestResult
+    $compareParameters = Get-CompareParameters
+    $result = Test-M365DSCTargetResource -DesiredValues $PSBoundParameters `
+        -ResourceName $($MyInvocation.MyCommand.Source).Replace('MSFT_', '') `
+        @compareParameters
+    return $result
 }
 
 function Export-TargetResource
@@ -371,7 +354,7 @@ function Export-TargetResource
                     CertificatePassword   = $CertificatePassword
                     CertificatePath       = $CertificatePath
                     CertificateThumbprint = $CertificateThumbprint
-                    Managedidentity       = $ManagedIdentity.IsPresent
+                    ManagedIdentity       = $ManagedIdentity.IsPresent
                     Credential            = $Credential
                     AccessTokens          = $AccessTokens
                 }
@@ -430,17 +413,25 @@ function Export-TargetResource
     }
     catch
     {
-        Write-M365DSCHost -Message $Global:M365DSCEmojiRedX -CommitWrite
-
         New-M365DSCLogEntry -Message 'Error during Export:' `
             -Exception $_ `
             -Source $($MyInvocation.MyCommand.Source) `
             -TenantId $TenantId `
             -Credential $Credential
 
-        return ''
+        throw
     }
 }
 
-Export-ModuleMember -Function *-TargetResource
+function Get-CompareParameters
+{
+    [CmdletBinding()]
+    [OutputType([System.Collections.Hashtable])]
+    param()
 
+    return @{
+        ExcludedProperties = @('Url')
+    }
+}
+
+Export-ModuleMember -Function @('*-TargetResource', 'Get-CompareParameters')

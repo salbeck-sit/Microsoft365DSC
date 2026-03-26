@@ -1,3 +1,5 @@
+Confirm-M365DSCModuleDependency -ModuleName 'MSFT_IntuneMobileAppsBundleMacOS'
+
 function Get-TargetResource
 {
     [CmdletBinding()]
@@ -92,8 +94,8 @@ function Get-TargetResource
         #endregion
 
         [Parameter()]
+        [ValidateSet('Present', 'Absent')]
         [System.String]
-        [ValidateSet('Absent', 'Present')]
         $Ensure = 'Present',
 
         [Parameter()]
@@ -132,7 +134,7 @@ function Get-TargetResource
         if (-not $Script:exportedInstance -or $Script:exportedInstance.DisplayName -ne $DisplayName)
         {
 
-            $ConnectionMode = New-M365DSCConnection -Workload 'MicrosoftGraph' `
+            $null = New-M365DSCConnection -Workload 'MicrosoftGraph' `
                 -InboundParameters $PSBoundParameters
 
             #Ensure the proper dependencies are installed in the current environment.
@@ -191,7 +193,7 @@ function Get-TargetResource
         $complexCategories = @()
         foreach ($category in $getValue.Categories)
         {
-            $myCategory = @{}
+            $myCategory = [ordered]@{}
             $myCategory.Add('Id', $category.id)
             $myCategory.Add('DisplayName', $category.displayName)
             $complexCategories += $myCategory
@@ -200,7 +202,7 @@ function Get-TargetResource
         $complexLargeIcon = $null
         if ($null -ne $getValue.LargeIcon.Value)
         {
-            $complexLargeIcon = @{}
+            $complexLargeIcon = [ordered]@{}
             $complexLargeIcon.Add('Type', $getValue.LargeIcon.Type)
             $complexLargeIcon.Add('Value', [System.Convert]::ToBase64String($getValue.LargeIcon.Value))
         }
@@ -267,7 +269,7 @@ function Get-TargetResource
         }
         if ($results.PackageFileType -eq 'Pkg')
         {
-            $results.PreInstallScript  = [System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase64String($getValue.AdditionalProperties.preInstallScript.scriptContent))
+            $results.PreInstallScript = [System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase64String($getValue.AdditionalProperties.preInstallScript.scriptContent))
             $results.PostInstallScript = [System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase64String($getValue.AdditionalProperties.postInstallScript.scriptContent))
         }
         $assignmentsValues = Get-MgBetaDeviceAppManagementMobileAppAssignment -MobileAppId $Id
@@ -278,7 +280,7 @@ function Get-TargetResource
         }
         $results.Add('Assignments', $assignmentResult)
 
-        return [System.Collections.Hashtable] $results
+        return $results
     }
     catch
     {
@@ -288,7 +290,7 @@ function Get-TargetResource
             -TenantId $TenantId `
             -Credential $Credential
 
-        return $nullResult
+        throw
     }
 }
 
@@ -385,8 +387,8 @@ function Set-TargetResource
         #endregion
 
         [Parameter()]
+        [ValidateSet('Present', 'Absent')]
         [System.String]
-        [ValidateSet('Absent', 'Present')]
         $Ensure = 'Present',
 
         [Parameter()]
@@ -422,7 +424,7 @@ function Set-TargetResource
 
     if ($PSBoundParameters.PackageFileType -eq 'Dmg' -and ($PSBoundParameters.ContainsKey('PreInstallScript') -or $PSBoundParameters.ContainsKey('PostInstallScript')))
     {
-        throw "PreInstallScript and PostInstallScript are not supported for Dmg package type."
+        throw 'PreInstallScript and PostInstallScript are not supported for Dmg package type.'
     }
 
     #Ensure the proper dependencies are installed in the current environment.
@@ -438,8 +440,7 @@ function Set-TargetResource
     #endregion
 
     $currentInstance = Get-TargetResource @PSBoundParameters
-
-    $boundParameters = Remove-M365DSCAuthenticationParameter -BoundParameters $PSBoundParameters
+    $BoundParameters = Remove-M365DSCAuthenticationParameter -BoundParameters $PSBoundParameters
     $boundParameters.Remove('Categories') | Out-Null
     $boundParameters.Remove('PackageFileType') | Out-Null
 
@@ -463,7 +464,7 @@ function Set-TargetResource
     if ($Ensure -eq 'Present' -and $currentInstance.Ensure -eq 'Absent')
     {
         Write-Verbose -Message "Creating an Intune Mobile Apps Bundle for macOS with DisplayName {$DisplayName}"
-        $boundParameters.Remove("Assignments") | Out-Null
+        $boundParameters.Remove('Assignments') | Out-Null
 
         $createParameters = ([Hashtable]$boundParameters).Clone()
         $createParameters = Rename-M365DSCCimInstanceParameter -Properties $createParameters
@@ -471,23 +472,15 @@ function Set-TargetResource
 
         if (-not $createParameters.ContainsKey('FileName') -or -not $createParameters.ContainsKey('IncludedApps'))
         {
-            throw "FileName and IncludedApps are required parameters."
+            throw 'FileName and IncludedApps are required parameters.'
         }
 
-        $keys = (([Hashtable]$createParameters).Clone()).Keys
-        foreach ($key in $keys)
-        {
-            if ($null -ne $createParameters.$key -and $createParameters.$key.GetType().Name -like '*CimInstance*')
-            {
-                $createParameters.$key = Convert-M365DSCDRGComplexTypeToHashtable -ComplexObject $createParameters.$key
-            }
-        }
         #region resource generator code
         $odataType = "#microsoft.graph.macOS$($PackageFileType)App"
-        $createParameters.Add("@odata.type", $odataType)
+        $createParameters.Add('@odata.type', $odataType)
         $createParameters.Add('primaryBundleId', $createParameters.IncludedApps[0].BundleId)
         $createParameters.Add('primaryBundleVersion', $createParameters.IncludedApps[0].BundleVersion)
-        $policy = Invoke-MgGraphRequest -Method POST -Uri "/beta/deviceAppManagement/mobileApps" -Body ($createParameters | ConvertTo-Json -Depth 10)
+        $policy = Invoke-MgGraphRequest -Method POST -Uri '/beta/deviceAppManagement/mobileApps' -Body ($createParameters | ConvertTo-Json -Depth 10)
 
         Invoke-M365DSCIntuneMobileAppInitialUpload -AppId $policy.Id -OdataType $odataType -FileExtension $PackageFileType.ToLower()
 
@@ -504,30 +497,20 @@ function Set-TargetResource
                 -Assignments $assignmentsHash
         }
 
-        Write-Warning -Message "The Intune Mobile Apps Bundle for macOS resource has been created and the sample content was uploaded. Please ensure to upload the actual content from the Intune portal."
+        Write-Warning -Message 'The Intune Mobile Apps Bundle for macOS resource has been created and the sample content was uploaded. Please ensure to upload the actual content from the Intune portal.'
         #endregion
     }
     elseif ($Ensure -eq 'Present' -and $currentInstance.Ensure -eq 'Present')
     {
         Write-Verbose -Message "Updating the Intune Mobile Apps Bundle for macOS with Id {$($currentInstance.Id)}"
-        $boundParameters.Remove("Assignments") | Out-Null
+        $boundParameters.Remove('Assignments') | Out-Null
 
         $updateParameters = ([Hashtable]$boundParameters).Clone()
         $updateParameters = Rename-M365DSCCimInstanceParameter -Properties $updateParameters
-
         $updateParameters.Remove('Id') | Out-Null
 
-        $keys = (([Hashtable]$updateParameters).Clone()).Keys
-        foreach ($key in $keys)
-        {
-            if ($null -ne $pdateParameters.$key -and $updateParameters.$key.GetType().Name -like '*CimInstance*')
-            {
-                $updateParameters.$key = Convert-M365DSCDRGComplexTypeToHashtable -ComplexObject $updateParameters.MobileAppId
-            }
-        }
-
         #region resource generator code
-        $updateParameters.Add("@odata.type", "#microsoft.graph.macOS$($PackageFileType)App")
+        $updateParameters.Add('@odata.type', "#microsoft.graph.macOS$($PackageFileType)App")
         Invoke-MgGraphRequest -Method PATCH -Uri "/beta/deviceAppManagement/mobileApps/$($currentInstance.Id)" -Body ($updateParameters | ConvertTo-Json -Depth 10)
 
         if ($PSBoundParameters.ContainsKey('Categories'))
@@ -644,8 +627,8 @@ function Test-TargetResource
         #endregion
 
         [Parameter()]
+        [ValidateSet('Present', 'Absent')]
         [System.String]
-        [ValidateSet('Absent', 'Present')]
         $Ensure = 'Present',
 
         [Parameter()]
@@ -679,11 +662,8 @@ function Test-TargetResource
 
     if ($PSBoundParameters.PackageFileType -eq 'Dmg' -and ($PSBoundParameters.ContainsKey('PreInstallScript') -or $PSBoundParameters.ContainsKey('PostInstallScript')))
     {
-        throw "PreInstallScript and PostInstallScript are not supported for Dmg package type."
+        throw 'PreInstallScript and PostInstallScript are not supported for Dmg package type.'
     }
-
-    #Ensure the proper dependencies are installed in the current environment.
-    Confirm-M365DSCDependencies
 
     #region Telemetry
     $ResourceName = $MyInvocation.MyCommand.ModuleName.Replace('MSFT_', '')
@@ -694,50 +674,11 @@ function Test-TargetResource
     Add-M365DSCTelemetryEvent -Data $data
     #endregion
 
-    Write-Verbose -Message "Testing configuration of the Intune Mobile Apps Bundle for macOS with Id {$Id} and DisplayName {$DisplayName}"
-
-    $CurrentValues = Get-TargetResource @PSBoundParameters
-    $ValuesToCheck = ([hashtable]$PSBoundParameters).Clone()
-    $testResult = $true
-
-    #Compare Cim instances
-    foreach ($key in $PSBoundParameters.Keys)
-    {
-        $source = $PSBoundParameters.$key
-        $target = $CurrentValues.$key
-        if ($null -ne $source -and $source.GetType().Name -like '*CimInstance*')
-        {
-            $testResult = Compare-M365DSCComplexObject `
-                -Source ($source) `
-                -Target ($target)
-
-            if (-not $testResult)
-            {
-                break
-            }
-
-            $ValuesToCheck.Remove($key) | Out-Null
-        }
-    }
-
-    $ValuesToCheck.Remove('Id') | Out-Null
-    $ValuesToCheck.Remove('PackageFileType') | Out-Null
-    $ValuesToCheck = Remove-M365DSCAuthenticationParameter -BoundParameters $ValuesToCheck
-
-    Write-Verbose -Message "Current Values: $(Convert-M365DscHashtableToString -Hashtable $CurrentValues)"
-    Write-Verbose -Message "Target Values: $(Convert-M365DscHashtableToString -Hashtable $ValuesToCheck)"
-
-    if ($testResult)
-    {
-        $testResult = Test-M365DSCParameterState -CurrentValues $CurrentValues `
-            -Source $($MyInvocation.MyCommand.Source) `
-            -DesiredValues $PSBoundParameters `
-            -ValuesToCheck $ValuesToCheck.Keys
-    }
-
-    Write-Verbose -Message "Test-TargetResource returned $testResult"
-
-    return $testResult
+    $compareParameters = Get-CompareParameters
+    $result = Test-M365DSCTargetResource -DesiredValues $PSBoundParameters `
+        -ResourceName $($MyInvocation.MyCommand.Source).Replace('MSFT_', '') `
+        @compareParameters
+    return $result
 }
 
 function Export-TargetResource
@@ -937,16 +878,25 @@ function Export-TargetResource
     }
     catch
     {
-        Write-M365DSCHost -Message $Global:M365DSCEmojiRedX -CommitWrite
-
         New-M365DSCLogEntry -Message 'Error during Export:' `
             -Exception $_ `
             -Source $($MyInvocation.MyCommand.Source) `
             -TenantId $TenantId `
             -Credential $Credential
 
-        return ''
+        throw
     }
 }
 
-Export-ModuleMember -Function *-TargetResource
+function Get-CompareParameters
+{
+    [CmdletBinding()]
+    [OutputType([System.Collections.Hashtable])]
+    param()
+
+    return @{
+        ExcludedProperties = @('PackageFileType')
+    }
+}
+
+Export-ModuleMember -Function @('*-TargetResource', 'Get-CompareParameters')

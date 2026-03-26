@@ -95,8 +95,8 @@ function Get-TargetResource
     {
         if (-not $Script:exportedInstance -or $Script:exportedInstance.DisplayName -ne $DisplayName)
         {
-            New-M365DSCConnection -Workload 'MicrosoftGraph' `
-                -InboundParameters $PSBoundParameters | Out-Null
+            $null = New-M365DSCConnection -Workload 'MicrosoftGraph' `
+                -InboundParameters $PSBoundParameters
 
             #Ensure the proper dependencies are installed in the current environment.
             Confirm-M365DSCDependencies
@@ -149,25 +149,25 @@ function Get-TargetResource
             AccessTokens          = $AccessTokens
         }
 
-        if ($instance.AdditionalProperties -ne $null)
+        if ($null -ne $instance.AdditionalProperties)
         {
             $results.Add('CustomAuthenticationExtensionType', $instance.AdditionalProperties['@odata.type'])
         }
 
-        if ($instance.AuthenticationConfiguration -ne $null)
+        if ($null -ne $instance.AuthenticationConfiguration)
         {
             $results.Add('AuthenticationConfigurationType', $instance.AuthenticationConfiguration['@odata.type'])
             $results.Add('AuthenticationConfigurationResourceId', $instance.AuthenticationConfiguration['resourceId'])
         }
 
-        if ($instance.ClientConfiguration -ne $null)
+        if ($null -ne $instance.ClientConfiguration)
         {
             $results.Add('ClientConfigurationTimeoutMilliseconds', $instance.ClientConfiguration.TimeoutInMilliseconds)
             $results.Add('ClientConfigurationMaximumRetries', $instance.ClientConfiguration.MaximumRetries)
         }
 
         $endpointConfigurationInstance = @{}
-        if ($instance.EndPointConfiguration -ne $null -and $instance.EndPointConfiguration.AdditionalProperties -ne $null)
+        if ($null -ne $instance.EndPointConfiguration -and $null -ne $instance.EndPointConfiguration.AdditionalProperties)
         {
             $endpointConfigurationInstance.Add('EndpointType', $instance.EndPointConfiguration.AdditionalProperties['@odata.type'])
 
@@ -185,7 +185,7 @@ function Get-TargetResource
         }
 
         $ClaimsForTokenConfigurationInstance = @()
-        if ($instance.AdditionalProperties -ne $null -and $instance.AdditionalProperties['claimsForTokenConfiguration'] -ne $null)
+        if ($null -ne $instance.AdditionalProperties -and $null -ne $instance.AdditionalProperties['claimsForTokenConfiguration'])
         {
             foreach ($claim in $instance.AdditionalProperties['claimsForTokenConfiguration'])
             {
@@ -200,18 +200,17 @@ function Get-TargetResource
         $results.Add('EndPointConfiguration', $endpointConfigurationInstance)
         $results.Add('ClaimsForTokenConfiguration', $ClaimsForTokenConfigurationInstance)
 
-        return [System.Collections.Hashtable] $results
+        return $results
     }
     catch
     {
-        Write-Verbose -Message $_
         New-M365DSCLogEntry -Message 'Error retrieving data:' `
             -Exception $_ `
             -Source $($MyInvocation.MyCommand.Source) `
             -TenantId $TenantId `
             -Credential $Credential
 
-        return $nullResult
+        throw
     }
 }
 
@@ -374,7 +373,6 @@ function Set-TargetResource
     # UPDATE
     elseif ($Ensure -eq 'Present' -and $currentInstance.Ensure -eq 'Present')
     {
-        Write-Verbose -Message "Updating custom authentication extension {$DisplayName}"
         $params.Add('CustomAuthenticationExtensionId', $currentInstance.Id)
         $params.Remove('Id') | Out-Null
 
@@ -390,8 +388,8 @@ function Set-TargetResource
             $params['AdditionalProperties']['claimsForTokenConfiguration'] += $c
         }
 
-        Write-Verbose -Message "{$params['@odata.type']}"
-        Update-MgBetaIdentityCustomAuthenticationExtension -CustomAuthenticationExtensionId $Id -BodyParameter $params
+        Write-Verbose -Message "Updating custom authentication extension {$DisplayName} with:`r`n$(ConvertTo-Json $params -Depth 10)"
+        Update-MgBetaIdentityCustomAuthenticationExtension -CustomAuthenticationExtensionId $currentInstance.Id -BodyParameter $params
     }
     # REMOVE
     elseif ($Ensure -eq 'Absent' -and $currentInstance.Ensure -eq 'Present')
@@ -500,7 +498,7 @@ function Test-TargetResource
     #endregion
 
     $result = Test-M365DSCTargetResource -DesiredValues $PSBoundParameters `
-                                         -ResourceName $($MyInvocation.MyCommand.Source).Replace('MSFT_', '')
+        -ResourceName $($MyInvocation.MyCommand.Source).Replace('MSFT_', '')
     return $result
 }
 
@@ -510,6 +508,10 @@ function Export-TargetResource
     [OutputType([System.String])]
     param
     (
+        [Parameter()]
+        [System.String]
+        $Filter,
+
         [Parameter()]
         [System.Management.Automation.PSCredential]
         $Credential,
@@ -556,7 +558,10 @@ function Export-TargetResource
 
     try
     {
-        [array] $Script:exportedInstances = Get-MgBetaIdentityCustomAuthenticationExtension -ErrorAction Stop
+        [array] $Script:exportedInstances = Get-MgBetaIdentityCustomAuthenticationExtension `
+        -All `
+        -Filter $Filter `
+        -ErrorAction Stop
 
         $i = 1
         $dscContent = ''
@@ -620,17 +625,14 @@ function Export-TargetResource
     }
     catch
     {
-        Write-M365DSCHost -Message $Global:M365DSCEmojiRedX -CommitWrite
-
         New-M365DSCLogEntry -Message 'Error during Export:' `
             -Exception $_ `
             -Source $($MyInvocation.MyCommand.Source) `
             -TenantId $TenantId `
             -Credential $Credential
 
-        return ''
+        throw
     }
 }
 
 Export-ModuleMember -Function *-TargetResource
-

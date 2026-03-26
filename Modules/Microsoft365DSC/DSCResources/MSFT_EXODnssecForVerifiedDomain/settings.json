@@ -10,16 +10,42 @@
     ]
   },
   "permissions": {
-    "graph": {
-      "delegated": {
-        "read": [],
-        "update": []
-      },
+    "Office 365 Exchange Online": {
       "application": {
-        "read": [],
-        "update": []
+        "read": [
+          {
+            "name": "Exchange.ManageAsApp"
+          }
+        ],
+        "update": [
+          {
+            "name": "Exchange.ManageAsApp"
+          }
+        ]
+      }
+    },
+    "exchange": {
+      "requiredroles": {
+        "read": [
+          "View-Only Configuration"
+        ],
+        "update": [
+          "Security Admin"
+        ]
+      },
+      "requiredrolegroups": {
+        "read": [
+          "View-Only Organization Management"
+        ],
+        "update": [
+          "Security Administrator"
+        ]
       }
     }
   },
-  "requiredModules": []
+  "requiredModules": [],
+  "supportedEnvironments": [
+    "Global"
+  ],
+  "mode": "Configuration"
 }

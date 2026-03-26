@@ -11,9 +11,7 @@ Public
 function Test-M365DSCAgent
 {
     [CmdletBinding()]
-    param(
-
-    )
+    param()
 
     #region Telemetry
     $data = [System.Collections.Generic.Dictionary[[String], [String]]]::new()
@@ -165,6 +163,8 @@ function Set-M365DSCAgentCertificateConfiguration
         }
         $existingCertificate = $null
     }
+
+    $certificateExists = $false
     if ($null -eq $existingCertificate)
     {
         Write-Verbose -Message 'No existing M365DSC certificate found. Creating one.'
@@ -182,7 +182,8 @@ function Set-M365DSCAgentCertificateConfiguration
     }
     else
     {
-        Write-Verbose -Message 'An existing M365DSc certificate was found. Re-using it.'
+        Write-Verbose -Message 'An existing M365DSC certificate was found. Re-using it.'
+        $certificateExists = $true
     }
     $thumbprint = $existingCertificate.Thumbprint
     Write-Verbose -Message "Using M365DSCEncryptionCert with thumbprint {$thumbprint}"
@@ -225,9 +226,13 @@ function Set-M365DSCAgentCertificateConfiguration
 
     if ($GeneratePFX)
     {
-        if ($Password -eq $null)
+        if ([System.String]::IsNullOrEmpty($Password))
         {
-            Throw 'When the GeneratePFX switch is used, you also need to provide a password.'
+            throw 'GeneratePFX requires a password.'
+        }
+        if ($certificateExists -and -not $PSBoundParameters.ContainsKey('ForceRenew'))
+        {
+            throw 'GeneratePFX requires either no certificate to exist or the -ForceRenew parameter.'
         }
         $securePassword = ConvertTo-SecureString -String $password -Force -AsPlainText
         Export-PfxCertificate -Cert $existingCertificate.PSPath `

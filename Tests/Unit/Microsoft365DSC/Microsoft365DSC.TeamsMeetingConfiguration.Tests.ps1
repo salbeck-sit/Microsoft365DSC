@@ -27,6 +27,8 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
 
             $Global:PartialExportFileName = 'c:\TestPath'
 
+            Mock -ModuleName M365DSCUtil -CommandName Confirm-M365DSCDependencies -MockWith {
+            }
 
             Mock -CommandName Save-M365DSCPartialExport -MockWith {
             }
@@ -80,7 +82,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     EnableQoS                   = $False
                     Credential                  = $Credential
                     HelpURL                     = $null
-                    Identity                    = 'Global'
+                    IsSingleInstance            = 'Yes'
                     LegalURL                    = $null
                     LogoURL                     = $null
                 }
@@ -104,13 +106,13 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     ClientAudioPortRange        = 20
                     ClientMediaPortRangeEnabled = $True
                     ClientVideoPort             = 50020
-                    ClientVideoPortRange        = 21; #Variant
+                    ClientVideoPortRange        = 21; # Drift
                     CustomFooterText            = $null
                     DisableAnonymousJoin        = $False
                     EnableQoS                   = $False
                     Credential                  = $Credential
                     HelpURL                     = $null
-                    Identity                    = 'Global'
+                    IsSingleInstance            = 'Yes'
                     LegalURL                    = $null
                     LogoURL                     = $null
                 }

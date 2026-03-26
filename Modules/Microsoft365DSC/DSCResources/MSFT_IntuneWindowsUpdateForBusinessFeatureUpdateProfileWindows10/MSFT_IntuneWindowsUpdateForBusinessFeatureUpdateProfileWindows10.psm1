@@ -45,8 +45,8 @@ function Get-TargetResource
         #endregion
 
         [Parameter()]
+        [ValidateSet('Present', 'Absent')]
         [System.String]
-        [ValidateSet('Absent', 'Present')]
         $Ensure = 'Present',
 
         [Parameter()]
@@ -84,7 +84,7 @@ function Get-TargetResource
     {
         if (-not $Script:exportedInstance -or $Script:exportedInstance.DisplayName -ne $DisplayName)
         {
-            $ConnectionMode = New-M365DSCConnection -Workload 'MicrosoftGraph' `
+            $null = New-M365DSCConnection -Workload 'MicrosoftGraph' `
                 -InboundParameters $PSBoundParameters
             #Ensure the proper dependencies are installed in the current environment.
             Confirm-M365DSCDependencies
@@ -112,7 +112,7 @@ function Get-TargetResource
             {
                 Write-Verbose -Message "Could not find an Intune Windows Update For Business Feature Update Profile for Windows10 with Id {$Id}"
 
-                if (-Not [string]::IsNullOrEmpty($DisplayName))
+                if (-not [string]::IsNullOrEmpty($DisplayName))
                 {
                     $getValue = Get-MgBetaDeviceManagementWindowsFeatureUpdateProfile `
                         -All `
@@ -137,7 +137,7 @@ function Get-TargetResource
         Write-Verbose -Message "An Intune Windows Update For Business Feature Update Profile for Windows10 with Id {$Id} and DisplayName {$DisplayName} was found."
 
         #region resource generator code
-        $complexRolloutSettings = @{}
+        $complexRolloutSettings = [ordered]@{}
         if ($null -ne $getValue.RolloutSettings.offerEndDateTimeInUTC)
         {
             $complexRolloutSettings.Add('OfferEndDateTimeInUTC', ([DateTimeOffset]$getValue.RolloutSettings.offerEndDateTimeInUTC).ToString('o'))
@@ -147,7 +147,7 @@ function Get-TargetResource
         {
             $complexRolloutSettings.Add('OfferStartDateTimeInUTC', ([DateTimeOffset]$getValue.RolloutSettings.offerStartDateTimeInUTC).ToString('o'))
         }
-        if ($complexRolloutSettings.values.Where({ $null -ne $_ }).count -eq 0)
+        if ($complexRolloutSettings.values.Where({ $null -ne $_ }).Count -eq 0)
         {
             $complexRolloutSettings = $null
         }
@@ -184,7 +184,7 @@ function Get-TargetResource
         }
         $results.Add('Assignments', $assignmentResult)
 
-        return [System.Collections.Hashtable] $results
+        return $results
     }
     catch
     {
@@ -194,7 +194,7 @@ function Get-TargetResource
             -TenantId $TenantId `
             -Credential $Credential
 
-        return $nullResult
+        throw
     }
 }
 
@@ -242,8 +242,8 @@ function Set-TargetResource
         #endregion
 
         [Parameter()]
+        [ValidateSet('Present', 'Absent')]
         [System.String]
-        [ValidateSet('Absent', 'Present')]
         $Ensure = 'Present',
 
         [Parameter()]
@@ -366,17 +366,9 @@ function Set-TargetResource
         }
 
         $CreateParameters = ([Hashtable]$BoundParameters).Clone()
-        $CreateParameters = Rename-M365DSCCimInstanceParameter -Properties $CreateParameters
-        $CreateParameters.Remove('Id') | Out-Null
+        $createParameters = Rename-M365DSCCimInstanceParameter -Properties $createParameters
+        $createParameters.Remove('Id') | Out-Null
 
-        $keys = (([Hashtable]$CreateParameters).Clone()).Keys
-        foreach ($key in $keys)
-        {
-            if ($null -ne $CreateParameters.$key -and $CreateParameters.$key.GetType().Name -like '*cimInstance*')
-            {
-                $CreateParameters.$key = Convert-M365DSCDRGComplexTypeToHashtable -ComplexObject $CreateParameters.$key
-            }
-        }
 
         #region resource generator code
         $policy = New-MgBetaDeviceManagementWindowsFeatureUpdateProfile -BodyParameter $CreateParameters
@@ -451,18 +443,9 @@ function Set-TargetResource
             }
         }
 
-        $UpdateParameters = ([Hashtable]$BoundParameters).Clone()
-        $UpdateParameters = Rename-M365DSCCimInstanceParameter -Properties $UpdateParameters
-        $UpdateParameters.Remove('Id') | Out-Null
-
-        $keys = (([Hashtable]$UpdateParameters).Clone()).Keys
-        foreach ($key in $keys)
-        {
-            if ($null -ne $UpdateParameters.$key -and $UpdateParameters.$key.GetType().Name -like '*cimInstance*')
-            {
-                $UpdateParameters.$key = Convert-M365DSCDRGComplexTypeToHashtable -ComplexObject $UpdateParameters.$key
-            }
-        }
+        $updateParameters = ([Hashtable]$boundParameters).Clone()
+        $updateParameters = Rename-M365DSCCimInstanceParameter -Properties $updateParameters
+        $updateParameters.Remove('Id') | Out-Null
 
         #region resource generator code
         Update-MgBetaDeviceManagementWindowsFeatureUpdateProfile  `
@@ -529,8 +512,8 @@ function Test-TargetResource
         #endregion
 
         [Parameter()]
+        [ValidateSet('Present', 'Absent')]
         [System.String]
-        [ValidateSet('Absent', 'Present')]
         $Ensure = 'Present',
 
         [Parameter()]
@@ -577,7 +560,7 @@ function Test-TargetResource
     Write-Verbose -Message "Testing configuration of the Intune Windows Update For Business Feature Update Profile for Windows10 with Id {$Id} and DisplayName {$DisplayName}"
 
     $CurrentValues = Get-TargetResource @PSBoundParameters
-    $ValuesToCheck = ([Hashtable]$PSBoundParameters).Clone()
+    $ValuesToCheck = Remove-M365DSCAuthenticationParameter -BoundParameters $PSBoundParameters
     $testResult = $true
 
     # Cannot be changed after creation
@@ -597,7 +580,8 @@ function Test-TargetResource
         {
             $testResult = Compare-M365DSCComplexObject `
                 -Source ($source) `
-                -Target ($target)
+                -Target ($target) `
+                -PropertyName $key
 
             if (-not $testResult)
             {
@@ -822,7 +806,7 @@ function Export-TargetResource
                 $complexTypeStringResult = Get-M365DSCDRGComplexTypeToString `
                     -ComplexObject $Results.RolloutSettings `
                     -CIMInstanceName 'MicrosoftGraphWindowsUpdateRolloutSettings'
-                if (-Not [String]::IsNullOrWhiteSpace($complexTypeStringResult))
+                if (-not [String]::IsNullOrWhiteSpace($complexTypeStringResult))
                 {
                     $Results.RolloutSettings = $complexTypeStringResult
                 }
@@ -866,18 +850,15 @@ function Export-TargetResource
         }
         else
         {
-            Write-M365DSCHost -Message $Global:M365DSCEmojiRedX -CommitWrite
-
             New-M365DSCLogEntry -Message 'Error during Export:' `
                 -Exception $_ `
                 -Source $($MyInvocation.MyCommand.Source) `
                 -TenantId $TenantId `
                 -Credential $Credential
-        }
 
-        return ''
+            throw
+        }
     }
 }
 
 Export-ModuleMember -Function *-TargetResource
-

@@ -69,39 +69,30 @@ function Get-TargetResource
         $AccessTokens
     )
 
-    New-M365DSCConnection -Workload 'AzureDevOPS' `
-        -InboundParameters $PSBoundParameters | Out-Null
+    Write-Verbose -Message "Getting configuration of ADO Permission Group for Organization {$OrganizationName} and Principal {$PrincipalName}"
 
-    #Ensure the proper dependencies are installed in the current environment.
-    Confirm-M365DSCDependencies
-
-    #region Telemetry
-    $ResourceName = $MyInvocation.MyCommand.ModuleName.Replace('MSFT_', '')
-    $CommandName = $MyInvocation.MyCommand
-    $data = Format-M365DSCTelemetryParameters -ResourceName $ResourceName `
-        -CommandName $CommandName `
-        -Parameters $PSBoundParameters
-    Add-M365DSCTelemetryEvent -Data $data
-    #endregion
-
-    $nullResult = $PSBoundParameters
-    $nullResult.Ensure = 'Absent'
     try
     {
-        if ($null -ne $Script:exportedInstances -and $Script:ExportMode)
+        if ($null -eq $Script:exportedInstances -or -not $Script:ExportMode)
         {
-            if (-not [System.String]::IsNullOrEmpty($Descriptor))
-            {
-                $instance = $Script:exportedInstances | Where-Object -FilterScript { $_.descriptor -eq $Descriptor }
-            }
+            $null = New-M365DSCConnection -Workload 'AzureDevOPS' `
+                -InboundParameters $PSBoundParameters
 
-            if ($null -eq $instance)
-            {
-                $instance = $Script:exportedInstances | Where-Object -FilterScript { $_.principalName -eq $PrincipalName }
-            }
-        }
-        else
-        {
+            #Ensure the proper dependencies are installed in the current environment.
+            Confirm-M365DSCDependencies
+
+            #region Telemetry
+            $ResourceName = $MyInvocation.MyCommand.ModuleName.Replace('MSFT_', '')
+            $CommandName = $MyInvocation.MyCommand
+            $data = Format-M365DSCTelemetryParameters -ResourceName $ResourceName `
+                -CommandName $CommandName `
+                -Parameters $PSBoundParameters
+            Add-M365DSCTelemetryEvent -Data $data
+            #endregion
+
+            $nullResult = $PSBoundParameters
+            $nullResult.Ensure = 'Absent'
+
             $uri = "https://vssps.dev.azure.com/$OrganizationName/_apis/graph/groups?api-version=7.1-preview.1"
             $allInstances = (Invoke-M365DSCAzureDevOPSWebRequest -Uri $uri).value
             if (-not [System.String]::IsNullOrEmpty($Descriptor))
@@ -112,10 +103,23 @@ function Get-TargetResource
             {
                 $instance = $allInstances | Where-Object -FilterScript { $_.principalName -eq $PrincipalName }
             }
+
+            if ($null -eq $instance)
+            {
+                return $nullResult
+            }
         }
-        if ($null -eq $instance)
+        else
         {
-            return $nullResult
+            if (-not [System.String]::IsNullOrEmpty($Descriptor))
+            {
+                $instance = $Script:exportedInstances | Where-Object -FilterScript { $_.descriptor -eq $Descriptor }
+            }
+
+            if ($null -eq $instance)
+            {
+                $instance = $Script:exportedInstances | Where-Object -FilterScript { $_.principalName -eq $PrincipalName }
+            }
         }
 
         # Level
@@ -152,18 +156,17 @@ function Get-TargetResource
             ManagedIdentity       = $ManagedIdentity.IsPresent
             AccessTokens          = $AccessTokens
         }
-        return [System.Collections.Hashtable] $results
+        return $results
     }
     catch
     {
-        Write-Verbose -Message $_
         New-M365DSCLogEntry -Message 'Error retrieving data:' `
             -Exception $_ `
             -Source $($MyInvocation.MyCommand.Source) `
             -TenantId $TenantId `
             -Credential $Credential
 
-        return $nullResult
+        throw
     }
 }
 
@@ -234,8 +237,8 @@ function Set-TargetResource
         [System.String[]]
         $AccessTokens
     )
-    New-M365DSCConnection -Workload 'AzureDevOPS' `
-        -InboundParameters $PSBoundParameters | Out-Null
+
+    Write-Verbose -Message "Setting configuration of ADO Permission Group for Organization {$OrganizationName} and Principal {$PrincipalName}"
 
     #Ensure the proper dependencies are installed in the current environment.
     Confirm-M365DSCDependencies
@@ -396,9 +399,6 @@ function Test-TargetResource
         $AccessTokens
     )
 
-    #Ensure the proper dependencies are installed in the current environment.
-    Confirm-M365DSCDependencies
-
     #region Telemetry
     $ResourceName = $MyInvocation.MyCommand.ModuleName.Replace('MSFT_', '')
     $CommandName = $MyInvocation.MyCommand
@@ -408,20 +408,9 @@ function Test-TargetResource
     Add-M365DSCTelemetryEvent -Data $data
     #endregion
 
-    $CurrentValues = Get-TargetResource @PSBoundParameters
-    $ValuesToCheck = ([Hashtable]$PSBoundParameters).Clone()
-
-    Write-Verbose -Message "Current Values: $(Convert-M365DscHashtableToString -Hashtable $CurrentValues)"
-    Write-Verbose -Message "Target Values: $(Convert-M365DscHashtableToString -Hashtable $ValuesToCheck)"
-
-    $testResult = Test-M365DSCParameterState -CurrentValues $CurrentValues `
-        -Source $($MyInvocation.MyCommand.Source) `
-        -DesiredValues $PSBoundParameters `
-        -ValuesToCheck $ValuesToCheck.Keys
-
-    Write-Verbose -Message "Test-TargetResource returned $testResult"
-
-    return $testResult
+    $result = Test-M365DSCTargetResource -DesiredValues $PSBoundParameters `
+        -ResourceName $($MyInvocation.MyCommand.Source).Replace('MSFT_', '')
+    return $result
 }
 
 function Export-TargetResource
@@ -483,7 +472,7 @@ function Export-TargetResource
 
         $i = 1
         $dscContent = ''
-        if ($accounts.count -eq 0)
+        if ($accounts.Count -eq 0)
         {
             Write-M365DSCHost -Message $Global:M365DSCEmojiGreenCheckMark -CommitWrite
             return ''
@@ -501,14 +490,6 @@ function Export-TargetResource
 
             $i = 1
             $dscContent = ''
-            if ($Script:exportedInstances.Length -eq 0)
-            {
-                Write-M365DSCHost -Message $Global:M365DSCEmojiGreenCheckMark -CommitWrite
-            }
-            else
-            {
-                Write-M365DSCHost -Message "`r`n" -DeferWrite
-            }
             foreach ($config in $Script:exportedInstances)
             {
                 $displayedKey = $config.principalName
@@ -550,15 +531,13 @@ function Export-TargetResource
     }
     catch
     {
-        Write-M365DSCHost -Message $Global:M365DSCEmojiRedX -CommitWrite
-
         New-M365DSCLogEntry -Message 'Error during Export:' `
             -Exception $_ `
             -Source $($MyInvocation.MyCommand.Source) `
             -TenantId $TenantId `
             -Credential $Credential
 
-        return ''
+        throw
     }
 }
 
@@ -582,6 +561,7 @@ function Set-M365DSCADOPermissionGroupMember
         [System.String]
         $Method = 'Put'
     )
+
     if ($null -eq $Script:allUsers)
     {
         $uri = "https://vsaex.dev.azure.com/$($OrganizationName)/_apis/userentitlements?api-version=7.2-preview.4"
@@ -594,4 +574,3 @@ function Set-M365DSCADOPermissionGroupMember
 }
 
 Export-ModuleMember -Function *-TargetResource
-

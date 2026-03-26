@@ -27,6 +27,8 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
 
             $Global:PartialExportFileName = 'c:\TestPath'
 
+            Mock -ModuleName M365DSCUtil -CommandName Confirm-M365DSCDependencies -MockWith {
+            }
 
             Mock -CommandName Save-M365DSCPartialExport -MockWith {
             }
@@ -71,7 +73,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     AllowUserDeleteMessage = $False
                     AllowUserEditMessage   = $True
                     GiphyRatingType        = 'Moderate'
-                    Identity               = 'Global'
+                    IsSingleInstance       = 'Yes'
                     Credential             = $Credential
                 }
             }
@@ -96,7 +98,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     AllowUserDeleteMessage = $True; #Drifted
                     AllowUserEditMessage   = $True
                     GiphyRatingType        = 'Moderate'
-                    Identity               = 'Global'
+                    IsSingleInstance       = 'Yes'
                     Credential             = $Credential
                 }
             }

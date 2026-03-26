@@ -3,7 +3,7 @@
   "description": "",
   "roles": {
     "read": [
-      "Global Reader"
+      "Teams Reader"
     ],
     "update": [
       "Teams Administrator"
@@ -31,5 +31,10 @@
   },
   "requiredModules": [
     "MicrosoftTeams"
-  ]
+  ],
+  "supportedEnvironments": [
+    "Global",
+    "USGov"
+  ],
+  "mode": "Configuration"
 }

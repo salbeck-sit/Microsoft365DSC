@@ -7,7 +7,7 @@ function Get-TargetResource
     param
     (
         [Parameter()]
-        [ValidateSet('#microsoft.graph.countryNamedLocation', '#microsoft.graph.ipNamedLocation', '#microsoft.graph.compliantNetworkNamedLocation')]
+        [ValidateSet('#microsoft.graph.CountryNamedLocation', '#microsoft.graph.ipNamedLocation', '#microsoft.graph.compliantNetworkNamedLocation')]
         [System.String]
         $OdataType,
 
@@ -74,13 +74,13 @@ function Get-TargetResource
         $AccessTokens
     )
 
+    Write-Verbose -Message "Getting configuration of AAD Named Location Policy with DisplayName {$DisplayName}"
+
     try
     {
         if (-not $Script:exportedInstance -or $Script:exportedInstance.DisplayName -ne $DisplayName)
         {
-            Write-Verbose -Message 'Getting configuration of AAD Named Location'
-
-            $ConnectionMode = New-M365DSCConnection -Workload 'MicrosoftGraph' `
+            $null = New-M365DSCConnection -Workload 'MicrosoftGraph' `
                 -InboundParameters $PSBoundParameters
 
             #Ensure the proper dependencies are installed in the current environment.
@@ -95,19 +95,13 @@ function Get-TargetResource
             Add-M365DSCTelemetryEvent -Data $data
             #endregion
 
-
             $nullReturn = $PSBoundParameters
             $nullReturn.Ensure = 'Absent'
-            try
+
+            $NamedLocation = $null
+            if (-not [System.String]::IsNullOrEmpty($Id))
             {
-                if ($Id)
-                {
-                    $NamedLocation = Get-MgBetaIdentityConditionalAccessNamedLocation -NamedLocationId $Id -ErrorAction Stop
-                }
-            }
-            catch
-            {
-                Write-Verbose -Message "Could not retrieve AAD Named Location by ID {$Id}"
+                $NamedLocation = Get-MgBetaIdentityConditionalAccessNamedLocation -NamedLocationId $Id -ErrorAction SilentlyContinue
             }
 
             if ($null -eq $NamedLocation)
@@ -157,11 +151,10 @@ function Get-TargetResource
             TenantId                          = $TenantId
             CertificateThumbprint             = $CertificateThumbprint
             Credential                        = $Credential
-            Managedidentity                   = $ManagedIdentity.IsPresent
+            ManagedIdentity                   = $ManagedIdentity.IsPresent
             AccessTokens                      = $AccessTokens
         }
 
-        Write-Verbose -Message "Get-TargetResource Result: `n $(Convert-M365DscHashtableToString -Hashtable $result)"
         return $result
     }
     catch
@@ -172,7 +165,7 @@ function Get-TargetResource
             -TenantId $TenantId `
             -Credential $Credential
 
-        return $nullReturn
+        throw
     }
 }
 
@@ -182,7 +175,7 @@ function Set-TargetResource
     param
     (
         [Parameter()]
-        [ValidateSet('#microsoft.graph.countryNamedLocation', '#microsoft.graph.ipNamedLocation', '#microsoft.graph.compliantNetworkNamedLocation')]
+        [ValidateSet('#microsoft.graph.CountryNamedLocation', '#microsoft.graph.ipNamedLocation', '#microsoft.graph.compliantNetworkNamedLocation')]
         [System.String]
         $OdataType,
 
@@ -310,7 +303,7 @@ function Set-TargetResource
             $desiredValues.Add('ipRanges', $IpRangesValue)
         }
     }
-    elseif ($OdataType -eq '#microsoft.graph.countryNamedLocation')
+    elseif ($OdataType -eq '#microsoft.graph.CountryNamedLocation')
     {
         $desiredValues.Add('includeUnknownCountriesAndRegions', $IncludeUnknownCountriesAndRegions)
         $desiredValues.Add('countriesAndRegions', $CountriesAndRegions)
@@ -360,7 +353,7 @@ function Test-TargetResource
     param
     (
         [Parameter()]
-        [ValidateSet('#microsoft.graph.countryNamedLocation', '#microsoft.graph.ipNamedLocation', '#microsoft.graph.compliantNetworkNamedLocation')]
+        [ValidateSet('#microsoft.graph.CountryNamedLocation', '#microsoft.graph.ipNamedLocation', '#microsoft.graph.compliantNetworkNamedLocation')]
         [System.String]
         $OdataType,
 
@@ -437,7 +430,7 @@ function Test-TargetResource
     #endregion
 
     $result = Test-M365DSCTargetResource -DesiredValues $PSBoundParameters `
-                                         -ResourceName $($MyInvocation.MyCommand.Source).Replace('MSFT_', '')
+        -ResourceName $($MyInvocation.MyCommand.Source).Replace('MSFT_', '')
     return $result
 }
 
@@ -479,7 +472,7 @@ function Export-TargetResource
         [System.String[]]
         $AccessTokens
     )
-    #$ConnectionMode = New-M365DSCConnection -Workload 'MicrosoftGraph' -InboundParameters $PSBoundParameters
+
     $ConnectionMode = New-M365DSCConnection -Workload 'MicrosoftGraph' `
         -InboundParameters $PSBoundParameters
 
@@ -525,7 +518,7 @@ function Export-TargetResource
                 DisplayName           = $AADNamedLocation.DisplayName
                 ID                    = $AADNamedLocation.ID
                 Credential            = $Credential
-                Managedidentity       = $ManagedIdentity.IsPresent
+                ManagedIdentity       = $ManagedIdentity.IsPresent
                 AccessTokens          = $AccessTokens
             }
             $Script:exportedInstance = $AADNamedLocation
@@ -549,17 +542,14 @@ function Export-TargetResource
     }
     catch
     {
-        Write-M365DSCHost -Message $Global:M365DSCEmojiRedX -CommitWrite
-
         New-M365DSCLogEntry -Message 'Error during Export:' `
             -Exception $_ `
             -Source $($MyInvocation.MyCommand.Source) `
             -TenantId $TenantId `
             -Credential $Credential
 
-        return ''
+        throw
     }
 }
 
 Export-ModuleMember -Function *-TargetResource
-

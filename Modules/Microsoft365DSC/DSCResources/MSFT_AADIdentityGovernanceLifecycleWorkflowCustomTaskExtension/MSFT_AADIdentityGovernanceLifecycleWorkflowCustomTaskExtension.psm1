@@ -64,12 +64,14 @@ function Get-TargetResource
         $AccessTokens
     )
 
+    Write-Verbose -Message "Getting configuration for the Azure AD Identity Governance Lifecycle Workflow Custom Task Extension with Id {$Id} and DisplayName {$DisplayName}"
+
     try
     {
         if (-not $Script:exportedInstance -or $Script:exportedInstance.Id -ne $Id)
         {
-            $ConnectionMode = New-M365DSCConnection -Workload 'MicrosoftGraph' `
-                -InboundParameters $PSBoundParameters | Out-Null
+            $null = New-M365DSCConnection -Workload 'MicrosoftGraph' `
+                -InboundParameters $PSBoundParameters
 
             #Ensure the proper dependencies are installed in the current environment.
             Confirm-M365DSCDependencies
@@ -86,13 +88,34 @@ function Get-TargetResource
             $nullResult = $PSBoundParameters
             $nullResult.Ensure = 'Absent'
 
-            if (-not [System.String]::IsNullOrEmpty($Id))
+            try
             {
-                $instance = Get-MgBetaIdentityGovernanceLifecycleWorkflowCustomTaskExtension -CustomTaskExtensionId $Id
+                if (-not [System.String]::IsNullOrEmpty($Id))
+                {
+                    $instance = Get-MgBetaIdentityGovernanceLifecycleWorkflowCustomTaskExtension -CustomTaskExtensionId $Id `
+                        -ErrorAction Stop
+                }
+                if ($null -eq $instance)
+                {
+                    $instance = Get-MgBetaIdentityGovernanceLifecycleWorkflowCustomTaskExtension -Filter "DisplayName eq '$($DisplayName -replace "'", "''")'" `
+                        -ErrorAction Stop
+                }
             }
-            if ($null -eq $instance)
+            catch
             {
-                $instance = Get-MgBetaIdentityGovernanceLifecycleWorkflowCustomTaskExtension -Filter "DisplayName eq '$($DisplayName -replace "'", "''")'"
+                if ($_.ErrorDetails.Message -like '*Insufficient license *')
+                {
+                    Write-Warning -Message ' Insufficient license. You need the Entra ID Governance license.'
+                }
+                else
+                {
+                    New-M365DSCLogEntry -Message 'Error during Get:' `
+                        -Exception $_ `
+                        -Source $($MyInvocation.MyCommand.Source) `
+                        -TenantId $TenantId `
+                        -Credential $Credential
+                    throw $_
+                }
             }
         }
         else
@@ -154,18 +177,17 @@ function Get-TargetResource
             ManagedIdentity       = $ManagedIdentity.IsPresent
             AccessTokens          = $AccessTokens
         }
-        return [System.Collections.Hashtable] $results
+        return $results
     }
     catch
     {
-        Write-Verbose -Message $_
         New-M365DSCLogEntry -Message 'Error retrieving data:' `
             -Exception $_ `
             -Source $($MyInvocation.MyCommand.Source) `
             -TenantId $TenantId `
             -Credential $Credential
 
-        return $nullResult
+        throw
     }
 }
 
@@ -279,9 +301,13 @@ function Set-TargetResource
             foreach ($app in $CallbackConfiguration.AuthorizedApps)
             {
                 $appInfo = Get-MgApplication -Filter "DisplayName eq '$($app -replace "'", "''")'" -ErrorAction SilentlyContinue
+                $currentApp = @{
+                    '@odata.type' = 'microsoft.graph.application'
+                }
                 if ($null -ne $appInfo)
                 {
-                    $appsValue += $appInfo.Id
+                    $currentApp.Add('id', $appInfo.Id)
+                    $appsValue += $currentApp
                 }
             }
             $instanceParams.callbackConfiguration.Add('authorizedApps', $appsValue)
@@ -291,20 +317,78 @@ function Set-TargetResource
     # CREATE
     if ($Ensure -eq 'Present' -and $currentInstance.Ensure -eq 'Absent')
     {
-        Write-Verbose -Message "Creating new Workflow Custom Task Extension {$DisplayName} with parameters:`r`n$(ConvertTo-Json $instanceParams)"
-        New-MgBetaIdentityGovernanceLifecycleWorkflowCustomTaskExtension -BodyParameter $instanceParams
+        try
+        {
+            Write-Verbose -Message "Creating new Workflow Custom Task Extension with DisplayName {$DisplayName}"
+            New-MgBetaIdentityGovernanceLifecycleWorkflowCustomTaskExtension -BodyParameter $instanceParams -ErrorAction Stop
+        }
+        catch
+        {
+            if ($_.ErrorDetails.Message -like '*Insufficient license *')
+            {
+                Write-Warning -Message ' Insufficient license. You need the Entra ID Governance license.'
+            }
+            else
+            {
+                New-M365DSCLogEntry -Message 'Error during Create:' `
+                    -Exception $_ `
+                    -Source $($MyInvocation.MyCommand.Source) `
+                    -TenantId $TenantId `
+                    -Credential $Credential
+                throw $_
+            }
+        }
     }
     # UPDATE
     elseif ($Ensure -eq 'Present' -and $currentInstance.Ensure -eq 'Present')
     {
-        Write-Verbose -Message "Updating Workflow Custom Task Extension {$DisplayName} with parameters:`r`n$(ConvertTo-Json $instanceParams)"
-        Update-MgBetaIdentityGovernanceLifecycleWorkflowCustomTaskExtension -CustomTaskExtensionId $currentInstance.Id -BodyParameter $instanceParams
+        try
+        {
+            Write-Verbose -Message "Updating Workflow Custom Task Extension with DisplayName {$DisplayName}"
+            Update-MgBetaIdentityGovernanceLifecycleWorkflowCustomTaskExtension -CustomTaskExtensionId $currentInstance.Id -BodyParameter $instanceParams -ErrorAction Stop
+        }
+        catch
+        {
+            if ($_.ErrorDetails.Message -like '*Insufficient license *')
+            {
+                Write-Warning -Message ' Insufficient license. You need the Entra ID Governance license.'
+            }
+            else
+            {
+                New-M365DSCLogEntry -Message 'Error during Update:' `
+                    -Exception $_ `
+                    -Source $($MyInvocation.MyCommand.Source) `
+                    -TenantId $TenantId `
+                    -Credential $Credential
+                throw $_
+            }
+        }
     }
     # REMOVE
     elseif ($Ensure -eq 'Absent' -and $currentInstance.Ensure -eq 'Present')
     {
-        Write-Verbose -Message "Removing Workflow Custom Task Extension {$DisplayName}"
-        Remove-MgBetaIdentityGovernanceLifecycleWorkflowCustomTaskExtension -CustomTaskExtensionId $currentInstance.Id
+        try
+        {
+            Write-Verbose -Message "Removing Workflow Custom Task Extension {$DisplayName}"
+            Remove-MgBetaIdentityGovernanceLifecycleWorkflowCustomTaskExtension -CustomTaskExtensionId $currentInstance.Id `
+                -ErrorAction Stop
+        }
+        catch
+        {
+            if ($_.ErrorDetails.Message -like '*Insufficient license *')
+            {
+                Write-Warning -Message ' Insufficient license. You need the Entra ID Governance license.'
+            }
+            else
+            {
+                New-M365DSCLogEntry -Message 'Error during Create:' `
+                    -Exception $_ `
+                    -Source $($MyInvocation.MyCommand.Source) `
+                    -TenantId $TenantId `
+                    -Credential $Credential
+                throw $_
+            }
+        }
     }
 }
 
@@ -382,7 +466,7 @@ function Test-TargetResource
     #endregion
 
     $result = Test-M365DSCTargetResource -DesiredValues $PSBoundParameters `
-                                         -ResourceName $($MyInvocation.MyCommand.Source).Replace('MSFT_', '')
+        -ResourceName $($MyInvocation.MyCommand.Source).Replace('MSFT_', '')
     return $result
 }
 
@@ -392,6 +476,10 @@ function Export-TargetResource
     [OutputType([System.String])]
     param
     (
+        [Parameter()]
+        [System.String]
+        $Filter,
+
         [Parameter()]
         [System.Management.Automation.PSCredential]
         $Credential,
@@ -438,7 +526,10 @@ function Export-TargetResource
 
     try
     {
-        [array] $Script:exportedInstances = Get-MgBetaIdentityGovernanceLifecycleWorkflowCustomTaskExtension -ErrorAction Stop
+        [array] $Script:exportedInstances = Get-MgBetaIdentityGovernanceLifecycleWorkflowCustomTaskExtension `
+            -All `
+            -Filter $Filter `
+            -ErrorAction Stop
 
         $i = 1
         $dscContent = ''
@@ -478,7 +569,7 @@ function Export-TargetResource
                 $complexTypeStringResult = Get-M365DSCDRGComplexTypeToString `
                     -ComplexObject $Results.EndpointConfiguration `
                     -CIMInstanceName 'AADIdentityGovernanceLifecycleWorkflowCustomTaskExtensionEndpointConfiguration'
-                if (-Not [String]::IsNullOrWhiteSpace($complexTypeStringResult))
+                if (-not [String]::IsNullOrWhiteSpace($complexTypeStringResult))
                 {
                     $Results.EndpointConfiguration = $complexTypeStringResult
                 }
@@ -493,7 +584,7 @@ function Export-TargetResource
                 $complexTypeStringResult = Get-M365DSCDRGComplexTypeToString `
                     -ComplexObject $Results.ClientConfiguration `
                     -CIMInstanceName 'AADIdentityGovernanceLifecycleWorkflowCustomTaskExtensionClientConfiguration'
-                if (-Not [String]::IsNullOrWhiteSpace($complexTypeStringResult))
+                if (-not [String]::IsNullOrWhiteSpace($complexTypeStringResult))
                 {
                     $Results.ClientConfiguration = $complexTypeStringResult
                 }
@@ -508,7 +599,7 @@ function Export-TargetResource
                 $complexTypeStringResult = Get-M365DSCDRGComplexTypeToString `
                     -ComplexObject $Results.CallbackConfiguration `
                     -CIMInstanceName 'AADIdentityGovernanceLifecycleWorkflowCustomTaskExtensionCallbackConfiguration'
-                if (-Not [String]::IsNullOrWhiteSpace($complexTypeStringResult))
+                if (-not [String]::IsNullOrWhiteSpace($complexTypeStringResult))
                 {
                     $Results.CallbackConfiguration = $complexTypeStringResult
                 }
@@ -535,26 +626,23 @@ function Export-TargetResource
     }
     catch
     {
-        if ($_.ErrorDetails.Message -like "Insufficient license *")
+        if ($_.ErrorDetails.Message -like 'Insufficient license *')
         {
             Write-M365DSCHost -Message "`r`n    " -DeferWrite
             Write-M365DSCHost -Message $Global:M365DSCEmojiYellowCircle -DeferWrite
-            Write-M365DSCHost -Message " Insufficient license. You need the Entra ID Governance license." -CommitWrite
+            Write-M365DSCHost -Message ' Insufficient license. You need the Entra ID Governance license.' -CommitWrite
         }
         else
         {
-            Write-M365DSCHost -Message $Global:M365DSCEmojiRedX -CommitWrite
-
             New-M365DSCLogEntry -Message 'Error during Export:' `
                 -Exception $_ `
                 -Source $($MyInvocation.MyCommand.Source) `
                 -TenantId $TenantId `
                 -Credential $Credential
-        }
 
-        return ''
+            throw
+        }
     }
 }
 
 Export-ModuleMember -Function *-TargetResource
-

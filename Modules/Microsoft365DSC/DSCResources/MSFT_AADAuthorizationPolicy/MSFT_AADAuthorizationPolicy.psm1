@@ -7,8 +7,8 @@ function Get-TargetResource
     param
     (
         [Parameter(Mandatory = $true)]
-        [System.String]
         [ValidateSet('Yes')]
+        [System.String]
         $IsSingleInstance,
 
         [Parameter()]
@@ -32,9 +32,13 @@ function Get-TargetResource
         $AllowEmailVerifiedUsersToJoinOrganization,
 
         [Parameter()]
+        [ValidateSet('None', 'AdminsAndGuestInviters', 'AdminsGuestInvitersAndAllMembers', 'Everyone')]
         [System.String]
-        [validateset('None', 'AdminsAndGuestInviters', 'AdminsGuestInvitersAndAllMembers', 'Everyone')]
         $AllowInvitesFrom,
+
+        [Parameter()]
+        [System.Boolean]
+        $AllowUserConsentForRiskyApps,
 
         [Parameter()]
         [System.Boolean]
@@ -65,7 +69,7 @@ function Get-TargetResource
         $PermissionGrantPolicyIdsAssignedToDefaultUserRole,
 
         [Parameter()]
-        [validateset('User', 'Guest', 'RestrictedGuest')]
+        [ValidateSet('User', 'Guest', 'RestrictedGuest')]
         [System.String]
         $GuestUserRole,
 
@@ -106,56 +110,24 @@ function Get-TargetResource
 
     Write-Verbose -Message 'Getting configuration of AzureAD Authorization Policy'
 
-    $ConnectionMode = New-M365DSCConnection -Workload 'MicrosoftGraph' `
-        -InboundParameters $PSBoundParameters
-
-    #Ensure the proper dependencies are installed in the current environment.
-    Confirm-M365DSCDependencies
-
-    #region Telemetry
-    $ResourceName = $MyInvocation.MyCommand.ModuleName -replace 'MSFT_', ''
-    $CommandName = $MyInvocation.MyCommand
-    $data = Format-M365DSCTelemetryParameters -ResourceName $ResourceName `
-        -CommandName $CommandName `
-        -Parameters $PSBoundParameters
-    Add-M365DSCTelemetryEvent -Data $data
-    #endregion
-
-    $nullReturn = @{
-        IsSingleInstance = 'Yes'
-    }
-
     try
     {
+        $null = New-M365DSCConnection -Workload 'MicrosoftGraph' `
+            -InboundParameters $PSBoundParameters
+
+        #Ensure the proper dependencies are installed in the current environment.
+        Confirm-M365DSCDependencies
+
+        #region Telemetry
+        $ResourceName = $MyInvocation.MyCommand.ModuleName -replace 'MSFT_', ''
+        $CommandName = $MyInvocation.MyCommand
+        $data = Format-M365DSCTelemetryParameters -ResourceName $ResourceName `
+            -CommandName $CommandName `
+            -Parameters $PSBoundParameters
+        Add-M365DSCTelemetryEvent -Data $data
+        #endregion
+
         $Policy = Get-MgBetaPolicyAuthorizationPolicy -ErrorAction Stop
-    }
-    catch
-    {
-        $message = 'Could not find existing authorization policy'
-
-        New-M365DSCLogEntry -Message $message `
-            -Exception $_ `
-            -Source $($MyInvocation.MyCommand.Source) `
-            -TenantId $TenantId `
-            -Credential $Credential
-
-        return $nullReturn
-    }
-
-    if ($null -eq $Policy)
-    {
-        $message = 'Existing Authorization Policy was not found'
-
-        New-M365DSCLogEntry -Message $message `
-            -Source $($MyInvocation.MyCommand.Source) `
-            -TenantId $TenantId `
-            -Credential $Credential
-
-        return $nullReturn
-    }
-    else
-    {
-        Write-Verbose -Message 'Get-TargetResource: Found existing authorization policy'
 
         $result = @{
             IsSingleInstance                                        = 'Yes'
@@ -165,6 +137,7 @@ function Get-TargetResource
             AllowedToUseSSPR                                        = $Policy.AllowedToUseSSPR
             AllowEmailVerifiedUsersToJoinOrganization               = $Policy.AllowEmailVerifiedUsersToJoinOrganization
             AllowInvitesFrom                                        = $Policy.AllowInvitesFrom
+            AllowUserConsentForRiskyApps                            = $Policy.AllowUserConsentForRiskyApps
             BlockMsolPowerShell                                     = $Policy.BlockMsolPowerShell
             DefaultUserRoleAllowedToCreateApps                      = $Policy.DefaultUserRolePermissions.AllowedToCreateApps
             DefaultUserRoleAllowedToCreateSecurityGroups            = $Policy.DefaultUserRolePermissions.AllowedToCreateSecurityGroups
@@ -179,12 +152,21 @@ function Get-TargetResource
             ApplicationId                                           = $ApplicationId
             TenantId                                                = $TenantId
             CertificateThumbprint                                   = $CertificateThumbprint
-            Managedidentity                                         = $ManagedIdentity.IsPresent
+            ManagedIdentity                                         = $ManagedIdentity.IsPresent
             AccessTokens                                            = $AccessTokens
         }
 
-        Write-Verbose -Message "Get-TargetResource Result: `n $(Convert-M365DscHashtableToString -Hashtable $result)"
         return $result
+    }
+    catch
+    {
+        New-M365DSCLogEntry -Message 'Error retrieving data:' `
+            -Exception $_ `
+            -Source $($MyInvocation.MyCommand.Source) `
+            -TenantId $TenantId `
+            -Credential $Credential
+
+        throw
     }
 }
 
@@ -194,8 +176,8 @@ function Set-TargetResource
     param
     (
         [Parameter(Mandatory = $true)]
-        [System.String]
         [ValidateSet('Yes')]
+        [System.String]
         $IsSingleInstance,
 
         [Parameter()]
@@ -219,9 +201,13 @@ function Set-TargetResource
         $AllowEmailVerifiedUsersToJoinOrganization,
 
         [Parameter()]
+        [ValidateSet('None', 'AdminsAndGuestInviters', 'AdminsGuestInvitersAndAllMembers', 'Everyone')]
         [System.String]
-        [validateset('None', 'AdminsAndGuestInviters', 'AdminsGuestInvitersAndAllMembers', 'Everyone')]
         $AllowInvitesFrom,
+
+        [Parameter()]
+        [System.Boolean]
+        $AllowUserConsentForRiskyApps,
 
         [Parameter()]
         [System.Boolean]
@@ -252,7 +238,7 @@ function Set-TargetResource
         $PermissionGrantPolicyIdsAssignedToDefaultUserRole,
 
         [Parameter()]
-        [validateset('User', 'Guest', 'RestrictedGuest')]
+        [ValidateSet('User', 'Guest', 'RestrictedGuest')]
         [System.String]
         $GuestUserRole,
 
@@ -309,16 +295,8 @@ function Set-TargetResource
     $currentPolicy = Get-TargetResource @PSBoundParameters
 
     Write-Verbose -Message 'Set-Targetresource: Cleaning up parameters'
-    $desiredParameters = ([hashtable]$PSBoundParameters).Clone()
+    $desiredParameters = Remove-M365DSCAuthenticationParameter -BoundParameters $PSBoundParameters
     $desiredParameters.Remove('IsSingleInstance') | Out-Null
-    $desiredParameters.Remove('ApplicationId') | Out-Null
-    $desiredParameters.Remove('TenantId') | Out-Null
-    $desiredParameters.Remove('CertificateThumbprint') | Out-Null
-    $desiredParameters.Remove('ApplicationSecret') | Out-Null
-    $desiredParameters.Remove('Ensure') | Out-Null
-    $desiredParameters.Remove('Credential') | Out-Null
-    $desiredParameters.Remove('ManagedIdentity') | Out-Null
-    $desiredParameters.Remove('AccessTokens') | Out-Null
 
     Write-Verbose -Message 'Set-Targetresource: Authorization Policy Ensure Present'
     $UpdateParameters = @{
@@ -336,8 +314,8 @@ function Set-TargetResource
 
         if (($desiredParam -is [System.Array] -and (Compare-Object -ReferenceObject $desiredParam -DifferenceObject $currentParam)) -or
             ($desiredParam -isnot [System.Array] -and $desiredParam -ne $currentParam) -or
-           ($null -eq $desiredParam -and $null -ne $currentParam) -or
-           ($null -ne $desiredParam -and $null -eq $currentParam))
+            ($null -eq $desiredParam -and $null -ne $currentParam) -or
+            ($null -ne $desiredParam -and $null -eq $currentParam))
         {
             if ($param.ToLower() -match 'defaultuserrole')
             {
@@ -384,7 +362,7 @@ function Set-TargetResource
     try
     {
         Write-Verbose -Message "Updating existing authorization policy with values: $(Convert-M365DscHashtableToString -Hashtable $UpdateParameters)"
-        $response = Update-MgBetaPolicyAuthorizationPolicy @updateParameters -ErrorAction Stop
+        $null = Update-MgBetaPolicyAuthorizationPolicy @updateParameters -ErrorAction Stop
     }
     catch
     {
@@ -407,8 +385,8 @@ function Test-TargetResource
     param
     (
         [Parameter(Mandatory = $true)]
-        [System.String]
         [ValidateSet('Yes')]
+        [System.String]
         $IsSingleInstance,
 
         [Parameter()]
@@ -432,9 +410,13 @@ function Test-TargetResource
         $AllowEmailVerifiedUsersToJoinOrganization,
 
         [Parameter()]
+        [ValidateSet('None', 'AdminsAndGuestInviters', 'AdminsGuestInvitersAndAllMembers', 'Everyone')]
         [System.String]
-        [validateset('None', 'AdminsAndGuestInviters', 'AdminsGuestInvitersAndAllMembers', 'Everyone')]
         $AllowInvitesFrom,
+
+        [Parameter()]
+        [System.Boolean]
+        $AllowUserConsentForRiskyApps,
 
         [Parameter()]
         [System.Boolean]
@@ -465,7 +447,7 @@ function Test-TargetResource
         $PermissionGrantPolicyIdsAssignedToDefaultUserRole,
 
         [Parameter()]
-        [validateset('User', 'Guest', 'RestrictedGuest')]
+        [ValidateSet('User', 'Guest', 'RestrictedGuest')]
         [System.String]$GuestUserRole,
 
         #generic
@@ -513,7 +495,7 @@ function Test-TargetResource
     #endregion
 
     $result = Test-M365DSCTargetResource -DesiredValues $PSBoundParameters `
-                                         -ResourceName $($MyInvocation.MyCommand.Source).Replace('MSFT_', '')
+        -ResourceName $($MyInvocation.MyCommand.Source).Replace('MSFT_', '')
     return $result
 }
 
@@ -608,15 +590,13 @@ function Export-TargetResource
     }
     catch
     {
-        Write-M365DSCHost -Message $Global:M365DSCEmojiRedX -CommitWrite
-
         New-M365DSCLogEntry -Message 'Error during Export:' `
             -Exception $_ `
             -Source $($MyInvocation.MyCommand.Source) `
             -TenantId $TenantId `
             -Credential $Credential
 
-        return ''
+        throw
     }
 }
 <#
@@ -670,7 +650,7 @@ function Get-GuestUserRoleIdFromName
     [OutputType([System.string])]
     param(
         [parameter()]
-        [validateset('User', 'Guest', 'RestrictedGuest')]
+        [ValidateSet('User', 'Guest', 'RestrictedGuest')]
         [String]
         $GuestUserRole
     )
@@ -728,4 +708,3 @@ function Get-GuestUserRoleNameFromId
 }
 
 Export-ModuleMember -Function *-TargetResource
-

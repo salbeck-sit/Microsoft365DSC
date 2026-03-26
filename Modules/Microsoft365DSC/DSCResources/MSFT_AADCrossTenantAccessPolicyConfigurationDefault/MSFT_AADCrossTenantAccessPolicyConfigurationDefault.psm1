@@ -7,8 +7,8 @@ function Get-TargetResource
     param
     (
         [Parameter(Mandatory = $true)]
-        [System.String]
         [ValidateSet('Yes')]
+        [System.String]
         $IsSingleInstance,
 
         [Parameter()]
@@ -30,6 +30,14 @@ function Get-TargetResource
         [Parameter()]
         [Microsoft.Management.Infrastructure.CimInstance]
         $InboundTrust,
+
+        [Parameter()]
+        [Microsoft.Management.Infrastructure.CimInstance]
+        $InvitationRedemptionIdentityProviderConfiguration,
+
+        [Parameter()]
+        [Microsoft.Management.Infrastructure.CimInstance]
+        $TenantRestrictions,
 
         [Parameter()]
         [System.String]
@@ -65,11 +73,11 @@ function Get-TargetResource
         $AccessTokens
     )
 
-    Write-Verbose -Message "Getting configuration of AzureAD Cross Tenant Access Policy Configuration Default"
+    Write-Verbose -Message 'Getting configuration of AzureAD Cross Tenant Access Policy Configuration Default'
 
     try
     {
-        $ConnectionMode = New-M365DSCConnection -Workload 'MicrosoftGraph' `
+        $null = New-M365DSCConnection -Workload 'MicrosoftGraph' `
             -InboundParameters $PSBoundParameters
 
         #Ensure the proper dependencies are installed in the current environment.
@@ -91,45 +99,117 @@ function Get-TargetResource
 
         if ($null -eq $getValue)
         {
-            Write-Verbose -Message "Could not find an Azure AD Cross Tenant Access Configuration Default"
+            Write-Verbose -Message 'Could not find an Azure AD Cross Tenant Access Configuration Default'
             return $nullResult
         }
 
         $B2BCollaborationInboundValue = $null
         if ($null -ne $getValue.B2BCollaborationInbound)
         {
-            $B2BCollaborationInboundValue = @{
-                Applications = @{
+            $B2BCollaborationInboundValue = [ordered]@{
+                Applications   = [ordered]@{
                     AccessType = $getValue.B2BCollaborationInbound.Applications.AccessType
                     Targets    = [System.Array]$getValue.B2BCollaborationInbound.Applications.Targets
                 }
-                UsersAndGroups =@{
+                UsersAndGroups = [ordered]@{
                     AccessType = $getValue.B2BCollaborationInbound.UsersAndGroups.AccessType
                     Targets    = [System.Array] $getValue.B2BCollaborationInbound.UsersAndGroups.Targets
                 }
             }
+
+            # Convert users back to UPN
+            $newValue = @()
+            foreach ($valueEntry in $B2BCollaborationInboundValue.UsersAndGroups.Targets)
+            {
+                $currentEntry = [ordered]@{
+                    Target     = $valueEntry.Target
+                    TargetType = $valueEntry.TargetType
+                }
+                if ($valueEntry.TargetType -eq 'user')
+                {
+                    $user = Get-MgUser -UserId $valueEntry.Target -ErrorAction SilentlyContinue
+                    if ($null -ne $user)
+                    {
+                        $currentEntry.Target = $user.UserPrincipalName
+                    }
+                    else
+                    {
+                        $currentEntry.Target = $valueEntry.Target
+                    }
+                }
+                else
+                {
+                    $group = [System.Array] (Get-MgGroup -GroupId $valueEntry.Target -ErrorAction SilentlyContinue)
+                    if ($null -ne $group -and $group.Length -eq 1)
+                    {
+                        $currentEntry.Target = $group.DisplayName
+                    }
+                    else
+                    {
+                        $currentEntry.Target = $valueEntry.Target
+                    }
+                }
+                $newValue += $currentEntry
+            }
+            $B2BCollaborationInboundValue.UsersAndGroups.Targets = $newValue
         }
         if ($null -ne $getValue.B2BCollaborationOutbound)
         {
-            $B2BCollaborationOutboundValue = @{
-                Applications = @{
+            $B2BCollaborationOutboundValue = [ordered]@{
+                Applications   = [ordered]@{
                     AccessType = $getValue.B2BCollaborationOutbound.Applications.AccessType
                     Targets    = [System.Array] $getValue.B2BCollaborationOutbound.Applications.Targets
                 }
-                UsersAndGroups =@{
+                UsersAndGroups = [ordered]@{
                     AccessType = $getValue.B2BCollaborationOutbound.UsersAndGroups.AccessType
                     Targets    = [System.Array] $getValue.B2BCollaborationOutbound.UsersAndGroups.Targets
                 }
             }
+
+            # Convert users back to UPN
+            $newValue = @()
+            foreach ($valueEntry in $B2BCollaborationOutboundValue.UsersAndGroups.Targets)
+            {
+                $currentEntry = [ordered]@{
+                    Target     = $valueEntry.Target
+                    TargetType = $valueEntry.TargetType
+                }
+                if ($valueEntry.TargetType -eq 'user')
+                {
+                    $user = Get-MgUser -UserId $valueEntry.Target -ErrorAction SilentlyContinue
+                    if ($null -ne $user)
+                    {
+                        $currentEntry.Target = $user.UserPrincipalName
+                    }
+                    else
+                    {
+                        $currentEntry.Target = $valueEntry.Target
+                    }
+                }
+                else
+                {
+                    $group = [System.Array] (Get-MgGroup -GroupId $valueEntry.Target -ErrorAction SilentlyContinue)
+                    if ($null -ne $group -and $group.Length -eq 1)
+                    {
+                        $currentEntry.Target = $group.DisplayName
+                    }
+                    else
+                    {
+                        $currentEntry.Target = $valueEntry.Target
+                    }
+                }
+                $newValue += $currentEntry
+            }
+            $B2BCollaborationOutboundValue.UsersAndGroups.Targets = $newValue
         }
         if ($null -ne $getValue.B2BDirectConnectInbound)
         {
-            $B2BDirectConnectInboundValue = @{
-                Applications = @{
+            $B2BDirectConnectInboundValue = [ordered]@{
+                Applications   = [ordered]@{
                     AccessType = $getValue.B2BDirectConnectInbound.Applications.AccessType
                     Targets    = [System.Array] $getValue.B2BDirectConnectInbound.Applications.Targets
                 }
-                UsersAndGroups =@{
+                UsersAndGroups = [ordered]@{
                     AccessType = $getValue.B2BDirectConnectInbound.UsersAndGroups.AccessType
                     Targets    = [System.Array] $getValue.B2BDirectConnectInbound.UsersAndGroups.Targets
                 }
@@ -137,44 +217,107 @@ function Get-TargetResource
         }
         if ($null -ne $getValue.B2BDirectConnectOutbound)
         {
-            $B2BDirectConnectOutboundValue = @{
-                Applications = @{
+            $B2BDirectConnectOutboundValue = [ordered]@{
+                Applications   = [ordered]@{
                     AccessType = $getValue.B2BDirectConnectOutbound.Applications.AccessType
                     Targets    = [System.Array] $getValue.B2BDirectConnectOutbound.Applications.Targets
                 }
-                UsersAndGroups =@{
+                UsersAndGroups = [ordered]@{
                     AccessType = $getValue.B2BDirectConnectOutbound.UsersAndGroups.AccessType
                     Targets    = [System.Array] $getValue.B2BDirectConnectOutbound.UsersAndGroups.Targets
                 }
             }
+            # Convert users back to UPN
+            $newValue = @()
+            foreach ($valueEntry in $B2BDirectConnectOutboundValue.UsersAndGroups.Targets)
+            {
+                $currentEntry = [ordered]@{
+                    Target     = $valueEntry.Target
+                    TargetType = $valueEntry.TargetType
+                }
+                if ($valueEntry.TargetType -eq 'user')
+                {
+                    $user = Get-MgUser -UserId $valueEntry.Target -ErrorAction SilentlyContinue
+                    if ($null -ne $user)
+                    {
+                        $currentEntry.Target = $user.UserPrincipalName
+                    }
+                    else
+                    {
+                        $currentEntry.Target = $valueEntry.Target
+                    }
+                }
+                else
+                {
+                    $group = [System.Array] (Get-MgGroup -GroupId $valueEntry.Target -ErrorAction SilentlyContinue)
+                    if ($null -ne $group -and $group.Length -eq 1)
+                    {
+                        $currentEntry.Target = $group.DisplayName
+                    }
+                    else
+                    {
+                        $currentEntry.Target = $valueEntry.Target
+                    }
+                }
+                $newValue += $currentEntry
+            }
+            $B2BDirectConnectOutboundValue.UsersAndGroups.Targets = $newValue
         }
         if ($null -ne $getValue.InboundTrust)
         {
-            $InboundTrustValue = @{
+            $InboundTrustValue = [ordered]@{
                 IsCompliantDeviceAccepted           = $getValue.InboundTrust.IsCompliantDeviceAccepted
                 IsHybridAzureADJoinedDeviceAccepted = $getValue.InboundTrust.IsHybridAzureADJoinedDeviceAccepted
                 IsMfaAccepted                       = $getValue.InboundTrust.IsMfaAccepted
             }
         }
-
-        $results = @{
-            IsSingleInstance         = 'Yes'
-            B2BCollaborationInbound  = $B2BCollaborationInboundValue
-            B2BCollaborationOutbound = $B2BCollaborationOutboundValue
-            B2BDirectConnectInbound  = $B2BDirectConnectInboundValue
-            B2BDirectConnectOutbound = $B2BDirectConnectOutboundValue
-            InboundTrust             = $InboundTrustValue
-            Ensure                   = 'Present'
-            Credential               = $Credential
-            ApplicationId            = $ApplicationId
-            TenantId                 = $TenantId
-            ApplicationSecret        = $ApplicationSecret
-            CertificateThumbprint    = $CertificateThumbprint
-            ManagedIdentity          = $ManagedIdentity.IsPresent
-            AccessTokens             = $AccessTokens
+        if ($null -ne $getValue.InvitationRedemptionIdentityProviderConfiguration)
+        {
+            $invitationRedemptionIdentityProviderConfigurationValue = [ordered]@{
+                FallbackIdentityProvider               = $getValue.InvitationRedemptionIdentityProviderConfiguration.FallbackIdentityProvider
+                PrimaryIdentityProviderPrecedenceOrder = $getValue.InvitationRedemptionIdentityProviderConfiguration.PrimaryIdentityProviderPrecedenceOrder
+            }
+        }
+        if ($null -ne $getValue.TenantRestrictions)
+        {
+            $tenantRestrictionsValue = [ordered]@{
+                Applications = [ordered]@{
+                    AccessType = $getValue.TenantRestrictions.Applications.AccessType
+                    Targets    = [System.Array] $getValue.TenantRestrictions.Applications.Targets
+                }
+                <# Not yet supported
+                Devices = [ordered]@{
+                    Mode = $getValue.TenantRestrictions.Devices.Mode
+                    Rule = $getValue.TenantRestrictions.Devices.Rule
+                }
+                #>
+                UsersAndGroups = [ordered]@{
+                    AccessType = $getValue.TenantRestrictions.UsersAndGroups.AccessType
+                    Targets    = [System.Array] $getValue.TenantRestrictions.UsersAndGroups.Targets
+                }
+            }
         }
 
-        return [System.Collections.Hashtable] $results
+        $results = @{
+            IsSingleInstance                                  = 'Yes'
+            B2BCollaborationInbound                           = $B2BCollaborationInboundValue
+            B2BCollaborationOutbound                          = $B2BCollaborationOutboundValue
+            B2BDirectConnectInbound                           = $B2BDirectConnectInboundValue
+            B2BDirectConnectOutbound                          = $B2BDirectConnectOutboundValue
+            InboundTrust                                      = $InboundTrustValue
+            InvitationRedemptionIdentityProviderConfiguration = $invitationRedemptionIdentityProviderConfigurationValue
+            TenantRestrictions                                = $tenantRestrictionsValue
+            Ensure                                            = 'Present'
+            Credential                                        = $Credential
+            ApplicationId                                     = $ApplicationId
+            TenantId                                          = $TenantId
+            ApplicationSecret                                 = $ApplicationSecret
+            CertificateThumbprint                             = $CertificateThumbprint
+            ManagedIdentity                                   = $ManagedIdentity.IsPresent
+            AccessTokens                                      = $AccessTokens
+        }
+
+        return $results
     }
     catch
     {
@@ -184,7 +327,7 @@ function Get-TargetResource
             -TenantId $TenantId `
             -Credential $Credential
 
-        return $nullResult
+        throw
     }
 }
 
@@ -194,8 +337,8 @@ function Set-TargetResource
     param
     (
         [Parameter(Mandatory = $true)]
-        [System.String]
         [ValidateSet('Yes')]
+        [System.String]
         $IsSingleInstance,
 
         [Parameter()]
@@ -217,6 +360,14 @@ function Set-TargetResource
         [Parameter()]
         [Microsoft.Management.Infrastructure.CimInstance]
         $InboundTrust,
+
+        [Parameter()]
+        [Microsoft.Management.Infrastructure.CimInstance]
+        $InvitationRedemptionIdentityProviderConfiguration,
+
+        [Parameter()]
+        [Microsoft.Management.Infrastructure.CimInstance]
+        $TenantRestrictions,
 
         [Parameter()]
         [System.String]
@@ -252,7 +403,7 @@ function Set-TargetResource
         $AccessTokens
     )
 
-    Write-Verbose -Message "Setting configuration of AzureAD Cross Tenant Access Policy Configuration Default"
+    Write-Verbose -Message 'Setting configuration of AzureAD Cross Tenant Access Policy Configuration Default'
 
     #Ensure the proper dependencies are installed in the current environment.
     Confirm-M365DSCDependencies
@@ -268,16 +419,8 @@ function Set-TargetResource
 
     $currentInstance = Get-TargetResource @PSBoundParameters
 
-    $OperationParams = ([Hashtable]$PSBoundParameters).Clone()
-    $OperationParams.Remove('Credential') | Out-Null
-    $OperationParams.Remove('ManagedIdentity') | Out-Null
-    $OperationParams.Remove('ApplicationId') | Out-Null
-    $OperationParams.Remove('TenantId') | Out-Null
-    $OperationParams.Remove('CertificateThumbprint') | Out-Null
-    $OperationParams.Remove('ApplicationSecret') | Out-Null
-    $OperationParams.Remove('Ensure') | Out-Null
+    $OperationParams = Remove-M365DSCAuthenticationParameter -BoundParameters $PSBoundParameters
     $OperationParams.Remove('IsSingleInstance') | Out-Null
-    $OperationParams.Remove('AccessTokens') | Out-Null
 
     if ($null -ne $OperationParams.B2BCollaborationInbound)
     {
@@ -318,6 +461,21 @@ function Set-TargetResource
         $OperationParams.Remove('InboundTrust') | Out-Null
         $OperationParams.Add('inboundTrust', $temp)
     }
+    if ($null -ne $OperationParams.InvitationRedemptionIdentityProviderConfiguration)
+    {
+        $OperationParams.InvitationRedemptionIdentityProviderConfiguration = (Get-M365DSCAADDefaultInvitationRedemptionIdentityProviderConfiguration -Setting $OperationParams.InvitationRedemptionIdentityProviderConfiguration)
+        $temp = $OperationParams.InvitationRedemptionIdentityProviderConfiguration
+        $OperationParams.Remove('InvitationRedemptionIdentityProviderConfiguration') | Out-Null
+        $OperationParams.Add('invitationRedemptionIdentityProviderConfiguration', $temp)
+    }
+    if ($null -ne $OperationParams.TenantRestrictions)
+    {
+        $OperationParams.TenantRestrictions = (Get-M365DSCAADCrossTenantAccessPolicyTenantRestrictions -Setting $OperationParams.TenantRestrictions)
+        $OperationParams.TenantRestrictions = (Update-M365DSCSettingUserIdFromUPN -Setting $OperationParams.TenantRestrictions)
+        $temp = $OperationParams.TenantRestrictions
+        $OperationParams.Remove('TenantRestrictions') | Out-Null
+        $OperationParams.Add('tenantRestrictions', $temp)
+    }
 
     if ($Ensure -eq 'Present' -and $currentInstance.Ensure -eq 'Present')
     {
@@ -340,8 +498,8 @@ function Test-TargetResource
     param
     (
         [Parameter(Mandatory = $true)]
-        [System.String]
         [ValidateSet('Yes')]
+        [System.String]
         $IsSingleInstance,
 
         [Parameter()]
@@ -363,6 +521,14 @@ function Test-TargetResource
         [Parameter()]
         [Microsoft.Management.Infrastructure.CimInstance]
         $InboundTrust,
+
+        [Parameter()]
+        [Microsoft.Management.Infrastructure.CimInstance]
+        $InvitationRedemptionIdentityProviderConfiguration,
+
+        [Parameter()]
+        [Microsoft.Management.Infrastructure.CimInstance]
+        $TenantRestrictions,
 
         [Parameter()]
         [System.String]
@@ -408,7 +574,7 @@ function Test-TargetResource
     #endregion
 
     $result = Test-M365DSCTargetResource -DesiredValues $PSBoundParameters `
-                                         -ResourceName $($MyInvocation.MyCommand.Source).Replace('MSFT_', '')
+        -ResourceName $($MyInvocation.MyCommand.Source).Replace('MSFT_', '')
     return $result
 }
 
@@ -477,7 +643,7 @@ function Export-TargetResource
             TenantId              = $TenantId
             CertificateThumbprint = $CertificateThumbprint
             Credential            = $Credential
-            Managedidentity       = $ManagedIdentity.IsPresent
+            ManagedIdentity       = $ManagedIdentity.IsPresent
             AccessTokens          = $AccessTokens
         }
         $Results = Get-TargetResource @Params
@@ -511,7 +677,7 @@ function Export-TargetResource
                 -CIMInstanceName 'AADCrossTenantAccessPolicyB2BSetting' `
                 -ComplexTypeMapping $complexMapping
 
-            if (-Not [String]::IsNullOrWhiteSpace($complexTypeStringResult))
+            if (-not [String]::IsNullOrWhiteSpace($complexTypeStringResult))
             {
                 $Results.B2BCollaborationInbound = $complexTypeStringResult
             }
@@ -550,7 +716,7 @@ function Export-TargetResource
                 -CIMInstanceName 'AADCrossTenantAccessPolicyB2BSetting' `
                 -ComplexTypeMapping $complexMapping
 
-            if (-Not [String]::IsNullOrWhiteSpace($complexTypeStringResult))
+            if (-not [String]::IsNullOrWhiteSpace($complexTypeStringResult))
             {
                 $Results.B2BCollaborationOutbound = $complexTypeStringResult
             }
@@ -589,7 +755,7 @@ function Export-TargetResource
                 -CIMInstanceName 'AADCrossTenantAccessPolicyB2BSetting' `
                 -ComplexTypeMapping $complexMapping
 
-            if (-Not [String]::IsNullOrWhiteSpace($complexTypeStringResult))
+            if (-not [String]::IsNullOrWhiteSpace($complexTypeStringResult))
             {
                 $Results.B2BDirectConnectInbound = $complexTypeStringResult
             }
@@ -628,7 +794,7 @@ function Export-TargetResource
                 -CIMInstanceName 'AADCrossTenantAccessPolicyB2BSetting' `
                 -ComplexTypeMapping $complexMapping
 
-            if (-Not [String]::IsNullOrWhiteSpace($complexTypeStringResult))
+            if (-not [String]::IsNullOrWhiteSpace($complexTypeStringResult))
             {
                 $Results.B2BDirectConnectOutbound = $complexTypeStringResult
             }
@@ -640,19 +806,11 @@ function Export-TargetResource
 
         if ($null -ne $Results.InboundTrust)
         {
-            $complexMapping = @(
-                @{
-                    Name            = 'InboundTrust'
-                    CimInstanceName = 'AADCrossTenantAccessPolicyInboundTrust'
-                    IsRequired      = $False
-                }
-            )
             $complexTypeStringResult = Get-M365DSCDRGComplexTypeToString `
                 -ComplexObject $Results.InboundTrust `
-                -CIMInstanceName 'AADCrossTenantAccessPolicyInboundTrust' `
-                -ComplexTypeMapping $complexMapping
+                -CIMInstanceName 'AADCrossTenantAccessPolicyInboundTrust'
 
-            if (-Not [String]::IsNullOrWhiteSpace($complexTypeStringResult))
+            if (-not [String]::IsNullOrWhiteSpace($complexTypeStringResult))
             {
                 $Results.InboundTrust = $complexTypeStringResult
             }
@@ -662,12 +820,67 @@ function Export-TargetResource
             }
         }
 
+        if ($null -ne $Results.InvitationRedemptionIdentityProviderConfiguration)
+        {
+            $complexTypeStringResult = Get-M365DSCDRGComplexTypeToString `
+                -ComplexObject $Results.InvitationRedemptionIdentityProviderConfiguration `
+                -CIMInstanceName 'AADDefaultInvitationRedemptionIdentityProviderConfiguration'
+
+            if (-not [String]::IsNullOrWhiteSpace($complexTypeStringResult))
+            {
+                $Results.InvitationRedemptionIdentityProviderConfiguration = $complexTypeStringResult
+            }
+            else
+            {
+                $Results.Remove('InvitationRedemptionIdentityProviderConfiguration') | Out-Null
+            }
+        }
+
+        if ($null -ne $Results.TenantRestrictions)
+        {
+            $complexMapping = @(
+                @{
+                    Name            = 'Applications'
+                    CimInstanceName = 'AADCrossTenantAccessPolicyTargetConfiguration'
+                    IsRequired      = $False
+                },
+                @{
+                    Name            = 'UsersAndGroups'
+                    CimInstanceName = 'AADCrossTenantAccessPolicyTargetConfiguration'
+                    IsRequired      = $False
+                },
+                @{
+                    Name            = 'Devices'
+                    CimInstanceName = 'AADDevicesFilter'
+                    IsRequired      = $False
+                },
+                @{
+                    Name            = 'Targets'
+                    CimInstanceName = 'AADCrossTenantAccessPolicyTarget'
+                    IsRequired      = $False
+                }
+            )
+            $complexTypeStringResult = Get-M365DSCDRGComplexTypeToString `
+                -ComplexObject $Results.TenantRestrictions `
+                -CIMInstanceName 'AADCrossTenantAccessPolicyTenantRestrictions' `
+                -ComplexTypeMapping $complexMapping
+
+            if (-not [String]::IsNullOrWhiteSpace($complexTypeStringResult))
+            {
+                $Results.TenantRestrictions = $complexTypeStringResult
+            }
+            else
+            {
+                $Results.Remove('TenantRestrictions') | Out-Null
+            }
+        }
+
         $currentDSCBlock = Get-M365DSCExportContentForResource -ResourceName $ResourceName `
             -ConnectionMode $ConnectionMode `
             -ModulePath $PSScriptRoot `
             -Results $Results `
             -Credential $Credential `
-            -NoEscape @('B2BCollaborationInbound', 'B2BCollaborationOutbound', 'B2BDirectConnectInbound', 'B2BDirectConnectOutbound', 'InboundTrust')
+            -NoEscape @('B2BCollaborationInbound', 'B2BCollaborationOutbound', 'B2BDirectConnectInbound', 'B2BDirectConnectOutbound', 'InboundTrust', 'InvitationRedemptionIdentityProviderConfiguration', 'TenantRestrictions')
 
         # Fix OrganizationName variable in CIMInstance
         $currentDSCBlock = $currentDSCBlock.Replace('@$OrganizationName''', "@' + `$OrganizationName")
@@ -682,15 +895,13 @@ function Export-TargetResource
     }
     catch
     {
-        Write-M365DSCHost -Message $Global:M365DSCEmojiRedX -CommitWrite
-
         New-M365DSCLogEntry -Message 'Error during Export:' `
             -Exception $_ `
             -Source $($MyInvocation.MyCommand.Source) `
             -TenantId $TenantId `
             -Credential $Credential
 
-        return ''
+        throw
     }
 }
 
@@ -783,6 +994,8 @@ function Get-M365DSCAADCrossTenantAccessPolicyB2BSetting
         $targets = @()
         foreach ($currentTarget in $Setting.usersAndGroups.targets)
         {
+            $user = $null
+            $group = $null
             if ($currentTarget.targetType -eq 'User')
             {
                 $user = Get-MgUser -UserId $currentTarget.target -ErrorAction SilentlyContinue
@@ -834,6 +1047,43 @@ function Get-M365DSCAADCrossTenantAccessPolicyInboundTrust
     }
 
     return $result
+}
+
+function Get-M365DSCAADDefaultInvitationRedemptionIdentityProviderConfiguration
+{
+    [CmdletBinding()]
+    [OutputType([System.Collections.Hashtable])]
+    param(
+        [Parameter(Mandatory = $true)]
+        [System.Object]
+        $Setting
+    )
+
+    @{
+        fallbackIdentityProvider               = $Setting.FallbackIdentityProvider
+        primaryIdentityProviderPrecedenceOrder = $Setting.PrimaryIdentityProviderPrecedenceOrder
+    }
+}
+
+function Get-M365DSCAADCrossTenantAccessPolicyTenantRestrictions
+{
+    [CmdletBinding()]
+    [OutputType([System.Collections.Hashtable])]
+    param(
+        [Parameter(Mandatory = $true)]
+        [System.Object]
+        $Setting
+    )
+
+    $body = Get-M365DSCAADCrossTenantAccessPolicyB2BSetting -Setting $Setting
+    <#
+    $body.Add('devices', @{
+        mode = $Setting.Devices.Mode
+        rule = $Setting.Devices.Rule
+    })
+    #>
+
+    return $body
 }
 
 Export-ModuleMember -Function *-TargetResource

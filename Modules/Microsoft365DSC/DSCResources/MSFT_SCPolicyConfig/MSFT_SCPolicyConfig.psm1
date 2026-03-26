@@ -156,24 +156,25 @@ function Get-TargetResource
         $AccessTokens
     )
 
-    New-M365DSCConnection -Workload 'SecurityComplianceCenter' `
-        -InboundParameters $PSBoundParameters | Out-Null
+    Write-Verbose -Message "Getting configuration of SCFilePlanPropertyReferenceId for $Name"
 
-    #Ensure the proper dependencies are installed in the current environment.
-    Confirm-M365DSCDependencies
-
-    #region Telemetry
-    $ResourceName = $MyInvocation.MyCommand.ModuleName.Replace('MSFT_', '')
-    $CommandName = $MyInvocation.MyCommand
-    $data = Format-M365DSCTelemetryParameters -ResourceName $ResourceName `
-        -CommandName $CommandName `
-        -Parameters $PSBoundParameters
-    Add-M365DSCTelemetryEvent -Data $data
-    #endregion
-
-    $nullResult = $PSBoundParameters
     try
     {
+        $null = New-M365DSCConnection -Workload 'SecurityComplianceCenter' `
+            -InboundParameters $PSBoundParameters
+
+        #Ensure the proper dependencies are installed in the current environment.
+        Confirm-M365DSCDependencies
+
+        #region Telemetry
+        $ResourceName = $MyInvocation.MyCommand.ModuleName.Replace('MSFT_', '')
+        $CommandName = $MyInvocation.MyCommand
+        $data = Format-M365DSCTelemetryParameters -ResourceName $ResourceName `
+            -CommandName $CommandName `
+            -Parameters $PSBoundParameters
+        Add-M365DSCTelemetryEvent -Data $data
+        #endregion
+
         $instance = Get-PolicyConfig -ErrorAction Stop
         $EndpointDlpGlobalSettingsValue = ConvertFrom-Json $instance.EndpointDlpGlobalSettings
         $DlpPrinterGroupsObject = ConvertFrom-Json $instance.DlpPrinterGroups
@@ -184,7 +185,7 @@ function Get-TargetResource
 
         # AdvancedClassificationEnabled
         $AdvancedClassificationEnabledValue = $false # default value
-        $valueToParse =($EndpointDlpGlobalSettingsValue | Where-Object { $_.Setting -eq 'AdvancedClassificationEnabled' }).Value
+        $valueToParse = ($EndpointDlpGlobalSettingsValue | Where-Object { $_.Setting -eq 'AdvancedClassificationEnabled' }).Value
         if (-not [System.String]::IsNullOrEmpty($valueToParse))
         {
             $AdvancedClassificationEnabledValue = [Boolean]::Parse($valueToParse)
@@ -235,7 +236,7 @@ function Get-TargetResource
         if ($null -ne $entry)
         {
             $entry = ConvertFrom-Json $entry.Value
-            $EvidenceStoreSettingsValue = @{
+            $EvidenceStoreSettingsValue = [ordered]@{
                 FileEvidenceIsEnabled = $entry.FileEvidenceIsEnabled
                 NumberOfDaysToRetain  = [Uint32]$entry.NumberOfDaysToRetain
                 StorageAccounts       = [Array]$entry.StorageAccounts
@@ -258,7 +259,7 @@ function Get-TargetResource
         $DlpAppGroupsValue = @()
         foreach ($group in $DlpAppGroupsObject)
         {
-            $entry = @{
+            $entry = [ordered]@{
                 Name        = $group.Name
                 Id          = $group.Id
                 Description = $group.Description
@@ -267,7 +268,7 @@ function Get-TargetResource
 
             foreach ($appEntry in $group.Apps)
             {
-                $app = @{
+                $app = [ordered]@{
                     ExecutableName = $appEntry.ExecutableName
                     Name           = $appEntry.Name
                     Quarantine     = [Boolean]::Parse($appEntry.Quarantine)
@@ -282,7 +283,7 @@ function Get-TargetResource
         $UnallowedAppValue = @()
         foreach ($entry in $entries)
         {
-            $current = @{
+            $current = [ordered]@{
                 Value      = $entry.Value
                 Executable = $entry.Executable
             }
@@ -294,7 +295,7 @@ function Get-TargetResource
         $UnallowedCloudSyncAppValue = @()
         foreach ($entry in $entries)
         {
-            $current = @{
+            $current = [ordered]@{
                 Value      = $entry.Value
                 Executable = $entry.Executable
             }
@@ -314,7 +315,7 @@ function Get-TargetResource
         $UnallowedBluetoothAppValue = @()
         foreach ($entry in $entries)
         {
-            $current = @{
+            $current = [ordered]@{
                 Value      = $entry.Value
                 Executable = $entry.Executable
             }
@@ -326,7 +327,7 @@ function Get-TargetResource
         $UnallowedBrowserValue = @()
         foreach ($entry in $entries)
         {
-            $current = @{
+            $current = [ordered]@{
                 Value      = $entry.Value
                 Executable = $entry.Executable
             }
@@ -348,7 +349,7 @@ function Get-TargetResource
         $SiteGroupsValue = @()
         foreach ($siteGroup in $SiteGroupsObject)
         {
-            $entry = @{
+            $entry = [ordered]@{
                 Id   = $siteGroup.Id
                 Name = $siteGroup.Name
             }
@@ -356,7 +357,7 @@ function Get-TargetResource
             $addresses = @()
             foreach ($address in $siteGroup.Addresses)
             {
-                $addresses += @{
+                $addresses += [ordered]@{
                     MatchType    = $address.MatchType
                     Url          = $address.Url
                     AddressLower = $address.AddressLower
@@ -381,10 +382,10 @@ function Get-TargetResource
                 $BusinessJustificationListValue = @()
                 foreach ($entity in $entities)
                 {
-                    $current = @{
+                    $current = [ordered]@{
                         Id                = $entity.Id
                         Enable            = [Boolean]$entity.Enable
-                        justificationText = $entity.justificationText
+                        justificationText = $entity.justificationText | Select-Object -First 1
                     }
                     $BusinessJustificationListValue += $current
                 }
@@ -426,7 +427,7 @@ function Get-TargetResource
         $DlpPrinterGroupsValue = @()
         foreach ($group in $DlpPrinterGroupsObject.groups)
         {
-            $entry = @{
+            $entry = [ordered]@{
                 groupName = $group.groupName
                 groupId   = $group.groupId
             }
@@ -434,7 +435,7 @@ function Get-TargetResource
             $printers = @()
             foreach ($printer in $group.printers)
             {
-                $current = @{
+                $current = [ordered]@{
                     universalPrinter = [Boolean]$printer.universalPrinter
                     usbPrinter       = [Boolean]$printer.usbPrinter
                     usbPrinterId     = $printer.usbPrinterPID
@@ -460,14 +461,14 @@ function Get-TargetResource
         $DLPRemovableMediaGroupsValue = @()
         foreach ($group in $DLPRemovableMediaGroupsObject.groups)
         {
-            $entry = @{
+            $entry = [ordered]@{
                 groupName = $group.groupName
             }
 
             $medias = @()
             foreach ($media in $group.removableMedia)
             {
-                $current = @{
+                $current = [ordered]@{
                     deviceId          = $media.deviceId
                     removableMediaVID = $media.removableMediaVID
                     name              = $media.name
@@ -488,7 +489,7 @@ function Get-TargetResource
         $DlpNetworkShareGroupsValue = @()
         foreach ($group in $DlpNetworkShareGroupsObject.groups)
         {
-            $entry = @{
+            $entry = [ordered]@{
                 groupName    = $group.groupName
                 groupId      = $group.groupId
                 networkPaths = [Array]$group.networkPaths
@@ -501,7 +502,7 @@ function Get-TargetResource
         {
             $quarantineInfo = [Array]($EndpointDlpGlobalSettingsValue | Where-Object { $_.Setting -eq 'QuarantineParameters' }).Value
             $quarantineInfo = ConvertFrom-Json $quarantineInfo[0]
-            $QuarantineParametersValue = @{
+            $QuarantineParametersValue = [ordered]@{
                 EnableQuarantineForCloudSyncApps = $quarantineInfo.EnableQuarantineForCloudSyncApps
                 QuarantinePath                   = $quarantineInfo.QuarantinePath
                 MacQuarantinePath                = $quarantineInfo.MacQuarantinePath
@@ -564,18 +565,17 @@ function Get-TargetResource
             ManagedIdentity                         = $ManagedIdentity.IsPresent
             AccessTokens                            = $AccessTokens
         }
-        return [System.Collections.Hashtable] $results
+        return $results
     }
     catch
     {
-        Write-Verbose -Message $_
         New-M365DSCLogEntry -Message 'Error retrieving data:' `
             -Exception $_ `
             -Source $($MyInvocation.MyCommand.Source) `
             -TenantId $TenantId `
             -Credential $Credential
 
-        return $nullResult
+        throw
     }
 }
 
@@ -734,8 +734,10 @@ function Set-TargetResource
         $AccessTokens
     )
 
-    New-M365DSCConnection -Workload 'SecurityComplianceCenter' `
-        -InboundParameters $PSBoundParameters | Out-Null
+    Write-Verbose -Message "Setting configuration of SCFilePlanPropertyReferenceId for $Name"
+
+    $null = New-M365DSCConnection -Workload 'SecurityComplianceCenter' `
+        -InboundParameters $PSBoundParameters
 
     #Ensure the proper dependencies are installed in the current environment.
     Confirm-M365DSCDependencies
@@ -1099,7 +1101,7 @@ function Set-TargetResource
     $CurrentPolicyConfig = Get-TargetResource @PSBoundParameters
     if ($EnableSpoAipMigration -ne $CurrentPolicyConfig.EnableSpoAipMigration)
     {
-        $params.Add("EnableSpoAipMigration", $EnableSpoAipMigration)
+        $params.Add('EnableSpoAipMigration', $EnableSpoAipMigration)
     }
     Write-Verbose -Message "Updating policy config with values:`r`n$(Convert-M365DscHashtableToString -Hashtable $params)"
     Set-PolicyConfig @params
@@ -1261,9 +1263,6 @@ function Test-TargetResource
         $AccessTokens
     )
 
-    #Ensure the proper dependencies are installed in the current environment.
-    Confirm-M365DSCDependencies
-
     #region Telemetry
     $ResourceName = $MyInvocation.MyCommand.ModuleName.Replace('MSFT_', '')
     $CommandName = $MyInvocation.MyCommand
@@ -1273,46 +1272,9 @@ function Test-TargetResource
     Add-M365DSCTelemetryEvent -Data $data
     #endregion
 
-    $CurrentValues = Get-TargetResource @PSBoundParameters
-    $ValuesToCheck = ([Hashtable]$PSBoundParameters).Clone()
-
-    Write-Verbose -Message "Current Values: $(Convert-M365DscHashtableToString -Hashtable $CurrentValues)"
-    Write-Verbose -Message "Target Values: $(Convert-M365DscHashtableToString -Hashtable $ValuesToCheck)"
-
-    #Compare Cim instances
-    $testResult = $true
-    $testTargetResource = $true
-    foreach ($key in $PSBoundParameters.Keys)
-    {
-        $source = $PSBoundParameters.$key
-        $target = $CurrentValues.$key
-        if ($null -ne $source -and $source.GetType().Name -like '*CimInstance*')
-        {
-            $testResult = Compare-M365DSCComplexObject `
-                -Source ($source) `
-                -Target ($target)
-
-            if (-not $testResult)
-            {
-                $testTargetResource = $false
-                break
-            }
-
-            $ValuesToCheck.Remove($key) | Out-Null
-        }
-    }
-
-    $testResult = Test-M365DSCParameterState -CurrentValues $CurrentValues `
-        -Source $($MyInvocation.MyCommand.Source) `
-        -DesiredValues $PSBoundParameters `
-        -ValuesToCheck $ValuesToCheck.Keys
-
-    if (-not $testResult)
-    {
-        $testTargetResource = $false
-    }
-    Write-Verbose -Message "Test-TargetResource returned $testTargetResource"
-    return $testTargetResource
+    $result = Test-M365DSCTargetResource -DesiredValues $PSBoundParameters `
+        -ResourceName $($MyInvocation.MyCommand.Source).Replace('MSFT_', '')
+    return $result
 }
 
 function Export-TargetResource
@@ -1393,7 +1355,8 @@ function Export-TargetResource
             }
             else
             {
-                $Results.Remove('BusinessJustificationList') | Out-Null            }
+                $Results.Remove('BusinessJustificationList') | Out-Null
+            }
         }
 
         if ($null -ne $Results.DLPAppGroups -and $Results.DLPAppGroups.Length -gt 0)
@@ -1635,8 +1598,8 @@ function Export-TargetResource
             -Results $Results `
             -Credential $Credential `
             -NoEscape @('QuarantineParameters', 'BusinessJustificationList', 'DLPAppGroups', 'DLPNetworkShareGroups',
-                'DLPPrinterGroups', 'DLPRemovableMediaGroups', 'SiteGroups', 'UnallowedApp', 'UnallowedCloudSyncApp',
-                'UnallowedBluetoothApp', 'UnallowedBrowser', 'EvidenceStoreSettings')
+            'DLPPrinterGroups', 'DLPRemovableMediaGroups', 'SiteGroups', 'UnallowedApp', 'UnallowedCloudSyncApp',
+            'UnallowedBluetoothApp', 'UnallowedBrowser', 'EvidenceStoreSettings')
 
         $dscContent += $currentDSCBlock
         Save-M365DSCPartialExport -Content $currentDSCBlock `
@@ -1647,17 +1610,14 @@ function Export-TargetResource
     }
     catch
     {
-        Write-M365DSCHost -Message $Global:M365DSCEmojiRedX -CommitWrite
-
         New-M365DSCLogEntry -Message 'Error during Export:' `
             -Exception $_ `
             -Source $($MyInvocation.MyCommand.Source) `
             -TenantId $TenantId `
             -Credential $Credential
 
-        return ''
+        throw
     }
 }
 
 Export-ModuleMember -Function *-TargetResource
-

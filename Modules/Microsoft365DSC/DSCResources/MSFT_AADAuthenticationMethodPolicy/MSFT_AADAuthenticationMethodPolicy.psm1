@@ -8,23 +8,6 @@ function Get-TargetResource
     (
         #region resource generator code
         [Parameter()]
-        [System.String]
-        $Description,
-
-        [Parameter(Mandatory = $true)]
-        [System.String]
-        $DisplayName,
-
-        [Parameter()]
-        [ValidateSet('preMigration', 'migrationInProgress', 'migrationComplete', 'unknownFutureValue')]
-        [System.String]
-        $PolicyMigrationState,
-
-        [Parameter()]
-        [System.String]
-        $PolicyVersion,
-
-        [Parameter()]
         [System.Int32]
         $ReconfirmationInDays,
 
@@ -39,16 +22,12 @@ function Get-TargetResource
         [Parameter()]
         [Microsoft.Management.Infrastructure.CimInstance]
         $SystemCredentialPreferences,
-
-        [Parameter()]
-        [System.String]
-        $Id,
         #endregion
 
-        [Parameter()]
+        [Parameter(Mandatory = $true)]
+        [ValidateSet('Yes')]
         [System.String]
-        [ValidateSet('Present')]
-        $Ensure = 'Present',
+        $IsSingleInstance,
 
         [Parameter()]
         [System.Management.Automation.PSCredential]
@@ -85,7 +64,7 @@ function Get-TargetResource
     {
         if (-not $Script:exportedInstance -or $Script:exportedInstance.DisplayName -ne $DisplayName)
         {
-            $ConnectionMode = New-M365DSCConnection -Workload 'MicrosoftGraph' `
+            $null = New-M365DSCConnection -Workload 'MicrosoftGraph' `
                 -InboundParameters $PSBoundParameters
 
             #Ensure the proper dependencies are installed in the current environment.
@@ -100,57 +79,44 @@ function Get-TargetResource
             Add-M365DSCTelemetryEvent -Data $data
             #endregion
 
-            $nullResult = $PSBoundParameters
-            $nullResult.Ensure = 'Absent'
-
-            $getValue = $null
-            #region resource generator code
-            if (-not [System.String]::IsNullOrEmpty($Id))
-            {
-                $getValue = Get-MgBetaPolicyAuthenticationMethodPolicy -ErrorAction SilentlyContinue
-            }
-
-            if ($null -eq $getValue)
-            {
-                Write-Verbose -Message "Could not find an Azure AD Authentication Method Policy with Id {$Id}"
-
-                if (-Not [string]::IsNullOrEmpty($DisplayName))
-                {
-                    $getValue = Get-MgBetaPolicyAuthenticationMethodPolicy `
-                        -ErrorAction SilentlyContinue | Where-Object `
-                        -FilterScript { `
-                            $_.DisplayName -eq "$($DisplayName)" `
-                            -and $_.AdditionalProperties.'@odata.type' -eq '#microsoft.graph.AuthenticationMethodsPolicy' `
-                    }
-                }
-            }
-            #endregion
-            if ($null -eq $getValue)
-            {
-                Write-Verbose -Message "Could not find an Azure AD Authentication Method Policy with DisplayName {$DisplayName}"
-                return $nullResult
-            }
+            $getValue = Get-MgBetaPolicyAuthenticationMethodPolicy -ErrorAction Stop
         }
         else
         {
             $getValue = $Script:exportedInstance
         }
-        $Id = $getValue.Id
-        Write-Verbose -Message "An Azure AD Authentication Method Policy with Id {$Id} and DisplayName {$DisplayName} was found."
+        Write-Verbose -Message "An Azure AD Authentication Method Policy was found."
 
         #region resource generator code
-        $complexRegistrationEnforcement = @{}
-        $complexAuthenticationMethodsRegistrationCampaign = @{}
+        $complexRegistrationEnforcement = [ordered]@{}
+        $complexAuthenticationMethodsRegistrationCampaign = [ordered]@{}
         $complexExcludeTargets = @()
         foreach ($currentExcludeTargets in $getValue.registrationEnforcement.authenticationMethodsRegistrationCampaign.excludeTargets)
         {
-            $myExcludeTargets = @{}
-            $myExcludeTargets.Add('Id', $currentExcludeTargets.id)
+            $myExcludeTargets = [ordered]@{}
             if ($null -ne $currentExcludeTargets.targetType)
             {
-                $myExcludeTargets.Add('TargetType', $currentExcludeTargets.targetType.toString())
+                $myExcludeTargets.Add('TargetType', $currentExcludeTargets.targetType.ToString())
+                if ($myExcludeTargets.TargetType -eq 'Group')
+                {
+                    $myExcludeTargetsDisplayName = Get-M365DSCGroupDisplayNameById -GroupId $currentExcludeTargets.Id
+                    if ($null -eq $myExcludeTargetsDisplayName)
+                    {
+                        continue
+                    }
+                    $myExcludeTargets.Add('Id', $myExcludeTargetsDisplayName)
+                }
+                elseif ($myExcludeTargets.TargetType -eq 'User')
+                {
+                    $myExcludeTargetsUserPrincipalName = Get-M365DSCUserPrincipalNameById -UserId $currentExcludeTargets.Id
+                    if ($null -eq $myExcludeTargetsUserPrincipalName)
+                    {
+                        continue
+                    }
+                    $myExcludeTargets.Add('Id', $myExcludeTargetsUserPrincipalName)
+                }
             }
-            if ($myExcludeTargets.values.Where({ $null -ne $_ }).count -gt 0)
+            if ($myExcludeTargets.values.Where({ $null -ne $_ }).Count -gt 0)
             {
                 $complexExcludeTargets += $myExcludeTargets
             }
@@ -159,14 +125,33 @@ function Get-TargetResource
         $complexIncludeTargets = @()
         foreach ($currentIncludeTargets in $getValue.registrationEnforcement.authenticationMethodsRegistrationCampaign.includeTargets)
         {
-            $myIncludeTargets = @{}
-            $myIncludeTargets.Add('Id', $currentIncludeTargets.id)
+            $myIncludeTargets = [ordered]@{}
+            if ($currentIncludeTargets.id -ne "all_users")
+            {
+                $myIncludeTargetsDisplayName = $null
+                if ($currentIncludeTargets.targetType -eq 'Group')
+                {
+                    $myIncludeTargetsDisplayName = Get-M365DSCGroupDisplayNameById -GroupId $currentIncludeTargets.Id
+                }
+                elseif ($currentIncludeTargets.targetType -eq 'User')
+                {
+                    $myIncludeTargetsDisplayName = Get-M365DSCUserPrincipalNameById -UserId $currentIncludeTargets.Id
+                }
+                if (-not [System.String]::IsNullOrEmpty($myIncludeTargetsDisplayName))
+                {
+                    $myIncludeTargets.Add('Id', $myIncludeTargetsDisplayName)
+                }
+            }
+            else
+            {
+                $myIncludeTargets.Add('Id', $currentIncludeTargets.id)
+            }
             $myIncludeTargets.Add('TargetedAuthenticationMethod', $currentIncludeTargets.targetedAuthenticationMethod)
             if ($null -ne $currentIncludeTargets.targetType)
             {
-                $myIncludeTargets.Add('TargetType', $currentIncludeTargets.targetType.toString())
+                $myIncludeTargets.Add('TargetType', $currentIncludeTargets.targetType.ToString())
             }
-            if ($myIncludeTargets.values.Where({ $null -ne $_ }).count -gt 0)
+            if ($myIncludeTargets.values.Where({ $null -ne $_ }).Count -gt 0)
             {
                 $complexIncludeTargets += $myIncludeTargets
             }
@@ -175,51 +160,81 @@ function Get-TargetResource
         $complexAuthenticationMethodsRegistrationCampaign.Add('SnoozeDurationInDays', $getValue.registrationEnforcement.authenticationMethodsRegistrationCampaign.snoozeDurationInDays)
         if ($null -ne $getValue.registrationEnforcement.authenticationMethodsRegistrationCampaign.state)
         {
-            $complexAuthenticationMethodsRegistrationCampaign.Add('State', $getValue.registrationEnforcement.authenticationMethodsRegistrationCampaign.state.toString())
+            $complexAuthenticationMethodsRegistrationCampaign.Add('State', $getValue.registrationEnforcement.authenticationMethodsRegistrationCampaign.state.ToString())
         }
-        if ($complexAuthenticationMethodsRegistrationCampaign.values.Where({ $null -ne $_ }).count -eq 0)
+        if ($complexAuthenticationMethodsRegistrationCampaign.values.Where({ $null -ne $_ }).Count -eq 0)
         {
             $complexAuthenticationMethodsRegistrationCampaign = $null
         }
         $complexRegistrationEnforcement.Add('AuthenticationMethodsRegistrationCampaign', $complexAuthenticationMethodsRegistrationCampaign)
-        if ($complexRegistrationEnforcement.values.Where({ $null -ne $_ }).count -eq 0)
+        if ($complexRegistrationEnforcement.values.Where({ $null -ne $_ }).Count -eq 0)
         {
             $complexRegistrationEnforcement = $null
         }
 
-        $complexReportSuspiciousActivitySettings = @{}
-        $newComplexIncludeTarget = @{}
-        $newComplexIncludeTarget.Add('Id', $getValue.ReportSuspiciousActivitySettings.IncludeTarget.id)
+        $complexReportSuspiciousActivitySettings = [ordered]@{}
+        $newComplexIncludeTarget = [ordered]@{}
+        if ($getValue.ReportSuspiciousActivitySettings.IncludeTarget.id -ne "all_users")
+        {
+            $includeTargetDisplayName = $null
+            if ($getValue.ReportSuspiciousActivitySettings.IncludeTarget.targetType -eq 'Group')
+            {
+                $includeTargetDisplayName = Get-M365DSCGroupDisplayNameById -GroupId $getValue.ReportSuspiciousActivitySettings.IncludeTarget.Id
+                if ($null -ne $includeTargetDisplayName)
+                {
+                    $newComplexIncludeTarget.Add('Id', $includeTargetDisplayName)
+                }
+            }
+        }
+        else
+        {
+            $newComplexIncludeTarget.Add('Id', $getValue.ReportSuspiciousActivitySettings.IncludeTarget.id)
+        }
         if ($null -ne $getValue.ReportSuspiciousActivitySettings.IncludeTarget.targetType)
         {
-            $newComplexIncludeTarget.Add('TargetType', $getValue.ReportSuspiciousActivitySettings.IncludeTarget.targetType.toString())
+            $newComplexIncludeTarget.Add('TargetType', $getValue.ReportSuspiciousActivitySettings.IncludeTarget.targetType.ToString())
         }
         $complexReportSuspiciousActivitySettings.Add('IncludeTarget', $newComplexIncludeTarget)
 
         if ($null -ne $getValue.ReportSuspiciousActivitySettings.state)
         {
-            $complexReportSuspiciousActivitySettings.Add('State', $getValue.ReportSuspiciousActivitySettings.state.toString())
+            $complexReportSuspiciousActivitySettings.Add('State', $getValue.ReportSuspiciousActivitySettings.state.ToString())
         }
         if ($null -ne $getValue.ReportSuspiciousActivitySettings.VoiceReportingCode)
         {
             $complexReportSuspiciousActivitySettings.Add('VoiceReportingCode', $getValue.ReportSuspiciousActivitySettings.VoiceReportingCode)
         }
-        if ($complexReportSuspiciousActivitySettings.values.Where({ $null -ne $_ }).count -eq 0)
+        if ($complexReportSuspiciousActivitySettings.values.Where({ $null -ne $_ }).Count -eq 0)
         {
             $complexReportSuspiciousActivitySettings = $null
         }
 
-        $complexSystemCredentialPreferences = @{}
+        $complexSystemCredentialPreferences = [ordered]@{}
         $complexExcludeTargets = @()
         foreach ($currentExcludeTargets in $getValue.SystemCredentialPreferences.excludeTargets)
         {
-            $myExcludeTargets = @{}
-            $myExcludeTargets.Add('Id', $currentExcludeTargets.id)
+            $myExcludeTargets = [ordered]@{}
+            if ($currentExcludeTargets.id -ne "all_users")
+            {
+                if ($currentExcludeTargets.targetType -eq 'Group')
+                {
+                    $myExcludeTargetsDisplayName = Get-M365DSCGroupDisplayNameById -GroupId $currentExcludeTargets.Id
+                    if ($null -eq $myExcludeTargetsDisplayName)
+                    {
+                        continue
+                    }
+                    $myExcludeTargets.Add('Id', $myExcludeTargetsDisplayName)
+                }
+            }
+            else
+            {
+                $myExcludeTargets.Add('Id', $currentExcludeTargets.id)
+            }
             if ($null -ne $currentExcludeTargets.targetType)
             {
-                $myExcludeTargets.Add('TargetType', $currentExcludeTargets.targetType.toString())
+                $myExcludeTargets.Add('TargetType', $currentExcludeTargets.targetType.ToString())
             }
-            if ($myExcludeTargets.values.Where({ $null -ne $_ }).count -gt 0)
+            if ($myExcludeTargets.values.Where({ $null -ne $_ }).Count -gt 0)
             {
                 $complexExcludeTargets += $myExcludeTargets
             }
@@ -228,13 +243,28 @@ function Get-TargetResource
         $complexIncludeTargets = @()
         foreach ($currentIncludeTargets in $getValue.SystemCredentialPreferences.includeTargets)
         {
-            $myIncludeTargets = @{}
-            $myIncludeTargets.Add('Id', $currentIncludeTargets.id)
+            $myIncludeTargets = [ordered]@{}
+            if ($currentIncludeTargets.id -ne "all_users")
+            {
+                if ($currentIncludeTargets.targetType -eq 'Group')
+                {
+                    $myIncludeTargetsDisplayName = Get-M365DSCGroupDisplayNameById -GroupId $currentIncludeTargets.Id
+                    if ($null -eq $myIncludeTargetsDisplayName)
+                    {
+                        continue
+                    }
+                    $myIncludeTargets.Add('Id', $myIncludeTargetsDisplayName)
+                }
+            }
+            else
+            {
+                $myIncludeTargets.Add('Id', $currentIncludeTargets.id)
+            }
             if ($null -ne $currentIncludeTargets.targetType)
             {
-                $myIncludeTargets.Add('TargetType', $currentIncludeTargets.targetType.toString())
+                $myIncludeTargets.Add('TargetType', $currentIncludeTargets.targetType.ToString())
             }
-            if ($myIncludeTargets.values.Where({ $null -ne $_ }).count -gt 0)
+            if ($myIncludeTargets.values.Where({ $null -ne $_ }).Count -gt 0)
             {
                 $complexIncludeTargets += $myIncludeTargets
             }
@@ -242,9 +272,9 @@ function Get-TargetResource
         $complexSystemCredentialPreferences.Add('IncludeTargets', $complexIncludeTargets)
         if ($null -ne $getValue.SystemCredentialPreferences.state)
         {
-            $complexSystemCredentialPreferences.Add('State', $getValue.SystemCredentialPreferences.state.toString())
+            $complexSystemCredentialPreferences.Add('State', $getValue.SystemCredentialPreferences.state.ToString())
         }
-        if ($complexSystemCredentialPreferences.values.Where({ $null -ne $_ }).count -eq 0)
+        if ($complexSystemCredentialPreferences.values.Where({ $null -ne $_ }).Count -eq 0)
         {
             $complexSystemCredentialPreferences = $null
         }
@@ -252,27 +282,22 @@ function Get-TargetResource
 
         $results = @{
             #region resource generator code
-            Description                      = $getValue.Description
-            DisplayName                      = $getValue.DisplayName
-            #PolicyMigrationState             = $enumPolicyMigrationState #DEPRECATED - Cannot be set
-            PolicyVersion                    = $getValue.PolicyVersion
             ReconfirmationInDays             = $getValue.ReconfirmationInDays
             RegistrationEnforcement          = $complexRegistrationEnforcement
             ReportSuspiciousActivitySettings = $complexReportSuspiciousActivitySettings
             SystemCredentialPreferences      = $complexSystemCredentialPreferences
-            Id                               = $getValue.Id
-            Ensure                           = 'Present'
+            IsSingleInstance                 = 'Yes'
             Credential                       = $Credential
             ApplicationId                    = $ApplicationId
             TenantId                         = $TenantId
             ApplicationSecret                = $ApplicationSecret
             CertificateThumbprint            = $CertificateThumbprint
-            Managedidentity                  = $ManagedIdentity.IsPresent
+            ManagedIdentity                  = $ManagedIdentity.IsPresent
             AccessTokens                     = $AccessTokens
             #endregion
         }
 
-        return [System.Collections.Hashtable] $results
+        return $results
     }
     catch
     {
@@ -282,7 +307,7 @@ function Get-TargetResource
             -TenantId $TenantId `
             -Credential $Credential
 
-        return $nullResult
+        throw
     }
 }
 
@@ -292,23 +317,6 @@ function Set-TargetResource
     param
     (
         #region resource generator code
-        [Parameter()]
-        [System.String]
-        $Description,
-
-        [Parameter(Mandatory = $true)]
-        [System.String]
-        $DisplayName,
-
-        [Parameter()]
-        [ValidateSet('preMigration', 'migrationInProgress', 'migrationComplete', 'unknownFutureValue')]
-        [System.String]
-        $PolicyMigrationState,
-
-        [Parameter()]
-        [System.String]
-        $PolicyVersion,
-
         [Parameter()]
         [System.Int32]
         $ReconfirmationInDays,
@@ -325,15 +333,11 @@ function Set-TargetResource
         [Microsoft.Management.Infrastructure.CimInstance]
         $SystemCredentialPreferences,
 
-        [Parameter()]
-        [System.String]
-        $Id,
-
         #endregion
-        [Parameter()]
+        [Parameter(Mandatory = $true)]
+        [ValidateSet('Yes')]
         [System.String]
-        [ValidateSet('Present')]
-        $Ensure = 'Present',
+        $IsSingleInstance,
 
         [Parameter()]
         [System.Management.Automation.PSCredential]
@@ -379,43 +383,22 @@ function Set-TargetResource
     #endregion
 
     $currentInstance = Get-TargetResource @PSBoundParameters
+    $boundParameters = Remove-M365DSCAuthenticationParameter -BoundParameters $PSBoundParameters
 
-    $BoundParameters = Remove-M365DSCAuthenticationParameter -BoundParameters $PSBoundParameters
+    Write-Verbose -Message "Updating the Azure AD Authentication Method Policy"
 
-    if ($Ensure -eq 'Present' -and $currentInstance.Ensure -eq 'Absent')
-    {
-        Write-Verbose -Message 'Azure AD Authentication Method Policy instance cannot be created'
-    }
-    elseif ($Ensure -eq 'Present' -and $currentInstance.Ensure -eq 'Present')
-    {
-        Write-Verbose -Message "Updating the Azure AD Authentication Method Policy with Id {$($currentInstance.Id)}"
+    $updateParameters = Rename-M365DSCCimInstanceParameter -Properties $boundParameters
+    Update-M365DSCAuthenticationTargets -Targets $updateParameters.RegistrationEnforcement.AuthenticationMethodsRegistrationCampaign.ExcludeTargets
+    Update-M365DSCAuthenticationTargets -Targets $updateParameters.RegistrationEnforcement.AuthenticationMethodsRegistrationCampaign.IncludeTargets
+    Update-M365DSCAuthenticationTargets -Targets $updateParameters.ReportSuspiciousActivitySettings.IncludeTarget
+    Update-M365DSCAuthenticationTargets -Targets $updateParameters.SystemCredentialPreferences.ExcludeTargets
+    Update-M365DSCAuthenticationTargets -Targets $updateParameters.SystemCredentialPreferences.IncludeTargets
 
-        $UpdateParameters = ([Hashtable]$BoundParameters).clone()
-        $UpdateParameters = Rename-M365DSCCimInstanceParameter -Properties $UpdateParameters
-
-        $UpdateParameters.Remove('Id') | Out-Null
-
-        $keys = (([Hashtable]$UpdateParameters).clone()).Keys
-        foreach ($key in $keys)
-        {
-            if ($null -ne $UpdateParameters.$key -and $UpdateParameters.$key.getType().Name -like '*cimInstance*')
-            {
-                $UpdateParameters.$key = Convert-M365DSCDRGComplexTypeToHashtable -ComplexObject $UpdateParameters.$key
-            }
-        }
-
-        if (-not [System.String]::IsNullOrEmpty($PolicyMigrationState))
-        {
-            Write-Verbose -Message "DEPRECATED - Property PolicyMigrationState cannot be set."
-            $UpdateParameters.Remove('PolicyMigrationState') | Out-Null
-        }
-
-        #region resource generator code
-        $UpdateParameters.Add('@odata.type', '#microsoft.graph.AuthenticationMethodsPolicy')
-        Write-Verbose -Message "Updating AuthenticationMethodPolicy with: `r`n$(Convert-M365DscHashtableToString -Hashtable $UpdateParameters)"
-        Update-MgBetaPolicyAuthenticationMethodPolicy -BodyParameter $UpdateParameters
-        #endregion
-    }
+    #region resource generator code
+    $updateParameters.Remove('IsSingleInstance') | Out-Null
+    $updateParameters.Add('@odata.type', '#microsoft.graph.AuthenticationMethodsPolicy')
+    Update-MgBetaPolicyAuthenticationMethodPolicy -BodyParameter $updateParameters
+    #endregion
 }
 
 function Test-TargetResource
@@ -425,23 +408,6 @@ function Test-TargetResource
     param
     (
         #region resource generator code
-        [Parameter()]
-        [System.String]
-        $Description,
-
-        [Parameter(Mandatory = $true)]
-        [System.String]
-        $DisplayName,
-
-        [Parameter()]
-        [ValidateSet('preMigration', 'migrationInProgress', 'migrationComplete', 'unknownFutureValue')]
-        [System.String]
-        $PolicyMigrationState,
-
-        [Parameter()]
-        [System.String]
-        $PolicyVersion,
-
         [Parameter()]
         [System.Int32]
         $ReconfirmationInDays,
@@ -457,15 +423,11 @@ function Test-TargetResource
         [Parameter()]
         [Microsoft.Management.Infrastructure.CimInstance]
         $SystemCredentialPreferences,
+        #endregion
 
-        [Parameter()]
+        [ValidateSet('Yes')]
         [System.String]
-        $Id,
-
-        [Parameter()]
-        [System.String]
-        [ValidateSet('Present')]
-        $Ensure = 'Present',
+        $IsSingleInstance,
 
         [Parameter()]
         [System.Management.Automation.PSCredential]
@@ -506,8 +468,7 @@ function Test-TargetResource
     #endregion
 
     $result = Test-M365DSCTargetResource -DesiredValues $PSBoundParameters `
-                                         -ResourceName $($MyInvocation.MyCommand.Source).Replace('MSFT_', '') `
-                                         -ExcludedProperties @('PolicyMigrationState')
+        -ResourceName $($MyInvocation.MyCommand.Source).Replace('MSFT_', '')
     return $result
 }
 
@@ -564,8 +525,7 @@ function Export-TargetResource
     try
     {
         #region resource generator code
-        [array]$getValue = Get-MgBetaPolicyAuthenticationMethodPolicy `
-            -ErrorAction Stop | Where-Object -FilterScript { $null -ne $_.DisplayName }
+        [array]$getValue = Get-MgBetaPolicyAuthenticationMethodPolicy -ErrorAction Stop
         #endregion
 
         $i = 1
@@ -592,9 +552,7 @@ function Export-TargetResource
 
                 Write-M365DSCHost -Message "    |---[$i/$($getValue.Count)] $displayedKey" -DeferWrite
                 $params = @{
-                    Id                    = $config.Id
-                    DisplayName           = $config.DisplayName
-                    Ensure                = 'Present'
+                    IsSingleInstance      = 'Yes'
                     Credential            = $Credential
                     ApplicationId         = $ApplicationId
                     TenantId              = $TenantId
@@ -635,7 +593,7 @@ function Export-TargetResource
                         -CIMInstanceName 'MicrosoftGraphregistrationEnforcement' `
                         -ComplexTypeMapping $complexMapping
 
-                    if (-Not [String]::IsNullOrWhiteSpace($complexTypeStringResult))
+                    if (-not [String]::IsNullOrWhiteSpace($complexTypeStringResult))
                     {
                         $Results.RegistrationEnforcement = $complexTypeStringResult
                     }
@@ -664,7 +622,7 @@ function Export-TargetResource
                         -CIMInstanceName 'MicrosoftGraphreportSuspiciousActivitySettings' `
                         -ComplexTypeMapping $complexMapping
 
-                    if (-Not [String]::IsNullOrWhiteSpace($complexTypeStringResult))
+                    if (-not [String]::IsNullOrWhiteSpace($complexTypeStringResult))
                     {
                         $Results.ReportSuspiciousActivitySettings = $complexTypeStringResult
                     }
@@ -699,7 +657,7 @@ function Export-TargetResource
                         -CIMInstanceName 'MicrosoftGraphsystemCredentialPreferences' `
                         -ComplexTypeMapping $complexMapping
 
-                    if (-Not [String]::IsNullOrWhiteSpace($complexTypeStringResult))
+                    if (-not [String]::IsNullOrWhiteSpace($complexTypeStringResult))
                     {
                         $Results.SystemCredentialPreferences = $complexTypeStringResult
                     }
@@ -727,17 +685,14 @@ function Export-TargetResource
     }
     catch
     {
-        Write-M365DSCHost -Message $Global:M365DSCEmojiRedX -CommitWrite
-
         New-M365DSCLogEntry -Message 'Error during Export:' `
             -Exception $_ `
             -Source $($MyInvocation.MyCommand.Source) `
             -TenantId $TenantId `
             -Credential $Credential
 
-        return ''
+        throw
     }
 }
 
 Export-ModuleMember -Function *-TargetResource
-

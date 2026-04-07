@@ -49,6 +49,7 @@ if ($null -eq $Script:M365DSCDependencies)
         $Script:M365DSCDependencies[$entry.Key].Commands = $sortedFunctions
     }
     $Script:M365DSCRequiredModules = @($globalRequiredModules.psobject.Properties.Name)
+    $Script:M365DSCRequiredModulesLoaded = $false
 }
 
 function Get-M365DSCResourceSettings
@@ -65,6 +66,25 @@ function Get-M365DSCRequiredModules
     param()
 
     return $Script:M365DSCRequiredModules
+}
+
+function Set-M365DSCRequiredModulesLoaded
+{
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory = $true)]
+        [System.Boolean]$Value
+    )
+
+    $Script:M365DSCRequiredModulesLoaded = $Value
+}
+
+function Test-IsM365DSCRequiredModulesLoaded
+{
+    [CmdletBinding()]
+    param()
+
+    return $Script:M365DSCRequiredModulesLoaded
 }
 
 function Get-M365DSCModuleConfiguration
@@ -198,6 +218,10 @@ function Confirm-M365DSCLoadedModule
             $importModuleSplat.Add('Function', $manifestModule.Commands)
             $importModuleSplat.Cmdlet = $manifestModule.Commands
         }
+        if ($ModuleName -eq 'PnP.PowerShell' -and $manifestModule.RequiredVersion -eq '1.12.0' -and $Script:IsPowerShellCore)
+        {
+            $importModuleSplat.Add('UseWindowsPowerShell', $true)
+        }
         Import-Module @importModuleSplat
         Write-Verbose -Message "Module '$ModuleName' with version '$($manifestModule.RequiredVersion)' has been imported."
     }
@@ -231,7 +255,7 @@ function Confirm-M365DSCLoadedModule
     PS> Confirm-M365DSCModuleDependency -ModuleName 'MSFT_AADApplication'
 
 .FUNCTIONALITY
-    Public
+    Internal
 #>
 function Confirm-M365DSCModuleDependency
 {
@@ -385,15 +409,21 @@ function Uninstall-M365DSCOutdatedDependencies
                 Write-Information -MessageData "Uninstalling $($module.Name) Version {$($module.Version)}"
                 if (Test-Path -Path $($module.Path))
                 {
-                    Remove-Item $($module.ModuleBase) -Force -Recurse
+                    Remove-Item $($module.ModuleBase) -Force -Recurse -ErrorAction Stop
                 }
             }
             catch
             {
-                New-M365DSCLogEntry -Message "Could not uninstall $($module.Name) Version $($module.Version)" `
+                $message = "Could not uninstall $($module.Name) Version $($module.Version)"
+                if ($_.Exception.Message -like "*Access to the path* is denied*" -and ($Scope -eq "AllUsers") -and -not
+                    ([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator))
+                {
+                    $message += ' You need to run this command as a local administrator.'
+                }
+                New-M365DSCLogEntry -Message $message `
                     -Exception $_ `
                     -Source $($MyInvocation.MyCommand.Source)
-                Write-Error -Message "Could not uninstall $($module.Name) Version $($module.Version)" -ErrorAction Continue
+                Write-Error -Message $message -ErrorAction Continue
             }
         }
 
@@ -423,15 +453,21 @@ function Uninstall-M365DSCOutdatedDependencies
                         Write-Information -MessageData "Uninstalling $($foundModule.Name) Version {$($foundModule.Version)}"
                         if (Test-Path -Path $($foundModule.Path))
                         {
-                            Remove-Item $($foundModule.ModuleBase) -Force -Recurse
+                            Remove-Item $($foundModule.ModuleBase) -Force -Recurse -ErrorAction Stop
                         }
                     }
                     catch
                     {
-                        New-M365DSCLogEntry -Message "Could not uninstall $($foundModule.Name) Version $($foundModule.Version)" `
+                        $message = "Could not uninstall $($foundModule.Name) Version $($foundModule.Version)"
+                        if ($_.Exception.Message -like "*Access to the path* is denied*" -and
+                            ($Scope -eq "AllUsers") -and -not ([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator))
+                        {
+                            $message += ' You need to run this command as a local administrator.'
+                        }
+                        New-M365DSCLogEntry -Message $message `
                             -Exception $_ `
                             -Source $($MyInvocation.MyCommand.Source)
-                        Write-Error -Message "Could not uninstall $($foundModule.Name) Version $($foundModule.Version)" -ErrorAction Continue
+                        Write-Error -Message $message -ErrorAction Continue
                     }
                 }
             }
@@ -462,12 +498,21 @@ function Uninstall-M365DSCOutdatedDependencies
                 Write-Information -MessageData "Uninstalling $($foundModule.Name) version {$($foundModule.Version)}"
                 if (Test-Path -Path $($foundModule.Path))
                 {
-                    Remove-Item $($foundModule.ModuleBase) -Force -Recurse
+                    Remove-Item $($foundModule.ModuleBase) -Force -Recurse -ErrorAction Stop
                 }
             }
             catch
             {
-                Write-Error -Message "Could not uninstall $($foundModule.Name) Version $($foundModule.Version)" -ErrorAction Continue
+                $message = "Could not uninstall $($foundModule.Name) Version $($foundModule.Version)"
+                if ($_.Exception.Message -like "*Access to the path* is denied*" -and
+                    ($Scope -eq "AllUsers") -and -not ([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator))
+                {
+                    $message += ' You need to run this command as a local administrator.'
+                }
+                New-M365DSCLogEntry -Message $message `
+                    -Exception $_ `
+                    -Source $($MyInvocation.MyCommand.Source)
+                Write-Error -Message $message -ErrorAction Continue
             }
         }
     }
@@ -495,6 +540,9 @@ function Uninstall-M365DSCOutdatedDependencies
 
 .PARAMETER Repository
     Specifies the PowerShell repository name to use for the installation of the dependencies.
+
+.PARAMETER UsePowerShellGet
+    Specifies that Install-Module should be used for the installation of the dependencies instead of Install-PSResource.
 
 .EXAMPLE
     PS> Update-M365DSCDependencies
@@ -531,7 +579,11 @@ function Update-M365DSCDependencies
 
         [Parameter()]
         [System.String]
-        $Repository = 'PSGallery'
+        $Repository = 'PSGallery',
+
+        [Parameter()]
+        [switch]
+        $UsePowerShellGet
     )
 
     try
@@ -624,7 +676,7 @@ function Update-M365DSCDependencies
                         }
                         Remove-Module $dependency.ModuleName -Force -ErrorAction SilentlyContinue
 
-                        if ($scopedIsPsResourceGetAvailable)
+                        if ($scopedIsPsResourceGetAvailable -and -not $UsePowerShellGet)
                         {
                             Write-Information -MessageData "Using Install-PSResource to install $($dependency.ModuleName) with version {$($dependency.RequiredVersion)}"
                             Install-PSResource -Name $dependency.ModuleName -Version $dependency.RequiredVersion -Scope $Scope -AcceptLicense -SkipDependencyCheck -TrustRepository -Repository $Repository
@@ -737,6 +789,7 @@ function Update-M365DSCModule
     )
 
     $params = @{}
+    $unloadModule = $true
 
     if (-not [System.String]::IsNullOrEmpty($proxy))
     {
@@ -776,11 +829,19 @@ function Update-M365DSCModule
                 }
             }
         }
+        elseif ($_.Exception.Message -like "*was not updated because no valid module was found*")
+        {
+            Write-Verbose -Message "No valid module was found to update."
+            $unloadModule = $false
+        }
     }
     try
     {
-        Write-Verbose -Message "Unloading all instances of the Microsoft365DSC module from the current PowerShell session."
-        Remove-Module Microsoft365DSC -Force
+        if ($unloadModule)
+        {
+            Write-Verbose -Message "Unloading all instances of the Microsoft365DSC module from the current PowerShell session."
+            Remove-Module Microsoft365DSC -Force
+        }
 
         Write-Verbose -Message "Retrieving all versions of the Microsoft365DSC installed on the machine."
         [Array]$instances = Get-Module Microsoft365DSC -ListAvailable | Sort-Object -Property Version -Descending
@@ -814,6 +875,8 @@ Export-ModuleMember -Function @(
     'Get-M365DSCRequiredModules',
     'Get-M365DSCResourceSettings',
     'Set-M365DSCModuleConfiguration',
+    'Set-M365DSCRequiredModulesLoaded',
+    'Test-IsM365DSCRequiredModulesLoaded',
     'Test-M365DSCDependenciesForNewVersions',
     'Test-M365DSCModuleValidity',
     'Uninstall-M365DSCOutdatedDependencies',

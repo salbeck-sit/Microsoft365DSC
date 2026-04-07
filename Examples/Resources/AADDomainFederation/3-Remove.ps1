@@ -19,16 +19,15 @@ Configuration Example
         $CertificateThumbprint
     )
     Import-DscResource -ModuleName Microsoft365DSC
-
     node localhost
     {
-        IntuneDeviceConfigurationHealthMonitoringConfigurationPolicyWindows10 'Example'
+        AADDomainFederation "AADDomainFederation-contoso.com"
         {
-            DisplayName                       = "Health Monitoring Configuration";
-            Ensure                            = "Absent";
             ApplicationId         = $ApplicationId;
-            TenantId              = $TenantId;
             CertificateThumbprint = $CertificateThumbprint;
+            DomainId              = "contoso.com";
+            Ensure                = "Absent";
+            TenantId              = $TenantId;
         }
     }
 }

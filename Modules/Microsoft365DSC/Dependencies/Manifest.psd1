@@ -22,7 +22,7 @@
         },
         @{
             ModuleName      = 'DSCParser'
-            RequiredVersion = '3.0.0.1'
+            RequiredVersion = '3.0.0.2'
         },
         @{
             ModuleName      = 'ExchangeOnlineManagement'
@@ -130,7 +130,7 @@
         },
         @{
             ModuleName      = "MSCloudLoginAssistant"
-            RequiredVersion = "1.1.59"
+            RequiredVersion = "1.1.62"
         },
         @{
             ModuleName      = 'PnP.PowerShell'
@@ -143,7 +143,7 @@
         },
         @{
             ModuleName      = 'ReverseDSC'
-            RequiredVersion = '2.0.0.31'
+            RequiredVersion = '2.0.0.34'
         },
         @{
             ModuleName      = 'PSParallelPipeline'

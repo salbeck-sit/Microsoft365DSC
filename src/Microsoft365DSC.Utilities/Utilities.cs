@@ -1,13 +1,27 @@
-﻿using System;
+﻿using Microsoft365DSC.Cache;
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Management.Automation;
+using System.Management.Automation.Language;
 
 namespace Microsoft365DSC.Utilities
 {
     public static class Utilities
     {
+        public static List<string> GetFunctionParameterNamesByAST(string modulePath, string functionName)
+        {
+            ScriptBlockAst ast = Parser.ParseFile(modulePath, out var tokens, out var errors);
+            FunctionDefinitionAst? functionAst = ast.FindAll(node =>
+                node is FunctionDefinitionAst funcDef &&
+                funcDef.Name == functionName, true).FirstOrDefault() as FunctionDefinitionAst;
+
+            return functionAst is null || functionAst.Body.ParamBlock is null
+                ? throw new InvalidOperationException($"Function '{functionName}' not found in module '{modulePath}' or it does not have a parameter block.")
+                : functionAst.Body.ParamBlock.Parameters.Select(param => param.Name.VariablePath.UserPath).ToList();
+        }
+
         /// <summary>
         /// Method to update special characters in strings.
         /// This method handles the conversion of special characters similar to Update-M365DSCSpecialCharacters.
@@ -41,15 +55,34 @@ namespace Microsoft365DSC.Utilities
             return results;
         }
 
+        public static object? FilterLoadedCimClassesByName(string className)
+        {
+            if (CacheManager.IsSchemaLoaded)
+            {
+                return FilterCimClassesByName(CacheManager.Schema, className);
+            }
+            return null;
+        }
+
         public static object? FilterCimClassesByName(IEnumerable<object> schemaObjects, string className)
         {
-            foreach (var entry in schemaObjects.Cast<PSObject>())
+            foreach (object obj in schemaObjects)
             {
-                dynamic dyn = entry as dynamic;
-                string name = dyn.ClassName;
-                if (name == className)
+                if (obj is PSObject psObject)
                 {
-                    return entry;
+                    dynamic dyn = psObject as dynamic;
+                    string name = dyn.ClassName;
+                    if (name == className)
+                    {
+                        return psObject;
+                    }
+                }
+                else if (obj is IDictionary hashtable)
+                {
+                    if (hashtable["ClassName"]?.ToString() == className)
+                    {
+                        return hashtable;
+                    }
                 }
             }
             return null;
@@ -69,10 +102,10 @@ namespace Microsoft365DSC.Utilities
 
         public static List<string> UnwrapArrayToStrings(Array array)
         {
-            List<string> results = new List<string>();
-            foreach (var item in array)
+            List<string> results = [];
+            foreach (object item in array)
             {
-                var innerItem = item;
+                object? innerItem = item;
                 if (item is PSObject psObject)
                     innerItem = psObject.BaseObject;
 

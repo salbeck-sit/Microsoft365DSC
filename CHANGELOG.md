@@ -4,16 +4,32 @@
 
 * AADAccessReviewDefinition
   * [BREAKING CHANGE] Fixed the type definition of the `ScopeValue` property.
+  * Changed the export type from `Configuration` to `Data`. It now only appears in
+    the export file during a `Full` export.
 * AADApplication
   * Added name resolution for `AppId` and `PermissionIds` in preauthorized applications.
 * AADAuthenticationMethodPolicy
   * [BREAKING CHANGE] Added `IsSingleInstance` parameter.
-    Removed `Ensure`, `DisplayName`, `Description`, `Id` and `PolicyVersion` parameters.
+    Removed `Ensure`, `DisplayName`, `Description`, `Id` and `PolicyVersion`
+  * Fixed error in parameters.
 * AADAuthenticationMethodPolicy*
   * Streamlined group resolution during update operation.
   * Streamlined Target name resolution for all authentication resources.
-* AADAuthenticationRequirement
-  * [BREAKING CHANGE] Added `IsSingleInstance` parameter.
+* AADConditionalAccessPolicy
+  * Added application name resolution and fix warning messages.
+    FIXES [#6902](https://github.com/microsoft/Microsoft365DSC/issues/6902)
+* AADCrossTenantAccessPolicyConfigurationPartner
+  * Fixed an issue where the schema was incorrect.
+    FIXES [#6998](https://github.com/microsoft/Microsoft365DSC/issues/6998)
+* AADDomainFederation
+  * Initial Release
+    FIXES [#6995](https://github.com/microsoft/Microsoft365DSC/issues/6995)
+* AADPIMGroupSetting
+  * [BREAKING CHANGE] Fix typo in use of Elegibility -> Eligibility
+    FIXES [#7021](https://github.com/microsoft/Microsoft365DSC/issues/7021)
+* AADRoleSetting
+  * [BREAKING CHANGE] Fix typo in use of Elegibility -> Eligibility
+    FIXES [#7021](https://github.com/microsoft/Microsoft365DSC/issues/7021)
 * AADTenantAppManagementPolicy
   * [BREAKING CHANGE] Added `IsSingleInstance` and removed `Ensure` parameter.
 * EXOActiveSyncMailboxPolicy
@@ -30,6 +46,10 @@
     to `System.String` instead of an implicit conversion to `System.Uri`.
 * EXOMigration
   * Fixed an issue where `UserEmails` could contain empty strings.
+* EXOSharedMailbox
+  * Added support for properties `MessageCopyForSendOnBehalfEnabled` and
+    `MessageCopyForSentAsEnabled` and while here fixed several issues with this
+    resource
 * EXOTenantAllowBlockListItems
   * [BREAKING CHANGE] Removed the Microsoft reserved `SubmissionID` parameter.
   * [BREAKING CHANGE] Updated the property `Action` to be Required instead of Key.
@@ -39,6 +59,27 @@
   * Updated several parameter types from String to Integer.
 * IntuneAppleMDMPushNotificationCertificate
   * [BREAKING CHANGE] Removed the `Id` parameter because it is random.
+* IntuneDeviceCompliancePolicyAndroidWorkProfile
+  * Updated the resource to use display names for `NotificationTemplateId`
+    and `NotificationMessageCCList`.
+  * Updated the resource to omit `NotificationTemplateId` if it is set to
+    `00000000-0000-0000-0000-000000000000`.
+* IntuneDeviceCompliancePolicyAndroidDeviceOwner
+  * Updated the resource to use display names for `NotificationTemplateId`
+    and `NotificationMessageCCList`.
+  * Updated the resource to omit `NotificationTemplateId` if it is set to
+    `00000000-0000-0000-0000-000000000000`.
+* IntuneDeviceCompliancePolicyWindows10
+  * Fixed an issue where `NotificationMessageCCList` would be exported
+    without quotes around the group names.
+* IntuneDeviceConfigurationDefenderForEndpointOnboardingPolicyWindows10
+  * [BREAKING CHANGE] Renamed resource to
+    `IntuneDeviceConfigurationDefenderOnboardingPolicyWindows10`.
+    FIXES [#6559](https://github.com/microsoft/Microsoft365DSC/issues/6559)
+* IntuneDeviceConfigurationHealthMonitoringConfigurationPolicyWindows10
+  * [BREAKING CHANGE] Renamed resource to
+    `IntuneDeviceConfigurationHealthMonitoringPolicyWindows10`.
+    FIXES [#6559](https://github.com/microsoft/Microsoft365DSC/issues/6559)
 * IntuneDeviceConfigurationKioskPolicyWindows10
   * [BREAKING CHANGE] Removed property `ProfileId` from the
     `MSFT_MicrosoftGraphWindowsKioskProfile` instance.
@@ -70,13 +111,25 @@
     to `MSFT_DeviceManagementMacOSLobAppAssignment`.
 * IntuneMobileAppsManagedGooglePlayApp
   * [BREAKING CHANGE] Updated the `Assignments` parameter type to allow settings.
+  * Added support for `androidManagedStoreAppTrackIds` in the assignment settings.
   * Renamed CIM class for assignments from `MSFT_DeviceManagementMobileAppAssignment`
     to `MSFT_DeviceManagementManagedGooglePlayMobileAppAssignment`.
 * IntuneWindowsInformationProtectionPolicyWindows10MdmEnrolled
   * [BREAKING CHANGE] Removed the `*CidrRange` choices from the ipRange type.
+* PPTenantSettings
+  * Changed type of `EnableDesktopFlowDataPolicyManagement` property from String to
+    Boolean to avoid errors or warnings.
+    FIXES [#6740](https://github.com/microsoft/Microsoft365DSC/issues/6740)
 * SCPolicyConfig
   * Fixed an issue where `JustificationText` was exported as an array and could
     contain empty strings.
+* SCRoleGroupMember
+  * [BREAKING CHANGE] Updated the export to use `Alias` for users with email addresses.
+    Fallback to `Name` for all other types, e.g. Service Principals.
+    FIXES [#6829](https://github.com/microsoft/Microsoft365DSC/issues/6829)
+* SCSensitivityLabel
+  * Fixed an issue where the CIM definition for `MSFT_LabelSetting` did not match.
+    FIXES [#7002](https://github.com/microsoft/Microsoft365DSC/issues/7002)
 * TeamsClientConfiguration
   * [BREAKING CHANGE] Added `IsSingleInstance` and removed `Identity` parameter.
 * TeamsFederationConfiguration
@@ -94,19 +147,41 @@
 * TeamsMeetingPolicy
   * [BREAKING CHANGE] Removed the obsolete parameter `AllowCarbonSummary`.
     FIXES [#6972](https://github.com/microsoft/Microsoft365DSC/issues/6972)
+* TeamsOnlineVoiceMailPolicy
+  * [BREAKING CHANGE] Changed the type of `MaximumRecordingLength` from String to Int.
+* M365DSCModuleMgmt
+  * Added the parameter `UsePowerShellGet` to `Update-M365DSCDependencies` as an override
+    fallback if `Install-PSResource` is not available or not working.
+    FIXES [#7003](https://github.com/microsoft/Microsoft365DSC/issues/7003)
+  * Fixed an issue where an in-memory update of the module failed.
 * M365DSCPermissions
   * Removed internal function `Update-M365DSCResourcesSettingsJSON`.
 * M365DSCReport
   * Fixed an issue where comparing instances of `EXOTenantAllowBlockListItems` would
     use the wrong resource keys.
     FIXES [#6981](https://github.com/microsoft/Microsoft365DSC/issues/6981)
+  * Fixed an issue where incorrect resources were compared against each other if
+    the resource contains more than three key properties in `New-M365DSCDeltaReport`.
+  * Removed the deprecated function `Compare-M365DSCConfigurations`.
+    Use `New-M365DSCDeltaReport` as a replacement.
 * M365DSCStubsUtility
   * Removed module.
 * M365DSCUtil
   * Added `KeepExport` parameter to `Assert-M365DSCBlueprint` function.
+* DEPENDENCIES
+  * Updated `DSCParser` to version 3.0.0.1.
+  * Updated `MSCloudLoginAssistant` to version 1.1.62.
+  * Updated `ReverseDSC` to version 2.0.0.34.
 * MISC
   * Added CIM information about required properties to all resources where applicable.
+  * Added message about requiring PowerShell 7 starting Octoboer 2026.
+  * Improved filtering for Intune configuration policies during Export.
+  * Improved the accuracy of the comparison engine.
+  * Refactored module structure to improve maintainability.
   * Removed duplicate complex hashtable conversions.
+  * [BREAKING CHANGE] Store error logs in $env:TEMP instead of current working directory.
+  * Updated documentation for different group types for AADGroup, EXOGroupSettings
+    and EXODistributionGroup.
 
 # 1.26.318.1
 
@@ -121,6 +196,8 @@
     and `TenantRestrictions`.
 * AADCrossTenantAccessPolicyConfigurationPartner
   * Added support for `IdentitySynchronization`.
+* AzureRoleEligibilityScheduleSettings
+  * Initial Release [#6974](https://github.com/microsoft/Microsoft365DSC/issues/6974)
 * EXOMailContact
   * Updated the `Set-TargetResource` logic to use fixed parameters.
 * IntuneDeviceConfigurationHealthMonitoringConfigurationPolicyWindows10
@@ -1019,6 +1096,7 @@
   * Fixed typo in `ManagedIdentity` property across all resources.
   * Improved module import speed by up to 60%.
   * Reduced repeated logins during export of SPO and Teams resources.
+  * [BREAKING CHANGE] Removed the public function `Get-M365DSCConnectedWorkloadList`.
   * Removed unnecessary type casting across all resources.
   * Streamlined test cases.
   * Updated most resource testing to use the new comparison function.

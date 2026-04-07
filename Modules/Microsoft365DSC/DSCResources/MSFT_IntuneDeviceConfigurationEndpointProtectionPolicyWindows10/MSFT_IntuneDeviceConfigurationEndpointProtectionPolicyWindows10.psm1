@@ -1328,7 +1328,7 @@ function Get-TargetResource
             $myfirewallRules.Add('FilePath', $currentfirewallRules.filePath)
             if ($null -ne $currentfirewallRules.interfaceTypes)
             {
-                $myfirewallRules.Add('InterfaceTypes', $currentfirewallRules.interfaceTypes.ToString() -split ',')
+                $myfirewallRules.Add('InterfaceTypes', [System.String[]]($currentfirewallRules.interfaceTypes.ToString().Split(',') | Where-Object { -not [System.String]::IsNullOrEmpty($_) }))
             }
             $myfirewallRules.Add('LocalAddressRanges', $currentfirewallRules.localAddressRanges)
             $myfirewallRules.Add('LocalPortRanges', $currentfirewallRules.localPortRanges)
@@ -3772,7 +3772,7 @@ function Set-TargetResource
         }
         #region resource generator code
         $UpdateParameters.Add('@odata.type', '#microsoft.graph.windows10EndpointProtectionConfiguration')
-        Update-MgBetaDeviceManagementDeviceConfiguration  `
+        Update-MgBetaDeviceManagementDeviceConfiguration `
             -DeviceConfigurationId $currentInstance.Id `
             -BodyParameter $UpdateParameters
         $assignmentsHash = ConvertTo-IntunePolicyAssignment -IncludeDeviceFilter:$true -Assignments $Assignments
@@ -4890,7 +4890,7 @@ function Export-TargetResource
         #region resource generator code
         [array]$getValue = Get-MgBetaDeviceManagementDeviceConfiguration -Filter $Filter -All `
             -ErrorAction Stop | Where-Object `
-            -FilterScript { `
+            -FilterScript {
                 $_.AdditionalProperties.'@odata.type' -eq '#microsoft.graph.windows10EndpointProtectionConfiguration' `
         }
         #endregion

@@ -57,6 +57,7 @@
   # Script files (.ps1) that are run in the caller's environment prior to importing this module.
   ScriptsToProcess = @(
     'Import-M365DSCDllLoaderModule.ps1',
+    'Show-PwshWarning.ps1',
     'Update-MaximumFunctionCount.ps1'
   )
 
@@ -70,17 +71,21 @@
   NestedModules     = @(
     'Modules/M365DSCAgent.psm1',
     'Modules/M365DSCCompare.psm1',
+    'Modules/M365DSCConnection.psm1',
     'Modules/M365DSCDocGenerator.psm1',
     'Modules/M365DSCErrorHandler.psm1',
+    'Modules/M365DSCExportUtil.psm1',
     'Modules/M365DSCLogEngine.psm1',
     'Modules/M365DSCModuleMgmt.psm1',
     'Modules/M365DSCPermissions.psm1',
     'Modules/M365DSCReport.psm1',
     'Modules/M365DSCReverse.psm1',
     'Modules/M365DSCTelemetryEngine.psm1',
+    'Modules/M365DSCTenantInfo.psm1',
     'Modules/M365DSCUtil.psm1',
     'Modules/M365DSCDRGUtil.psm1',
     'Modules/M365DSCIntuneSettingsCatalogUtil.psm1',
+    'Modules/M365DSCIntuneUtil.psm1',
     'Modules/EncodingHelpers/M365DSCEmojis.psm1',
     'Modules/WorkloadHelpers/M365DSCAzureHelper.psm1',
     'Modules/WorkloadHelpers/M365DSCAzureDevOPSHelper.psm1',
@@ -98,7 +103,6 @@
   # Cmdlets to export from this module, for best performance, do not use wildcards and do not delete the entry, use an empty array if there are no cmdlets to export.
   CmdletsToExport   = @(
     'Assert-M365DSCBlueprint',
-    'Compare-M365DSCConfigurations',
     'Confirm-M365DSCDependencies',
     'Export-M365DSCConfiguration',
     'Export-M365DSCDiagnosticData',

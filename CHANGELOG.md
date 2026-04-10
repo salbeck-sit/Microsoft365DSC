@@ -31,6 +31,7 @@
 * AADPIMGroupSetting
   * [BREAKING CHANGE] Fix typo in use of Elegibility -> Eligibility
     FIXES [#7021](https://github.com/microsoft/Microsoft365DSC/issues/7021)
+  * Updated the export to be in sequential Entra group order to minimize Git changes.
 * AADRoleSetting
   * [BREAKING CHANGE] Fix typo in use of Elegibility -> Eligibility
     FIXES [#7021](https://github.com/microsoft/Microsoft365DSC/issues/7021)
@@ -42,6 +43,9 @@
   * Changed cmdlets from `*-ActiveSyncMailboxPolicy` to `*-MobileDeviceMailboxPolicy`.
   * [BREAKING CHANGE] Updated property names to match newly returned values and parameters.
     Added new properties `AllowGooglePushNotifications` and `AllowMicrosoftPushNotifications`.
+* EXOAvailabilityConfig
+  * [BREAKING CHANGE] Updated resource to be `IsSingleInstance`.
+  * Added support for `AllowedTenantIds`.
 * EXODkimSigningConfig
   * Fixed an issue to create new DkimSigningConfig
     FIXES [#6982](https://github.com/microsoft/Microsoft365DSC/issues/6982)
@@ -52,6 +56,8 @@
     to `System.String` instead of an implicit conversion to `System.Uri`.
 * EXOMigration
   * Fixed an issue where `UserEmails` could contain empty strings.
+* EXORoleGroup
+  * Fixed an issue where multiple role groups with the same Identity were checked.
 * EXOSharedMailbox
   * Added support for properties `MessageCopyForSendOnBehalfEnabled` and
     `MessageCopyForSentAsEnabled` and while here fixed several issues with this
@@ -142,6 +148,10 @@
   * Updated the timespan comparison to allow a discrepancy of up to 30 seconds
     for the `SignOutAfter` and `WarnAfter` properties.
     FIXES [#7031](https://github.com/Microsoft365DSC/Microsoft365DSC/issues/7031)
+* SPOHomeSite
+  * Fixed an issue where an empty / non-existant Home Site was exported.
+* SPOTheme
+  * Fixed an issue where `Palette` entries were not correctly compared.
 * TeamsClientConfiguration
   * [BREAKING CHANGE] Added `IsSingleInstance` and removed `Identity` parameter.
 * TeamsFederationConfiguration
@@ -161,6 +171,8 @@
     FIXES [#6972](https://github.com/microsoft/Microsoft365DSC/issues/6972)
 * TeamsOnlineVoiceMailPolicy
   * [BREAKING CHANGE] Changed the type of `MaximumRecordingLength` from String to Int.
+* M365DSCIntuneUtil
+  * Removed function `Compare-M365DSCIntunePolicyAssignment`.
 * M365DSCModuleMgmt
   * Added the parameter `UsePowerShellGet` to `Update-M365DSCDependencies` as an override
     fallback if `Install-PSResource` is not available or not working.
@@ -189,6 +201,8 @@
   * Added message about requiring PowerShell 7 starting Octoboer 2026.
   * Improved filtering for Intune configuration policies during Export.
   * Improved the accuracy of the comparison engine.
+  * Improved the delta report to pinpoint the changes more exactly if multiple
+    complex objects were being compared against each other.
   * Refactored module structure to improve maintainability.
   * Removed duplicate complex hashtable conversions.
   * [BREAKING CHANGE] Store error logs in $env:TEMP instead of current working directory.

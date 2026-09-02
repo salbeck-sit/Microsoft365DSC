@@ -2326,11 +2326,9 @@ function Invoke-M365DSCGraphBatchRequest
         }
 
         Write-Verbose -Message "Sending BATCH Request with $($request.requests.Count) sub-requests (starting at index $i)..."
-        $returnHeaders = $null
         $apiResponse = Invoke-MgGraphRequest -Method POST `
             -Uri 'beta/$batch' `
             -Body ($request | ConvertTo-Json -Depth 10) `
-            -ResponseHeadersVariable returnHeaders `
             -ErrorAction SilentlyContinue
 
         :inner foreach ($response in $apiResponse.responses)
@@ -2354,13 +2352,7 @@ function Invoke-M365DSCGraphBatchRequest
                 }
                 429 {
                     Write-Warning -Message "Throttling encountered, pausing and repeating request..."
-                    $useThrottlingDelayInSeconds = 0
-                    # attempt to use delay suggested by Graph
-                    if ($false -eq [System.Int32]::TryParse($returnHeaders.'Retry-After', [ref]$useThrottlingDelayInSeconds))
-                    {
-                        $useThrottlingDelayInSeconds = $ThrottlingDelayInSeconds # fall back to fixed value
-                    }
-                    Start-Sleep -Seconds $useThrottlingDelayInSeconds
+                    Start-Sleep -Seconds $ThrottlingDelayInSeconds
                     $BatchRequestSize = [Math]::Max($halfBatchSize, [Math]::Floor($BatchRequestSize / 2))
                     $i = if ($i -ge $BatchRequestSize) { $i - $BatchRequestSize } else { 0 }
                     continue outer

@@ -2317,7 +2317,6 @@ function Invoke-M365DSCGraphBatchRequest
 
     $batchResponses = [System.Collections.Generic.List[System.Collections.Hashtable]]::new()
     $halfBatchSize = [Math]::Ceiling($BatchRequestSize / 2)
-    $retryCount = 0
     :outer for ($i = 0; $i -lt $Requests.Count; $i += $BatchRequestSize)
     {
         $batchRequestSized = $Requests[$i..([Math]::Min($i + $BatchRequestSize - 1, $Requests.Count - 1))]
@@ -2354,14 +2353,13 @@ function Invoke-M365DSCGraphBatchRequest
                     }
                 }
                 429 {
-                    $retryCount++
+                    Write-Warning -Message "Throttling encountered, pausing and repeating request..."
                     $useThrottlingDelayInSeconds = 0
+                    # attempt to use delay suggested by Graph
                     if ($false -eq [System.Int32]::TryParse($returnHeaders.'Retry-After', [ref]$useThrottlingDelayInSeconds))
                     {
-                        # calculate backoff if Retry-After return-header is missing
-                        $useThrottlingDelayInSeconds = $ThrottlingDelayInSeconds * $retryCount
+                        $useThrottlingDelayInSeconds = $ThrottlingDelayInSeconds # fall back to fixed value
                     }
-                    Write-Warning -Message "Throttling encountered, pausing for $useThrottlingDelayInSeconds seconds and repeating request..."
                     Start-Sleep -Seconds $useThrottlingDelayInSeconds
                     $BatchRequestSize = [Math]::Max($halfBatchSize, [Math]::Floor($BatchRequestSize / 2))
                     $i = if ($i -ge $BatchRequestSize) { $i - $BatchRequestSize } else { 0 }

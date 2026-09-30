@@ -71,6 +71,8 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     ApplyAppEnforcedRestrictionsToAdHocRecipients = $true
                     FilePickerExternalImageSearchEnabled          = $true
                     HideDefaultThemes                             = $false
+                    EnableSensitivityLabelForOneNote              = $true
+                    EnableSensitivityLabelForVideoFiles           = $true
                     TenantDefaultTimeZone                         = "(UTC-05:00) Eastern Time (US and Canada)"
                 }
 
@@ -109,6 +111,8 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                         ApplyAppEnforcedRestrictionsToAdHocRecipients = $true
                         FilePickerExternalImageSearchEnabled          = $true
                         HideDefaultThemes                             = $true
+                        EnableSensitivityLabelForOneNote              = $false
+                        EnableSensitivityLabelForVideoFiles           = $false
                     }
                 }
 
@@ -148,6 +152,8 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     ApplyAppEnforcedRestrictionsToAdHocRecipients = $true
                     FilePickerExternalImageSearchEnabled          = $true
                     HideDefaultThemes                             = $false
+                    EnableSensitivityLabelForOneNote              = $true
+                    EnableSensitivityLabelForVideoFiles           = $true
                     TenantDefaultTimeZone                         = "(UT-05:00)"
                 }
 
@@ -186,6 +192,8 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                         ApplyAppEnforcedRestrictionsToAdHocRecipients = $true
                         FilePickerExternalImageSearchEnabled          = $true
                         HideDefaultThemes                             = $true
+                        EnableSensitivityLabelForOneNote              = $true
+                        EnableSensitivityLabelForVideoFiles           = $true
                     }
                 }
 
@@ -233,6 +241,8 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                         ApplyAppEnforcedRestrictionsToAdHocRecipients = $true
                         FilePickerExternalImageSearchEnabled          = $true
                         HideDefaultThemes                             = $false
+                        EnableSensitivityLabelForOneNote              = $true
+                        EnableSensitivityLabelForVideoFiles           = $true
                     }
                 }
 

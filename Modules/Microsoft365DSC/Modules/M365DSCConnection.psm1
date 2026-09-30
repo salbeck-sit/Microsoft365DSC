@@ -382,6 +382,11 @@ function New-M365DSCConnection
     }
     #endregion
 
+    if ($Workload -eq 'PnP')
+    {
+        Register-M365DSCPnPIdentityClientResolver
+    }
+
     try
     {
         Connect-M365Tenant @connectParams

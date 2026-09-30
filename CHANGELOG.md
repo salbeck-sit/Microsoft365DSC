@@ -688,6 +688,8 @@
     `TlsTokenBindingPolicyValue`, `ViewersCanCommentOnMediaDisabled`, `Workflow2010Disabled`.
   * [BREAKING CHANGE] Removed property `OneDriveSharingCapability`. Is is replaced
     with `MySiteSharingCapability` in the `SPOSharingSettings` resource.
+  * Added properties `EnableSensitivityLabelForOneNote` and
+    `EnableSensitivityLabelForVideoFiles`.
 * SPOUserProfileProperty
   * Updated fetching of user profile properties.
 * TeamsAudioConferencingPolicy
@@ -740,6 +742,9 @@
   * Added handling for PowerShell 7.6 with Mgx to improve Graph calls.
   * Improved handling of query parameters and paging for collection retrieval.
   * Improved handling of omitting parameters from the request body.
+* M365DSCModuleMgmt
+  * Added a workaround for PnP.PowerShell 3.4 crashing with a stack overflow when another
+    module loaded a different `Microsoft.Identity.Client` version first.
 * M365DSCReport
   * Updated the `Markdown` configuration report layout and content generation.
 * M365DSCPermissions
@@ -772,7 +777,7 @@
   * Updated `DSCParser` to version 3.1.0.5.
   * Updated `Microsoft.Graph.*` to version 2.39.0.
   * Updated `MSCloudLoginAssistant` to version 1.2.9.
-  * Updated `PnP.PowerShell` to version 3.3.0.
+  * Updated `PnP.PowerShell` to version 3.4.1.
     FIXES [#7414](https://github.com/Microsoft365DSC/Microsoft365DSC/issues/7414)
   * Updated `PSParallelPipeline` to version 1.3.0.
   * Updated `ReverseDSC` to version 3.0.0.0.

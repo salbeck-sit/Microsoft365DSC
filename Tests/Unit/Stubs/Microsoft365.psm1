@@ -89774,7 +89774,15 @@ function Set-PnPTenant
 
         [Parameter()]
         [System.Boolean]
-        $DisplayStartASiteOption
+        $DisplayStartASiteOption,
+
+        [Parameter()]
+        [System.Nullable`1[System.Boolean]]
+        $EnableSensitivityLabelForOneNote,
+
+        [Parameter()]
+        [System.Nullable`1[System.Boolean]]
+        $EnableSensitivityLabelForVideoFiles
     )
 }
 function Set-PnPTenantCdnEnabled

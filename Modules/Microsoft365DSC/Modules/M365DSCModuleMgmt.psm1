@@ -521,6 +521,146 @@ function Import-M365DSCDependencyModule
 
 <#
 .SYNOPSIS
+    Serves Microsoft.Identity.Client to PnP.PowerShell from a dedicated load context.
+
+.DESCRIPTION
+    Registers a Default.Resolving handler that loads the Microsoft.Identity.Client assemblies of the
+    PnP.PowerShell folder into a dedicated load context. The handler only answers when the default
+    load context already holds another version. Must run before PnP.PowerShell is imported.
+
+.PARAMETER ModuleBase
+    Specifies the folder of the PnP.PowerShell version that is imported. Defaults to the version
+    the dependency manifest requires.
+
+.EXAMPLE
+    PS> Register-M365DSCPnPIdentityClientResolver
+
+.FUNCTIONALITY
+    Internal
+#>
+function Register-M365DSCPnPIdentityClientResolver
+{
+    [CmdletBinding()]
+    param(
+        [Parameter()]
+        [System.String]
+        $ModuleBase
+    )
+
+    # TODO: Remove once https://github.com/pnp/powershell/pull/5480 and new PnP.PowerShell version is released
+    if ($PSEdition -ne 'Core' -or $Script:M365DSCPnPIdentityClientResolverRegistered)
+    {
+        return
+    }
+
+    if ([System.String]::IsNullOrEmpty($ModuleBase))
+    {
+        $requiredVersion = $Script:M365DSCDependencies['PnP.PowerShell'].RequiredVersion
+        $pnpModule = Get-Module -Name 'PnP.PowerShell' -ListAvailable | Where-Object -FilterScript { $_.Version -eq $requiredVersion } | Select-Object -First 1
+        if ($null -eq $pnpModule)
+        {
+            Write-Verbose -Message "PnP.PowerShell $requiredVersion is not installed. The PnP.PowerShell resolver workaround is not registered."
+            return
+        }
+        $ModuleBase = $pnpModule.ModuleBase
+    }
+
+    $dependencyPath = Join-Path -Path $ModuleBase -ChildPath 'Common'
+    if (-not (Test-Path -Path (Join-Path -Path $dependencyPath -ChildPath 'Microsoft.Identity.Client.dll')))
+    {
+        Write-Verbose -Message "No Microsoft.Identity.Client found under '$dependencyPath'. The PnP.PowerShell resolver workaround is not registered."
+        return
+    }
+
+    if ($null -eq ('Microsoft365DSC.Workarounds.PnPIdentityClientResolver' -as [System.Type]))
+    {
+        Add-Type -Language CSharp -TypeDefinition @"
+using System;
+using System.IO;
+using System.Reflection;
+using System.Runtime.Loader;
+using System.Threading;
+
+namespace Microsoft365DSC.Workarounds
+{
+    public static class PnPIdentityClientResolver
+    {
+        private static readonly object s_gate = new object();
+        private static string s_dependencyPath;
+        private static AssemblyLoadContext s_context;
+        private static int s_registered;
+
+        public static void Register(string dependencyPath)
+        {
+            s_dependencyPath = dependencyPath;
+            if (Interlocked.Exchange(ref s_registered, 1) == 0)
+            {
+                AssemblyLoadContext.Default.Resolving += Resolve;
+            }
+        }
+
+        private static Assembly Resolve(AssemblyLoadContext context, AssemblyName assemblyName)
+        {
+            string name = assemblyName == null ? null : assemblyName.Name;
+            if (string.IsNullOrEmpty(name) || !name.StartsWith("Microsoft.Identity.Client", StringComparison.OrdinalIgnoreCase))
+            {
+                return null;
+            }
+
+            string candidate = Path.Combine(s_dependencyPath, name + ".dll");
+            if (!File.Exists(candidate) || !IsLoadedInDefaultContext(name))
+            {
+                return null;
+            }
+
+            if (assemblyName.Version != null && !assemblyName.Version.Equals(AssemblyName.GetAssemblyName(candidate).Version))
+            {
+                return null;
+            }
+
+            lock (s_gate)
+            {
+                if (s_context == null)
+                {
+                    s_context = new AssemblyLoadContext("Microsoft365DSC.PnP.IdentityClient", false);
+                }
+
+                foreach (Assembly loaded in s_context.Assemblies)
+                {
+                    if (string.Equals(loaded.GetName().Name, name, StringComparison.OrdinalIgnoreCase))
+                    {
+                        return loaded;
+                    }
+                }
+
+                return s_context.LoadFromAssemblyPath(candidate);
+            }
+        }
+
+        private static bool IsLoadedInDefaultContext(string name)
+        {
+            foreach (Assembly assembly in AssemblyLoadContext.Default.Assemblies)
+            {
+                if (string.Equals(assembly.GetName().Name, name, StringComparison.OrdinalIgnoreCase))
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+    }
+}
+"@
+    }
+
+    [Microsoft365DSC.Workarounds.PnPIdentityClientResolver]::Register($dependencyPath)
+    $Script:M365DSCPnPIdentityClientResolverRegistered = $true
+    Write-Verbose -Message "Registered the PnP.PowerShell Microsoft.Identity.Client resolver for '$dependencyPath'."
+}
+
+<#
+.SYNOPSIS
     Ensures a dependency module is loaded at the required version.
 
 .DESCRIPTION
@@ -597,6 +737,11 @@ function Confirm-M365DSCLoadedModule
     }
 
     $loadedModule = Get-Module -Name $ModuleName
+    if ($ModuleName -eq 'PnP.PowerShell' -and ($null -eq $loadedModule -or $loadedModule.Version -ne $manifestModule.RequiredVersion))
+    {
+        Register-M365DSCPnPIdentityClientResolver
+    }
+
     if ($null -eq $loadedModule)
     {
         Write-Verbose -Message "Module '$ModuleName' is not loaded. Importing it now."
@@ -1390,6 +1535,7 @@ Export-ModuleMember -Function @(
     'Get-M365DSCResourceSetting',
     'Get-M365DSCResourceSettings',
     'Import-M365DSCDependencyModule',
+    'Register-M365DSCPnPIdentityClientResolver',
     'Set-M365DSCVerboseScope',
     'Set-M365DSCModuleConfiguration',
     'Set-M365DSCRequiredModulesLoaded',

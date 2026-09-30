@@ -333,8 +333,16 @@ class SPOTenantSettings : M365DSCResourceBase
     [System.Nullable[System.Boolean]] $EnableAIPIntegration
 
     [DscProperty()]
+    [System.ComponentModel.Description('Allows turning on support for sensitivity labels on OneNote files in SharePoint and OneDrive.')]
+    [System.Nullable[System.Boolean]] $EnableSensitivityLabelForOneNote
+
+    [DscProperty()]
     [System.ComponentModel.Description('Allows turning on support for PDFs with sensitivity labels.')]
     [System.Nullable[System.Boolean]] $EnableSensitivityLabelForPDF
+
+    [DscProperty()]
+    [System.ComponentModel.Description('Allows turning on support for sensitivity labels on video files in SharePoint and OneDrive.')]
+    [System.Nullable[System.Boolean]] $EnableSensitivityLabelForVideoFiles
 
     [DscProperty()]
     [System.ComponentModel.Description('Determines whether or not we need to include external participants in shared channels for SharePoint access restriction.')]
@@ -616,7 +624,9 @@ class SPOTenantSettings : M365DSCResourceBase
                 EnableAIPIntegration                                           = $SPOTenantSettings.EnableAIPIntegration
                 EnableMediaReactions                                           = $SPOTenantSettings.EnableMediaReactions
                 EnableNotificationsSubscriptions                               = $SPOTenantSettings.EnableNotificationsSubscriptions
+                EnableSensitivityLabelForOneNote                               = $SPOTenantSettings.EnableSensitivityLabelForOneNote
                 EnableSensitivityLabelForPDF                                   = $SPOTenantSettings.EnableSensitivityLabelForPDF
+                EnableSensitivityLabelForVideoFiles                            = $SPOTenantSettings.EnableSensitivityLabelForVideoFiles
                 EnforceRequestDigest                                           = $SPOTenantSettings.EnforceRequestDigest
                 # TODO: Add GroupId lookup
                 ExcludedBlockDownloadGroupIds                                  = Get-M365DSCArrayFromProperty -PropertyValue $SPOTenantSettings.ExcludedBlockDownloadGroupIds -ElementType ([System.String])

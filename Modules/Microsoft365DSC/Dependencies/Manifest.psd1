@@ -55,7 +55,7 @@
         },
         @{
             ModuleName      = 'PnP.PowerShell'
-            RequiredVersion = '3.3.0'
+            RequiredVersion = '3.4.1'
             PowerShellCore  = $true
         },
         @{

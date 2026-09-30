@@ -16,6 +16,11 @@ BeforeAll {
         param ($Data, $Type)
     }
 
+    function global:Register-M365DSCPnPIdentityClientResolver
+    {
+        param ($ModuleBase)
+    }
+
     function global:Connect-M365Tenant
     {
         [CmdletBinding()]
@@ -42,6 +47,7 @@ Describe 'New-M365DSCConnection' {
         Mock -ModuleName M365DSCConnection -CommandName Test-IsM365DSCRequiredModulesLoaded -MockWith { $true }
         Mock -ModuleName M365DSCConnection -CommandName Add-M365DSCTelemetryEvent
         Mock -ModuleName M365DSCConnection -CommandName Connect-M365Tenant
+        Mock -ModuleName M365DSCConnection -CommandName Register-M365DSCPnPIdentityClientResolver
     }
 
     AfterAll {

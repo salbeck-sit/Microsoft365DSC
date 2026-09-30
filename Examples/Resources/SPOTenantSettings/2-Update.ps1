@@ -104,7 +104,9 @@ Configuration Example
             SocialBarOnSitePagesDisabled                                   = $false
             CommentsOnSitePagesDisabled                                    = $false
             EnableAIPIntegration                                           = $false
+            EnableSensitivityLabelForOneNote                               = $true
             EnableSensitivityLabelForPDF                                   = $true
+            EnableSensitivityLabelForVideoFiles                            = $true
             ExemptNativeUsersFromTenantLevelRestricedAccessControl         = $true
             AllowSelectSGsInODBListInTenant                                = @()
             DenySelectSGsInODBListInTenant                                 = @()

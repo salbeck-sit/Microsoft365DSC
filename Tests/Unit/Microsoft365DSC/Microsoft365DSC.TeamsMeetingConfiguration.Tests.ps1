@@ -39,20 +39,33 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
 
             Mock -CommandName Get-CsTeamsMeetingConfiguration -MockWith {
                 return @{
-                    ClientAppSharingPort        = 50040
-                    ClientAppSharingPortRange   = 20
-                    ClientAudioPort             = 50000
-                    ClientAudioPortRange        = 20
-                    ClientMediaPortRangeEnabled = $True
-                    ClientVideoPort             = 50020
-                    ClientVideoPortRange        = 20
-                    CustomFooterText            = $null
-                    DisableAnonymousJoin        = $False
-                    EnableQoS                   = $False
-                    HelpURL                     = $null
-                    Identity                    = 'Global'
-                    LegalURL                    = $null
-                    LogoURL                     = $null
+                    ClientAppSharingPort                 = 50040
+                    ClientAppSharingPortRange            = 20
+                    ClientAudioPort                      = 50000
+                    ClientAudioPortRange                 = 20
+                    ClientMediaPortRangeEnabled          = $True
+                    ClientVideoPort                      = 50020
+                    ClientVideoPortRange                 = 20
+                    CustomFooterText                     = $null
+                    DisableAnonymousJoin                 = $False
+                    EnableAttributedTranscripts          = $False
+                    EnableGraphTranscriptAccess          = $False
+                    EnableQoS                            = $False
+                    HelpURL                              = $null
+                    Identity                             = 'Global'
+                    LegalURL                             = $null
+                    LogoURL                              = $null
+                    PublishedEntraAuthenticationContexts = @(
+                        @{
+                            Id                   = 'c3'
+                            PublishedName        = 'Confidential meetings'
+                            PublishedDescription = 'Requires step-up authentication to join confidential meetings'
+                            EntraName            = 'Confidential access'
+                            EntraDescription     = 'Step-up authentication for confidential resources'
+                            Published            = $True
+                        }
+                    )
+                    ReportMeeting                        = 'Enabled'
                 }
             }
 
@@ -70,21 +83,31 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
         Context -Name 'When settings are correctly set' -Fixture {
             BeforeAll {
                 $testParams = @{
-                    ClientAppSharingPort        = 50040
-                    ClientAppSharingPortRange   = 20
-                    ClientAudioPort             = 50000
-                    ClientAudioPortRange        = 20
-                    ClientMediaPortRangeEnabled = $True
-                    ClientVideoPort             = 50020
-                    ClientVideoPortRange        = 20
-                    CustomFooterText            = $null
-                    DisableAnonymousJoin        = $False
-                    EnableQoS                   = $False
-                    Credential                  = $Credential
-                    HelpURL                     = $null
-                    IsSingleInstance            = 'Yes'
-                    LegalURL                    = $null
-                    LogoURL                     = $null
+                    ClientAppSharingPort                 = 50040
+                    ClientAppSharingPortRange            = 20
+                    ClientAudioPort                      = 50000
+                    ClientAudioPortRange                 = 20
+                    ClientMediaPortRangeEnabled          = $True
+                    ClientVideoPort                      = 50020
+                    ClientVideoPortRange                 = 20
+                    CustomFooterText                     = $null
+                    DisableAnonymousJoin                 = $False
+                    EnableAttributedTranscripts          = $False
+                    EnableGraphTranscriptAccess          = $False
+                    EnableQoS                            = $False
+                    Credential                           = $Credential
+                    HelpURL                              = $null
+                    IsSingleInstance                     = 'Yes'
+                    LegalURL                             = $null
+                    LogoURL                              = $null
+                    PublishedEntraAuthenticationContexts = @(
+                        [MSFT_TeamsPublishedEntraAuthenticationContext] @{
+                            Id                   = 'c3'
+                            PublishedName        = 'Confidential meetings'
+                            PublishedDescription = 'Requires step-up authentication to join confidential meetings'
+                        }
+                    )
+                    ReportMeeting                        = 'Enabled'
                 }
             }
 
@@ -100,21 +123,25 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
         Context -Name 'When settings are NOT correctly set' -Fixture {
             BeforeAll {
                 $testParams = @{
-                    ClientAppSharingPort        = 50040
-                    ClientAppSharingPortRange   = 20
-                    ClientAudioPort             = 50000
-                    ClientAudioPortRange        = 20
-                    ClientMediaPortRangeEnabled = $True
-                    ClientVideoPort             = 50020
-                    ClientVideoPortRange        = 21; # Drift
-                    CustomFooterText            = $null
-                    DisableAnonymousJoin        = $False
-                    EnableQoS                   = $False
-                    Credential                  = $Credential
-                    HelpURL                     = $null
-                    IsSingleInstance            = 'Yes'
-                    LegalURL                    = $null
-                    LogoURL                     = $null
+                    ClientAppSharingPort                 = 50040
+                    ClientAppSharingPortRange            = 20
+                    ClientAudioPort                      = 50000
+                    ClientAudioPortRange                 = 20
+                    ClientMediaPortRangeEnabled          = $True
+                    ClientVideoPort                      = 50020
+                    ClientVideoPortRange                 = 21; # Drift
+                    CustomFooterText                     = $null
+                    DisableAnonymousJoin                 = $False
+                    EnableAttributedTranscripts          = $False
+                    EnableGraphTranscriptAccess          = $False
+                    EnableQoS                            = $False
+                    Credential                           = $Credential
+                    HelpURL                              = $null
+                    IsSingleInstance                     = 'Yes'
+                    LegalURL                             = $null
+                    LogoURL                              = $null
+                    PublishedEntraAuthenticationContexts = @()
+                    ReportMeeting                        = 'Enabled'
                 }
             }
 

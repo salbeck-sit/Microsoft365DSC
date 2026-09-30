@@ -51,6 +51,11 @@ class TeamsMessagingConfiguration : M365DSCResourceBase
     [System.String] $ReportIncorrectSecurityDetections
 
     [DscProperty()]
+    [System.ComponentModel.Description('This setting enables/disables Viva Engage Communities integration across the whole tenant.')]
+    [ValidateSet('Disabled', 'Enabled')]
+    [System.String] $Communities
+
+    [DscProperty()]
     [System.ComponentModel.Description('Credentials of the workload''s Admin')]
     [System.Management.Automation.PSCredential] $Credential
 
@@ -115,6 +120,7 @@ class TeamsMessagingConfiguration : M365DSCResourceBase
 
             Write-Verbose -Message 'A Teams Messaging Configuration with Identity {Global} was found'
             $results = @{
+                Communities                       = $instance.Communities
                 ContentBasedPhishingCheck         = $instance.ContentBasedPhishingCheck
                 CustomEmojis                      = $instance.CustomEmojis
                 EnableInOrganizationChatControl   = $instance.EnableInOrganizationChatControl

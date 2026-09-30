@@ -54,6 +54,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     FileTypeCheck                     = "Disabled"
                     Identity                          = "Global"
                     UrlReputationCheck                = "Disabled"
+                    Communities                       = "Enabled"
                 }
             }
 
@@ -80,6 +81,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     ReportIncorrectSecurityDetections = "Disabled"
                     FileTypeCheck                     = "Disabled"
                     UrlReputationCheck                = "Disabled"
+                    Communities                       = "Enabled"
                     IsSingleInstance = 'Yes'
                     Credential = $Credential;
                 }
@@ -102,6 +104,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     ReportIncorrectSecurityDetections = "Disabled"
                     FileTypeCheck                     = "Disabled"
                     UrlReputationCheck                = "Disabled"
+                    Communities                       = "Enabled"
                     IsSingleInstance = 'Yes'
                     Credential = $Credential;
                 }

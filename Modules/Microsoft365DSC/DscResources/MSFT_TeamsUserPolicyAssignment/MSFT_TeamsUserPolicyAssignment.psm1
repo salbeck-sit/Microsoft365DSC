@@ -84,6 +84,10 @@ class TeamsUserPolicyAssignment : M365DSCResourceBase
     [System.String] $TeamsMobilityPolicy
 
     [DscProperty()]
+    [System.ComponentModel.Description('Name of the Teams Personal Attendant Policy.')]
+    [System.String] $TeamsPersonalAttendantPolicy
+
+    [DscProperty()]
     [System.ComponentModel.Description('Name of the Teams Update Management Policy.')]
     [System.String] $TeamsUpdateManagementPolicy
 
@@ -149,10 +153,17 @@ class TeamsUserPolicyAssignment : M365DSCResourceBase
                 $this.AddTelemetry('Get')
             }
 
-            $assignment = Get-CsUserPolicyAssignment -Identity $this.User -ErrorAction SilentlyContinue
-            if ($null -eq $assignment)
+            $assignmentErrors = $null
+            $assignment = Get-CsUserPolicyAssignment -Identity $this.User -ErrorAction SilentlyContinue -ErrorVariable assignmentErrors
+            if ($assignmentErrors.Count -gt 0)
             {
-                Write-Verbose -Message "User Policy Assignment not found for $($this.User)"
+                Write-Verbose -Message "User {$($this.User)} not found for Teams User Policy Assignment"
+                return $this.AsResult($null)
+            }
+
+            if ($null -eq $assignment -and $this.ResourceCache['exportMode'])
+            {
+                Write-Verbose -Message "User {$($this.User)} has no Teams User Policy Assignment to export"
                 return $this.AsResult($null)
             }
 
@@ -270,6 +281,12 @@ class TeamsUserPolicyAssignment : M365DSCResourceBase
                 $TeamsMobilityPolicyValue = 'Global'
             }
 
+            $TeamsPersonalAttendantPolicyValue = ($assignment | Where-Object -FilterScript { $_.PolicyType -eq 'TeamsPersonalAttendantPolicy' }).PolicyName
+            if ([System.String]::IsNullOrEmpty($TeamsPersonalAttendantPolicyValue))
+            {
+                $TeamsPersonalAttendantPolicyValue = 'Global'
+            }
+
             $TeamsUpdateManagementPolicyValue = ($assignment | Where-Object -FilterScript { $_.PolicyType -eq 'TeamsUpdateManagementPolicy' }).PolicyName
             if ([System.String]::IsNullOrEmpty($TeamsUpdateManagementPolicyValue))
             {
@@ -310,6 +327,7 @@ class TeamsUserPolicyAssignment : M365DSCResourceBase
                 TeamsMeetingPolicy              = $TeamsMeetingPolicyValue
                 TeamsMessagingPolicy            = $TeamsMessagingPolicyValue
                 TeamsMobilityPolicy             = $TeamsMobilityPolicyValue
+                TeamsPersonalAttendantPolicy    = $TeamsPersonalAttendantPolicyValue
                 TeamsUpdateManagementPolicy     = $TeamsUpdateManagementPolicyValue
                 TeamsUpgradePolicy              = $TeamsUpgradePolicyValue
                 TenantDialPlan                  = $TenantDialPlanValue
@@ -537,6 +555,16 @@ class TeamsUserPolicyAssignment : M365DSCResourceBase
                     $policyName = $null
                 }
                 Grant-CsTeamsMobilityPolicy -Identity $this.User -PolicyName $policyName | Out-Null
+            }
+            if ($null -ne $this.TeamsPersonalAttendantPolicy -and $this.TeamsPersonalAttendantPolicy -ne $currentInstance.TeamsPersonalAttendantPolicy)
+            {
+                Write-Verbose -Message "Assigning the Personal Attendant Policy {$($this.TeamsPersonalAttendantPolicy)} to user {$($this.User)}"
+                $policyName = $this.TeamsPersonalAttendantPolicy
+                if ($policyName -eq 'Global')
+                {
+                    $policyName = $null
+                }
+                Grant-CsTeamsPersonalAttendantPolicy -Identity $this.User -PolicyName $policyName | Out-Null
             }
             if ($null -ne $this.TeamsUpdateManagementPolicy -and $this.TeamsUpdateManagementPolicy -ne $currentInstance.TeamsUpdateManagementPolicy)
             {

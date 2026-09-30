@@ -78557,8 +78557,19 @@ function New-CsAutoAttendant
 
         [Parameter()]
         [System.String]
-        $MainlineAttendantAgentVoiceId
+        $MainlineAttendantAgentVoiceId,
 
+        [Parameter()]
+        [System.String]
+        $AutoRecordingTemplateId,
+
+        [Parameter()]
+        [System.String]
+        $SharedVoicemailTriageSettingsTemplateId,
+
+        [Parameter()]
+        [System.String]
+        $SpamDetectionTemplateId
     )
 }
 
@@ -78589,8 +78600,27 @@ function New-CsAutoAttendantCallFlow
 
         [Parameter()]
         [System.Management.Automation.SwitchParameter]
-        $Force
+        $Force,
 
+        [Parameter()]
+        [System.Int32]
+        $TimeoutThreshold,
+
+        [Parameter()]
+        [System.String]
+        $TimeoutDisconnectPromptType,
+
+        [Parameter()]
+        [System.String]
+        $TimeoutDisconnectPromptCustomText,
+
+        [Parameter()]
+        [System.String]
+        $AiDisclaimerType,
+
+        [Parameter()]
+        [System.String]
+        $AiDisclaimerCustomText
     )
 }
 
@@ -78649,8 +78679,11 @@ function New-CsAutoAttendantCallableEntity
 
         [Parameter()]
         [System.Management.Automation.SwitchParameter]
-        $Force
+        $Force,
 
+        [Parameter()]
+        [System.String]
+        $SharedVoicemailHistoryTemplateId
     )
 }
 
@@ -78966,7 +78999,11 @@ function New-CsOnlineVoicemailPolicy
 
         [Parameter()]
         [System.Boolean]
-        $EnableTranscriptionTranslation
+        $EnableTranscriptionTranslation,
+
+        [Parameter()]
+        [System.Nullable`1[System.Boolean]]
+        $EnableVoicemailTriage
     )
 }
 function New-CsTeamsAppPermissionPolicy
@@ -79242,7 +79279,27 @@ function New-CsTeamsCallingPolicy
 
         [Parameter()]
         [System.Boolean]
-        $AllowTranscriptionForCalling
+        $AllowTranscriptionForCalling,
+
+        [Parameter()]
+        [System.String]
+        $RecordingAndTranscriptionAudioNotification,
+
+        [Parameter()]
+        [System.String]
+        $PreventComplianceRecording,
+
+        [Parameter()]
+        [System.Nullable`1[System.Boolean]]
+        $AllowMeetingKnowledgeGeneration,
+
+        [Parameter()]
+        [System.String]
+        $VoicePhishingDetection,
+
+        [Parameter()]
+        [System.String]
+        $ExplicitRecordingConsent
     )
 }
 function New-CsTeamsChannelsPolicy
@@ -79287,7 +79344,55 @@ function New-CsTeamsChannelsPolicy
 
         [Parameter()]
         [System.Management.Automation.SwitchParameter]
-        $Force
+        $Force,
+
+        [Parameter()]
+        [System.String]
+        $AllowCreateChannel,
+
+        [Parameter()]
+        [System.String]
+        $AllowCreateClassicChannel,
+
+        [Parameter()]
+        [System.String]
+        $AllowCreatePrivateChannel,
+
+        [Parameter()]
+        [System.String]
+        $AllowCreateSharedChannel,
+
+        [Parameter()]
+        [System.String]
+        $CreateSharedChannelsByDefault,
+
+        [Parameter()]
+        [System.String]
+        $AllowUsersFromOutsideTeam,
+
+        [Parameter()]
+        [System.String]
+        $AllowGuestsFromOutsideTeam,
+
+        [Parameter()]
+        [System.String]
+        $AllowUsersFromOutsideTeamInPrivateChannel,
+
+        [Parameter()]
+        [System.String]
+        $AllowGuestsFromOutsideTeamInPrivateChannel,
+
+        [Parameter()]
+        [System.String]
+        $AllowSharingWithTeamInOrg,
+
+        [Parameter()]
+        [System.String]
+        $AllowSharingPrivateChannelWithTeamInOrg,
+
+        [Parameter()]
+        [System.String]
+        $DefaultChannelTypeOnCreation
     )
 }
 function New-CsTeamsComplianceRecordingPolicy
@@ -79490,7 +79595,15 @@ function New-CsTeamsEventsPolicy
 
         [Parameter()]
         [System.String]
-        $TownhallChatExperience
+        $TownhallChatExperience,
+
+        [Parameter()]
+        [System.String]
+        $AllowEngagementReport,
+
+        [Parameter()]
+        [System.String]
+        $InfoShownInReportMode
     )
 }
 function New-CsTeamsFeedbackPolicy
@@ -79962,7 +80075,71 @@ function New-CsTeamsMeetingPolicy
 
         [Parameter()]
         [System.String]
-        $AutoRecording
+        $AutoRecording,
+
+        [Parameter()]
+        [System.String]
+        $RecordingAndTranscriptionAudioNotification,
+
+        [Parameter()]
+        [System.String]
+        $FilterProfanityInTranscript,
+
+        [Parameter()]
+        [System.Nullable`1[System.Boolean]]
+        $AllowMeetingKnowledgeGeneration,
+
+        [Parameter()]
+        [System.Nullable`1[System.Int64]]
+        $MeetingKnowledgeExpirationDays,
+
+        [Parameter()]
+        [System.String]
+        $ExternalBotAccessMode,
+
+        [Parameter()]
+        [System.String]
+        $PreventComplianceRecording,
+
+        [Parameter()]
+        [System.Nullable`1[System.Boolean]]
+        $DisableAudioAnnouncementsForResourceAccounts,
+
+        [Parameter()]
+        [System.String]
+        $SyntheticMediaDetection,
+
+        [Parameter()]
+        [System.String]
+        $SyntheticMediaDetectionAppId,
+
+        [Parameter()]
+        [System.Nullable`1[System.Boolean]]
+        $ConditionalAccessAttendeeVerification,
+
+        [Parameter()]
+        [System.Nullable`1[System.Boolean]]
+        $EnablePreMeetingConsent,
+
+        [Parameter()]
+        [System.String]
+        $PreMeetingConsentContentIdentifier,
+
+        [Parameter()]
+        [System.Nullable`1[System.Boolean]]
+        $EnableExternalRecordingDetection,
+
+        [Parameter()]
+        [System.Nullable`1[System.Boolean]]
+        $AllowIntelligentRecap,
+
+        [Parameter()]
+        [System.Nullable`1[System.Int64]]
+        $IntelligentRecapDocxFileExpirationDays,
+
+        [Parameter()]
+        [System.String]
+        $CaptchaVerificationForMeetingJoin
     )
 }
 function New-CsTeamsMessagingPolicy
@@ -80906,7 +81083,11 @@ function Set-CsOnlineVoicemailPolicy
 
         [Parameter()]
         [System.Boolean]
-        $EnableTranscriptionTranslation
+        $EnableTranscriptionTranslation,
+
+        [Parameter()]
+        [System.Nullable`1[System.Boolean]]
+        $EnableVoicemailTriage
     )
 }
 
@@ -81220,7 +81401,27 @@ function Set-CsTeamsCallingPolicy
 
         [Parameter()]
         [System.Boolean]
-        $AllowTranscriptionForCalling
+        $AllowTranscriptionForCalling,
+
+        [Parameter()]
+        [System.String]
+        $RecordingAndTranscriptionAudioNotification,
+
+        [Parameter()]
+        [System.String]
+        $PreventComplianceRecording,
+
+        [Parameter()]
+        [System.Nullable`1[System.Boolean]]
+        $AllowMeetingKnowledgeGeneration,
+
+        [Parameter()]
+        [System.String]
+        $VoicePhishingDetection,
+
+        [Parameter()]
+        [System.String]
+        $ExplicitRecordingConsent
     )
 }
 function Set-CsTeamsChannelsPolicy
@@ -81265,7 +81466,55 @@ function Set-CsTeamsChannelsPolicy
 
         [Parameter()]
         [System.Management.Automation.SwitchParameter]
-        $Force
+        $Force,
+
+        [Parameter()]
+        [System.String]
+        $AllowCreateChannel,
+
+        [Parameter()]
+        [System.String]
+        $AllowCreateClassicChannel,
+
+        [Parameter()]
+        [System.String]
+        $AllowCreatePrivateChannel,
+
+        [Parameter()]
+        [System.String]
+        $AllowCreateSharedChannel,
+
+        [Parameter()]
+        [System.String]
+        $CreateSharedChannelsByDefault,
+
+        [Parameter()]
+        [System.String]
+        $AllowUsersFromOutsideTeam,
+
+        [Parameter()]
+        [System.String]
+        $AllowGuestsFromOutsideTeam,
+
+        [Parameter()]
+        [System.String]
+        $AllowUsersFromOutsideTeamInPrivateChannel,
+
+        [Parameter()]
+        [System.String]
+        $AllowGuestsFromOutsideTeamInPrivateChannel,
+
+        [Parameter()]
+        [System.String]
+        $AllowSharingWithTeamInOrg,
+
+        [Parameter()]
+        [System.String]
+        $AllowSharingPrivateChannelWithTeamInOrg,
+
+        [Parameter()]
+        [System.String]
+        $DefaultChannelTypeOnCreation
     )
 }
 function Set-CsTeamsComplianceRecordingPolicy
@@ -81468,7 +81717,15 @@ function Set-CsTeamsEventsPolicy
 
         [Parameter()]
         [System.String]
-        $TownhallChatExperience
+        $TownhallChatExperience,
+
+        [Parameter()]
+        [System.String]
+        $AllowEngagementReport,
+
+        [Parameter()]
+        [System.String]
+        $InfoShownInReportMode
     )
 }
 function Set-CsTeamsFeedbackPolicy
@@ -81619,7 +81876,23 @@ function Set-CsTeamsMeetingConfiguration
 
         [Parameter()]
         [System.String]
-        $LegalURL
+        $LegalURL,
+
+        [Parameter()]
+        [System.String]
+        $ReportMeeting,
+
+        [Parameter()]
+        [System.Object]
+        $PublishedEntraAuthenticationContexts,
+
+        [Parameter()]
+        [System.Nullable`1[System.Boolean]]
+        $EnableAttributedTranscripts,
+
+        [Parameter()]
+        [System.Nullable`1[System.Boolean]]
+        $EnableGraphTranscriptAccess
     )
 }
 function Set-CsTeamsMeetingPolicy
@@ -82012,7 +82285,71 @@ function Set-CsTeamsMeetingPolicy
 
         [Parameter()]
         [System.String]
-        $AutoRecording
+        $AutoRecording,
+
+        [Parameter()]
+        [System.String]
+        $RecordingAndTranscriptionAudioNotification,
+
+        [Parameter()]
+        [System.String]
+        $FilterProfanityInTranscript,
+
+        [Parameter()]
+        [System.Nullable`1[System.Boolean]]
+        $AllowMeetingKnowledgeGeneration,
+
+        [Parameter()]
+        [System.Nullable`1[System.Int64]]
+        $MeetingKnowledgeExpirationDays,
+
+        [Parameter()]
+        [System.String]
+        $ExternalBotAccessMode,
+
+        [Parameter()]
+        [System.String]
+        $PreventComplianceRecording,
+
+        [Parameter()]
+        [System.Nullable`1[System.Boolean]]
+        $DisableAudioAnnouncementsForResourceAccounts,
+
+        [Parameter()]
+        [System.String]
+        $SyntheticMediaDetection,
+
+        [Parameter()]
+        [System.String]
+        $SyntheticMediaDetectionAppId,
+
+        [Parameter()]
+        [System.Nullable`1[System.Boolean]]
+        $ConditionalAccessAttendeeVerification,
+
+        [Parameter()]
+        [System.Nullable`1[System.Boolean]]
+        $EnablePreMeetingConsent,
+
+        [Parameter()]
+        [System.String]
+        $PreMeetingConsentContentIdentifier,
+
+        [Parameter()]
+        [System.Nullable`1[System.Boolean]]
+        $EnableExternalRecordingDetection,
+
+        [Parameter()]
+        [System.Nullable`1[System.Boolean]]
+        $AllowIntelligentRecap,
+
+        [Parameter()]
+        [System.Nullable`1[System.Int64]]
+        $IntelligentRecapDocxFileExpirationDays,
+
+        [Parameter()]
+        [System.String]
+        $CaptchaVerificationForMeetingJoin
     )
 }
 function Set-CsTeamsMessagingPolicy
@@ -84110,6 +84447,43 @@ function Grant-CsTeamsMobilityPolicy
         $Rank
     )
 }
+function Grant-CsTeamsPersonalAttendantPolicy
+{
+    [CmdletBinding()]
+    param(
+        [Parameter()]
+        [System.Management.Automation.SwitchParameter]
+        $PassThru,
+
+        [Parameter()]
+        [System.String]
+        $PolicyName,
+
+        [Parameter()]
+        [System.Management.Automation.SwitchParameter]
+        $Confirm,
+
+        [Parameter()]
+        [System.String]
+        $Identity,
+
+        [Parameter()]
+        [System.Management.Automation.SwitchParameter]
+        $Global,
+
+        [Parameter()]
+        [System.String]
+        $Group,
+
+        [Parameter()]
+        [System.String]
+        $MsftInternalProcessingMode,
+
+        [Parameter()]
+        [System.Nullable`1[System.Int32]]
+        $Rank
+    )
+}
 function Grant-CsTeamsUpdateManagementPolicy
 {
     [CmdletBinding()]
@@ -84604,7 +84978,11 @@ function New-CsCallQueue
 
         [Parameter()]
         [System.String]
-        $OverflowRedirectPersonTextToSpeechPrompt
+        $OverflowRedirectPersonTextToSpeechPrompt,
+
+        [Parameter()]
+        [System.String]
+        $SharedVoicemailTriageSettingsTemplateId
     )
 }
 function New-CsEdgeAllowAllKnownDomains
@@ -85671,7 +86049,7 @@ function Remove-CsPhoneNumberAssignment
 
         [Parameter()]
         [System.String]
-        $PhoneNumberType,
+        $NumberType,
 
         [Parameter()]
         [System.String]
@@ -85679,7 +86057,7 @@ function Remove-CsPhoneNumberAssignment
 
         [Parameter()]
         [System.String]
-        $PhoneNumber
+        $TelephoneNumber
     )
 }
 function Remove-CsTeamsAudioConferencingPolicy
@@ -86329,7 +86707,11 @@ function Set-CsCallQueue
 
         [Parameter()]
         [System.String]
-        $OverflowRedirectPersonTextToSpeechPrompt
+        $OverflowRedirectPersonTextToSpeechPrompt,
+
+        [Parameter()]
+        [System.String]
+        $SharedVoicemailTriageSettingsTemplateId
     )
 }
 function Set-CsOnlineDialInConferencingTenantSettings
@@ -86504,7 +86886,23 @@ function Set-CsOnlineVoicemailUserSettings
 
         [Parameter()]
         [PSObject]
-        $CallAnswerRule
+        $CallAnswerRule,
+
+        [Parameter()]
+        [System.Nullable`1[System.Boolean]]
+        $UrgencyDetectionEnabled,
+
+        [Parameter()]
+        [System.Nullable`1[System.Boolean]]
+        $CategoryDetectionEnabled,
+
+        [Parameter()]
+        [System.Nullable`1[System.Boolean]]
+        $CallToActionDetectionEnabled,
+
+        [Parameter()]
+        [System.Nullable`1[System.Boolean]]
+        $VoiceToTextSummaryEnabled
     )
 }
 function Set-CsOnlineVoiceRoute
@@ -86591,7 +86989,7 @@ function Set-CsPhoneNumberAssignment
 
         [Parameter()]
         [System.String]
-        $PhoneNumberType,
+        $NumberType,
 
         [Parameter()]
         [System.String]
@@ -86615,7 +87013,7 @@ function Set-CsPhoneNumberAssignment
 
         [Parameter()]
         [System.String]
-        $PhoneNumber
+        $TelephoneNumber
     )
 }
 function Set-CsTeamsAudioConferencingPolicy
@@ -87391,7 +87789,19 @@ function Set-CsTenantFederationConfiguration
 
         [Parameter()]
         [System.Boolean]
-        $AllowPublicUsers
+        $AllowPublicUsers,
+
+        [Parameter()]
+        [System.String]
+        $SecurityTeamAllowBlockListDelegation,
+
+        [Parameter()]
+        [System.Boolean]
+        $EnableExternalAccessRestrictionsForChatParticipants,
+
+        [Parameter()]
+        [System.Boolean]
+        $EnableMutualFederationForChatParticipants
     )
 }
 function Set-CsTenantNetworkRegion
@@ -87649,7 +88059,15 @@ function Set-CsUserCallingSettings
 
         [Parameter()]
         [System.String]
-        $GroupNotificationOverride
+        $GroupNotificationOverride,
+
+        [Parameter()]
+        [System.String]
+        $BusyOnBusyOption,
+
+        [Parameter()]
+        [System.Int32]
+        $MaximumConcurrentCalls
     )
 }
 function Get-CsTeamsMessagingConfiguration
@@ -87711,7 +88129,11 @@ function Set-CsTeamsMessagingConfiguration
 
         [Parameter()]
         [switch]
-        $Force
+        $Force,
+
+        [Parameter()]
+        [System.String]
+        $Communities
     )
 }
 function Get-CsTeamsTargetingPolicy

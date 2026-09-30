@@ -43,11 +43,11 @@
         },
         @{
             ModuleName      = 'Microsoft.Graph.Authentication'
-            RequiredVersion = '2.39.0'
+            RequiredVersion = '2.41.0'
         },
         @{
             ModuleName      = 'MicrosoftTeams'
-            RequiredVersion = '7.6.0'
+            RequiredVersion = '8.0.0'
         },
         @{
             ModuleName      = "MSCloudLoginAssistant"

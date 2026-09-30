@@ -25,22 +25,24 @@ Configuration Example
     {
         TeamsFederationConfiguration 'TeamsFederationConfiguration-Example'
         {
-            IsSingleInstance                            = 'Yes';
-            AllowedDomains                              = @();
-            AllowedTrialTenantDomains                   = @("northwindtraders.onmicrosoft.com");
-            BlockedDomains                              = @();
-            BlockAllSubdomains                          = $false;
-            AllowFederatedUsers                         = $true;
-            AllowTeamsConsumer                          = $true;
-            AllowTeamsConsumerInbound                   = $true;
-            DomainBlockingForMDOAdminsInTeams           = "Enabled";
-            ExternalAccessWithTrialTenants              = "Blocked";
-            RestrictTeamsConsumerToExternalUserProfiles = $false;
-            SharedSipAddressSpace                       = $false;
-            TreatDiscoveredPartnersAsUnverified         = $false;
-            ApplicationId                               = $ApplicationId
-            TenantId                                    = $TenantId
-            CertificateThumbprint                       = $CertificateThumbprint
+            IsSingleInstance                                    = 'Yes';
+            AllowedDomains                                      = @();
+            AllowedTrialTenantDomains                           = @("northwindtraders.onmicrosoft.com");
+            BlockedDomains                                      = @();
+            BlockAllSubdomains                                  = $false;
+            AllowFederatedUsers                                 = $true;
+            AllowTeamsConsumer                                  = $true;
+            AllowTeamsConsumerInbound                           = $true;
+            EnableExternalAccessRestrictionsForChatParticipants = $false;
+            EnableMutualFederationForChatParticipants           = $false;
+            ExternalAccessWithTrialTenants                      = "Blocked";
+            RestrictTeamsConsumerToExternalUserProfiles         = $false;
+            SecurityTeamAllowBlockListDelegation                = "Enabled";
+            SharedSipAddressSpace                               = $false;
+            TreatDiscoveredPartnersAsUnverified                 = $false;
+            ApplicationId                                       = $ApplicationId
+            TenantId                                            = $TenantId
+            CertificateThumbprint                               = $CertificateThumbprint
         }
     }
 }

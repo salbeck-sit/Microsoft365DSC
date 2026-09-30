@@ -47,6 +47,18 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     EnablePrivateTeamDiscovery                    = $True
                     AllowSharedChannelCreation                    = $True
                     AllowUserToParticipateInExternalSharedChannel = $True
+                    AllowCreateChannel                            = 'Enabled'
+                    AllowCreateClassicChannel                     = 'Enabled'
+                    AllowCreatePrivateChannel                     = 'Enabled'
+                    AllowCreateSharedChannel                      = 'Enabled'
+                    CreateSharedChannelsByDefault                 = 'Disabled'
+                    AllowUsersFromOutsideTeam                     = 'Enabled'
+                    AllowGuestsFromOutsideTeam                    = 'Disabled'
+                    AllowUsersFromOutsideTeamInPrivateChannel     = 'Enabled'
+                    AllowGuestsFromOutsideTeamInPrivateChannel    = 'Disabled'
+                    AllowSharingWithTeamInOrg                     = 'Enabled'
+                    AllowSharingPrivateChannelWithTeamInOrg       = 'Unset'
+                    DefaultChannelTypeOnCreation                  = 'Standard'
                 }
             }
 
@@ -78,6 +90,18 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     EnablePrivateTeamDiscovery                    = $True
                     AllowSharedChannelCreation                    = $True
                     AllowUserToParticipateInExternalSharedChannel = $True
+                    AllowCreateChannel                            = 'Enabled'
+                    AllowCreateClassicChannel                     = 'Enabled'
+                    AllowCreatePrivateChannel                     = 'Enabled'
+                    AllowCreateSharedChannel                      = 'Enabled'
+                    CreateSharedChannelsByDefault                 = 'Disabled'
+                    AllowUsersFromOutsideTeam                     = 'Enabled'
+                    AllowGuestsFromOutsideTeam                    = 'Disabled'
+                    AllowUsersFromOutsideTeamInPrivateChannel     = 'Enabled'
+                    AllowGuestsFromOutsideTeamInPrivateChannel    = 'Disabled'
+                    AllowSharingWithTeamInOrg                     = 'Enabled'
+                    AllowSharingPrivateChannelWithTeamInOrg       = 'Unset'
+                    DefaultChannelTypeOnCreation                  = 'Standard'
                     Ensure                                        = 'Present'
                     Credential                                    = $Credential
                 }
@@ -112,6 +136,18 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     EnablePrivateTeamDiscovery                    = $False # Drift
                     AllowSharedChannelCreation                    = $True
                     AllowUserToParticipateInExternalSharedChannel = $True
+                    AllowCreateChannel                            = 'Enabled'
+                    AllowCreateClassicChannel                     = 'Enabled'
+                    AllowCreatePrivateChannel                     = 'Enabled'
+                    AllowCreateSharedChannel                      = 'Enabled'
+                    CreateSharedChannelsByDefault                 = 'Disabled'
+                    AllowUsersFromOutsideTeam                     = 'Enabled'
+                    AllowGuestsFromOutsideTeam                    = 'Disabled'
+                    AllowUsersFromOutsideTeamInPrivateChannel     = 'Enabled'
+                    AllowGuestsFromOutsideTeamInPrivateChannel    = 'Disabled'
+                    AllowSharingWithTeamInOrg                     = 'Enabled'
+                    AllowSharingPrivateChannelWithTeamInOrg       = 'Unset'
+                    DefaultChannelTypeOnCreation                  = 'Standard'
                     Ensure                                        = 'Present'
                     Credential                                    = $Credential
                 }
@@ -143,6 +179,18 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     EnablePrivateTeamDiscovery                    = $True
                     AllowSharedChannelCreation                    = $True
                     AllowUserToParticipateInExternalSharedChannel = $True
+                    AllowCreateChannel                            = 'Enabled'
+                    AllowCreateClassicChannel                     = 'Enabled'
+                    AllowCreatePrivateChannel                     = 'Enabled'
+                    AllowCreateSharedChannel                      = 'Enabled'
+                    CreateSharedChannelsByDefault                 = 'Disabled'
+                    AllowUsersFromOutsideTeam                     = 'Enabled'
+                    AllowGuestsFromOutsideTeam                    = 'Disabled'
+                    AllowUsersFromOutsideTeamInPrivateChannel     = 'Enabled'
+                    AllowGuestsFromOutsideTeamInPrivateChannel    = 'Disabled'
+                    AllowSharingWithTeamInOrg                     = 'Enabled'
+                    AllowSharingPrivateChannelWithTeamInOrg       = 'Unset'
+                    DefaultChannelTypeOnCreation                  = 'Standard'
                     Ensure                                        = 'Present'
                     Credential                                    = $Credential
                 }
@@ -168,6 +216,18 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     EnablePrivateTeamDiscovery                     = $True
                     AllowSharedChannelCreation                    = $True
                     AllowUserToParticipateInExternalSharedChannel = $True
+                    AllowCreateChannel                            = 'Enabled'
+                    AllowCreateClassicChannel                     = 'Enabled'
+                    AllowCreatePrivateChannel                     = 'Enabled'
+                    AllowCreateSharedChannel                      = 'Enabled'
+                    CreateSharedChannelsByDefault                 = 'Disabled'
+                    AllowUsersFromOutsideTeam                     = 'Enabled'
+                    AllowGuestsFromOutsideTeam                    = 'Disabled'
+                    AllowUsersFromOutsideTeamInPrivateChannel     = 'Enabled'
+                    AllowGuestsFromOutsideTeamInPrivateChannel    = 'Disabled'
+                    AllowSharingWithTeamInOrg                     = 'Enabled'
+                    AllowSharingPrivateChannelWithTeamInOrg       = 'Unset'
+                    DefaultChannelTypeOnCreation                  = 'Standard'
                     Ensure                                        = 'Absent'
                     Credential                                    = $Credential
                 }

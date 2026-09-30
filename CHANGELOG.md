@@ -697,26 +697,78 @@
 * TeamsAutoAttendant
   * Initial release.
     FIXES [#5379](https://github.com/Microsoft365DSC/Microsoft365DSC/issues/5379)
+* TeamsCallingPolicy
+  * [BREAKING CHANGE] Removed property `SafeTransferEnabled`.
+  * Added properties `AllowMeetingKnowledgeGeneration`, `PreventComplianceRecording`,
+    `RecordingAndTranscriptionAudioNotification` and `VoicePhishingDetection`.
 * TeamsCallQueue
   * Added GUID resolution to `AuthorizedUsers` and `Users`.
+  * Added property `SharedVoicemailTriageSettingsTemplateId`.
+  * Fixed an issue where updating or removing a call queue failed.
+  * Fixed an issue where updating or removing a call queue could target another queue whose
+    name contains the configured `Name`.
+  * Fixed an issue where `WelcomeMusicAudioFileId` and `MusicOnHoldAudioFileId` were
+    always returned empty.
+  * Fixed an issue where `CallbackEmailNotificationTarget` returned the type name of the
+    target object instead of its id.
 * TeamsChannel
   * Added the missing Graph permissions to manage Teams channels.
+* TeamsChannelsPolicy
+  * Added properties `AllowCreateChannel`, `AllowCreateClassicChannel`,
+    `AllowCreatePrivateChannel`, `AllowCreateSharedChannel`, `AllowGuestsFromOutsideTeam`,
+    `AllowGuestsFromOutsideTeamInPrivateChannel`,
+    `AllowSharingPrivateChannelWithTeamInOrg`, `AllowSharingWithTeamInOrg`,
+    `AllowUsersFromOutsideTeam`, `AllowUsersFromOutsideTeamInPrivateChannel`,
+    `CreateSharedChannelsByDefault` and `DefaultChannelTypeOnCreation`.
 * TeamsChannelTab
   * [BREAKING CHANGE] Changed `SortOrderIndex` to a string to match the type Microsoft
     Graph declares. A numeric value in an existing configuration keeps working.
   * [BREAKING CHANGE] Replaced the flattened `ContentUrl`, `EntityId`, `RemoveUrl` and
     `WebSiteUrl` properties with the `Configuration` complex property, which carries the
     same four members under the names Microsoft Graph uses.
+* TeamsEventsPolicy
+  * Added properties `AllowEngagementReport` and `InfoShownInReportMode`.
+* TeamsFederationConfiguration
+  * [BREAKING CHANGE] Renamed property `DomainBlockingForMDOAdminsInTeams` to
+    `SecurityTeamAllowBlockListDelegation`.
+  * Added properties `EnableExternalAccessRestrictionsForChatParticipants` and
+    `EnableMutualFederationForChatParticipants`.
+  * Fixed an issue where `AllowedTrialTenantDomains` returned `Domain=<domain>` instead of
+    the domain name.
 * TeamsGuestMessagingConfiguration
   * [BREAKING CHANGE] Removed deprecated property `UsersCanDeleteBotMessages`. It is available
     on the `TeamsMessagingPolicy` resource instead.
+* TeamsMeetingConfiguration
+  * Added properties `EnableAttributedTranscripts`, `EnableGraphTranscriptAccess`,
+    `PublishedEntraAuthenticationContexts` and `ReportMeeting`.
+* TeamsMeetingPolicy
+  * Added properties `AllowIntelligentRecap`, `AllowMeetingKnowledgeGeneration`,
+    `ConditionalAccessAttendeeVerification`,
+    `DisableAudioAnnouncementsForResourceAccounts`, `EnableExternalRecordingDetection`,
+    `EnablePreMeetingConsent`, `ExternalBotAccessMode`, `FilterProfanityInTranscript`,
+    `IntelligentRecapDocxFileExpirationDays`, `MeetingKnowledgeExpirationDays`,
+    `PreMeetingConsentContentIdentifier`, `PreventComplianceRecording`,
+    `RecordingAndTranscriptionAudioNotification`, `SyntheticMediaDetection` and
+    `SyntheticMediaDetectionAppId`.
+  * Fixed the allowed values of `CaptchaVerificationForMeetingJoin` to `NotRequired` and
+    `AnonymousUsersAndUntrustedOrganizations`.
+* TeamsMessagingConfiguration
+  * Added property `Communities`.
 * TeamsOnlineSchedule
   * Initial release.
     FIXES [#5379](https://github.com/Microsoft365DSC/Microsoft365DSC/issues/5379)
+* TeamsOnlineVoicemailPolicy
+  * Added property `EnableVoicemailTriage`.
 * TeamsOnlineVoicemailUserSettings
   * [BREAKING CHANGE] Removed deprecated property `OofGreetingFollowCalendarEnabled`.
   * Updated `UpdateTimeOfDay` to use the format `h:mm tt` with invariant culture.
     An example is `6:00 pm`. This is the standard on en-US cultures.
+  * Added properties `CallToActionDetectionEnabled`, `CategoryDetectionEnabled`,
+    `UrgencyDetectionEnabled` and `VoiceToTextSummaryEnabled`.
+* TeamsOnlineVoiceUser
+  * Fixed an issue where assigning a telephone number failed.
+* TeamsOrgWideAppSettings
+  * Added support for write operations with service principal authentication.
 * TeamsTenantNetworkSite
   * [BREAKING CHANGE] Removed deprecated property `SiteAddress`.
 * TeamsUpdateManagementPolicy
@@ -725,6 +777,17 @@
 * TeamsUpgradePolicy
   * Fixed an issue where the cached instance was discarded during export and re-read from the
     service, because the identity carries a `Tag:` prefix the cached instance was compared against.
+* TeamsUserCallingSettings
+  * Added properties `BusyOnBusyOption` and `MaximumConcurrentCalls`.
+  * Fixed an issue where `Set()` combined parameters of different parameter sets of
+    `Set-CsUserCallingSettings` in one call and failed with "Parameter set cannot be
+    resolved".
+  * Fixed an issue where `CallGroupTargets`, `ForwardingTarget` and `UnansweredTarget`
+    always drifted on SIP addresses.
+* TeamsUserPolicyAssignment
+  * Added property `TeamsPersonalAttendantPolicy`.
+  * Fixed an issue where a user without any direct policy assignment returned no policies
+    instead of `Global`.
 * M365DSCCheckProperties
   * [BREAKING CHANGE] Removed the module and its function `Get-PropertyReport`. The API surface
     checker in `Utilities/ApiSurface` replaces it and covers every workload, not only Exchange
@@ -771,11 +834,18 @@
     resource origin id to the display name of the object behind it.
   * Fixed XML output of `Test-M365DSCParameterState` so attribute `Name` no longer has
     a trailing space in elements `<DesiredValues>` and `<CurrentValues>`.
+  * Fixed the PowerShell 7 session of the Local Configuration Manager loading the highest
+    installed Microsoft365DSC version instead of the version the configuration was
+    compiled against.
+  * Added a workaround for Microsoft.Graph.Authentication 2.41.0 failing to load
+    `System.IO.Pipelines` in the PowerShell 7 session of the Local Configuration Manager.
+  * Removed the internal `Initialize-WindowsPowerShellSession` function.
 * DEPENDENCIES
   * Added `M365DSC.Mgx` with version 2.1.8.
   * Added `M365DSC.PSDesiredStateConfiguration` with version 3.1.9.
   * Updated `DSCParser` to version 3.1.0.5.
-  * Updated `Microsoft.Graph.*` to version 2.39.0.
+  * Updated `Microsoft.Graph.*` to version 2.41.0.
+  * Updated `MicrosoftTeams` to version 8.0.0.
   * Updated `MSCloudLoginAssistant` to version 1.2.9.
   * Updated `PnP.PowerShell` to version 3.4.1.
     FIXES [#7414](https://github.com/Microsoft365DSC/Microsoft365DSC/issues/7414)

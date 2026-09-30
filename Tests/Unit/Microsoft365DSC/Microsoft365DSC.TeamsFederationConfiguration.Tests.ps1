@@ -39,12 +39,15 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
 
             Mock -CommandName Get-CsTenantFederationConfiguration -MockWith {
                 return @{
-                    AllowFederatedUsers       = $True
-                    AllowTeamsConsumer        = $False
-                    AllowTeamsConsumerInbound = $False
-                    AllowedTrialTenantDomains = @()
-                    BlockAllSubdomains        = $False
-                    Identity                  = 'Global'
+                    AllowFederatedUsers                                 = $True
+                    AllowTeamsConsumer                                  = $False
+                    AllowTeamsConsumerInbound                           = $False
+                    AllowedTrialTenantDomains                           = @([PSCustomObject]@{ Domain = 'northwindtraders.onmicrosoft.com' })
+                    BlockAllSubdomains                                  = $False
+                    EnableExternalAccessRestrictionsForChatParticipants = $False
+                    EnableMutualFederationForChatParticipants           = $False
+                    Identity                                            = 'Global'
+                    SecurityTeamAllowBlockListDelegation                = 'Disabled'
                 }
             }
 
@@ -65,13 +68,16 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
         Context -Name 'When settings are correctly set' -Fixture {
             BeforeAll {
                 $testParams = @{
-                    AllowFederatedUsers       = $True
-                    AllowTeamsConsumer        = $False
-                    AllowTeamsConsumerInbound = $False
-                    AllowedTrialTenantDomains = @()
-                    BlockAllSubdomains        = $False
-                    IsSingleInstance          = 'Yes'
-                    Credential                = $Credential
+                    AllowFederatedUsers                                 = $True
+                    AllowTeamsConsumer                                  = $False
+                    AllowTeamsConsumerInbound                           = $False
+                    AllowedTrialTenantDomains                           = @('northwindtraders.onmicrosoft.com')
+                    BlockAllSubdomains                                  = $False
+                    EnableExternalAccessRestrictionsForChatParticipants = $False
+                    EnableMutualFederationForChatParticipants           = $False
+                    SecurityTeamAllowBlockListDelegation                = 'Disabled'
+                    IsSingleInstance                                    = 'Yes'
+                    Credential                                          = $Credential
                 }
             }
 
@@ -87,13 +93,16 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
         Context -Name 'When settings are NOT correctly set' -Fixture {
             BeforeAll {
                 $testParams = @{
-                    AllowFederatedUsers       = $True
-                    AllowTeamsConsumer        = $True
-                    AllowTeamsConsumerInbound = $True
-                    AllowedTrialTenantDomains = @()
-                    BlockAllSubdomains        = $False
-                    IsSingleInstance          = 'Yes'
-                    Credential                = $Credential
+                    AllowFederatedUsers                                 = $True
+                    AllowTeamsConsumer                                  = $True
+                    AllowTeamsConsumerInbound                           = $True
+                    AllowedTrialTenantDomains                           = @()
+                    BlockAllSubdomains                                  = $False
+                    EnableExternalAccessRestrictionsForChatParticipants = $True
+                    EnableMutualFederationForChatParticipants           = $True
+                    SecurityTeamAllowBlockListDelegation                = 'Enabled'
+                    IsSingleInstance                                    = 'Yes'
+                    Credential                                          = $Credential
                 }
             }
 

@@ -184,6 +184,10 @@ class TeamsCallQueue : M365DSCResourceBase
     [System.String] $AutoRecordingTemplateId
 
     [DscProperty()]
+    [System.ComponentModel.Description('The SharedVoicemailTriageSettingsTemplateId parameter indicates the shared voicemail triage settings template to apply to the call queue.')]
+    [System.String] $SharedVoicemailTriageSettingsTemplateId
+
+    [DscProperty()]
     [System.ComponentModel.Description('The TimeoutDisconnectTextToSpeechPrompt parameter indicates the Text-to-Speech (TTS) prompt which is played to the caller when being disconnected due to timeout.')]
     [System.String] $TimeoutDisconnectTextToSpeechPrompt
 
@@ -448,8 +452,7 @@ class TeamsCallQueue : M365DSCResourceBase
                 $nullReturn.Ensure = 'Absent'
 
                 Write-M365DSCHost -Message "Getting Office 365 queue $($this.Name)"
-                $queue = Get-CsCallQueue -NameFilter $this.Name `
-                    -ErrorAction SilentlyContinue | Where-Object -FilterScript { $_.Name -eq $this.Name }
+                $queue = $this.GetCallQueue()
             }
             else
             {
@@ -528,9 +531,9 @@ class TeamsCallQueue : M365DSCResourceBase
                 DistributionLists                             = [String[]]$queue.DistributionLists
                 HideAuthorizedUsers                           = $hideAuthorizedUsersValue
                 UseDefaultMusicOnHold                         = $queue.UseDefaultMusicOnHold
-                WelcomeMusicAudioFileId                       = $queue.WelcomeMusicAudioFileId
+                WelcomeMusicAudioFileId                       = $queue.WelcomeMusicResourceId
                 WelcomeTextToSpeechPrompt                     = $queue.WelcomeTextToSpeechPrompt
-                MusicOnHoldAudioFileId                        = $queue.MusicOnHoldAudioFileId
+                MusicOnHoldAudioFileId                        = $queue.MusicOnHoldResourceId
                 OverflowAction                                = $queue.OverflowAction
                 OverflowActionTarget                          = $queue.OverflowActionTarget.Id
                 OverflowThreshold                             = $queue.OverflowThreshold
@@ -601,7 +604,7 @@ class TeamsCallQueue : M365DSCResourceBase
                 CallToAgentRatioThresholdBeforeOfferingCallback = $queue.CallToAgentRatioThresholdBeforeOfferingCallback
                 CallbackOfferAudioFilePromptResourceId        = $queue.CallbackOfferAudioFilePromptResourceId
                 CallbackOfferTextToSpeechPrompt               = $queue.CallbackOfferTextToSpeechPrompt
-                CallbackEmailNotificationTarget               = $queue.CallbackEmailNotificationTarget
+                CallbackEmailNotificationTarget               = $queue.CallbackEmailNotificationTarget.Id
                 ServiceLevelThresholdResponseTimeInSecond     = $queue.ServiceLevelThresholdResponseTimeInSecond
                 ShiftsTeamId                                  = $queue.ShiftsTeamId
                 CustomAudioFileAnnouncementForCR              = $queue.CustomAudioFileAnnouncementForCR
@@ -609,6 +612,7 @@ class TeamsCallQueue : M365DSCResourceBase
                 ComplianceRecordingForCallQueueTemplateId     = [String[]]$queue.ComplianceRecordingForCallQueueTemplateId
                 SharedCallQueueHistoryTemplateId              = $queue.SharedCallQueueHistoryTemplateId
                 AutoRecordingTemplateId                       = $queue.AutoRecordingTemplateId
+                SharedVoicemailTriageSettingsTemplateId       = $queue.SharedVoicemailTriageSettingsTemplateId
                 ShiftsSchedulingGroupId                       = $queue.ShiftsSchedulingGroupId
                 ChannelId                                     = $queue.ChannelId
                 ChannelUserObjectId                           = $queue.ChannelUserObjectId
@@ -729,15 +733,13 @@ class TeamsCallQueue : M365DSCResourceBase
         elseif (($currentValues.Ensure -eq 'Present' -and 'Present' -eq $this.Ensure))
         {
             Write-Verbose -Message "Updating the Teams Call Queue with Name {$($this.Name)}"
-            $queue = Get-CsCallQueue -NameFilter $this.Name
-            $opsParameters.Add('Identity', $queue.Id)
+            $opsParameters.Add('Identity', $this.GetCallQueue().Identity)
             Set-CsCallQueue @opsParameters
         }
         elseif (($this.Ensure -eq 'Absent' -and $currentValues.Ensure -eq 'Present'))
         {
             Write-Verbose -Message "Removing the Teams Call Queue with Name {$($this.Name)}"
-            $queue = Get-CsCallQueue -NameFilter $this.Name
-            Remove-CsCallQueue -Identity $queue.Id
+            Remove-CsCallQueue -Identity $this.GetCallQueue().Identity
         }
     }
 
@@ -823,6 +825,20 @@ class TeamsCallQueue : M365DSCResourceBase
 
             throw
         }
+    }
+
+    hidden [System.Object] GetCallQueue()
+    {
+        $queueName = $this.Name
+        $queue = Get-CsCallQueue -NameFilter $queueName `
+            -ErrorAction SilentlyContinue | Where-Object -FilterScript { $_.Name -eq $queueName }
+
+        if ($null -eq $queue)
+        {
+            return $null
+        }
+
+        return $queue
     }
 
     hidden [TeamsCallQueue] AsResult([System.Object] $Values)

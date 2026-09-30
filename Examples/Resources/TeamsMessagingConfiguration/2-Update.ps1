@@ -26,6 +26,7 @@ Configuration Example
     {
         TeamsMessagingConfiguration 'TeamsMessagingConfiguration-Example'
         {
+            Communities                       = "Enabled";
             ContentBasedPhishingCheck         = "Disabled";
             CustomEmojis                      = $True;
             EnableInOrganizationChatControl   = $False;

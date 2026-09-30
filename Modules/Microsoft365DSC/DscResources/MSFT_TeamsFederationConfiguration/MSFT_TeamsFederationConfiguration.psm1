@@ -37,9 +37,12 @@ class TeamsFederationConfiguration : M365DSCResourceBase
     [System.Nullable[System.Boolean]] $AllowTeamsConsumerInbound
 
     [DscProperty()]
-    [System.ComponentModel.Description('When set to ''Enabled'', security operations team will be able to add domains to the blocklist on security portal. When set to ''Disabled'', security operations team will not have permissions to update the domains blocklist.')]
-    [ValidateSet('Disabled', 'Enabled')]
-    [System.String] $DomainBlockingForMDOAdminsInTeams
+    [System.ComponentModel.Description('When set to True, users whose assigned external access policy has EnableFederationAccess set to False are blocked from being added to group chats that include external users and are removed from existing active ones. When set to False, such users can be added to these group chats only when a user of the same tenant with federation access starts the chat.')]
+    [System.Nullable[System.Boolean]] $EnableExternalAccessRestrictionsForChatParticipants
+
+    [DscProperty()]
+    [System.ComponentModel.Description('When set to True, all participants of a group chat must have mutual federation relationships with every other participant. When set to False, only the initiator of the group chat and the user joining or being added need a mutual federation relationship.')]
+    [System.Nullable[System.Boolean]] $EnableMutualFederationForChatParticipants
 
     [DscProperty()]
     [System.ComponentModel.Description('When set to Blocked, all external access with users from Teams subscriptions that contain only trial licenses will be blocked. This means users from these trial-only tenants will not be able to reach to your users via chats, Teams calls, and meetings (using the users authenticated identity) and your users will not be able to reach users in these trial-only tenants. If this setting is set to Blocked, users from the trial-only tenant will also be removed from existing chats.')]
@@ -57,6 +60,11 @@ class TeamsFederationConfiguration : M365DSCResourceBase
     [DscProperty()]
     [System.ComponentModel.Description('When set to True, Teamsconsumer have access only to external user profiles')]
     [System.Nullable[System.Boolean]] $RestrictTeamsConsumerToExternalUserProfiles
+
+    [DscProperty()]
+    [System.ComponentModel.Description('When set to ''Enabled'', security operations team will be able to add domains and users to the blocklist on security portal. When set to ''Disabled'', security operations team will not have permissions to update the domains and users blocklists.')]
+    [ValidateSet('Disabled', 'Enabled')]
+    [System.String] $SecurityTeamAllowBlockListDelegation
 
     [DscProperty()]
     [System.ComponentModel.Description('Credentials of the Teams Admin')]
@@ -137,27 +145,29 @@ class TeamsFederationConfiguration : M365DSCResourceBase
             }
 
             return $this.AsResult(@{
-                AllowedDomains                              = $AllowedDomainsValues
-                BlockedDomains                              = $BlockedDomainsValues
-                AllowedTrialTenantDomains                   = [System.String[]]$config.AllowedTrialTenantDomains
-                AllowFederatedUsers                         = $config.AllowFederatedUsers
-                AllowTeamsConsumer                          = $config.AllowTeamsConsumer
-                AllowTeamsConsumerInbound                   = $config.AllowTeamsConsumerInbound
-                BlockAllSubdomains                          = $config.BlockAllSubdomains
-                DomainBlockingForMDOAdminsInTeams           = $config.DomainBlockingForMDOAdminsInTeams
-                ExternalAccessWithTrialTenants              = $config.ExternalAccessWithTrialTenants
-                TreatDiscoveredPartnersAsUnverified         = $config.TreatDiscoveredPartnersAsUnverified
-                SharedSipAddressSpace                       = $config.SharedSipAddressSpace
-                RestrictTeamsConsumerToExternalUserProfiles = $config.RestrictTeamsConsumerToExternalUserProfiles
-                IsSingleInstance                            = 'Yes'
-                Credential                                  = $this.Credential
-                ApplicationId                               = $this.ApplicationId
-                TenantId                                    = $this.TenantId
-                CertificateThumbprint                       = $this.CertificateThumbprint
-                CertificatePath                             = $this.CertificatePath
-                CertificatePassword                         = $this.CertificatePassword
-                ManagedIdentity                             = $this.ManagedIdentity
-                AccessTokens                                = $this.AccessTokens
+                AllowedDomains                                      = $AllowedDomainsValues
+                BlockedDomains                                      = $BlockedDomainsValues
+                AllowedTrialTenantDomains                           = [System.String[]]@(foreach ($trialDomain in $config.AllowedTrialTenantDomains) { $trialDomain.Domain })
+                AllowFederatedUsers                                 = $config.AllowFederatedUsers
+                AllowTeamsConsumer                                  = $config.AllowTeamsConsumer
+                AllowTeamsConsumerInbound                           = $config.AllowTeamsConsumerInbound
+                BlockAllSubdomains                                  = $config.BlockAllSubdomains
+                EnableExternalAccessRestrictionsForChatParticipants = $config.EnableExternalAccessRestrictionsForChatParticipants
+                EnableMutualFederationForChatParticipants           = $config.EnableMutualFederationForChatParticipants
+                ExternalAccessWithTrialTenants                      = $config.ExternalAccessWithTrialTenants
+                TreatDiscoveredPartnersAsUnverified                 = $config.TreatDiscoveredPartnersAsUnverified
+                SharedSipAddressSpace                               = $config.SharedSipAddressSpace
+                RestrictTeamsConsumerToExternalUserProfiles         = $config.RestrictTeamsConsumerToExternalUserProfiles
+                SecurityTeamAllowBlockListDelegation                = $config.SecurityTeamAllowBlockListDelegation
+                IsSingleInstance                                    = 'Yes'
+                Credential                                          = $this.Credential
+                ApplicationId                                       = $this.ApplicationId
+                TenantId                                            = $this.TenantId
+                CertificateThumbprint                               = $this.CertificateThumbprint
+                CertificatePath                                     = $this.CertificatePath
+                CertificatePassword                                 = $this.CertificatePassword
+                ManagedIdentity                                     = $this.ManagedIdentity
+                AccessTokens                                        = $this.AccessTokens
             })
         }
         catch

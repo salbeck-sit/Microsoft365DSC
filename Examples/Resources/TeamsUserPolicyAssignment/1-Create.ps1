@@ -44,6 +44,7 @@ Configuration Example
             TeamsMeetingPolicy              = "Corporate Meeting Policy";
             TeamsMessagingPolicy            = "CorporateMessaging";
             TeamsMobilityPolicy             = "CorporateMobility";
+            TeamsPersonalAttendantPolicy    = "Global";
             TeamsUpdateManagementPolicy     = "EarlyAdopters";
             TeamsUpgradePolicy              = "UpgradeToTeams";
             TenantDialPlan                  = "AmsterdamPlan";

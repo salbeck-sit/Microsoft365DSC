@@ -28,6 +28,7 @@ Configuration Example
             Identity                                = "CorporateEvents"
             Description                             = "Lets the marketing team run town halls and webinars"
             AllowEmailEditing                       = "Enabled"
+            AllowEngagementReport                   = "ForceEnabled"
             AllowEventIntegrations                  = $true
             AllowWebinars                           = "Enabled"
             AllowTownhalls                          = "Enabled"
@@ -38,6 +39,7 @@ Configuration Example
             BroadcastPremiumApps                    = "Enabled"
             ExternalPresenterJoinVerification       = "eOTP"
             ImmersiveEvents                         = "Enabled"
+            InfoShownInReportMode                   = "IdentityOnly"
             RecordingForTownhall                    = "Enabled"
             RecordingForWebinar                     = "Enabled"
             Registration                            = "Enabled"

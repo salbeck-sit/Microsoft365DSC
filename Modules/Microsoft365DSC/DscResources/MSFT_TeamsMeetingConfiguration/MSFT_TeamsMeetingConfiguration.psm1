@@ -33,6 +33,14 @@ class TeamsMeetingConfiguration : M365DSCResourceBase
     [System.Nullable[System.Boolean]] $DisableAppInteractionForAnonymousUsers
 
     [DscProperty()]
+    [System.ComponentModel.Description('Determines whether transcripts accessed through the Microsoft Graph API can include speaker attribution in the tenant. Set this to TRUE to allow speaker-attributed transcript formats and FALSE to block them. When FALSE, callers can still retrieve transcripts in an unattributed format.')]
+    [System.Nullable[System.Boolean]] $EnableAttributedTranscripts
+
+    [DscProperty()]
+    [System.ComponentModel.Description('Determines whether transcripts can be accessed through the Microsoft Graph API in the tenant. Set this to TRUE to allow the access and FALSE to block all Microsoft Graph API access to transcripts.')]
+    [System.Nullable[System.Boolean]] $EnableGraphTranscriptAccess
+
+    [DscProperty()]
     [System.ComponentModel.Description('Determines whether Quality of Service Marking for real-time media (audio, video, screen/app sharing) is enabled in the tenant. Set this to TRUE to enable and FALSE to disable.')]
     [System.Nullable[System.Boolean]] $EnableQoS
 
@@ -44,6 +52,15 @@ class TeamsMeetingConfiguration : M365DSCResourceBase
     [DscProperty()]
     [System.ComponentModel.Description('When set to True, users within the Tenant will have their presenter role capabilities limited. When set to False, the presenter role capabilities will not be impacted and will remain as is.')]
     [System.Nullable[System.Boolean]] $LimitPresenterRolePermissions
+
+    [DscProperty()]
+    [System.ComponentModel.Description('List of Microsoft Entra ID authentication contexts that can be applied to Teams meetings for conditional access scenarios.')]
+    [MSFT_TeamsPublishedEntraAuthenticationContext[]] $PublishedEntraAuthenticationContexts
+
+    [DscProperty()]
+    [System.ComponentModel.Description('Determines whether users can report meetings they believe involve security risks, such as phishing, vishing or impersonation, through the Report a concern and Report as not a concern options in the meeting experience. Possible values are Enabled and Disabled.')]
+    [ValidateSet('Disabled', 'Enabled')]
+    [System.String] $ReportMeeting
 
     [DscProperty()]
     [System.ComponentModel.Description('Determines the starting port number for client audio. Minimum allowed value: 1024 Maximum allowed value: 65535 Default value: 50000.')]
@@ -132,6 +149,16 @@ class TeamsMeetingConfiguration : M365DSCResourceBase
 
             $config = Get-CsTeamsMeetingConfiguration -ErrorAction Stop
 
+            $publishedContexts = @()
+            foreach ($context in $config.PublishedEntraAuthenticationContexts)
+            {
+                $publishedContexts += @{
+                    Id                   = $context.Id
+                    PublishedName        = $context.PublishedName
+                    PublishedDescription = $context.PublishedDescription
+                }
+            }
+
             return $this.AsResult(@{
                 IsSingleInstance                        = 'Yes'
                 LogoURL                                = $config.LogoURL
@@ -139,6 +166,8 @@ class TeamsMeetingConfiguration : M365DSCResourceBase
                 HelpURL                                = $config.HelpURL
                 CustomFooterText                       = $config.CustomFooterText
                 DisableAnonymousJoin                   = $config.DisableAnonymousJoin
+                EnableAttributedTranscripts            = $config.EnableAttributedTranscripts
+                EnableGraphTranscriptAccess            = $config.EnableGraphTranscriptAccess
                 EnableQoS                              = $config.EnableQoS
                 ClientAudioPort                        = $config.ClientAudioPort
                 ClientAudioPortRange                   = $config.ClientAudioPortRange
@@ -150,6 +179,8 @@ class TeamsMeetingConfiguration : M365DSCResourceBase
                 DisableAppInteractionForAnonymousUsers = $config.DisableAppInteractionForAnonymousUsers
                 FeedbackSurveyForAnonymousUsers        = $config.FeedbackSurveyForAnonymousUsers
                 LimitPresenterRolePermissions          = $config.LimitPresenterRolePermissions
+                PublishedEntraAuthenticationContexts   = $publishedContexts
+                ReportMeeting                          = $config.ReportMeeting
                 Credential                             = $this.Credential
                 ApplicationId                          = $this.ApplicationId
                 TenantId                               = $this.TenantId
@@ -185,6 +216,26 @@ class TeamsMeetingConfiguration : M365DSCResourceBase
         $null = $this.Connect('MicrosoftTeams')
 
         $SetParams = Remove-M365DSCAuthenticationParameter -BoundParameters $this.GetBoundParameters()
+        if ($SetParams.ContainsKey('PublishedEntraAuthenticationContexts'))
+        {
+            $publishedContexts = @()
+            foreach ($context in $this.PublishedEntraAuthenticationContexts)
+            {
+                $publishedContext = New-Object -TypeName 'Microsoft.Teams.Policy.Administration.Cmdlets.Core.PublishedEntraAuthenticationContext'
+                $publishedContext.Id = $context.Id
+                if ($null -ne $context.PublishedName)
+                {
+                    $publishedContext.PublishedName = $context.PublishedName
+                }
+                if ($null -ne $context.PublishedDescription)
+                {
+                    $publishedContext.PublishedDescription = $context.PublishedDescription
+                }
+                $publishedContexts += $publishedContext
+            }
+            $SetParams.PublishedEntraAuthenticationContexts = $publishedContexts
+        }
+
         $SetParams.Add('Identity', 'Global')
         $SetParams.Remove('IsSingleInstance') | Out-Null
         Set-CsTeamsMeetingConfiguration @SetParams
@@ -230,11 +281,27 @@ class TeamsMeetingConfiguration : M365DSCResourceBase
                     $Global:M365DSCExportResourceInstancesCount++
                 }
 
+                if ($null -ne $Results.PublishedEntraAuthenticationContexts)
+                {
+                    $complexTypeStringResult = Get-M365DSCDRGComplexTypeToString `
+                        -ComplexObject $Results.PublishedEntraAuthenticationContexts `
+                        -CIMInstanceName 'TeamsPublishedEntraAuthenticationContext'
+                    if (-not [String]::IsNullOrWhiteSpace($complexTypeStringResult))
+                    {
+                        $Results.PublishedEntraAuthenticationContexts = $complexTypeStringResult
+                    }
+                    else
+                    {
+                        $Results.Remove('PublishedEntraAuthenticationContexts') | Out-Null
+                    }
+                }
+
                 $currentDSCBlock = Get-M365DSCExportContentForResource -ResourceName $this.GetResourceName() `
                     -ConnectionMode $ConnectionMode `
                     -ModulePath $this.GetModulePath() `
                     -Results $Results `
-                    -Credential $this.Credential
+                    -Credential $this.Credential `
+                    -NoEscape @('PublishedEntraAuthenticationContexts')
                 [void]$dscContent.Append($currentDSCBlock)
                 Save-M365DSCPartialExport -Content $currentDSCBlock `
                     -FileName $Global:PartialExportFileName
@@ -272,4 +339,19 @@ class TeamsMeetingConfiguration : M365DSCResourceBase
 
         return $result
     }
+}
+
+class MSFT_TeamsPublishedEntraAuthenticationContext
+{
+    [DscProperty(Mandatory)]
+    [System.ComponentModel.Description('Identifier of the Microsoft Entra ID authentication context, from c1 to c99.')]
+    [System.String] $Id
+
+    [DscProperty()]
+    [System.ComponentModel.Description('Name under which the authentication context is published to Teams meetings, up to 50 characters.')]
+    [System.String] $PublishedName
+
+    [DscProperty()]
+    [System.ComponentModel.Description('Description under which the authentication context is published to Teams meetings, up to 150 characters.')]
+    [System.String] $PublishedDescription
 }

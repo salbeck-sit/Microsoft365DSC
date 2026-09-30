@@ -89,6 +89,10 @@ class TeamsMeetingPolicy : M365DSCResourceBase
     [System.Nullable[System.Boolean]] $AllowImmersiveView
 
     [DscProperty()]
+    [System.ComponentModel.Description('Determines whether Intelligent Recap is allowed for the user''s meetings.')]
+    [System.Nullable[System.Boolean]] $AllowIntelligentRecap
+
+    [DscProperty()]
     [System.ComponentModel.Description('Determines whether audio is enabled in a user''s meetings or calls. Set this to TRUE to allow the user to share their audioo. Set this to FALSE to prohibit the user from sharing their audio.')]
     [System.Nullable[System.Boolean]] $AllowIPAudio
 
@@ -99,6 +103,10 @@ class TeamsMeetingPolicy : M365DSCResourceBase
     [DscProperty()]
     [System.ComponentModel.Description('This setting will allow admins to allow users the option of turning on Meeting Coach during meetings, which provides users with private personalized feedback on their communication and inclusivity.')]
     [System.Nullable[System.Boolean]] $AllowMeetingCoach
+
+    [DscProperty()]
+    [System.ComponentModel.Description('Determines whether an AI-generated meeting knowledge file is created for meetings organized by the user.')]
+    [System.Nullable[System.Boolean]] $AllowMeetingKnowledgeGeneration
 
     [DscProperty()]
     [System.ComponentModel.Description('Determines whether or not meetings created by users with this policy are able to utilize the Meeting Reactions feature.')]
@@ -230,13 +238,18 @@ class TeamsMeetingPolicy : M365DSCResourceBase
     [System.String] $BlockedAnonymousJoinClientTypes
 
     [DscProperty()]
-    [System.ComponentModel.Description('Require a verification check for meeting join.')]
+    [System.ComponentModel.Description('Determines who must complete a verification check (CAPTCHA) before joining meetings organized by the user. Possible values: NotRequired, AnonymousUsersAndUntrustedOrganizations.')]
+    [ValidateSet('NotRequired', 'AnonymousUsersAndUntrustedOrganizations')]
     [System.String] $CaptchaVerificationForMeetingJoin
 
     [DscProperty()]
     [System.ComponentModel.Description('Determines how channel meeting recordings are saved, permissioned, and who can download them.')]
     [ValidateSet('Allow', 'Block')]
     [System.String] $ChannelRecordingDownload
+
+    [DscProperty()]
+    [System.ComponentModel.Description('Enables Conditional Access authentication for users joining meetings organized by the user, using the authentication contexts published in the Teams meeting configuration.')]
+    [System.Nullable[System.Boolean]] $ConditionalAccessAttendeeVerification
 
     [DscProperty()]
     [System.ComponentModel.Description('Allows external connections of thirdparty apps to Microsoft Teams.')]
@@ -267,6 +280,18 @@ class TeamsMeetingPolicy : M365DSCResourceBase
     [System.Nullable[System.Boolean]] $DetectSensitiveContentDuringScreenSharing
 
     [DscProperty()]
+    [System.ComponentModel.Description('Determines whether Teams suppresses the system recording announcements in contact center calls. Set this to TRUE to suppress the announcements and leave compliance notifications to the contact center solution. Set this to FALSE to play all system recording announcements.')]
+    [System.Nullable[System.Boolean]] $DisableAudioAnnouncementsForResourceAccounts
+
+    [DscProperty()]
+    [System.ComponentModel.Description('Determines whether Teams detects third-party applications, such as screen recorders, audio recorders and AI note-takers, capturing audio on the user''s device during a meeting.')]
+    [System.Nullable[System.Boolean]] $EnableExternalRecordingDetection
+
+    [DscProperty()]
+    [System.ComponentModel.Description('Determines whether participants must explicitly accept a custom consent dialog before they can join any meeting hosted by the tenant. Requires at least one consent content entry in the Teams pre-meeting consent configuration.')]
+    [System.Nullable[System.Boolean]] $EnablePreMeetingConsent
+
+    [DscProperty()]
     [System.ComponentModel.Description('Determines whether or not users will be able to enroll/capture their Biometric data: Face & Voice.')]
     [ValidateSet('Disabled', 'Enabled')]
     [System.String] $EnrollUserOverride
@@ -277,13 +302,27 @@ class TeamsMeetingPolicy : M365DSCResourceBase
     [System.String] $ExplicitRecordingConsent
 
     [DscProperty()]
+    [System.ComponentModel.Description('Controls how external third-party meeting bots and meeting assistants are handled when they attempt to join meetings. Possible values: AllowAllBots, RequireApprovalWhenDetected, BlockDetectedBots.')]
+    [ValidateSet('AllowAllBots', 'RequireApprovalWhenDetected', 'BlockDetectedBots')]
+    [System.String] $ExternalBotAccessMode
+
+    [DscProperty()]
     [System.ComponentModel.Description('Determines whether the user is allowed to join external meetings.')]
     [ValidateSet('EnabledForAnyone', 'EnabledForTrustedOrgs', 'Disabled')]
     [System.String] $ExternalMeetingJoin
 
     [DscProperty()]
+    [System.ComponentModel.Description('Determines whether meeting transcripts filter profanity.')]
+    [ValidateSet('Disabled', 'Enabled')]
+    [System.String] $FilterProfanityInTranscript
+
+    [DscProperty()]
     [System.ComponentModel.Description('This policy controls what kind of information get shown for the user''s attendance in attendance report/dashboard.')]
     [System.String] $InfoShownInReportMode
+
+    [DscProperty()]
+    [System.ComponentModel.Description('Specifies the number of days the intelligent recap .docx file is stored before it expires.')]
+    [System.Nullable[System.Int32]] $IntelligentRecapDocxFileExpirationDays
 
     [DscProperty()]
     [System.ComponentModel.Description('Determines whether audio can be turned on in meetings and group calls.')]
@@ -328,6 +367,10 @@ class TeamsMeetingPolicy : M365DSCResourceBase
     [System.String] $MeetingInviteLanguages
 
     [DscProperty()]
+    [System.ComponentModel.Description('Specifies the number of days meeting knowledge data is retained before it is automatically deleted.')]
+    [System.Nullable[System.Int32]] $MeetingKnowledgeExpirationDays
+
+    [DscProperty()]
     [System.ComponentModel.Description('Specifies the number of days before meeting recordings will expire and move to the recycle bin. Value can be from 1 to 99,999 days. NOTE: You may opt to set Meeting Recordings to never expire by entering the value -1.')]
     [ValidateRange(-1, 99999)]
     [System.Nullable[System.Int32]] $NewMeetingRecordingExpirationDays
@@ -358,6 +401,15 @@ class TeamsMeetingPolicy : M365DSCResourceBase
     [System.String] $PreferredMeetingProviderForIslandsMode
 
     [DscProperty()]
+    [System.ComponentModel.Description('Identifier that references the Id of the pre-meeting consent content configuration stored as meeting settings. The service updates it when the consent content changes.')]
+    [System.String] $PreMeetingConsentContentIdentifier
+
+    [DscProperty()]
+    [System.ComponentModel.Description('Determines whether users enabled for compliance recording are blocked from joining meetings organized by the user. Possible values: None, All.')]
+    [ValidateSet('None', 'All')]
+    [System.String] $PreventComplianceRecording
+
+    [DscProperty()]
     [System.ComponentModel.Description('This setting enables Microsoft 365 Tenant Admins to Enable or Disable the Questions and Answers experience (Q+A).')]
     [ValidateSet('Disabled', 'Enabled')]
     [System.String] $QnAEngagementMode
@@ -366,6 +418,11 @@ class TeamsMeetingPolicy : M365DSCResourceBase
     [System.ComponentModel.Description('Allows users to use real time text during a meeting, allowing them to communicate by typing their messages in real time. Possible Values: Enabled: User is allowed to turn on real time text. Disabled: User is not allowed to turn on real time text.')]
     [ValidateSet('Disabled', 'Enabled')]
     [System.String] $RealTimeText
+
+    [DscProperty()]
+    [System.ComponentModel.Description('Determines whether audio notifications are played when recording or transcription starts or stops.')]
+    [ValidateSet('Disabled', 'Enabled')]
+    [System.String] $RecordingAndTranscriptionAudioNotification
 
     [DscProperty()]
     [System.ComponentModel.Description('Determines whether or not biometric data will be used to distinguish and or attribute in the transcript.')]
@@ -401,6 +458,15 @@ class TeamsMeetingPolicy : M365DSCResourceBase
     [System.ComponentModel.Description('Controls if Teams uses overflow capability once a meeting reaches its capacity (1,000 users with full functionality).')]
     [ValidateSet('Disabled', 'Enabled')]
     [System.String] $StreamingAttendeeMode
+
+    [DscProperty()]
+    [System.ComponentModel.Description('Determines whether synthetic audio and video detection is enabled for the user''s meetings.')]
+    [ValidateSet('Disabled', 'Enabled')]
+    [System.String] $SyntheticMediaDetection
+
+    [DscProperty()]
+    [System.ComponentModel.Description('Teams app Id of the registered detection bot used for synthetic media analysis. The all-zero GUID represents the platform default.')]
+    [System.String] $SyntheticMediaDetectionAppId
 
     [DscProperty()]
     [System.ComponentModel.Description('Determines whether or not meetings created by users with this policy are able to utilize the Camera Far-End PTZ Mode.')]
@@ -537,115 +603,130 @@ class TeamsMeetingPolicy : M365DSCResourceBase
             }
             Write-Verbose -Message "Found Teams Meeting Policy {$($this.Identity)}"
             return $this.AsResult(@{
-                Identity                                    = $this.Identity
-                Description                                 = $policy.Description
-                AIInterpreter                               = $policy.AIInterpreter
-                AllowAnnotations                            = $policy.AllowAnnotations
-                AllowAnonymousUsersToDialOut                = $policy.AllowAnonymousUsersToDialOut
-                AllowAnonymousUsersToJoinMeeting            = $policy.AllowAnonymousUsersToJoinMeeting
-                AllowAnonymousUsersToStartMeeting           = $policy.AllowAnonymousUsersToStartMeeting
-                AllowAvatarsInGallery                       = $policy.AllowAvatarsInGallery
-                AllowBreakoutRooms                          = $policy.AllowBreakoutRooms
-                AllowCartCaptionsScheduling                 = $policy.AllowCartCaptionsScheduling
-                AllowChannelMeetingScheduling               = $policy.AllowChannelMeetingScheduling
-                AllowCloudRecording                         = $policy.AllowCloudRecording
-                AllowDocumentCollaboration                  = $policy.AllowDocumentCollaboration
-                AllowMultipleScreenshare                    = $policy.AllowMultipleScreenshare
-                AllowedStreamingMediaInput                  = $policy.AllowedStreamingMediaInput
-                AllowedUsersForMeetingDetails               = $policy.AllowedUsersForMeetingDetails
-                AllowEngagementReport                       = $policy.AllowEngagementReport
-                AllowExternalNonTrustedMeetingChat          = $policy.AllowExternalNonTrustedMeetingChat
-                AllowExternalParticipantGiveRequestControl  = $policy.AllowExternalParticipantGiveRequestControl
-                AllowImmersiveView                          = $policy.AllowImmersiveView
-                AllowIPAudio                                = $policy.AllowIPAudio
-                AllowIPVideo                                = $policy.AllowIPVideo
-                AllowMeetingCoach                           = $policy.AllowMeetingCoach
-                AllowMeetingReactions                       = $policy.AllowMeetingReactions
-                AllowMeetingRegistration                    = $policy.AllowMeetingRegistration
-                AllowMeetNow                                = $policy.AllowMeetNow
-                AllowNDIStreaming                           = $policy.AllowNDIStreaming
-                AllowNetworkConfigurationSettingsLookup     = $policy.AllowNetworkConfigurationSettingsLookup
-                AllowOrganizersToOverrideLobbySettings      = $policy.AllowOrganizersToOverrideLobbySettings
-                AllowOutlookAddIn                           = $policy.AllowOutlookAddIn
-                AllowParticipantGiveRequestControl          = $policy.AllowParticipantGiveRequestControl
-                AllowPowerPointSharing                      = $policy.AllowPowerPointSharing
-                AllowPrivateMeetingScheduling               = $policy.AllowPrivateMeetingScheduling
-                AllowPrivateMeetNow                         = $policy.AllowPrivateMeetNow
-                AllowPSTNUsersToBypassLobby                 = $policy.AllowPSTNUsersToBypassLobby
-                AllowRecordingStorageOutsideRegion          = $policy.AllowRecordingStorageOutsideRegion
-                AllowSharedNotes                            = $policy.AllowSharedNotes
-                AllowTasksFromTranscript                    = $policy.AllowTasksFromTranscript
-                AllowTranscription                          = $policy.AllowTranscription
-                AllowUserToJoinExternalMeeting              = $policy.AllowUserToJoinExternalMeeting
-                AllowWatermarkCustomizationForCameraVideo   = $policy.AllowWatermarkCustomizationForCameraVideo
-                AllowWatermarkCustomizationForScreenSharing = $policy.AllowWatermarkCustomizationForScreenSharing
-                AllowWatermarkForCameraVideo                = $policy.AllowWatermarkForCameraVideo
-                AllowWatermarkForScreenSharing              = $policy.AllowWatermarkForScreenSharing
-                AllowWhiteboard                             = $policy.AllowWhiteboard
-                AnonymousUserAuthenticationMethod           = $policy.AnonymousUserAuthenticationMethod
-                AttendeeIdentityMasking                     = $policy.AttendeeIdentityMasking
-                AudibleRecordingNotification                = $policy.AudibleRecordingNotification
-                AutoAdmittedUsers                           = $policy.AutoAdmittedUsers
-                AutomaticallyStartCopilot                   = $policy.AutomaticallyStartCopilot
-                AutoRecording                               = $policy.AutoRecording
-                BackroomChat                                = $policy.BackroomChat
-                BlockedAnonymousJoinClientTypes             = $policy.BlockedAnonymousJoinClientTypes
-                CaptchaVerificationForMeetingJoin           = $policy.CaptchaVerificationForMeetingJoin
-                ChannelRecordingDownload                    = $policy.ChannelRecordingDownload
-                ConnectToMeetingControls                    = $policy.ConnectToMeetingControls
-                ContentSharingInExternalMeetings            = $policy.ContentSharingInExternalMeetings
-                Copilot                                     = $policy.Copilot
-                CopyRestriction                             = $policy.CopyRestriction
-                DesignatedPresenterRoleMode                 = $policy.DesignatedPresenterRoleMode
-                DetectSensitiveContentDuringScreenSharing   = $policy.DetectSensitiveContentDuringScreenSharing
-                EnrollUserOverride                          = $policy.EnrollUserOverride
-                ExplicitRecordingConsent                    = $policy.ExplicitRecordingConsent
-                ExternalMeetingJoin                         = $policy.ExternalMeetingJoin
-                InfoShownInReportMode                       = $policy.InfoShownInReportMode
-                IPAudioMode                                 = $policy.IPAudioMode
-                IPVideoMode                                 = $policy.IPVideoMode
-                LiveCaptionsEnabledType                     = $policy.LiveCaptionsEnabledType
-                LiveInterpretationEnabledType               = $policy.LiveInterpretationEnabledType
-                LiveStreamingMode                           = $policy.LiveStreamingMode
-                LobbyChat                                   = $policy.LobbyChat
-                MediaBitRateKb                              = $policy.MediaBitRateKb
-                MeetingChatEnabledType                      = $policy.MeetingChatEnabledType
-                MeetingInviteLanguages                      = $policy.MeetingInviteLanguages
-                NewMeetingRecordingExpirationDays           = $policy.NewMeetingRecordingExpirationDays
-                NoiseSuppressionForDialInParticipants       = $policy.NoiseSuppressionForDialInParticipants
-                ParticipantNameChange                       = $policy.ParticipantNameChange
-                ParticipantSlideControl                     = $policy.ParticipantSlideControl
-                PasscodeComplexity                          = $policy.PasscodeComplexity
-                PreferredMeetingProviderForIslandsMode      = $policy.PreferredMeetingProviderForIslandsMode
-                QnAEngagementMode                           = $policy.QnAEngagementMode
-                RealTimeText                                = $policy.RealTimeText
-                RoomAttributeUserOverride                   = $policy.RoomAttributeUserOverride
-                RoomPeopleNameUserOverride                  = $policy.RoomPeopleNameUserOverride
-                ScreenSharingMode                           = $policy.ScreenSharingMode
-                SetRecordingAndTranscriptOwnership          = $policy.SetRecordingAndTranscriptOwnership
-                SmsNotifications                            = $policy.SmsNotifications
-                SpeakerAttributionMode                      = $policy.SpeakerAttributionMode
-                StreamingAttendeeMode                       = $policy.StreamingAttendeeMode
-                TeamsCameraFarEndPTZMode                    = $policy.TeamsCameraFarEndPTZMode
-                UsersCanAdmitFromLobby                      = $policy.UsersCanAdmitFromLobby
-                VideoFiltersMode                            = $policy.VideoFiltersMode
-                VoiceIsolation                              = $policy.VoiceIsolation
-                VoiceSimulationInInterpreter                = $policy.VoiceSimulationInInterpreter
-                WatermarkForAnonymousUsers                  = $policy.WatermarkForAnonymousUsers
-                WatermarkForCameraVideoOpacity              = $policy.WatermarkForCameraVideoOpacity
-                WatermarkForCameraVideoPattern              = $policy.WatermarkForCameraVideoPattern
-                WatermarkForScreenSharingOpacity            = $policy.WatermarkForScreenSharingOpacity
-                WatermarkForScreenSharingPattern            = $policy.WatermarkForScreenSharingPattern
-                WhoCanRegister                              = $policy.WhoCanRegister
-                Ensure                                      = 'Present'
-                Credential                                  = $this.Credential
-                ApplicationId                               = $this.ApplicationId
-                TenantId                                    = $this.TenantId
-                CertificateThumbprint                       = $this.CertificateThumbprint
-                CertificatePath                             = $this.CertificatePath
-                CertificatePassword                         = $this.CertificatePassword
-                ManagedIdentity                             = $this.ManagedIdentity
-                AccessTokens                                = $this.AccessTokens
+                Identity                                     = $this.Identity
+                Description                                  = $policy.Description
+                AIInterpreter                                = $policy.AIInterpreter
+                AllowAnnotations                             = $policy.AllowAnnotations
+                AllowAnonymousUsersToDialOut                 = $policy.AllowAnonymousUsersToDialOut
+                AllowAnonymousUsersToJoinMeeting             = $policy.AllowAnonymousUsersToJoinMeeting
+                AllowAnonymousUsersToStartMeeting            = $policy.AllowAnonymousUsersToStartMeeting
+                AllowAvatarsInGallery                        = $policy.AllowAvatarsInGallery
+                AllowBreakoutRooms                           = $policy.AllowBreakoutRooms
+                AllowCartCaptionsScheduling                  = $policy.AllowCartCaptionsScheduling
+                AllowChannelMeetingScheduling                = $policy.AllowChannelMeetingScheduling
+                AllowCloudRecording                          = $policy.AllowCloudRecording
+                AllowDocumentCollaboration                   = $policy.AllowDocumentCollaboration
+                AllowMultipleScreenshare                     = $policy.AllowMultipleScreenshare
+                AllowedStreamingMediaInput                   = $policy.AllowedStreamingMediaInput
+                AllowedUsersForMeetingDetails                = $policy.AllowedUsersForMeetingDetails
+                AllowEngagementReport                        = $policy.AllowEngagementReport
+                AllowExternalNonTrustedMeetingChat           = $policy.AllowExternalNonTrustedMeetingChat
+                AllowExternalParticipantGiveRequestControl   = $policy.AllowExternalParticipantGiveRequestControl
+                AllowImmersiveView                           = $policy.AllowImmersiveView
+                AllowIntelligentRecap                        = $policy.AllowIntelligentRecap
+                AllowIPAudio                                 = $policy.AllowIPAudio
+                AllowIPVideo                                 = $policy.AllowIPVideo
+                AllowMeetingCoach                            = $policy.AllowMeetingCoach
+                AllowMeetingKnowledgeGeneration              = $policy.AllowMeetingKnowledgeGeneration
+                AllowMeetingReactions                        = $policy.AllowMeetingReactions
+                AllowMeetingRegistration                     = $policy.AllowMeetingRegistration
+                AllowMeetNow                                 = $policy.AllowMeetNow
+                AllowNDIStreaming                            = $policy.AllowNDIStreaming
+                AllowNetworkConfigurationSettingsLookup      = $policy.AllowNetworkConfigurationSettingsLookup
+                AllowOrganizersToOverrideLobbySettings       = $policy.AllowOrganizersToOverrideLobbySettings
+                AllowOutlookAddIn                            = $policy.AllowOutlookAddIn
+                AllowParticipantGiveRequestControl           = $policy.AllowParticipantGiveRequestControl
+                AllowPowerPointSharing                       = $policy.AllowPowerPointSharing
+                AllowPrivateMeetingScheduling                = $policy.AllowPrivateMeetingScheduling
+                AllowPrivateMeetNow                          = $policy.AllowPrivateMeetNow
+                AllowPSTNUsersToBypassLobby                  = $policy.AllowPSTNUsersToBypassLobby
+                AllowRecordingStorageOutsideRegion           = $policy.AllowRecordingStorageOutsideRegion
+                AllowSharedNotes                             = $policy.AllowSharedNotes
+                AllowTasksFromTranscript                     = $policy.AllowTasksFromTranscript
+                AllowTranscription                           = $policy.AllowTranscription
+                AllowUserToJoinExternalMeeting               = $policy.AllowUserToJoinExternalMeeting
+                AllowWatermarkCustomizationForCameraVideo    = $policy.AllowWatermarkCustomizationForCameraVideo
+                AllowWatermarkCustomizationForScreenSharing  = $policy.AllowWatermarkCustomizationForScreenSharing
+                AllowWatermarkForCameraVideo                 = $policy.AllowWatermarkForCameraVideo
+                AllowWatermarkForScreenSharing               = $policy.AllowWatermarkForScreenSharing
+                AllowWhiteboard                              = $policy.AllowWhiteboard
+                AnonymousUserAuthenticationMethod            = $policy.AnonymousUserAuthenticationMethod
+                AttendeeIdentityMasking                      = $policy.AttendeeIdentityMasking
+                AudibleRecordingNotification                 = $policy.AudibleRecordingNotification
+                AutoAdmittedUsers                            = $policy.AutoAdmittedUsers
+                AutomaticallyStartCopilot                    = $policy.AutomaticallyStartCopilot
+                AutoRecording                                = $policy.AutoRecording
+                BackroomChat                                 = $policy.BackroomChat
+                BlockedAnonymousJoinClientTypes              = $policy.BlockedAnonymousJoinClientTypes
+                CaptchaVerificationForMeetingJoin            = $policy.CaptchaVerificationForMeetingJoin
+                ChannelRecordingDownload                     = $policy.ChannelRecordingDownload
+                ConditionalAccessAttendeeVerification        = $policy.ConditionalAccessAttendeeVerification
+                ConnectToMeetingControls                     = $policy.ConnectToMeetingControls
+                ContentSharingInExternalMeetings             = $policy.ContentSharingInExternalMeetings
+                Copilot                                      = $policy.Copilot
+                CopyRestriction                              = $policy.CopyRestriction
+                DesignatedPresenterRoleMode                  = $policy.DesignatedPresenterRoleMode
+                DetectSensitiveContentDuringScreenSharing    = $policy.DetectSensitiveContentDuringScreenSharing
+                DisableAudioAnnouncementsForResourceAccounts = $policy.DisableAudioAnnouncementsForResourceAccounts
+                EnableExternalRecordingDetection             = $policy.EnableExternalRecordingDetection
+                EnablePreMeetingConsent                      = $policy.EnablePreMeetingConsent
+                EnrollUserOverride                           = $policy.EnrollUserOverride
+                ExplicitRecordingConsent                     = $policy.ExplicitRecordingConsent
+                ExternalBotAccessMode                        = $policy.ExternalBotAccessMode
+                ExternalMeetingJoin                          = $policy.ExternalMeetingJoin
+                FilterProfanityInTranscript                  = $policy.FilterProfanityInTranscript
+                InfoShownInReportMode                        = $policy.InfoShownInReportMode
+                IntelligentRecapDocxFileExpirationDays       = $policy.IntelligentRecapDocxFileExpirationDays
+                IPAudioMode                                  = $policy.IPAudioMode
+                IPVideoMode                                  = $policy.IPVideoMode
+                LiveCaptionsEnabledType                      = $policy.LiveCaptionsEnabledType
+                LiveInterpretationEnabledType                = $policy.LiveInterpretationEnabledType
+                LiveStreamingMode                            = $policy.LiveStreamingMode
+                LobbyChat                                    = $policy.LobbyChat
+                MediaBitRateKb                               = $policy.MediaBitRateKb
+                MeetingChatEnabledType                       = $policy.MeetingChatEnabledType
+                MeetingInviteLanguages                       = $policy.MeetingInviteLanguages
+                MeetingKnowledgeExpirationDays               = $policy.MeetingKnowledgeExpirationDays
+                NewMeetingRecordingExpirationDays            = $policy.NewMeetingRecordingExpirationDays
+                NoiseSuppressionForDialInParticipants        = $policy.NoiseSuppressionForDialInParticipants
+                ParticipantNameChange                        = $policy.ParticipantNameChange
+                ParticipantSlideControl                      = $policy.ParticipantSlideControl
+                PasscodeComplexity                           = $policy.PasscodeComplexity
+                PreferredMeetingProviderForIslandsMode       = $policy.PreferredMeetingProviderForIslandsMode
+                PreMeetingConsentContentIdentifier           = $policy.PreMeetingConsentContentIdentifier
+                PreventComplianceRecording                   = $policy.PreventComplianceRecording
+                QnAEngagementMode                            = $policy.QnAEngagementMode
+                RealTimeText                                 = $policy.RealTimeText
+                RecordingAndTranscriptionAudioNotification   = $policy.RecordingAndTranscriptionAudioNotification
+                RoomAttributeUserOverride                    = $policy.RoomAttributeUserOverride
+                RoomPeopleNameUserOverride                   = $policy.RoomPeopleNameUserOverride
+                ScreenSharingMode                            = $policy.ScreenSharingMode
+                SetRecordingAndTranscriptOwnership           = $policy.SetRecordingAndTranscriptOwnership
+                SmsNotifications                             = $policy.SmsNotifications
+                SpeakerAttributionMode                       = $policy.SpeakerAttributionMode
+                StreamingAttendeeMode                        = $policy.StreamingAttendeeMode
+                SyntheticMediaDetection                      = $policy.SyntheticMediaDetection
+                SyntheticMediaDetectionAppId                 = $policy.SyntheticMediaDetectionAppId
+                TeamsCameraFarEndPTZMode                     = $policy.TeamsCameraFarEndPTZMode
+                UsersCanAdmitFromLobby                       = $policy.UsersCanAdmitFromLobby
+                VideoFiltersMode                             = $policy.VideoFiltersMode
+                VoiceIsolation                               = $policy.VoiceIsolation
+                VoiceSimulationInInterpreter                 = $policy.VoiceSimulationInInterpreter
+                WatermarkForAnonymousUsers                   = $policy.WatermarkForAnonymousUsers
+                WatermarkForCameraVideoOpacity               = $policy.WatermarkForCameraVideoOpacity
+                WatermarkForCameraVideoPattern               = $policy.WatermarkForCameraVideoPattern
+                WatermarkForScreenSharingOpacity             = $policy.WatermarkForScreenSharingOpacity
+                WatermarkForScreenSharingPattern             = $policy.WatermarkForScreenSharingPattern
+                WhoCanRegister                               = $policy.WhoCanRegister
+                Ensure                                       = 'Present'
+                Credential                                   = $this.Credential
+                ApplicationId                                = $this.ApplicationId
+                TenantId                                     = $this.TenantId
+                CertificateThumbprint                        = $this.CertificateThumbprint
+                CertificatePath                              = $this.CertificatePath
+                CertificatePassword                          = $this.CertificatePassword
+                ManagedIdentity                              = $this.ManagedIdentity
+                AccessTokens                                 = $this.AccessTokens
             })
         }
         catch

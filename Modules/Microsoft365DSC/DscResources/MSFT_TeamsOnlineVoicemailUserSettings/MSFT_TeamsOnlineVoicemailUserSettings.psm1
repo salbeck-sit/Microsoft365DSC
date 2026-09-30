@@ -13,6 +13,14 @@ class TeamsOnlineVoicemailUserSettings : M365DSCResourceBase
     [System.String] $CallAnswerRule
 
     [DscProperty()]
+    [System.ComponentModel.Description('The CallToActionDetectionEnabled parameter represents whether call to action detection, an AI triage feature for personal voicemail, is enabled for the user.')]
+    [System.Nullable[System.Boolean]] $CallToActionDetectionEnabled
+
+    [DscProperty()]
+    [System.ComponentModel.Description('The CategoryDetectionEnabled parameter represents whether category detection, an AI triage feature for personal voicemail, is enabled for the user.')]
+    [System.Nullable[System.Boolean]] $CategoryDetectionEnabled
+
+    [DscProperty()]
     [System.ComponentModel.Description('The DefaultGreetingPromptOverwrite parameter represents the contents that overwrite the default normal greeting prompt. If the user''s normal custom greeting is not set and DefaultGreetingPromptOverwrite is not empty, the voicemail service will play this overwrite greeting instead of the default normal greeting in the voicemail deposit scenario.')]
     [System.String] $DefaultGreetingPromptOverwrite
 
@@ -41,8 +49,16 @@ class TeamsOnlineVoicemailUserSettings : M365DSCResourceBase
     [System.String] $TransferTarget
 
     [DscProperty()]
+    [System.ComponentModel.Description('The UrgencyDetectionEnabled parameter represents whether urgency detection, an AI triage feature for personal voicemail, is enabled for the user.')]
+    [System.Nullable[System.Boolean]] $UrgencyDetectionEnabled
+
+    [DscProperty()]
     [System.ComponentModel.Description('The VoicemailEnabled parameter represents whether to enable voicemail service. If set to $false, the user has no voicemail service.')]
     [System.Nullable[System.Boolean]] $VoicemailEnabled
+
+    [DscProperty()]
+    [System.ComponentModel.Description('The VoiceToTextSummaryEnabled parameter represents whether voice to text summary, an AI triage feature for personal voicemail, is enabled for the user.')]
+    [System.Nullable[System.Boolean]] $VoiceToTextSummaryEnabled
 
     [DscProperty()]
     [System.ComponentModel.Description('Present ensures the policy exists, absent ensures it is removed.')]
@@ -124,6 +140,8 @@ class TeamsOnlineVoicemailUserSettings : M365DSCResourceBase
             return $this.AsResult(@{
                 Identity                                 = $this.Identity
                 CallAnswerRule                           = $instance.CallAnswerRule
+                CallToActionDetectionEnabled             = $instance.CallToActionDetectionEnabled
+                CategoryDetectionEnabled                 = $instance.CategoryDetectionEnabled
                 DefaultGreetingPromptOverwrite           = $instance.DefaultGreetingPromptOverwrite
                 DefaultOofGreetingPromptOverwrite        = $instance.DefaultOofGreetingPromptOverwrite
                 OofGreetingEnabled                       = $instance.OofGreetingEnabled
@@ -131,7 +149,9 @@ class TeamsOnlineVoicemailUserSettings : M365DSCResourceBase
                 PromptLanguage                           = $instance.PromptLanguage
                 ShareData                                = $instance.ShareData
                 TransferTarget                           = $instance.TransferTarget
+                UrgencyDetectionEnabled                  = $instance.UrgencyDetectionEnabled
                 VoicemailEnabled                         = $instance.VoicemailEnabled
+                VoiceToTextSummaryEnabled                = $instance.VoiceToTextSummaryEnabled
                 Ensure                                   = 'Present'
                 Credential                               = $this.Credential
                 ApplicationId                            = $this.ApplicationId

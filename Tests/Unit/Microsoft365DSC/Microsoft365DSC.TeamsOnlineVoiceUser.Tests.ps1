@@ -43,6 +43,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             Mock -CommandName Get-CsPhoneNumberAssignment -MockWith {
                 return @{
                     LocationId = 'c7c5a17f-00d7-47c0-9ddb-3383229d606b'
+                    NumberType = 'DirectRouting'
                 }
             }
 
@@ -127,7 +128,19 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
 
             It 'Should remove the policy from the Set method' {
                 (New-M365DSCResourceInstance -ResourceName 'TeamsOnlineVoiceUser' -Property $testParams).Set()
-                Should -Invoke -CommandName Set-CsPhoneNumberAssignment -Exactly 1
+                Should -Invoke -CommandName Get-CsPhoneNumberAssignment -Exactly 1 -ParameterFilter { $TelephoneNumber -eq '15555555555' }
+                Should -Invoke -CommandName Set-CsPhoneNumberAssignment -Exactly 1 -ParameterFilter { $TelephoneNumber -eq '15555555555' -and $NumberType -eq 'DirectRouting' }
+            }
+
+            It 'Should throw from the Set method when the telephone number is missing or does not exist' {
+                $noNumberParams = $testParams.Clone()
+                $noNumberParams.Remove('TelephoneNumber')
+                { (New-M365DSCResourceInstance -ResourceName 'TeamsOnlineVoiceUser' -Property $noNumberParams).Set() } | Should -Throw -ExpectedMessage '*TelephoneNumber is required*'
+                Mock -CommandName Get-CsPhoneNumberAssignment -MockWith {
+                    return $null
+                }
+                { (New-M365DSCResourceInstance -ResourceName 'TeamsOnlineVoiceUser' -Property $testParams).Set() } | Should -Throw -ExpectedMessage '*{15555555555}*does not exist in the tenant*'
+                Should -Invoke -CommandName Set-CsPhoneNumberAssignment -Exactly 0
             }
         }
 

@@ -151,9 +151,20 @@ class TeamsOnlineVoiceUser : M365DSCResourceBase
 
         if ($this.Ensure -eq 'Present')
         {
+            if ([System.String]::IsNullOrEmpty($this.TelephoneNumber))
+            {
+                throw "A TelephoneNumber is required to assign a phone number to the Teams Online Voice User {$($this.Identity)}."
+            }
+
+            $acquiredNumber = Get-CsPhoneNumberAssignment -TelephoneNumber $this.TelephoneNumber -ErrorAction Stop
+            if ($null -eq $acquiredNumber)
+            {
+                throw "The telephone number {$($this.TelephoneNumber)} to assign to the Teams Online Voice User {$($this.Identity)} does not exist in the tenant."
+            }
+
             Set-CsPhoneNumberAssignment -Identity $this.Identity `
-                -PhoneNumber $this.TelephoneNumber `
-                -PhoneNumberType 'Calling' `
+                -TelephoneNumber $this.TelephoneNumber `
+                -NumberType $acquiredNumber.NumberType `
                 -LocationId $this.LocationID | Out-Null
         }
         else

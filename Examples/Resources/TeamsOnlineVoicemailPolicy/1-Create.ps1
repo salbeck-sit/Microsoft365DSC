@@ -29,6 +29,7 @@ Configuration Example
             EnableTranscription                 = $true;
             EnableTranscriptionProfanityMasking = $false;
             EnableTranscriptionTranslation      = $true;
+            EnableVoicemailTriage               = $false;
             Ensure                              = "Present";
             Identity                            = "CorporateVoicemail";
             MaximumRecordingLength              = 600;

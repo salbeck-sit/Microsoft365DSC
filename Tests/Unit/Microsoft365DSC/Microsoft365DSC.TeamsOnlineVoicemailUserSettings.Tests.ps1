@@ -43,12 +43,16 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             Mock -CommandName Get-CsOnlineVoicemailUserSettings -MockWith {
                 return @{
                     CallAnswerRule                           = 'RegularVoicemail'
+                    CallToActionDetectionEnabled             = $True
+                    CategoryDetectionEnabled                 = $True
                     Identity                                 = 'JohnSmith@Contoso.com'
                     OofGreetingEnabled                       = $False
                     OofGreetingFollowAutomaticRepliesEnabled = $False
                     PromptLanguage                           = 'en-US'
                     ShareData                                = $False
+                    UrgencyDetectionEnabled                  = $True
                     VoicemailEnabled                         = $True
+                    VoiceToTextSummaryEnabled                = $True
                 }
             }
 
@@ -64,12 +68,16 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             BeforeAll {
                 $testParams = @{
                     CallAnswerRule                           = 'RegularVoicemail'
+                    CallToActionDetectionEnabled             = $True
+                    CategoryDetectionEnabled                 = $True
                     Identity                                 = 'JohnSmith@Contoso.com'
                     OofGreetingEnabled                       = $False
                     OofGreetingFollowAutomaticRepliesEnabled = $False
                     PromptLanguage                           = 'en-US'
                     ShareData                                = $False
+                    UrgencyDetectionEnabled                  = $True
                     VoicemailEnabled                         = $True
+                    VoiceToTextSummaryEnabled                = $True
                     Ensure                                   = 'Present'
                     Credential                               = $Credential
                 }
@@ -97,12 +105,16 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             BeforeAll {
                 $testParams = @{
                     CallAnswerRule                           = 'RegularVoicemail'
+                    CallToActionDetectionEnabled             = $True
+                    CategoryDetectionEnabled                 = $True
                     Identity                                 = 'JohnSmith@Contoso.com'
                     OofGreetingEnabled                       = $False
                     OofGreetingFollowAutomaticRepliesEnabled = $True # Drift
                     PromptLanguage                           = 'en-US'
                     ShareData                                = $False
+                    UrgencyDetectionEnabled                  = $True
                     VoicemailEnabled                         = $True
+                    VoiceToTextSummaryEnabled                = $True
                     Ensure                                   = 'Present'
                     Credential                               = $Credential
                 }
@@ -126,12 +138,16 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             BeforeAll {
                 $testParams = @{
                     CallAnswerRule                           = 'RegularVoicemail'
+                    CallToActionDetectionEnabled             = $True
+                    CategoryDetectionEnabled                 = $True
                     Identity                                 = 'JohnSmith@Contoso.com'
                     OofGreetingEnabled                       = $False
                     OofGreetingFollowAutomaticRepliesEnabled = $False
                     PromptLanguage                           = 'en-US'
                     ShareData                                = $False
+                    UrgencyDetectionEnabled                  = $True
                     VoicemailEnabled                         = $True
+                    VoiceToTextSummaryEnabled                = $True
                     Ensure                                   = 'Present'
                     Credential                               = $Credential
                 }

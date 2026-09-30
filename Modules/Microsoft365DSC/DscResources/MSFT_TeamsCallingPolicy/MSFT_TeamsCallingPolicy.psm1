@@ -17,6 +17,10 @@ class TeamsCallingPolicy : M365DSCResourceBase
     [System.String] $AIInterpreter
 
     [DscProperty()]
+    [System.ComponentModel.Description('Controls whether meeting knowledge generation is allowed for calling when the user starts a recording, a transcription or Copilot.')]
+    [System.Nullable[System.Boolean]] $AllowMeetingKnowledgeGeneration
+
+    [DscProperty()]
     [System.ComponentModel.Description('The maximum amount a user can spend on outgoing PSTN calls, including all calls made through Pay-as-you-go Calling Plans and any overages on plans with bundled minutes.')]
     [System.Nullable[System.UInt32]] $CallingSpendUserLimit
 
@@ -58,9 +62,19 @@ class TeamsCallingPolicy : M365DSCResourceBase
     [System.String] $PopoutForIncomingPstnCalls
 
     [DscProperty()]
+    [System.ComponentModel.Description('Controls whether users enabled for compliance recording are blocked from joining calls initiated or received by the user assigned to this policy. Possible values are: None, All.')]
+    [ValidateSet('None', 'All')]
+    [System.String] $PreventComplianceRecording
+
+    [DscProperty()]
     [System.ComponentModel.Description('Allows users to use real time text during a call, allowing them to communicate by typing their messages in real time. Possible values are: Disabled, Enabled')]
     [ValidateSet('Disabled', 'Enabled')]
     [System.String] $RealTimeText
+
+    [DscProperty()]
+    [System.ComponentModel.Description('Controls whether audio notifications are played when a recording or transcription starts or stops for the users assigned to this policy. Possible values are: Enabled, Disabled.')]
+    [ValidateSet('Enabled', 'Disabled')]
+    [System.String] $RecordingAndTranscriptionAudioNotification
 
     [DscProperty()]
     [System.ComponentModel.Description('TBD. Possible values are: Disabled, Enabled')]
@@ -70,6 +84,11 @@ class TeamsCallingPolicy : M365DSCResourceBase
     [DscProperty()]
     [System.ComponentModel.Description('Controls if Teams calls are shown in the call log.')]
     [System.Nullable[System.Boolean]] $ShowTeamsCallsInCallLog
+
+    [DscProperty()]
+    [System.ComponentModel.Description('Controls the alerts shown to the user when AI-based detection identifies a voice phishing attempt during a live inbound Teams call. Possible values are: BannerAndAudio, Banner, Audio, None.')]
+    [ValidateSet('BannerAndAudio', 'Banner', 'Audio', 'None')]
+    [System.String] $VoicePhishingDetection
 
     [DscProperty()]
     [System.ComponentModel.Description('Enables the user to use the voice simulation feature while being AI interpreted. Possible values are: Disabled, Enabled')]
@@ -131,11 +150,6 @@ class TeamsCallingPolicy : M365DSCResourceBase
     [System.ComponentModel.Description('Setting this parameter allows you to turn on or turn off music on hold when a PSTN caller is placed on hold. It is turned on by default. Valid options are: Enabled, Disabled, UserOverride. For now setting the value to UserOverride is the same as Enabled. This setting does not apply to call park and SLA boss delegate features. Valid options are: Enabled, Disabled, UserOverride.')]
     [ValidateSet('Enabled', 'Disabled', 'UserOverride')]
     [System.String] $MusicOnHoldEnabledType
-
-    [DscProperty()]
-    [System.ComponentModel.Description('This parameter is not available for use. Valid options are: Enabled, Disabled, UserOverride.')]
-    [ValidateSet('Enabled', 'Disabled', 'UserOverride')]
-    [System.String] $SafeTransferEnabled
 
     [DscProperty()]
     [System.ComponentModel.Description('Setting this parameter to True will allows 1:1 Calls to be recorded.')]
@@ -241,50 +255,53 @@ class TeamsCallingPolicy : M365DSCResourceBase
 
             Write-Verbose -Message "Found Teams Calling Policy {$($this.Identity)}"
             return $this.AsResult(@{
-                Identity                             = $this.Identity
-                AIInterpreter                        = $policy.AIInterpreter
-                AllowPrivateCalling                  = $policy.AllowPrivateCalling
-                AllowWebPSTNCalling                  = $policy.AllowWebPSTNCalling
-                AllowVoicemail                       = $policy.AllowVoicemail
-                AllowCallGroups                      = $policy.AllowCallGroups
-                AllowDelegation                      = $policy.AllowDelegation
-                AllowCallForwardingToUser            = $policy.AllowCallForwardingToUser
-                AllowCallForwardingToPhone           = $policy.AllowCallForwardingToPhone
-                AllowCallRedirect                    = $policy.AllowCallRedirect
-                AllowSIPDevicesCalling               = $policy.AllowSIPDevicesCalling
-                CallingSpendUserLimit                = $policy.CallingSpendUserLimit
-                Copilot                              = $policy.Copilot
-                Description                          = $policy.Description
-                EnableSpendLimits                    = $policy.EnableSpendLimits
-                EnableWebPstnMediaBypass             = $policy.EnableWebPstnMediaBypass
-                ExplicitRecordingConsent             = $policy.ExplicitRecordingConsent
-                InboundFederatedCallRoutingTreatment = $policy.InboundFederatedCallRoutingTreatment
-                InboundPstnCallRoutingTreatment      = $policy.InboundPstnCallRoutingTreatment
-                PopoutAppPathForIncomingPstnCalls    = $policy.PopoutAppPathForIncomingPstnCalls
-                PopoutForIncomingPstnCalls           = $policy.PopoutForIncomingPstnCalls
-                PreventTollBypass                    = $policy.PreventTollBypass
-                RealTimeText                         = $policy.RealTimeText
-                ReportCall                           = $policy.ReportCall
-                ShowTeamsCallsInCallLog              = $policy.ShowTeamsCallsInCallLog
-                BusyOnBusyEnabledType                = $policy.BusyOnBusyEnabledType
-                CallRecordingExpirationDays          = $policy.CallRecordingExpirationDays
-                MusicOnHoldEnabledType               = $policy.MusicOnHoldEnabledType
-                SafeTransferEnabled                  = $policy.SafeTransferEnabled
-                AllowCloudRecordingForCalls          = $policy.AllowCloudRecordingForCalls
-                AllowTranscriptionForCalling         = $policy.AllowTranscriptionForCalling
-                LiveCaptionsEnabledTypeForCalling    = $policy.LiveCaptionsEnabledTypeForCalling
-                AutoAnswerEnabledType                = $policy.AutoAnswerEnabledType
-                SpamFilteringEnabledType             = $policy.SpamFilteringEnabledType
-                VoiceSimulationInInterpreter         = $policy.VoiceSimulationInInterpreter
-                Ensure                               = 'Present'
-                Credential                           = $this.Credential
-                ApplicationId                        = $this.ApplicationId
-                TenantId                             = $this.TenantId
-                CertificateThumbprint                = $this.CertificateThumbprint
-                CertificatePath                      = $this.CertificatePath
-                CertificatePassword                  = $this.CertificatePassword
-                ManagedIdentity                      = $this.ManagedIdentity
-                AccessTokens                         = $this.AccessTokens
+                Identity                                   = $this.Identity
+                AIInterpreter                              = $policy.AIInterpreter
+                AllowMeetingKnowledgeGeneration            = $policy.AllowMeetingKnowledgeGeneration
+                AllowPrivateCalling                        = $policy.AllowPrivateCalling
+                AllowWebPSTNCalling                        = $policy.AllowWebPSTNCalling
+                AllowVoicemail                             = $policy.AllowVoicemail
+                AllowCallGroups                            = $policy.AllowCallGroups
+                AllowDelegation                            = $policy.AllowDelegation
+                AllowCallForwardingToUser                  = $policy.AllowCallForwardingToUser
+                AllowCallForwardingToPhone                 = $policy.AllowCallForwardingToPhone
+                AllowCallRedirect                          = $policy.AllowCallRedirect
+                AllowSIPDevicesCalling                     = $policy.AllowSIPDevicesCalling
+                CallingSpendUserLimit                      = $policy.CallingSpendUserLimit
+                Copilot                                    = $policy.Copilot
+                Description                                = $policy.Description
+                EnableSpendLimits                          = $policy.EnableSpendLimits
+                EnableWebPstnMediaBypass                   = $policy.EnableWebPstnMediaBypass
+                ExplicitRecordingConsent                   = $policy.ExplicitRecordingConsent
+                InboundFederatedCallRoutingTreatment       = $policy.InboundFederatedCallRoutingTreatment
+                InboundPstnCallRoutingTreatment            = $policy.InboundPstnCallRoutingTreatment
+                PopoutAppPathForIncomingPstnCalls          = $policy.PopoutAppPathForIncomingPstnCalls
+                PopoutForIncomingPstnCalls                 = $policy.PopoutForIncomingPstnCalls
+                PreventComplianceRecording                 = $policy.PreventComplianceRecording
+                PreventTollBypass                          = $policy.PreventTollBypass
+                RealTimeText                               = $policy.RealTimeText
+                RecordingAndTranscriptionAudioNotification = $policy.RecordingAndTranscriptionAudioNotification
+                ReportCall                                 = $policy.ReportCall
+                ShowTeamsCallsInCallLog                    = $policy.ShowTeamsCallsInCallLog
+                BusyOnBusyEnabledType                      = $policy.BusyOnBusyEnabledType
+                CallRecordingExpirationDays                = $policy.CallRecordingExpirationDays
+                MusicOnHoldEnabledType                     = $policy.MusicOnHoldEnabledType
+                AllowCloudRecordingForCalls                = $policy.AllowCloudRecordingForCalls
+                AllowTranscriptionForCalling               = $policy.AllowTranscriptionForCalling
+                LiveCaptionsEnabledTypeForCalling          = $policy.LiveCaptionsEnabledTypeForCalling
+                AutoAnswerEnabledType                      = $policy.AutoAnswerEnabledType
+                SpamFilteringEnabledType                   = $policy.SpamFilteringEnabledType
+                VoicePhishingDetection                     = $policy.VoicePhishingDetection
+                VoiceSimulationInInterpreter               = $policy.VoiceSimulationInInterpreter
+                Ensure                                     = 'Present'
+                Credential                                 = $this.Credential
+                ApplicationId                              = $this.ApplicationId
+                TenantId                                   = $this.TenantId
+                CertificateThumbprint                      = $this.CertificateThumbprint
+                CertificatePath                            = $this.CertificatePath
+                CertificatePassword                        = $this.CertificatePassword
+                ManagedIdentity                            = $this.ManagedIdentity
+                AccessTokens                               = $this.AccessTokens
             })
         }
         catch

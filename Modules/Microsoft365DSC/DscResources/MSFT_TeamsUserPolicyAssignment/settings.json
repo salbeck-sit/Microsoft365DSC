@@ -79,6 +79,7 @@
         "Grant-CsTeamsMeetingPolicy",
         "Grant-CsTeamsMessagingPolicy",
         "Grant-CsTeamsMobilityPolicy",
+        "Grant-CsTeamsPersonalAttendantPolicy",
         "Grant-CsTeamsUpdateManagementPolicy",
         "Grant-CsTeamsUpgradePolicy",
         "Grant-CsTenantDialPlan"

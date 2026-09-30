@@ -38,16 +38,19 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             function New-MockAutoAttendant
             {
                 return [PSCustomObject] @{
-                    Identity                      = 'b4c7e2a9-1d3f-4a6b-8e5c-2f9d7a1b3c6e'
-                    Name                          = 'Contoso Main Line'
-                    LanguageId                    = 'en-US'
-                    TimeZoneId                    = 'Pacific Standard Time'
-                    VoiceId                       = 'Female'
-                    VoiceResponseEnabled          = $true
-                    UserNameExtension             = 'None'
-                    MainlineAttendantEnabled      = $false
-                    MainlineAttendantAgentVoiceId = $null
-                    DefaultCallFlow               = [PSCustomObject] @{
+                    Identity                                = 'b4c7e2a9-1d3f-4a6b-8e5c-2f9d7a1b3c6e'
+                    Name                                    = 'Contoso Main Line'
+                    LanguageId                              = 'en-US'
+                    TimeZoneId                              = 'Pacific Standard Time'
+                    VoiceId                                 = 'Female'
+                    VoiceResponseEnabled                    = $true
+                    UserNameExtension                       = 'None'
+                    MainlineAttendantEnabled                = $false
+                    MainlineAttendantAgentVoiceId           = $null
+                    AutoRecordingTemplateId                 = $null
+                    SpamDetectionTemplateId                 = $null
+                    SharedVoicemailTriageSettingsTemplateId = '4e7a1c9d-3b6f-4d2a-8e5c-1f9b7a3d6c2e'
+                    DefaultCallFlow                         = [PSCustomObject] @{
                         Id                     = 'd2a6f9c1-4b8e-4d3a-9c7f-1e5b2a8d4c6f'
                         Name                   = 'Business hours'
                         ForceListenMenuEnabled = $false
@@ -93,7 +96,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                             )
                         }
                     }
-                    CallFlows                     = @(
+                    CallFlows                               = @(
                         [PSCustomObject] @{
                             Id                     = 'a9c3e7f1-5b2d-4e8a-9f6c-3d1b7e4a2c8f'
                             Name                   = 'After hours'
@@ -117,7 +120,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                             }
                         }
                     )
-                    CallHandlingAssociations      = @(
+                    CallHandlingAssociations                = @(
                         [PSCustomObject] @{
                             Type       = 'AfterHours'
                             ScheduleId = 'c5f8a2d6-9e3b-4c1f-a7d4-6b2e9f1c5a8d'
@@ -125,17 +128,17 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                             Enabled    = $true
                         }
                     )
-                    Schedules                     = @(
+                    Schedules                               = @(
                         [PSCustomObject] @{
                             Id   = 'c5f8a2d6-9e3b-4c1f-a7d4-6b2e9f1c5a8d'
                             Name = 'Contoso Business Hours'
                         }
                     )
-                    Operator                      = [PSCustomObject] @{
+                    Operator                                = [PSCustomObject] @{
                         Id   = 'e8b5a2c4-6f1d-4d3a-9b7e-2c4f8a1d3b5e'
                         Type = 'User'
                     }
-                    DirectoryLookupScope          = [PSCustomObject] @{
+                    DirectoryLookupScope                    = [PSCustomObject] @{
                         InclusionScope = [PSCustomObject] @{
                             GroupScope = [PSCustomObject] @{
                                 GroupIds = @('2d7f4b9e-8a1c-4e6d-b3f5-9c2a7e4d1b8f')
@@ -143,22 +146,23 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                         }
                         ExclusionScope = $null
                     }
-                    AuthorizedUsers               = @([System.Guid] '9e4f7b2d-3a1c-4d8e-b5f6-2c7a9e1d4b8f')
-                    HideAuthorizedUsers           = @()
-                    ApplicationInstances          = @('7c2e9a4b-5d3f-4e1a-8b6c-9f2d4a7e1c3b')
+                    AuthorizedUsers                         = @([System.Guid] '9e4f7b2d-3a1c-4d8e-b5f6-2c7a9e1d4b8f')
+                    HideAuthorizedUsers                     = @()
+                    ApplicationInstances                    = @('7c2e9a4b-5d3f-4e1a-8b6c-9f2d4a7e1c3b')
                 }
             }
 
             function New-DesiredParameters
             {
                 return @{
-                    Name                   = 'Contoso Main Line'
-                    LanguageId             = 'en-US'
-                    TimeZoneId             = 'Pacific Standard Time'
-                    VoiceId                = 'Female'
-                    EnableVoiceResponse    = $true
-                    UserNameExtension      = 'None'
-                    DefaultCallFlow        = [MSFT_TeamsAutoAttendantCallFlow] @{
+                    Name                                    = 'Contoso Main Line'
+                    LanguageId                              = 'en-US'
+                    TimeZoneId                              = 'Pacific Standard Time'
+                    VoiceId                                 = 'Female'
+                    EnableVoiceResponse                     = $true
+                    UserNameExtension                       = 'None'
+                    SharedVoicemailTriageSettingsTemplateId = '4e7a1c9d-3b6f-4d2a-8e5c-1f9b7a3d6c2e'
+                    DefaultCallFlow                         = [MSFT_TeamsAutoAttendantCallFlow] @{
                         Name                   = 'Business hours'
                         ForceListenMenuEnabled = $false
                         Greetings              = @(
@@ -201,7 +205,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                             )
                         }
                     }
-                    CallFlows              = @(
+                    CallFlows                               = @(
                         [MSFT_TeamsAutoAttendantCallFlow] @{
                             Name                   = 'After hours'
                             ForceListenMenuEnabled = $false
@@ -224,7 +228,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                             }
                         }
                     )
-                    CallHandlingAssociations = @(
+                    CallHandlingAssociations                = @(
                         [MSFT_TeamsAutoAttendantCallHandlingAssociation] @{
                             Type         = 'AfterHours'
                             ScheduleName = 'Contoso Business Hours'
@@ -232,15 +236,15 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                             Enabled      = $true
                         }
                     )
-                    Operator               = [MSFT_TeamsAutoAttendantCallableEntity] @{
+                    Operator                                = [MSFT_TeamsAutoAttendantCallableEntity] @{
                         Identity = 'AdeleV@contoso.onmicrosoft.com'
                         Type     = 'User'
                     }
-                    InclusionScopeGroupIds = @('2d7f4b9e-8a1c-4e6d-b3f5-9c2a7e4d1b8f')
-                    AuthorizedUsers        = @('AlexW@contoso.onmicrosoft.com')
-                    ApplicationInstances   = @('mainline@contoso.onmicrosoft.com')
-                    Ensure                 = 'Present'
-                    Credential             = $Credential
+                    InclusionScopeGroupIds                  = @('2d7f4b9e-8a1c-4e6d-b3f5-9c2a7e4d1b8f')
+                    AuthorizedUsers                         = @('AlexW@contoso.onmicrosoft.com')
+                    ApplicationInstances                    = @('mainline@contoso.onmicrosoft.com')
+                    Ensure                                  = 'Present'
+                    Credential                              = $Credential
                 }
             }
 
@@ -437,6 +441,15 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                 Should -Invoke -CommandName 'Set-CsAutoAttendant' -Exactly 1 -ParameterFilter {
                     $Instance.UserNameExtension -eq $testParams.UserNameExtension
                 }
+            }
+
+            It 'Should throw the call target error from the Set method when a call target cannot be created' {
+                Mock -CommandName New-CsAutoAttendantCallableEntity -MockWith {
+                    Write-Error -Message "User ($Identity) is not Enterprise Voice enabled."
+                }
+
+                { (New-M365DSCResourceInstance -ResourceName 'TeamsAutoAttendant' -Property $testParams).Set() } |
+                    Should -Throw -ExpectedMessage 'The call target {AdeleV@contoso.onmicrosoft.com} of type {User} of a Teams Auto Attendant could not be created. Error: User (e8b5a2c4-6f1d-4d3a-9b7e-2c4f8a1d3b5e) is not Enterprise Voice enabled.'
             }
         }
 

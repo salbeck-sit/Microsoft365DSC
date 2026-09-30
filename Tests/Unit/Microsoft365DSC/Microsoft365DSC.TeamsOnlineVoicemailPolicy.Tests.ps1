@@ -52,6 +52,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     EnableTranscription                 = $True
                     EnableTranscriptionProfanityMasking = $False
                     EnableTranscriptionTranslation      = $True
+                    EnableVoicemailTriage               = $False
                     Identity                            = 'TestPolicy'
                     MaximumRecordingLength              = [timespan]'00:10:00'
                     ShareData                           = 'Defer'
@@ -74,6 +75,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     EnableTranscription                 = $True
                     EnableTranscriptionProfanityMasking = $False
                     EnableTranscriptionTranslation      = $True
+                    EnableVoicemailTriage               = $False
                     Ensure                              = 'Present'
                     Identity                            = 'TestPolicy'
                     MaximumRecordingLength              = 600
@@ -110,6 +112,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     EnableTranscription                 = $True
                     EnableTranscriptionProfanityMasking = $False
                     EnableTranscriptionTranslation      = $True
+                    EnableVoicemailTriage               = $False
                     Ensure                              = 'Present'
                     Identity                            = 'TestPolicy'
                     MaximumRecordingLength              = 300 # Drift
@@ -143,6 +146,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     EnableTranscription                 = $True
                     EnableTranscriptionProfanityMasking = $False
                     EnableTranscriptionTranslation      = $True
+                    EnableVoicemailTriage               = $False
                     Ensure                              = 'Present'
                     Identity                            = 'TestPolicy'
                     MaximumRecordingLength              = 600
@@ -167,6 +171,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     EnableTranscription                 = $True
                     EnableTranscriptionProfanityMasking = $False
                     EnableTranscriptionTranslation      = $True
+                    EnableVoicemailTriage               = $False
                     Ensure                              = 'Absent'
                     Identity                            = 'TestPolicy'
                     MaximumRecordingLength              = 600

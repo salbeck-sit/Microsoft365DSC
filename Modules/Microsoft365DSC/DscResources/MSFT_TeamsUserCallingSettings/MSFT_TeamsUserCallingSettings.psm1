@@ -56,6 +56,15 @@ class TeamsUserCallingSettings : M365DSCResourceBase
     [System.String] $ForwardingTarget
 
     [DscProperty()]
+    [System.ComponentModel.Description('The busy on busy setting for the specified user. It controls what happens to a new incoming call when the user is already in a call or in a conference. Supported values are PlayBusySignal, RedirectAsUnansweredCall and RingUser. The setting applies when the Teams calling policy of the user has BusyOnBusyEnabledType set to UserOverride.')]
+    [ValidateSet('PlayBusySignal', 'RedirectAsUnansweredCall', 'RingUser')]
+    [System.String] $BusyOnBusyOption
+
+    [DscProperty()]
+    [System.ComponentModel.Description('The maximum number of concurrent calls for the specified user.')]
+    [System.Nullable[System.Int32]] $MaximumConcurrentCalls
+
+    [DscProperty()]
     [System.ComponentModel.Description('Present ensures the policy exists, absent ensures it is removed.')]
     [ValidateSet('Present', 'Absent')]
     [System.String] $Ensure
@@ -131,15 +140,17 @@ class TeamsUserCallingSettings : M365DSCResourceBase
                 Identity                  = $this.Identity
                 GroupNotificationOverride = $instance.GroupNotificationOverride
                 CallGroupOrder            = $instance.CallGroupOrder
-                CallGroupTargets          = $instance.CallGroupTargets
+                CallGroupTargets          = [TeamsUserCallingSettings]::RemoveSipPrefix($instance.CallGroupTargets)
                 IsUnansweredEnabled       = $instance.IsUnansweredEnabled
                 UnansweredDelay           = $instance.UnansweredDelay
-                UnansweredTarget          = $instance.UnansweredTarget
+                UnansweredTarget          = [TeamsUserCallingSettings]::RemoveSipPrefix($instance.UnansweredTarget)
                 UnansweredTargetType      = $instance.UnansweredTargetType
                 IsForwardingEnabled       = $instance.IsForwardingEnabled
                 ForwardingType            = $instance.ForwardingType
                 ForwardingTargetType      = $instance.ForwardingTargetType
-                ForwardingTarget          = $instance.ForwardingTarget
+                ForwardingTarget          = [TeamsUserCallingSettings]::RemoveSipPrefix($instance.ForwardingTarget)
+                BusyOnBusyOption          = $instance.BusyOnBusyOption
+                MaximumConcurrentCalls    = $instance.MaximumConcurrentCalls
                 Ensure                    = 'Present'
                 Credential                = $this.Credential
                 ApplicationId             = $this.ApplicationId
@@ -175,15 +186,87 @@ class TeamsUserCallingSettings : M365DSCResourceBase
 
         $CurrentValues = $this.Get().ToHashtable()
         $SetParameters = Remove-M365DSCAuthenticationParameter -BoundParameters $this.GetBoundParameters()
+        if ($CurrentValues.Ensure -eq 'Absent')
+        {
+            $CurrentValues = @{}
+        }
+
+        foreach ($name in @('CallGroupTargets', 'UnansweredTarget', 'ForwardingTarget'))
+        {
+            if ($SetParameters.ContainsKey($name))
+            {
+                $SetParameters[$name] = [TeamsUserCallingSettings]::RemoveSipPrefix($SetParameters[$name])
+            }
+        }
+
+        $parameterSets = [ordered]@{
+            CallGroupNotification  = @('GroupNotificationOverride')
+            Unanswered             = @('IsUnansweredEnabled', 'UnansweredDelay', 'UnansweredTargetType', 'UnansweredTarget')
+            Forwarding             = @('IsForwardingEnabled', 'ForwardingType', 'ForwardingTargetType', 'ForwardingTarget')
+            BusyOnBusy             = @('BusyOnBusyOption')
+            MaximumConcurrentCalls = @('MaximumConcurrentCalls')
+        }
+
+        $callGroupPosition = 0
+        if ($SetParameters.ContainsKey('CallGroupTargets') -and @($SetParameters.CallGroupTargets).Count -eq 0)
+        {
+            $callGroupPosition = 3
+        }
+        $parameterSets.Insert($callGroupPosition, 'CallGroup', @('CallGroupOrder', 'CallGroupTargets'))
+        $optionalParameters = @('UnansweredTargetType', 'UnansweredTarget', 'ForwardingTarget')
 
         try
         {
-            if ($this.CallGroupOrder -ne $CurrentValues.CallGroupOrder -or $this.CallGroupTargets -ne $CurrentValues.CallGroupTargets)
+            foreach ($parameterSet in $parameterSets.GetEnumerator())
             {
-                Set-CsUserCallingSettings -Identity $this.Identity -CallGroupOrder $this.CallGroupOrder -CallGroupTargets $this.CallGroupTargets
-                $SetParameters.Remove('CallGroupOrder') | Out-Null
+                $configured = [System.Collections.Generic.List[System.String]]::new()
+                $isDrifted = $false
+                foreach ($name in $parameterSet.Value)
+                {
+                    if ($SetParameters.ContainsKey($name))
+                    {
+                        $configured.Add($name)
+                        $isDrifted = $isDrifted -or ((@($SetParameters[$name]) -join ';') -ne (@($CurrentValues[$name]) -join ';'))
+                    }
+                }
+
+                if (-not $isDrifted)
+                {
+                    continue
+                }
+
+                $toggle = $parameterSet.Value[0]
+                $parameters = @{
+                    Identity = $this.Identity
+                }
+                if ($toggle -like 'Is*Enabled' -and ($false -eq $SetParameters[$toggle] -or ($configured.Count -eq 1 -and $configured[0] -eq $toggle)))
+                {
+                    $parameters[$toggle] = $SetParameters[$toggle]
+                }
+                else
+                {
+                    foreach ($name in $parameterSet.Value)
+                    {
+                        $value = $CurrentValues[$name]
+                        if ($SetParameters.ContainsKey($name))
+                        {
+                            $value = $SetParameters[$name]
+                        }
+
+                        if ($null -ne $value)
+                        {
+                            $parameters[$name] = $value
+                        }
+                        elseif ($optionalParameters -notcontains $name)
+                        {
+                            throw "Could not update the $($parameterSet.Key) calling settings of Teams user {$($this.Identity)} because $name is neither configured nor set on the user."
+                        }
+                    }
+                }
+
+                Write-Verbose -Message "Updating the $($parameterSet.Key) calling settings of Teams user {$($this.Identity)}"
+                Set-CsUserCallingSettings @parameters
             }
-            Set-CsUserCallingSettings @SetParameters
         }
         catch
         {
@@ -196,6 +279,38 @@ class TeamsUserCallingSettings : M365DSCResourceBase
     [bool] Test()
     {
         return ([M365DSCResourceBase] $this).Test()
+    }
+
+    [System.Collections.Hashtable] GetCompareParameters()
+    {
+        return @{
+            PostProcessing = {
+                param($DesiredValues, $CurrentValues, $ValuesToCheck, $ignore)
+                foreach ($name in @('CallGroupTargets', 'UnansweredTarget', 'ForwardingTarget'))
+                {
+                    if ($DesiredValues.ContainsKey($name))
+                    {
+                        $DesiredValues[$name] = [TeamsUserCallingSettings]::RemoveSipPrefix($DesiredValues[$name])
+                    }
+                }
+                return [System.Tuple[Hashtable, Hashtable, Hashtable]]::new($DesiredValues, $CurrentValues, $ValuesToCheck)
+            }
+        }
+    }
+
+    hidden static [System.Object] RemoveSipPrefix([System.Object] $Value)
+    {
+        if ($null -eq $Value)
+        {
+            return $null
+        }
+
+        if ($Value -is [System.String])
+        {
+            return $Value -replace '^sip:', ''
+        }
+
+        return [System.String[]] @($Value | ForEach-Object -Process { "$_" -replace '^sip:', '' })
     }
 
     [string] Export()

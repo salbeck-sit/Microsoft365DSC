@@ -26,6 +26,8 @@ Configuration Example
         TeamsOnlineVoicemailUserSettings 'TeamsOnlineVoicemailUserSettings-Example'
         {
             CallAnswerRule                           = "RegularVoicemail";
+            CallToActionDetectionEnabled             = $true;
+            CategoryDetectionEnabled                 = $true;
             DefaultGreetingPromptOverwrite           = "Hellow World!";
             Ensure                                   = "Present";
             Identity                                 = "John.Smith@contoso.com";
@@ -33,7 +35,9 @@ Configuration Example
             OofGreetingFollowAutomaticRepliesEnabled = $False;
             PromptLanguage                           = "en-US";
             ShareData                                = $False;
+            UrgencyDetectionEnabled                  = $true;
             VoicemailEnabled                         = $True;
+            VoiceToTextSummaryEnabled                = $true;
             ApplicationId                            = $ApplicationId;
             TenantId                                 = $TenantId;
             CertificateThumbprint                    = $CertificateThumbprint;

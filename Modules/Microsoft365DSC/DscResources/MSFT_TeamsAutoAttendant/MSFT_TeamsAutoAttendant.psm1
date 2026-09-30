@@ -70,6 +70,18 @@ class TeamsAutoAttendant : M365DSCResourceBase
     [System.String] $MainlineAttendantAgentVoiceId
 
     [DscProperty()]
+    [System.ComponentModel.Description('The id of the auto recording template applied to the auto attendant. Requires Mainline Attendant to be enabled.')]
+    [System.String] $AutoRecordingTemplateId
+
+    [DscProperty()]
+    [System.ComponentModel.Description('The id of the Mainline Attendant spam detection template assigned to the auto attendant.')]
+    [System.String] $SpamDetectionTemplateId
+
+    [DscProperty()]
+    [System.ComponentModel.Description('The id of the shared voicemail triage settings template that turns on the automatic triage of shared voicemails.')]
+    [System.String] $SharedVoicemailTriageSettingsTemplateId
+
+    [DscProperty()]
     [System.ComponentModel.Description('The user principal names of the resource accounts associated with the auto attendant.')]
     [System.String[]] $ApplicationInstances
 
@@ -218,28 +230,31 @@ class TeamsAutoAttendant : M365DSCResourceBase
             }
 
             $result = @{
-                Name                          = $autoAttendant.Name
-                LanguageId                    = $autoAttendant.LanguageId
-                VoiceId                       = $autoAttendant.VoiceId
-                TimeZoneId                    = $autoAttendant.TimeZoneId
-                EnableVoiceResponse           = [System.Boolean] $autoAttendant.VoiceResponseEnabled
-                CallFlows                     = [System.Array] $callFlowsValue
-                CallHandlingAssociations      = [System.Array] $associationsValue
-                InclusionScopeGroupIds        = [System.String[]] $inclusionScopeValue
-                ExclusionScopeGroupIds        = [System.String[]] $exclusionScopeValue
-                AuthorizedUsers               = [System.String[]] $authorizedUsersValue
-                HideAuthorizedUsers           = [System.String[]] $hideAuthorizedUsersValue
-                UserNameExtension             = [System.String] $autoAttendant.UserNameExtension
-                EnableMainlineAttendant       = [System.Boolean] $autoAttendant.MainlineAttendantEnabled
-                MainlineAttendantAgentVoiceId = $autoAttendant.MainlineAttendantAgentVoiceId
-                ApplicationInstances          = [System.String[]] $applicationInstancesValue
-                Ensure                        = 'Present'
-                Credential                    = $this.Credential
-                ApplicationId                 = $this.ApplicationId
-                TenantId                      = $this.TenantId
-                CertificateThumbprint         = $this.CertificateThumbprint
-                ManagedIdentity               = $this.ManagedIdentity
-                AccessTokens                  = $this.AccessTokens
+                Name                                    = $autoAttendant.Name
+                LanguageId                              = $autoAttendant.LanguageId
+                VoiceId                                 = $autoAttendant.VoiceId
+                TimeZoneId                              = $autoAttendant.TimeZoneId
+                EnableVoiceResponse                     = [System.Boolean] $autoAttendant.VoiceResponseEnabled
+                CallFlows                               = [System.Array] $callFlowsValue
+                CallHandlingAssociations                = [System.Array] $associationsValue
+                InclusionScopeGroupIds                  = [System.String[]] $inclusionScopeValue
+                ExclusionScopeGroupIds                  = [System.String[]] $exclusionScopeValue
+                AuthorizedUsers                         = [System.String[]] $authorizedUsersValue
+                HideAuthorizedUsers                     = [System.String[]] $hideAuthorizedUsersValue
+                UserNameExtension                       = [System.String] $autoAttendant.UserNameExtension
+                EnableMainlineAttendant                 = [System.Boolean] $autoAttendant.MainlineAttendantEnabled
+                MainlineAttendantAgentVoiceId           = $autoAttendant.MainlineAttendantAgentVoiceId
+                AutoRecordingTemplateId                 = $autoAttendant.AutoRecordingTemplateId
+                SpamDetectionTemplateId                 = $autoAttendant.SpamDetectionTemplateId
+                SharedVoicemailTriageSettingsTemplateId = $autoAttendant.SharedVoicemailTriageSettingsTemplateId
+                ApplicationInstances                    = [System.String[]] $applicationInstancesValue
+                Ensure                                  = 'Present'
+                Credential                              = $this.Credential
+                ApplicationId                           = $this.ApplicationId
+                TenantId                                = $this.TenantId
+                CertificateThumbprint                   = $this.CertificateThumbprint
+                ManagedIdentity                         = $this.ManagedIdentity
+                AccessTokens                            = $this.AccessTokens
             }
 
             if ($null -ne $autoAttendant.DefaultCallFlow)
@@ -354,9 +369,12 @@ class TeamsAutoAttendant : M365DSCResourceBase
                     $createParameters.HideAuthorizedUsers = [System.Guid[]] [TeamsAutoAttendant]::GetPrincipalIds($cache, $this.HideAuthorizedUsers)
                 }
 
-                if (-not [System.String]::IsNullOrEmpty($this.MainlineAttendantAgentVoiceId))
+                foreach ($propertyName in @('MainlineAttendantAgentVoiceId', 'AutoRecordingTemplateId', 'SpamDetectionTemplateId', 'SharedVoicemailTriageSettingsTemplateId'))
                 {
-                    $createParameters.MainlineAttendantAgentVoiceId = $this.MainlineAttendantAgentVoiceId
+                    if (-not [System.String]::IsNullOrEmpty($this.$propertyName))
+                    {
+                        $createParameters.$propertyName = $this.$propertyName
+                    }
                 }
 
                 if ($null -ne $this.EnableVoiceResponse)
@@ -386,7 +404,7 @@ class TeamsAutoAttendant : M365DSCResourceBase
                 $autoAttendant = [TeamsAutoAttendant]::GetAutoAttendantInstance($this.Name)
                 $currentApplicationInstances = @($autoAttendant.ApplicationInstances)
 
-                foreach ($propertyName in @('LanguageId', 'VoiceId', 'TimeZoneId', 'UserNameExtension', 'MainlineAttendantAgentVoiceId'))
+                foreach ($propertyName in @('LanguageId', 'VoiceId', 'TimeZoneId', 'UserNameExtension', 'MainlineAttendantAgentVoiceId', 'AutoRecordingTemplateId', 'SpamDetectionTemplateId', 'SharedVoicemailTriageSettingsTemplateId'))
                 {
                     if ($boundParameters.ContainsKey($propertyName))
                     {
@@ -821,6 +839,11 @@ class TeamsAutoAttendant : M365DSCResourceBase
             $result.CallPriority = [System.Int32] $CallableEntity.CallPriority
         }
 
+        if (-not [System.String]::IsNullOrEmpty($CallableEntity.SharedVoicemailHistoryTemplateId))
+        {
+            $result.SharedVoicemailHistoryTemplateId = $CallableEntity.SharedVoicemailHistoryTemplateId
+        }
+
         return $result
     }
 
@@ -841,6 +864,19 @@ class TeamsAutoAttendant : M365DSCResourceBase
         if ($null -ne $CallFlow.RingResourceAccountDelegates)
         {
             $result.RingResourceAccountDelegates = [System.Boolean] $CallFlow.RingResourceAccountDelegates
+        }
+
+        if ($CallFlow.TimeoutThreshold -gt 0)
+        {
+            $result.TimeoutThreshold = [System.Int32] $CallFlow.TimeoutThreshold
+        }
+
+        foreach ($propertyName in @('TimeoutDisconnectPromptType', 'TimeoutDisconnectPromptCustomText', 'AiDisclaimerType', 'AiDisclaimerCustomText'))
+        {
+            if (-not [System.String]::IsNullOrEmpty($CallFlow.$propertyName))
+            {
+                $result.$propertyName = [System.String] $CallFlow.$propertyName
+            }
         }
 
         if ($null -ne $CallFlow.Menu)
@@ -934,7 +970,7 @@ class TeamsAutoAttendant : M365DSCResourceBase
             $promptParameters.AudioFilePrompt = $audioFile
         }
 
-        return New-CsAutoAttendantPrompt @promptParameters
+        return New-CsAutoAttendantPrompt @promptParameters -ErrorAction Stop
     }
 
     hidden static [System.Object] NewCallableEntityObject([System.Collections.Hashtable] $Cache, [System.Object] $CallableEntity)
@@ -969,7 +1005,27 @@ class TeamsAutoAttendant : M365DSCResourceBase
             $entityParameters.CallPriority = [System.Int16] $CallableEntity.CallPriority
         }
 
-        return New-CsAutoAttendantCallableEntity @entityParameters
+        if (-not [System.String]::IsNullOrEmpty($CallableEntity.SharedVoicemailHistoryTemplateId))
+        {
+            $entityParameters.SharedVoicemailHistoryTemplateId = $CallableEntity.SharedVoicemailHistoryTemplateId
+        }
+
+        $entity = $null
+        try
+        {
+            $entity = New-CsAutoAttendantCallableEntity @entityParameters -ErrorAction Stop
+        }
+        catch
+        {
+            throw "The call target {$($CallableEntity.Identity)} of type {$($CallableEntity.Type)} of a Teams Auto Attendant could not be created. Error: $($_.Exception.Message)"
+        }
+
+        if ($null -eq $entity)
+        {
+            throw "The call target {$($CallableEntity.Identity)} of type {$($CallableEntity.Type)} of a Teams Auto Attendant could not be created."
+        }
+
+        return $entity
     }
 
     hidden static [System.Object] NewCallFlowObject([System.Collections.Hashtable] $Cache, [System.Object] $CallFlow)
@@ -1070,6 +1126,19 @@ class TeamsAutoAttendant : M365DSCResourceBase
             $callFlowParameters.RingResourceAccountDelegates = [System.Boolean] $CallFlow.RingResourceAccountDelegates
         }
 
+        if ($null -ne $CallFlow.TimeoutThreshold)
+        {
+            $callFlowParameters.TimeoutThreshold = [System.Int32] $CallFlow.TimeoutThreshold
+        }
+
+        foreach ($propertyName in @('TimeoutDisconnectPromptType', 'TimeoutDisconnectPromptCustomText', 'AiDisclaimerType', 'AiDisclaimerCustomText'))
+        {
+            if (-not [System.String]::IsNullOrEmpty($CallFlow.$propertyName))
+            {
+                $callFlowParameters.$propertyName = $CallFlow.$propertyName
+            }
+        }
+
         return New-CsAutoAttendantCallFlow @callFlowParameters
     }
 
@@ -1150,6 +1219,29 @@ class MSFT_TeamsAutoAttendantCallFlow
     [DscProperty()]
     [System.ComponentModel.Description('Indicates whether calls ring the delegates of the resource account.')]
     [System.Nullable[System.Boolean]] $RingResourceAccountDelegates
+
+    [DscProperty()]
+    [System.ComponentModel.Description('The maximum length in seconds of a Mainline Attendant call before it is disconnected, from 15 to 2400. The service rounds the value to the nearest multiple of 15.')]
+    [ValidateRange(15, 2400)]
+    [System.Nullable[System.Int32]] $TimeoutThreshold
+
+    [DscProperty()]
+    [System.ComponentModel.Description('The type of the prompt played before a Mainline Attendant call is disconnected because it reached the timeout threshold.')]
+    [ValidateSet('Default', 'Custom')]
+    [System.String] $TimeoutDisconnectPromptType
+
+    [DscProperty()]
+    [System.ComponentModel.Description('The text read to callers before the call is disconnected when the timeout disconnect prompt type is Custom.')]
+    [System.String] $TimeoutDisconnectPromptCustomText
+
+    [DscProperty()]
+    [System.ComponentModel.Description('The type of the artificial intelligence disclaimer played to callers at the start of a Mainline Attendant interaction.')]
+    [ValidateSet('Default', 'Custom', 'None')]
+    [System.String] $AiDisclaimerType
+
+    [DscProperty()]
+    [System.ComponentModel.Description('The artificial intelligence disclaimer read to callers when the disclaimer type is Custom.')]
+    [System.String] $AiDisclaimerCustomText
 }
 
 class MSFT_TeamsAutoAttendantMenu
@@ -1265,6 +1357,10 @@ class MSFT_TeamsAutoAttendantCallableEntity
     [System.ComponentModel.Description('The priority of calls transferred to the target, from 1 (highest) to 5 (lowest).')]
     [ValidateRange(1, 5)]
     [System.Nullable[System.Int32]] $CallPriority
+
+    [DscProperty()]
+    [System.ComponentModel.Description('The id of the shared call history template that collects the history of the voicemails left for a shared voicemail target in the Queues app.')]
+    [System.String] $SharedVoicemailHistoryTemplateId
 }
 
 class MSFT_TeamsAutoAttendantCallHandlingAssociation

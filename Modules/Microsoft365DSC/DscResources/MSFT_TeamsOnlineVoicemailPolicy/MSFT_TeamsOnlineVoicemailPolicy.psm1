@@ -24,6 +24,10 @@ class TeamsOnlineVoicemailPolicy : M365DSCResourceBase
     [System.Nullable[System.Boolean]] $EnableTranscriptionTranslation
 
     [DscProperty()]
+    [System.ComponentModel.Description('Specifies whether AI-powered voicemail triage is enabled. Possible values are $true or $false.')]
+    [System.Nullable[System.Boolean]] $EnableVoicemailTriage
+
+    [DscProperty()]
     [System.ComponentModel.Description('A duration of voicemail maximum recording length. The length should be between 30 seconds to 600 seconds.')]
     [System.Nullable[System.Int32]] $MaximumRecordingLength
 
@@ -138,6 +142,7 @@ class TeamsOnlineVoicemailPolicy : M365DSCResourceBase
                 EnableTranscription                 = $policy.EnableTranscription
                 EnableTranscriptionProfanityMasking = $policy.EnableTranscriptionProfanityMasking
                 EnableTranscriptionTranslation      = $policy.EnableTranscriptionTranslation
+                EnableVoicemailTriage               = $policy.EnableVoicemailTriage
                 MaximumRecordingLength              = $policy.MaximumRecordingLength.TotalSeconds
                 PostambleAudioFile                  = $policy.PostambleAudioFile
                 PreambleAudioFile                   = $policy.PreambleAudioFile

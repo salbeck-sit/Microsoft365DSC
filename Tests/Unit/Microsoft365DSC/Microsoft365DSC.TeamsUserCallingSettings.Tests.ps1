@@ -42,8 +42,13 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
 
             Mock -CommandName Get-CsUserCallingSettings -MockWith {
                 return @{
-                    CallGroupOrder  = 'Simultaneous'
-                    UnansweredDelay = '00:00:20'
+                    CallGroupOrder         = 'Simultaneous'
+                    CallGroupTargets       = @('sip:megan.bowen@contoso.com', 'alex.wilber@contoso.com')
+                    IsUnansweredEnabled    = $true
+                    UnansweredDelay        = '00:00:20'
+                    ForwardingTarget       = 'sip:adele.vance@contoso.com'
+                    BusyOnBusyOption       = 'RingUser'
+                    MaximumConcurrentCalls = 2
                 }
             }
 
@@ -58,11 +63,15 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
         Context -Name 'When no settings are assigned to a user' -Fixture {
             BeforeAll {
                 $testParams = @{
-                    Identity        = 'Test Settings'
-                    CallGroupOrder  = 'Simultaneous'
-                    Ensure          = 'Present'
-                    Credential      = $Credential
-                    UnansweredDelay = '00:00:20'
+                    Identity               = 'Test Settings'
+                    CallGroupOrder         = 'Simultaneous'
+                    CallGroupTargets       = @('sip:megan.bowen@contoso.com')
+                    Ensure                 = 'Present'
+                    Credential             = $Credential
+                    IsUnansweredEnabled    = $true
+                    UnansweredDelay        = '00:00:20'
+                    BusyOnBusyOption       = 'RingUser'
+                    MaximumConcurrentCalls = 2
                 }
 
                 Mock -CommandName Get-CsUserCallingSettings -MockWith {
@@ -80,18 +89,27 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
 
             It 'Should assign settings in the Set method' {
                 (New-M365DSCResourceInstance -ResourceName 'TeamsUserCallingSettings' -Property $testParams).Set()
-                Should -Invoke -CommandName Set-CsUserCallingSettings -Exactly 1
+                Should -Invoke -CommandName Set-CsUserCallingSettings -Exactly 4
+                Should -Invoke -CommandName Set-CsUserCallingSettings -Exactly 1 -ParameterFilter { $CallGroupTargets -join ',' -eq 'megan.bowen@contoso.com' }
             }
         }
 
         Context -Name 'Settings exists but is not in the Desired State' -Fixture {
             BeforeAll {
                 $testParams = @{
-                    Identity        = 'Test Settings'
-                    CallGroupOrder  = 'Simultaneous'
-                    Ensure          = 'Present'
-                    Credential      = $Credential
-                    UnansweredDelay = '00:00:30' # Drift
+                    Identity               = 'Test Settings'
+                    CallGroupOrder         = 'Simultaneous'
+                    CallGroupTargets       = @()
+                    Ensure                 = 'Present'
+                    Credential             = $Credential
+                    UnansweredDelay        = '00:00:30' # Drift
+                    IsForwardingEnabled    = $true
+                    BusyOnBusyOption       = 'RingUser'
+                    MaximumConcurrentCalls = 2
+                }
+
+                Mock -CommandName Set-CsUserCallingSettings -MockWith {
+                    $Script:setCallOrder.Add((@($PesterBoundParameters.Keys | Sort-Object) -join ','))
                 }
             }
 
@@ -104,19 +122,29 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             }
 
             It 'Should update the settings from the Set method' {
+                $Script:setCallOrder = [System.Collections.Generic.List[System.String]]::new()
                 (New-M365DSCResourceInstance -ResourceName 'TeamsUserCallingSettings' -Property $testParams).Set()
-                Should -Invoke -CommandName Set-CsUserCallingSettings -Exactly 1
+                Should -Invoke -CommandName Set-CsUserCallingSettings -Exactly 3
+                $Script:setCallOrder | Should -Be @(
+                    'Identity,IsUnansweredEnabled,UnansweredDelay',
+                    'Identity,IsForwardingEnabled',
+                    'CallGroupOrder,CallGroupTargets,Identity'
+                )
             }
         }
 
         Context -Name 'Settings exists and is already in the Desired State' -Fixture {
             BeforeAll {
                 $testParams = @{
-                    Identity        = 'Test Settings'
-                    CallGroupOrder  = 'Simultaneous'
-                    Ensure          = 'Present'
-                    Credential      = $Credential
-                    UnansweredDelay = '00:00:20'
+                    Identity               = 'Test Settings'
+                    CallGroupOrder         = 'Simultaneous'
+                    CallGroupTargets       = @('megan.bowen@contoso.com', 'sip:alex.wilber@contoso.com')
+                    Ensure                 = 'Present'
+                    Credential             = $Credential
+                    UnansweredDelay        = '00:00:20'
+                    ForwardingTarget       = 'adele.vance@contoso.com'
+                    BusyOnBusyOption       = 'RingUser'
+                    MaximumConcurrentCalls = 2
                 }
             }
 

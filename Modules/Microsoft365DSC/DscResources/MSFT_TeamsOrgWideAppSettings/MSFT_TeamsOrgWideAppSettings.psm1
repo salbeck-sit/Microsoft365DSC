@@ -103,16 +103,9 @@ class TeamsOrgWideAppSettings : M365DSCResourceBase
 
         $null = $this.Connect('MicrosoftTeams')
 
-        if ($this.GetBoundParameters().ContainsKey('ApplicationId'))
-        {
-            Write-Warning -Message "This resources doesn't support 'write' operations using Service Principal Authentication."
-        }
-        else
-        {
-            $setParameters = Remove-M365DSCAuthenticationParameter -BoundParameters $this.GetBoundParameters()
-            $setParameters.Remove('IsSingleInstance') | Out-Null
-            Set-CsTeamsSettingsCustomApp @setParameters
-        }
+        $setParameters = Remove-M365DSCAuthenticationParameter -BoundParameters $this.GetBoundParameters()
+        $setParameters.Remove('IsSingleInstance') | Out-Null
+        Set-CsTeamsSettingsCustomApp @setParameters
     }
 
     [bool] Test()

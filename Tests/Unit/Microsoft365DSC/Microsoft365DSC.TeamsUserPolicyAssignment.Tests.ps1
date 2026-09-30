@@ -83,6 +83,8 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             }
             Mock -CommandName Grant-CsTeamsMobilityPolicy -MockWith {
             }
+            Mock -CommandName Grant-CsTeamsPersonalAttendantPolicy -MockWith {
+            }
             Mock -CommandName Grant-CsTeamsUpdateManagementPolicy -MockWith {
             }
             Mock -CommandName Grant-CsTeamsUpgradePolicy -MockWith {
@@ -169,6 +171,10 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                             PolicyName = "Test";
                         },
                         @{
+                            PolicyType = "TeamsPersonalAttendantPolicy"
+                            PolicyName = "Test";
+                        },
+                        @{
                             PolicyType = "TeamsUpdateManagementPolicy"
                             PolicyName = "Test";
                         },
@@ -214,6 +220,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     TeamsMeetingPolicy              = "Test";
                     TeamsMessagingPolicy            = "Test";
                     TeamsMobilityPolicy             = "Test";
+                    TeamsPersonalAttendantPolicy    = "Test";
                     TeamsUpdateManagementPolicy     = "Test";
                     TeamsUpgradePolicy              = "Test";
                     TenantDialPlan                  = "Test";
@@ -223,6 +230,17 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
 
             It 'Should return false from the Test method' {
                 (New-M365DSCResourceInstance -ResourceName 'TeamsUserPolicyAssignment' -Property $testParams).Test() | Should -Be $true
+            }
+
+            It 'Should return Global without assignments and nothing for a missing user from the Get method' {
+                Mock -CommandName Get-CsUserPolicyAssignment -MockWith {
+                }
+                (New-M365DSCResourceInstance -ResourceName 'TeamsUserPolicyAssignment' -Property $testParams).Get().ToHashtable().TeamsPersonalAttendantPolicy | Should -Be 'Global'
+
+                Mock -CommandName Get-CsUserPolicyAssignment -MockWith {
+                    Write-Error -Message 'User does not exist'
+                }
+                (New-M365DSCResourceInstance -ResourceName 'TeamsUserPolicyAssignment' -Property $testParams).Get().ToHashtable().User | Should -BeNullOrEmpty
             }
         }
 
@@ -249,6 +267,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     TeamsMeetingPolicy              = "Test";
                     TeamsMessagingPolicy            = "Test";
                     TeamsMobilityPolicy             = "Test";
+                    TeamsPersonalAttendantPolicy    = "Test";
                     TeamsUpdateManagementPolicy     = "Test";
                     TeamsUpgradePolicy              = "Test";
                     TenantDialPlan                  = "DemTestPlan";

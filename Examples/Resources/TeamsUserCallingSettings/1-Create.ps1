@@ -25,6 +25,7 @@ Configuration Example
     {
         TeamsUserCallingSettings 'TeamsUserCallingSettings-Example'
         {
+            BusyOnBusyOption          = "RedirectAsUnansweredCall";
             CallGroupOrder            = "Simultaneous";
             CallGroupTargets          = @("megan.bowen@contoso.com", "alex.wilber@contoso.com");
             Ensure                    = "Present";
@@ -35,6 +36,7 @@ Configuration Example
             Identity                  = "John.Smith@contoso.com";
             IsForwardingEnabled       = $true;
             IsUnansweredEnabled       = $true;
+            MaximumConcurrentCalls    = 2;
             UnansweredDelay           = "00:00:20";
             UnansweredTarget          = "megan.bowen@contoso.com";
             UnansweredTargetType      = "SingleTarget";

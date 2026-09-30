@@ -36,6 +36,54 @@ class TeamsChannelsPolicy : M365DSCResourceBase
     [System.Nullable[System.Boolean]] $AllowUserToParticipateInExternalSharedChannel
 
     [DscProperty()]
+    [System.ComponentModel.Description('This setting enables/disables Next Generation Channel creation and editing. Possible values: Enabled, Disabled.')]
+    [System.String] $AllowCreateChannel
+
+    [DscProperty()]
+    [System.ComponentModel.Description('This setting enables/disables Classic Channel creation and editing. Possible values: Enabled, Disabled.')]
+    [System.String] $AllowCreateClassicChannel
+
+    [DscProperty()]
+    [System.ComponentModel.Description('This setting enables/disables Next Generation Private Channel creation and editing. Possible values: Enabled, Disabled.')]
+    [System.String] $AllowCreatePrivateChannel
+
+    [DscProperty()]
+    [System.ComponentModel.Description('This setting enables/disables Next Generation Shared Channel creation and editing. Possible values: Enabled, Disabled.')]
+    [System.String] $AllowCreateSharedChannel
+
+    [DscProperty()]
+    [System.ComponentModel.Description('This setting sets whether users are able to create Next Generation Shared Channels by default. Possible values: Enabled, Disabled.')]
+    [System.String] $CreateSharedChannelsByDefault
+
+    [DscProperty()]
+    [System.ComponentModel.Description('This setting enables/disables whether users from outside the team are allowed in Next Generation Channels. Possible values: Enabled, Disabled.')]
+    [System.String] $AllowUsersFromOutsideTeam
+
+    [DscProperty()]
+    [System.ComponentModel.Description('This setting enables/disables whether guests from outside the team are allowed in Next Generation Channels. Possible values: Enabled, Disabled.')]
+    [System.String] $AllowGuestsFromOutsideTeam
+
+    [DscProperty()]
+    [System.ComponentModel.Description('This setting enables/disables whether users from outside the team are allowed in Next Generation Private Channels. Possible values: Enabled, Disabled.')]
+    [System.String] $AllowUsersFromOutsideTeamInPrivateChannel
+
+    [DscProperty()]
+    [System.ComponentModel.Description('This setting enables/disables whether guests from outside the team are allowed in Next Generation Private Channels. Possible values: Enabled, Disabled.')]
+    [System.String] $AllowGuestsFromOutsideTeamInPrivateChannel
+
+    [DscProperty()]
+    [System.ComponentModel.Description('This setting enables/disables sharing Next Generation Channels with Teams in the same organization. Possible values: Enabled, Disabled.')]
+    [System.String] $AllowSharingWithTeamInOrg
+
+    [DscProperty()]
+    [System.ComponentModel.Description('This setting enables/disables sharing Next Generation Private Channels with Teams in the same organization. Possible values: Enabled, Disabled.')]
+    [System.String] $AllowSharingPrivateChannelWithTeamInOrg
+
+    [DscProperty()]
+    [System.ComponentModel.Description('This setting sets the default channel type that users have available on channel creation. Possible values: Flexible, Private, Standard, Shared.')]
+    [System.String] $DefaultChannelTypeOnCreation
+
+    [DscProperty()]
     [System.ComponentModel.Description('Present ensures the policy exists, absent ensures it is removed.')]
     [ValidateSet('Present', 'Absent')]
     [System.String] $Ensure
@@ -125,6 +173,18 @@ class TeamsChannelsPolicy : M365DSCResourceBase
                 AllowPrivateChannelCreation                   = $policy.AllowPrivateChannelCreation
                 AllowSharedChannelCreation                    = $policy.AllowSharedChannelCreation
                 AllowUserToParticipateInExternalSharedChannel = $policy.AllowUserToParticipateInExternalSharedChannel
+                AllowCreateChannel                            = $policy.AllowCreateChannel
+                AllowCreateClassicChannel                     = $policy.AllowCreateClassicChannel
+                AllowCreatePrivateChannel                     = $policy.AllowCreatePrivateChannel
+                AllowCreateSharedChannel                      = $policy.AllowCreateSharedChannel
+                CreateSharedChannelsByDefault                 = $policy.CreateSharedChannelsByDefault
+                AllowUsersFromOutsideTeam                     = $policy.AllowUsersFromOutsideTeam
+                AllowGuestsFromOutsideTeam                    = $policy.AllowGuestsFromOutsideTeam
+                AllowUsersFromOutsideTeamInPrivateChannel     = $policy.AllowUsersFromOutsideTeamInPrivateChannel
+                AllowGuestsFromOutsideTeamInPrivateChannel    = $policy.AllowGuestsFromOutsideTeamInPrivateChannel
+                AllowSharingWithTeamInOrg                     = $policy.AllowSharingWithTeamInOrg
+                AllowSharingPrivateChannelWithTeamInOrg       = $policy.AllowSharingPrivateChannelWithTeamInOrg
+                DefaultChannelTypeOnCreation                  = $policy.DefaultChannelTypeOnCreation
                 Ensure                                        = 'Present'
                 Credential                                    = $this.Credential
                 ApplicationId                                 = $this.ApplicationId

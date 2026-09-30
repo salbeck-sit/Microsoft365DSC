@@ -17,6 +17,11 @@ class TeamsEventsPolicy : M365DSCResourceBase
     [System.String] $AllowEmailEditing
 
     [DscProperty()]
+    [System.ComponentModel.Description('Controls whether attendance and engagement reports are allowed for events. Possible values are: Enabled, Disabled, ForceEnabled, ForceDisabled.')]
+    [ValidateSet('Enabled', 'Disabled', 'ForceEnabled', 'ForceDisabled')]
+    [System.String] $AllowEngagementReport
+
+    [DscProperty()]
     [System.ComponentModel.Description('This setting governs access to the integrations tab in the event creation workflow.')]
     [System.Nullable[System.Boolean]] $AllowEventIntegrations
 
@@ -64,6 +69,11 @@ class TeamsEventsPolicy : M365DSCResourceBase
     [System.ComponentModel.Description('This setting governs if a user can create Immersive Events using Teams Events.')]
     [ValidateSet('Enabled', 'Disabled')]
     [System.String] $ImmersiveEvents
+
+    [DscProperty()]
+    [System.ComponentModel.Description('Controls what information is shown in attendance reports. Possible values are: FullInformation, IdentityOnly.')]
+    [ValidateSet('FullInformation', 'IdentityOnly')]
+    [System.String] $InfoShownInReportMode
 
     [DscProperty()]
     [System.ComponentModel.Description('Determines whether recording is allowed in a user''s townhall.')]
@@ -204,12 +214,14 @@ class TeamsEventsPolicy : M365DSCResourceBase
                 EventAccessType                         = $policy.EventAccessType
                 ExternalPresenterJoinVerification       = $policy.ExternalPresenterJoinVerification
                 AllowEmailEditing                       = $policy.AllowEmailEditing
+                AllowEngagementReport                   = $policy.AllowEngagementReport
                 AllowEventIntegrations                  = $policy.AllowEventIntegrations
                 AllowTownhalls                          = $policy.AllowTownhalls
                 AllowedQuestionTypesInRegistrationForm  = $policy.AllowedQuestionTypesInRegistrationForm
                 AllowedWebinarTypesForRecordingPublish  = $policy.AllowedWebinarTypesForRecordingPublish
                 AllowedTownhallTypesForRecordingPublish = $policy.AllowedTownhallTypesForRecordingPublish
                 ImmersiveEvents                         = $policy.ImmersiveEvents
+                InfoShownInReportMode                   = $policy.InfoShownInReportMode
                 RecordingForTownhall                    = $policy.RecordingForTownhall
                 RecordingForWebinar                     = $policy.RecordingForWebinar
                 Registration                            = $policy.Registration

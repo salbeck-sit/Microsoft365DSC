@@ -2314,10 +2314,9 @@ function Invoke-M365DSCClassResourceInPowerShellCore
 
 # The endpoint's own idle timeout is two hours, and it allows 25 concurrent shells per user.
 $script:M365DSCSessionIdleTimeoutMilliseconds = 600000
+$script:M365DSCModuleManifestPath = Join-Path -Path (Split-Path -Path $PSScriptRoot -Parent) -ChildPath 'Microsoft365DSC.psd1'
 $script:PSCoreSession = $null
 $script:PSCoreSessionInitialized = $false
-$script:WinPSSession = $null
-$script:WinPSSessionInitialized = $false
 
 <#
 .SYNOPSIS
@@ -2427,32 +2426,15 @@ function Close-M365DSCPowerShellSessions
     Remove-M365DSCPowerShellSession -Session $script:PSCoreSession
     $script:PSCoreSession = $null
     $script:PSCoreSessionInitialized = $false
-
-    Remove-M365DSCPowerShellSession -Session $script:WinPSSession
-    $script:WinPSSession = $null
-    $script:WinPSSessionInitialized = $false
 }
 
 function Get-PowerShellSession
 {
     [CmdletBinding()]
     [OutputType([System.Management.Automation.Runspaces.PSSession])]
-    param
-    (
-        [Parameter(Mandatory = $false)]
-        [ValidateSet('PowerShell7', 'WindowsPowerShell')]
-        [System.String]
-        $PowerShellVersion
-    )
+    param ()
 
-    if ($PowerShellVersion -eq 'WindowsPowerShell')
-    {
-        return $Script:WinPSSession
-    }
-    else
-    {
-        return $Script:PSCoreSession
-    }
+    return $Script:PSCoreSession
 }
 
 <#
@@ -2493,12 +2475,22 @@ function Initialize-PowerShellCoreSession
         $script:PSCoreSession = New-PSSession -ComputerName localhost -ConfigurationName PowerShell.7 -EnableNetworkAccess `
             -SessionOption (New-PSSessionOption -IdleTimeout $script:M365DSCSessionIdleTimeoutMilliseconds) -ErrorAction Stop
         $lcmConfig = Get-DscLocalConfigurationManager
-        Invoke-Command -Session $script:PSCoreSession -ScriptBlock {
+        Invoke-Command -Session $script:PSCoreSession -ArgumentList $script:M365DSCModuleManifestPath -ScriptBlock {
+            param ($ModuleManifestPath)
+
+            # TODO: Remove once https://github.com/PowerShell/PowerShell-Native/issues/114 and new PowerShell version is released
+            $pipelinesPath = Join-Path -Path $PSHOME -ChildPath 'System.IO.Pipelines.dll'
+            $pipelinesLoaded = [System.AppDomain]::CurrentDomain.GetAssemblies() | Where-Object -FilterScript { $_.GetName().Name -eq 'System.IO.Pipelines' }
+            if ($null -eq $pipelinesLoaded -and (Test-Path -Path $pipelinesPath))
+            {
+                $null = [System.Runtime.Loader.AssemblyLoadContext]::Default.LoadFromAssemblyPath($pipelinesPath)
+            }
+
             $previousVerbosePreference = $global:VerbosePreference
             $global:VerbosePreference = 'SilentlyContinue'
             try
             {
-                Import-Module -Name Microsoft365DSC -Alias @() -Cmdlet @() -Variable @() -DisableNameChecking -SkipEditionCheck
+                Import-Module -Name $ModuleManifestPath -Function '*' -Alias @() -Cmdlet @() -Variable @() -DisableNameChecking -SkipEditionCheck
             }
             finally
             {
@@ -2511,67 +2503,6 @@ function Initialize-PowerShellCoreSession
     catch [System.Management.Automation.Remoting.PSRemotingTransportException]
     {
         throw "The function 'Initialize-PowerShellCoreSession' requires PowerShell Core to be installed and WinRM to be configured. Please install PowerShell Core and run 'Enable-PSRemoting -Force -SkipNetworkProfileCheck'."
-    }
-    catch
-    {
-        throw
-    }
-}
-
-<#
-.DESCRIPTION
-    Initializes a Windows PowerShell session.
-
-.FUNCTIONALITY
-    Private
-
-.EXAMPLE
-    Initialize-WindowsPowerShellSession
-#>
-function Initialize-WindowsPowerShellSession
-{
-    [CmdletBinding()]
-    param ()
-
-    if ($script:WinPSSessionInitialized -and (Test-M365DSCPowerShellSession -Session $script:WinPSSession))
-    {
-        return
-    }
-
-    Remove-M365DSCPowerShellSession -Session $script:WinPSSession
-    $script:WinPSSession = $null
-
-    if ($PSEdition -eq 'Core' -and -not $IsWindows)
-    {
-        throw "The function 'Initialize-WindowsPowerShellSession' is only supported on Windows."
-    }
-
-    if (-not ([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator))
-    {
-        throw "The function 'Initialize-WindowsPowerShellSession' requires administrative privileges. Either run the current session with administrative privileges or run the command directly in Windows PowerShell."
-    }
-
-    try
-    {
-        $script:WinPSSession = New-PSSession -ComputerName localhost -ConfigurationName PowerShell.7 -EnableNetworkAccess `
-            -SessionOption (New-PSSessionOption -IdleTimeout $script:M365DSCSessionIdleTimeoutMilliseconds) -ErrorAction Stop
-        Invoke-Command -Session $script:WinPSSession -ScriptBlock {
-            $previousVerbosePreference = $global:VerbosePreference
-            $global:VerbosePreference = 'SilentlyContinue'
-            try
-            {
-                Import-Module -Name Microsoft365DSC -Alias @() -Cmdlet @() -Variable @() -DisableNameChecking -SkipEditionCheck
-            }
-            finally
-            {
-                $global:VerbosePreference = $previousVerbosePreference
-            }
-        }
-        $script:WinPSSessionInitialized = $true
-    }
-    catch [System.Management.Automation.Remoting.PSRemotingTransportException]
-    {
-        throw "The function 'Initialize-WindowsPowerShellSession' requires Windows PowerShell 5.1 to be installed and WinRM to be configured. Please run 'Enable-PSRemoting -Force -SkipNetworkProfileCheck'."
     }
     catch
     {
@@ -3967,7 +3898,6 @@ Export-ModuleMember -Function @(
     'Initialize-M365DSCSchemaCache',
     'Close-M365DSCPowerShellSessions',
     'Initialize-PowerShellCoreSession',
-    'Initialize-WindowsPowerShellSession',
     'Install-M365DSCDevBranch',
     'Invoke-M365DSCClassResourceInPowerShellCore',
     'Invoke-M365DSCGraphBatchRequest',

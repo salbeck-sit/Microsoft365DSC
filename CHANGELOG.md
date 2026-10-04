@@ -81,9 +81,6 @@
     to `MSFT_MicrosoftGraphPrivilegedAccessPatternedRecurrence`.
   * The export now only queries groups that are enabled in PIM for Groups instead of every
     group in the tenant. Requires the `PrivilegedAccess.Read.AzureADGroup` permission.
-* AADGroupEligibilitySchedule
-  * [BREAKING CHANGE] Renamed the embedded class `MSFT_MicrosoftGraphRecurrenceRange1` to
-    `MSFT_MicrosoftGraphRecurrenceRange`.
 * AADGroupEligibilityScheduleSettings
   * Replaced the deprecated `/beta/privilegedAccess/aadGroups/resources` API, which stops
     returning data on October 28, 2026, with the PIM for Groups resources API. Requires the
@@ -182,8 +179,7 @@
 * EXOAtpPolicyForO365
   * [BREAKING CHANGE] Removed `Identity` property.
 * EXOAvailabilityAddressSpace
-  * [BREAKING CHANGE] Changed type for `Credentials` from String
-    to PSCredential and removed it from the export output.
+  * Removed `Credentials` from the export output and the drift comparison.
 * EXOArcConfig
   * Fixed an issue where the `ArcTrustedSealers` property was exported as
     a single string instead of an array.
@@ -335,10 +331,6 @@
     `MSFT_MicrosoftGraphIpRange`.
   * [BREAKING CHANGE] Renamed the embedded class `MSFT_MicrosoftGraphProxiedDomain1` to
     `MSFT_MicrosoftGraphProxiedDomain`.
-  * [BREAKING CHANGE] Renamed the embedded class `MSFT_MicrosoftGraphIpRange1` to
-    `MSFT_MicrosoftGraphIpRange`.
-  * [BREAKING CHANGE] Renamed the embedded class `MSFT_MicrosoftGraphProxiedDomain1` to
-    `MSFT_MicrosoftGraphProxiedDomain`.
   * Added support for the `DeviceManagementApplicabilityRuleOsEdition`,
     `DeviceManagementApplicabilityRuleOsVersion` and
     `DeviceManagementApplicabilityRuleDeviceMode` properties.
@@ -358,9 +350,6 @@
 * IntuneDeviceConfigurationPolicyMacOS
   * Added support for the `ActivationLockWhenSupervisedAllowed` property.
 * IntuneDeviceConfigurationPolicyWindows10
-  * [BREAKING CHANGE] Renamed the embedded class
-    `MSFT_MicrosoftGraphdefenderDetectedMalwareActions1` to
-    `MSFT_MicrosoftGraphdefenderDetectedMalwareActions`.
   * [BREAKING CHANGE] Renamed the embedded class
     `MSFT_MicrosoftGraphdefenderDetectedMalwareActions1` to
     `MSFT_MicrosoftGraphdefenderDetectedMalwareActions`.
@@ -529,9 +518,6 @@
   * [BREAKING CHANGE] Replaced the deprecated `Language` property with the `Locale`
     property.
 * IntuneWindowsAutopilotDeploymentProfileAzureADJoined
-  * [BREAKING CHANGE] Renamed the embedded class
-    `MSFT_MicrosoftGraphwindowsEnrollmentStatusScreenSettings1` to
-    `MSFT_MicrosoftGraphwindowsEnrollmentStatusScreenSettings`.
   * [BREAKING CHANGE] Renamed the embedded class
     `MSFT_MicrosoftGraphwindowsEnrollmentStatusScreenSettings1` to
     `MSFT_MicrosoftGraphwindowsEnrollmentStatusScreenSettings`.

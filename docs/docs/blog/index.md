@@ -2,6 +2,7 @@
 
 ## Major Updates
 
+* [October 2026 Major Release](./october-2026-major-release.md)
 * [October 2025 Major Release](./october-2025-major-release.md)
 * [April 2025 Major Release](./april-2025-major-release.md)
 * [October 2024 Major Release](./october-2024-major-release.md)

@@ -701,12 +701,12 @@ class AADGroupEligibilitySchedule : M365DSCResourceBase
                             }
                             @{
                                 Name            = 'Recurrence'
-                                CimInstanceName = 'MicrosoftGraphPatternedRecurrence1'
+                                CimInstanceName = 'MicrosoftGraphPrivilegedAccessPatternedRecurrence'
                                 IsRequired      = $False
                             }
                             @{
                                 Name            = 'Pattern'
-                                CimInstanceName = 'MicrosoftGraphRecurrencePattern1'
+                                CimInstanceName = 'MicrosoftGraphPrivilegedAccessRecurrencePattern'
                                 IsRequired      = $False
                             }
                             @{
@@ -811,7 +811,7 @@ class MSFT_MicrosoftGraphrequestSchedule
 
     [DscProperty()]
     [System.ComponentModel.Description('The frequency of the  eligible or active assignment. This property is currently unsupported in PIM.')]
-    [MSFT_MicrosoftGraphPatternedRecurrence1] $Recurrence
+    [MSFT_MicrosoftGraphPrivilegedAccessPatternedRecurrence] $Recurrence
 
     [DscProperty()]
     [System.ComponentModel.Description('When the  eligible or active assignment becomes active.')]
@@ -834,18 +834,18 @@ class MSFT_MicrosoftGraphExpirationPattern
     [System.String] $Type
 }
 
-class MSFT_MicrosoftGraphPatternedRecurrence1
+class MSFT_MicrosoftGraphPrivilegedAccessPatternedRecurrence
 {
     [DscProperty()]
     [System.ComponentModel.Description('The frequency of an event.  For access reviews: Do not specify this property for a one-time access review.  Only interval, dayOfMonth, and type (weekly, absoluteMonthly) properties of recurrencePattern are supported.')]
-    [MSFT_MicrosoftGraphRecurrencePattern1] $Pattern
+    [MSFT_MicrosoftGraphPrivilegedAccessRecurrencePattern] $Pattern
 
     [DscProperty()]
     [System.ComponentModel.Description('The duration of an event.')]
     [MSFT_MicrosoftGraphRecurrenceRange] $Range
 }
 
-class MSFT_MicrosoftGraphRecurrencePattern1
+class MSFT_MicrosoftGraphPrivilegedAccessRecurrencePattern
 {
     [DscProperty()]
     [System.ComponentModel.Description('The day of the month on which the event occurs. Required if type is absoluteMonthly or absoluteYearly.')]

@@ -9,6 +9,7 @@ nav:
   - Blog:
       - 'Blog Posts': 'blog/index.md'
       - Major Updates:
+          - 'October 2026': 'blog/october-2026-major-release.md'
           - 'October 2025': 'blog/october-2025-major-release.md'
           - 'April 2025': 'blog/april-2025-major-release.md'
           - 'October 2024': 'blog/october-2024-major-release.md'

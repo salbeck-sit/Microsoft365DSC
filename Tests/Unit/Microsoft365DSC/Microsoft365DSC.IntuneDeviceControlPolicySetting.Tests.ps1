@@ -224,23 +224,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                 $testParams = @{
                     Id          = 'FakeStringValue'
                     DisplayName = 'FakeStringValue'
-                    Description = 'FakeStringValue'
-                    MatchType   = 'Any'
-                    PrinterPolicySettings = @(
-                        ([MSFT_ReusablePrinterDeviceControlPolicySetting] @{
-                            FriendlyNameId = 'FriendlyNameId'
-                            Name = 'PrinterSetting'
-                            PrimaryId = 0
-                            PrinterConnectionId = 0
-                        })
-                    )
-                    StoragePolicySettings = @(
-                        ([MSFT_ReusableStorageDeviceControlPolicySetting] @{
-                            FriendlyNameId = 'FriendlyNameId'
-                            Name = 'RemovableStorageSetting'
-                            VID_PID = '0000_1111'
-                        })
-                    )
                     Ensure = 'Absent'
                     Credential = $Credential;
                 }

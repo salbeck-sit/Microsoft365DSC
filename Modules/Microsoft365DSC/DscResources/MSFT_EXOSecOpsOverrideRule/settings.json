@@ -11,7 +11,7 @@
     "generatorVersion": "2.0.0"
   },
   "excludedProperties": [],
-  "description": "Use this resource to manage phish sim override rules.",
+  "description": "Use this resource to manage the SecOps mailbox override rule.",
   "roles": {
     "read": [
       "Global Reader"
@@ -65,9 +65,12 @@
       "module": "ExchangeOnlineManagement",
       "cmdlets": [
         "Get-EXOSecOpsOverrideRule",
+        "Get-SecOpsOverridePolicy",
         "New-EXOSecOpsOverrideRule",
+        "New-SecOpsOverridePolicy",
         "Remove-EXOSecOpsOverrideRule",
-        "Set-EXOSecOpsOverrideRule"
+        "Set-EXOSecOpsOverrideRule",
+        "Set-SecOpsOverridePolicy"
       ]
     }
   ]

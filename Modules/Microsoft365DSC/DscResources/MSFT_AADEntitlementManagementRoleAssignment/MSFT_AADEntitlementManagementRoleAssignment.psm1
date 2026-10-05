@@ -131,6 +131,12 @@ class AADEntitlementManagementRoleAssignment : M365DSCResourceBase
                 $getValue = $this.ExportedInstance
             }
 
+            if ($null -eq $getValue)
+            {
+                Write-Verbose -Message 'No existing assignments were found'
+                return $this.AsResult($nullResult)
+            }
+
             switch ($getValue.Principal.'@odata.type')
             {
                 '#microsoft.graph.user'
@@ -145,12 +151,6 @@ class AADEntitlementManagementRoleAssignment : M365DSCResourceBase
                 {
                     $principalName = (Get-MgGroup -GroupId $getValue.PrincipalId).displayName
                 }
-            }
-
-            if ($null -eq $getValue)
-            {
-                Write-Verbose -Message 'No existing assignments were found'
-                return $this.AsResult($nullResult)
             }
 
             Write-Verbose -Message "Found existing role assignment with ID {$($getValue.id)}."

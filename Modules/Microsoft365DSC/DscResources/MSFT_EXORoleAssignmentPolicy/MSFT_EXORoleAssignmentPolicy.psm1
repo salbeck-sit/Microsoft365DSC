@@ -164,6 +164,11 @@ class EXORoleAssignmentPolicy : M365DSCResourceBase
         elseif ($this.Ensure -eq 'Absent' -and $currentRoleAssignmentPolicyConfig.Ensure -eq 'Present')
         {
             Write-Verbose -Message "Role Assignment Policy '$($this.Name)' exists but it shouldn't. Remove it."
+            foreach ($roleAssignment in @(Get-ManagementRoleAssignment -RoleAssignee $this.Name -ErrorAction SilentlyContinue))
+            {
+                Write-Verbose -Message "Removing Management Role Assignment {$($roleAssignment.Name)} from Role Assignment Policy {$($this.Name)}"
+                Remove-ManagementRoleAssignment -Identity $roleAssignment.Name -Confirm:$false
+            }
             Remove-RoleAssignmentPolicy -Identity $this.Name -Confirm:$false
         }
         # CASE: Role Assignment Policy exists and it should, but has different values than the desired ones

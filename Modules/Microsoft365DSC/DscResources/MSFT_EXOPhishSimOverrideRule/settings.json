@@ -11,7 +11,7 @@
     "generatorVersion": "2.0.0"
   },
   "excludedProperties": [],
-  "description": "Use this resource to manage phish sim override rules.",
+  "description": "Use this resource to manage the phishing simulation override rule.",
   "roles": {
     "read": [
       "Exchange Admin"
@@ -65,7 +65,9 @@
       "module": "ExchangeOnlineManagement",
       "cmdlets": [
         "Get-EXOPhishSimOverrideRule",
+        "Get-PhishSimOverridePolicy",
         "New-EXOPhishSimOverrideRule",
+        "New-PhishSimOverridePolicy",
         "Remove-EXOPhishSimOverrideRule",
         "Set-EXOPhishSimOverrideRule"
       ]

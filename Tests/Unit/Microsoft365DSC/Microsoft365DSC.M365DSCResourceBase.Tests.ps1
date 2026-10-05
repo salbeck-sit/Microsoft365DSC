@@ -284,6 +284,81 @@ Describe 'M365DSCResourceBase report context' {
     }
 }
 
+Describe 'M365DSCResourceBase time helpers' {
+    BeforeAll {
+        $Script:Resource = New-M365DSCResourceInstance -ResourceName 'EXORoleGroup' -Property @{
+            Name = 'Organization Management'
+        }
+    }
+
+    It 'Reads a value without offset as UTC' {
+        $Script:Resource::ConvertToDateTimeOffset('2030-01-01T00:00:00').Offset | Should -Be ([System.TimeSpan]::Zero)
+        $Script:Resource::ConvertToDateTimeOffset([System.DateTime]::new(2030, 1, 1, 0, 0, 0, [System.DateTimeKind]::Unspecified)).UtcDateTime |
+            Should -Be ([System.DateTime]::new(2030, 1, 1, 0, 0, 0, [System.DateTimeKind]::Utc))
+    }
+
+    It 'Returns null for an empty or unparsable date' {
+        $Script:Resource::ConvertToDateTimeOffset($null) | Should -BeNullOrEmpty
+        $Script:Resource::ConvertToDateTimeOffset('') | Should -BeNullOrEmpty
+        $Script:Resource::ConvertToDateTimeOffset('not a date') | Should -BeNullOrEmpty
+    }
+
+    It 'Formats dates as round-trip UTC timestamps' {
+        $Script:Resource::FormatDateTime('12/31/2024 11:59:59 PM +00:00') | Should -Be '2024-12-31T23:59:59.0000000Z'
+        $Script:Resource::FormatDateTime('2030-01-01T02:00:00+02:00') | Should -Be '2030-01-01T00:00:00.0000000Z'
+        $Script:Resource::FormatDateTime([System.DateTime]::new(2030, 1, 1, 0, 0, 0, [System.DateTimeKind]::Utc)) | Should -Be '2030-01-01T00:00:00.0000000Z'
+        $Script:Resource::FormatDateTime('not a date') | Should -Be 'not a date'
+        $Script:Resource::FormatDateTime($null) | Should -BeNullOrEmpty
+    }
+
+    It 'Compares dates by instant' {
+        $Script:Resource::IsSameDateTime('2030-01-01T00:00:00.0000000Z', '2030-01-01T00:00:00Z') | Should -BeTrue
+        $Script:Resource::IsSameDateTime('2030-01-01T02:00:00+02:00', '2030-01-01T00:00:00Z') | Should -BeTrue
+        $Script:Resource::IsSameDateTime('2030-01-01T00:00:01Z', '2030-01-01T00:00:00Z') | Should -BeFalse
+        $Script:Resource::IsSameDateTime($null, '') | Should -BeTrue
+    }
+
+    It 'Formats durations in their shortest ISO 8601 form' {
+        $Script:Resource::FormatDuration('P90DT0H0M0S') | Should -Be 'P90D'
+        $Script:Resource::FormatDuration([System.TimeSpan]::FromHours(1)) | Should -Be 'PT1H'
+        $Script:Resource::FormatDuration('not a duration') | Should -Be 'not a duration'
+        $Script:Resource::FormatDuration($null) | Should -BeNullOrEmpty
+    }
+
+    It 'Matches a duration against the time between two dates to the minute' {
+        $Script:Resource::IsSameDuration('PT8H', '2030-01-01T00:00:00Z', '2030-01-01T08:00:30Z') | Should -BeTrue
+        $Script:Resource::IsSameDuration('PT8H', '2030-01-01T00:00:00Z', '2030-01-01T09:00:00Z') | Should -BeFalse
+        $Script:Resource::IsSameDuration('not a duration', '2030-01-01T00:00:00Z', '2030-01-01T08:00:00Z') | Should -BeFalse
+    }
+}
+
+Describe 'M365DSCResourceBase deprecation warning' {
+    BeforeEach {
+        Mock -CommandName Write-Warning -ModuleName '_Shared' -MockWith {
+        }
+    }
+
+    It 'Names the resource, its replacement and the information link' {
+        $instance = New-M365DSCResourceInstance -ResourceName 'EXOApplicationAccessPolicy' -Property @{ Identity = 'Contoso Policy' }
+        $instance.WarnResourceDeprecated("'EXOManagementRoleAssignment'", 'https://learn.microsoft.com/exchange/permissions-exo/application-rbac')
+
+        Should -Invoke -CommandName Write-Warning -ModuleName '_Shared' -Exactly 2
+        Should -Invoke -CommandName Write-Warning -ModuleName '_Shared' -Exactly 1 -ParameterFilter {
+            $Message -eq "The resource 'EXOApplicationAccessPolicy' is deprecated. It will be removed in a future release. Please use 'EXOManagementRoleAssignment' instead."
+        }
+        Should -Invoke -CommandName Write-Warning -ModuleName '_Shared' -Exactly 1 -ParameterFilter {
+            $Message -eq 'For more information, please visit https://learn.microsoft.com/exchange/permissions-exo/application-rbac'
+        }
+    }
+
+    It 'Omits the information line when no link is given' {
+        $instance = New-M365DSCResourceInstance -ResourceName 'EXOApplicationAccessPolicy' -Property @{ Identity = 'Contoso Policy' }
+        $instance.WarnResourceDeprecated("'EXOManagementRoleAssignment'", $null)
+
+        Should -Invoke -CommandName Write-Warning -ModuleName '_Shared' -Exactly 1
+    }
+}
+
 Describe 'M365DSCResourceBase type data registration' {
     BeforeAll {
         $Script:Group = New-M365DSCResourceInstance -ResourceName 'AADGroup'
@@ -462,6 +537,102 @@ Describe 'M365DSCResourceBase bound parameter snapshot' {
         }
 
         @($mismatches) | Should -BeNullOrEmpty
+    }
+}
+
+Describe 'M365DSCResourceBase Ensure default' {
+    BeforeAll {
+        $stubPath = Join-Path -Path $PSScriptRoot -ChildPath '..\Stubs\Microsoft365.psm1' -Resolve
+        Import-Module -Name $stubPath -WarningAction SilentlyContinue -Global
+
+        $Script:AUModule = Get-M365DSCResourceModuleName -ResourceName 'AADAdministrativeUnit'
+        $secpasswd = ConvertTo-SecureString (New-Guid | Out-String) -AsPlainText -Force
+        $Script:Credential = New-Object System.Management.Automation.PSCredential ('tenantadmin@onmicrosoft.com', $secpasswd)
+
+        Mock -CommandName New-M365DSCConnection -ModuleName '_Shared' -MockWith {
+            return 'Credentials'
+        }
+
+        Mock -CommandName Add-M365DSCTelemetryEvent -ModuleName '_Shared' -MockWith {
+        }
+
+        Mock -CommandName Confirm-M365DSCDependencies -ModuleName $Script:AUModule -MockWith {
+        }
+
+        Mock -CommandName Get-MgDirectoryAdministrativeUnit -ModuleName $Script:AUModule -MockWith {
+        }
+
+        Mock -CommandName New-MgDirectoryAdministrativeUnit -ModuleName $Script:AUModule -MockWith {
+            return @{ Id = 'new' }
+        }
+
+        Mock -CommandName Start-Sleep -ModuleName $Script:AUModule -MockWith {
+        }
+    }
+
+    It 'Creates the object when the configuration omits Ensure' {
+        $instance = New-M365DSCResourceInstance -ResourceName 'AADAdministrativeUnit' -Property @{
+            DisplayName = 'Contoso'
+            Credential  = $Script:Credential
+        }
+
+        $instance.Set()
+
+        $instance.Ensure | Should -Be 'Present'
+        $instance.GetBoundParameters().ContainsKey('Ensure') | Should -BeFalse
+        Should -Invoke -CommandName New-MgDirectoryAdministrativeUnit -ModuleName $Script:AUModule -Exactly -Times 1 -ParameterFilter {
+            $BodyParameter.DisplayName -eq 'Contoso' -and -not $BodyParameter.ContainsKey('Ensure')
+        }
+    }
+
+    It 'Keeps an explicit Absent' {
+        $instance = New-M365DSCResourceInstance -ResourceName 'AADAdministrativeUnit' -Property @{
+            DisplayName = 'Contoso'
+            Ensure      = 'Absent'
+            Credential  = $Script:Credential
+        }
+
+        $instance.Set()
+
+        $instance.Ensure | Should -Be 'Absent'
+        $instance.GetBoundParameters().Ensure | Should -Be 'Absent'
+        Should -Invoke -CommandName New-MgDirectoryAdministrativeUnit -ModuleName $Script:AUModule -Exactly -Times 0
+    }
+
+    It 'Defaults an Ensure that DSC left unset by reflection without binding it' {
+        $instance = New-M365DSCResourceInstance -ResourceName 'AADAdministrativeUnit'
+        Set-PropertyByReflection -Instance $instance -Name 'DisplayName' -Value 'Contoso'
+
+        $null = $instance.RequiresPowerShellCore()
+
+        $instance.Ensure | Should -Be 'Present'
+        $bound = $instance.GetBoundParameters()
+        $bound.DisplayName | Should -Be 'Contoso'
+        $bound.ContainsKey('Ensure') | Should -BeFalse
+        $instance.GetAllParameters().ContainsKey('Ensure') | Should -BeFalse
+    }
+
+    It 'Leaves the Ensure of a Get result to Get' {
+        $instance = New-M365DSCResourceInstance -ResourceName 'AADAdministrativeUnit' -Property @{
+            DisplayName = 'Contoso'
+            Credential  = $Script:Credential
+        }
+
+        $instance.Get().Ensure | Should -Be 'Absent'
+        $instance.Get().ToHashtable().Ensure | Should -Be 'Absent'
+
+        $result = $instance.AsResult(@{ DisplayName = 'Contoso' })
+        $result.Ensure | Should -BeNullOrEmpty
+        $result.ToHashtable().ContainsKey('Ensure') | Should -BeFalse
+    }
+
+    It 'Ignores resources without an Ensure property' {
+        $instance = New-M365DSCResourceInstance -ResourceName 'M365DSCGraphAPIRuleEvaluation'
+
+        $null = $instance.RequiresPowerShellCore()
+
+        $instance.GetSchemaPropertyNames() | Should -Not -Contain 'Ensure'
+        Assert-SnapshotMatchesOracle -Instance $instance
     }
 }
 

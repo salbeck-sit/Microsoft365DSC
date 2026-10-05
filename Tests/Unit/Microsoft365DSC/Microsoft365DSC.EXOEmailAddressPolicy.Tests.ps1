@@ -129,6 +129,17 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             It 'Should call the Set method' {
                 (New-M365DSCResourceInstance -ResourceName 'EXOEmailAddressPolicy' -Property $testParams).Set()
                 Should -Invoke -CommandName Set-EmailAddressPolicy -Exactly 1
+                Should -Invoke -CommandName Remove-EmailAddressPolicy -Exactly 0
+            }
+
+            It 'Should recreate the policy from the Set method when ManagedByFilter drifts' {
+                $driftParams = $testParams.Clone()
+                $driftParams.ManagedByFilter = "Department -eq 'Sales'"
+                (New-M365DSCResourceInstance -ResourceName 'EXOEmailAddressPolicy' -Property $driftParams).Test() | Should -Be $false
+                (New-M365DSCResourceInstance -ResourceName 'EXOEmailAddressPolicy' -Property $driftParams).Set()
+                Should -Invoke -CommandName Remove-EmailAddressPolicy -Exactly 1
+                Should -Invoke -CommandName New-EmailAddressPolicy -Exactly 1 -ParameterFilter { $ManagedByFilter -eq "Department -eq 'Sales'" }
+                Should -Invoke -CommandName Set-EmailAddressPolicy -Exactly 0
             }
         }
 

@@ -146,6 +146,14 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     Description = "test description modified" # Drift
                     Ensure = "Present"
                     Id = "1f0c894f-d068-4f9c-af71-81d602569ad1"
+                    ClaimsForTokenConfiguration = @(
+                        [MSFT_AADCustomAuthenticationExtensionClaimForTokenConfiguration] @{
+                            ClaimIdInApiResponse = 'CostCentre'
+                        }
+                        [MSFT_AADCustomAuthenticationExtensionClaimForTokenConfiguration] @{
+                            ClaimIdInApiResponse = 'Division'
+                        }
+                    )
                 }
             }
 
@@ -160,7 +168,10 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
 
             It 'Should call the set method' {
                 (New-M365DSCResourceInstance -ResourceName 'AADCustomAuthenticationExtension' -Property $testParams).Set()
-                Should -Invoke -CommandName 'Update-MgBetaIdentityCustomAuthenticationExtension' -Exactly 1
+                Should -Invoke -CommandName 'Update-MgBetaIdentityCustomAuthenticationExtension' -ParameterFilter {
+                    ($BodyParameter.claimsForTokenConfiguration.claimIdInApiResponse -join ',') -eq 'CostCentre,Division' -and
+                    -not $BodyParameter.ContainsKey('customAuthenticationExtensionId')
+                } -Exactly 1
             }
         }
     }

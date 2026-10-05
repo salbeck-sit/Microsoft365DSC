@@ -1322,19 +1322,17 @@ class AADConditionalAccessPolicy : M365DSCResourceBase
                     }
                     else
                     {
-                        $conditions.platforms.includePlatforms = @() + $this.IncludePlatforms
+                        $conditions.platforms.includePlatforms = [AADConditionalAccessPolicy]::ConvertToGraphPlatform($this.IncludePlatforms)
                     }
-                    #no translation or conversion needed
                     if (([Array]$this.ExcludePlatforms).Length -ne 0)
                     {
                         $conditions.platforms.Add('excludePlatforms', @())
-                        $conditions.platforms.excludePlatforms = @() + $this.ExcludePlatforms
+                        $conditions.platforms.excludePlatforms = [AADConditionalAccessPolicy]::ConvertToGraphPlatform($this.ExcludePlatforms)
                     }
                     else
                     {
                         $conditions.platforms.Add('excludePlatforms', @())
                     }
-                    #no translation or conversion needed
                 }
                 else
                 {
@@ -1681,7 +1679,7 @@ class AADConditionalAccessPolicy : M365DSCResourceBase
             }
         }
 
-        Write-M365DSCHost -Message "newparameters: $($NewParameters | ConvertTo-Json -Depth 5)"
+        Write-Verbose -Message "Set(): Policy body: $($NewParameters | ConvertTo-Json -Depth 5)"
 
         if ($this.Ensure -eq 'Present' -and $currentPolicy.Ensure -eq 'Present')
         {
@@ -1824,6 +1822,23 @@ class AADConditionalAccessPolicy : M365DSCResourceBase
 
             throw
         }
+    }
+
+    hidden static [System.String[]] ConvertToGraphPlatform([System.String[]] $Platforms)
+    {
+        $graphPlatforms = @('android', 'iOS', 'windows', 'windowsPhone', 'macOS', 'linux', 'all', 'unknownFutureValue')
+        $result = @()
+        foreach ($platform in $Platforms)
+        {
+            $graphPlatform = $graphPlatforms | Where-Object -FilterScript { $_ -eq $platform }
+            if ($null -eq $graphPlatform)
+            {
+                $graphPlatform = $platform
+            }
+            $result += $graphPlatform
+        }
+
+        return $result
     }
 
     hidden [AADConditionalAccessPolicy] AsResult([System.Object] $Values)

@@ -184,13 +184,13 @@ class SCUnifiedAuditLogRetentionPolicy : M365DSCResourceBase
 
             $updateParameters = ([Hashtable]$boundParameters).Clone()
             $updateParameters.Remove('Name') | Out-Null
-            $updateParameters.Add('Identity', $currentInstance.Identity) | Out-Null
+            $updateParameters.Add('Identity', $this.Name) | Out-Null
             Set-UnifiedAuditLogRetentionPolicy @updateParameters | Out-Null
         }
         elseif ($this.Ensure -eq 'Absent' -and $currentInstance.Ensure -eq 'Present')
         {
             Write-Verbose -Message "Removing the Unified Audit Log Retention Policy with Name {$($this.Name)}"
-            Remove-UnifiedAuditLogRetentionPolicy -Identity $currentInstance.Identity
+            Remove-UnifiedAuditLogRetentionPolicy -Identity $this.Name -Confirm:$false
         }
     }
 

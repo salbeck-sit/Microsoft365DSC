@@ -71,6 +71,14 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     Ensure                    = 'Present'
                     Credential                = $Credential
                     Identity                  = 'TestPolicy'
+                    ExtendedNotifications     = @(
+                        [MSFT_TeamsEmergencyCallingExtendedNotification] @{
+                            EmergencyDialString       = '112'
+                            NotificationGroup         = @('security.desk@contoso.com', 'facilities@contoso.com')
+                            NotificationDialOutNumber = '+31205550142'
+                            NotificationMode          = 'ConferenceMuted'
+                        }
+                    )
                     NotificationDialOutNumber = '+1234567890'
                     NotificationGroup         = 'john.smith@contoso.onmicrosoft.com'
                     NotificationMode          = 'NotificationOnly'
@@ -78,6 +86,13 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
 
                 Mock -CommandName Get-CsTeamsEmergencyCallingPolicy -MockWith {
                     return $null
+                }
+
+                Mock -CommandName New-CsTeamsEmergencyCallingExtendedNotification -MockWith {
+                    return [PSCustomObject] @{
+                        EmergencyDialString = $EmergencyDialString
+                        NotificationGroup   = $NotificationGroup
+                    }
                 }
             }
 
@@ -91,7 +106,12 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
 
             It 'Should create the policy in the Set method' {
                 (New-M365DSCResourceInstance -ResourceName 'TeamsEmergencyCallingPolicy' -Property $testParams).Set()
-                Should -Invoke -CommandName New-CsTeamsEmergencyCallingPolicy -Exactly 1
+                Should -Invoke -CommandName New-CsTeamsEmergencyCallingExtendedNotification -Exactly 1 -ParameterFilter {
+                    $EmergencyDialString -eq '112' -and $NotificationGroup -eq 'security.desk@contoso.com;facilities@contoso.com'
+                }
+                Should -Invoke -CommandName New-CsTeamsEmergencyCallingPolicy -Exactly 1 -ParameterFilter {
+                    $ExtendedNotifications.Count -eq 1 -and $ExtendedNotifications[0].EmergencyDialString -eq '112'
+                }
             }
         }
 

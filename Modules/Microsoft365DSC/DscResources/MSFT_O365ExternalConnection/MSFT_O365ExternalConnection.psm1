@@ -100,7 +100,7 @@ class O365ExternalConnection : M365DSCResourceBase
                 }
                 if ($null -eq $instance)
                 {
-                    $instance = Get-MgBetaExternalConnection -Filter "Name eq '$($this.Name -replace "'", "''")'"
+                    $instance = Get-MgBetaExternalConnection -All -ErrorAction Stop | Where-Object -Property Name -EQ $this.Name
                 }
             }
             else
@@ -113,24 +113,24 @@ class O365ExternalConnection : M365DSCResourceBase
                 return $this.AsResult($nullResult)
             }
 
+            $callerAppId = (Get-MgContext).ClientId
             $AuthorizedAppIdsValue = @()
             foreach ($app in $instance.Configuration.AuthorizedAppIds)
             {
                 $appInstance = Get-MgApplication -Filter "AppId eq '$app'" -ErrorAction SilentlyContinue
                 if ($null -eq $appInstance)
                 {
-                    # Try to find it as a service principal
-                    $sp = Get-MgServicePrincipal -Filter "AppId eq '$app'" -ErrorAction SilentlyContinue
-                    if ($null -eq $sp)
-                    {
-                        throw "Could not find referenced application or service principal {$app} in the tenant."
-                    }
-                    $AuthorizedAppIdsValue += $sp.DisplayName
+                    $appInstance = Get-MgServicePrincipal -Filter "AppId eq '$app'" -ErrorAction SilentlyContinue
                 }
-                else
+                if ($null -eq $appInstance)
                 {
-                    $AuthorizedAppIdsValue += $appInstance.DisplayName
+                    throw "Could not find referenced application or service principal {$app} in the tenant."
                 }
+                if ($app -eq $callerAppId -and $this.AuthorizedAppIds -notcontains $appInstance.DisplayName)
+                {
+                    continue
+                }
+                $AuthorizedAppIdsValue += $appInstance.DisplayName
             }
 
             $activitySettingsValue = $null
@@ -206,21 +206,17 @@ class O365ExternalConnection : M365DSCResourceBase
         {
             foreach ($app in $this.AuthorizedAppIds)
             {
-                $appInstance = Get-MgApplication -Filter "AppId eq '$app'" -ErrorAction SilentlyContinue
+                $appFilter = "DisplayName eq '$($app -replace "'", "''")'"
+                $appInstance = Get-MgApplication -Filter $appFilter -ErrorAction SilentlyContinue | Select-Object -First 1
                 if ($null -eq $appInstance)
                 {
-                    # Try to find it as a service principal
-                    $sp = Get-MgServicePrincipal -Filter "AppId eq '$app'" -ErrorAction SilentlyContinue
-                    if ($null -eq $sp)
-                    {
-                        throw "Could not find referenced application or service principal {$app} in the tenant."
-                    }
-                    $AuthorizedAppIdsValue += $sp.DisplayName
+                    $appInstance = Get-MgServicePrincipal -Filter $appFilter -ErrorAction SilentlyContinue | Select-Object -First 1
                 }
-                else
+                if ($null -eq $appInstance)
                 {
-                    $AuthorizedAppIdsValue += $appInstance.DisplayName
+                    throw "Could not find referenced application or service principal {$app} in the tenant."
                 }
+                $AuthorizedAppIdsValue += $appInstance.AppId
             }
         }
         $body = @{
@@ -228,7 +224,7 @@ class O365ExternalConnection : M365DSCResourceBase
             name          = $this.Name
             description   = $this.Description
             configuration = @{
-                AuthorizedAppIds = $AuthorizedAppIdsValue
+                authorizedAppIds = $AuthorizedAppIdsValue
             }
         }
         if (-not [System.String]::IsNullOrEmpty($this.ContentCategory))

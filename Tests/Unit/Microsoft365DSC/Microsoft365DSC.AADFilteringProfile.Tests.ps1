@@ -119,6 +119,15 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                 (New-M365DSCResourceInstance -ResourceName 'AADFilteringProfile' -Property $testParams).Set()
                 Should -Invoke -CommandName New-MgBetaNetworkAccessFilteringProfile -Exactly 1
             }
+
+            It 'Should throw from the Set method when a linked policy does not exist' {
+                Mock -CommandName Get-MgBetaNetworkAccessFilteringPolicy -MockWith {
+                    return @()
+                }
+
+                { (New-M365DSCResourceInstance -ResourceName 'AADFilteringProfile' -Property $testParams).Set() } | Should -Throw '*Could not find filtering policy {MyTopPolicy}*'
+                Should -Invoke -CommandName New-MgBetaNetworkAccessFilteringProfile -Exactly 0
+            }
         }
 
         Context -Name "The instance exists but it SHOULD NOT" -Fixture {

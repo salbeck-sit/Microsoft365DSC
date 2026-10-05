@@ -121,7 +121,7 @@ class IntuneWifiConfigurationPolicyAndroidForWork : M365DSCResourceBase
                 #region resource generator code
                 if ($null -eq $getValue)
                 {
-                    $getValue = Get-MgBetaDeviceManagementDeviceConfiguration -All -Filter "DisplayName eq '$($this.DisplayName -replace "'", "''")' and isof('microsoft.graph.androidForWorkWifiConfiguration')" -ErrorAction SilentlyContinue
+                    $getValue = Get-MgBetaDeviceManagementDeviceConfiguration -All -Filter "DisplayName eq '$($this.DisplayName -replace "'", "''")' and (isof('microsoft.graph.androidForWorkWifiConfiguration') or (isof('microsoft.graph.androidWorkProfileWiFiConfiguration') and not isof('microsoft.graph.androidWorkProfileEnterpriseWiFiConfiguration')))" -ErrorAction SilentlyContinue
                 }
                 #endregion
 
@@ -136,6 +136,7 @@ class IntuneWifiConfigurationPolicyAndroidForWork : M365DSCResourceBase
                 $getValue = $this.ExportedInstance
             }
             $resolvedId = $getValue.Id
+            $this.ResourceCache['ODataType'] = $getValue.'@odata.type'
 
             Write-Verbose -Message "Found an Intune Wifi Configuration Policy Android For Work with id {$($resolvedId)}"
             $results = @{
@@ -236,7 +237,12 @@ class IntuneWifiConfigurationPolicyAndroidForWork : M365DSCResourceBase
             $updateParameters.Remove('Id') | Out-Null
 
             #region resource generator code
-            $updateParameters.Add('@odata.type', '#microsoft.graph.androidForWorkWifiConfiguration')
+            $odataType = '#microsoft.graph.androidForWorkWifiConfiguration'
+            if (-not [System.String]::IsNullOrEmpty($this.ResourceCache['ODataType']))
+            {
+                $odataType = $this.ResourceCache['ODataType']
+            }
+            $updateParameters.Add('@odata.type', $odataType)
             Update-MgBetaDeviceManagementDeviceConfiguration -BodyParameter $updateParameters `
                 -DeviceConfigurationId $currentInstance.Id
             $assignmentsHash = ConvertTo-IntunePolicyAssignment -IncludeDeviceFilter:$true -Assignments $this.Assignments

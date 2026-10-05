@@ -516,6 +516,15 @@ namespace Microsoft365DSC.Intune
                 choiceChildren.Add(childValue);
             }
 
+            var nestedChildren = choiceChildren
+                .Where(child => child["settingDefinitionId"] is string childId &&
+                    choiceChildren.Any(sibling => !ReferenceEquals(sibling, child) && ContainsSettingDefinition(sibling, childId)))
+                .ToList();
+            foreach (var nestedChild in nestedChildren)
+            {
+                choiceChildren.Remove(nestedChild);
+            }
+
             // Children array is required - either populated children or empty array
             choiceSettingValue["children"] = childDefinitions.Count > 0
                 ? choiceChildren.Cast<object>().ToArray()
@@ -782,6 +791,46 @@ namespace Microsoft365DSC.Intune
         {
             return string.Equals(settingType, instanceType, StringComparison.OrdinalIgnoreCase) ||
                    string.Equals(settingType, definitionType, StringComparison.OrdinalIgnoreCase);
+        }
+
+        /// <summary>
+        /// Returns true when a setting instance with the given definition id is nested anywhere below the instance.
+        /// </summary>
+        private static bool ContainsSettingDefinition(object node, string settingDefinitionId)
+        {
+            switch (node)
+            {
+                case Hashtable table:
+                    foreach (DictionaryEntry entry in table)
+                    {
+                        if (entry.Value is Hashtable nested &&
+                            string.Equals(nested["settingDefinitionId"] as string, settingDefinitionId, StringComparison.OrdinalIgnoreCase))
+                        {
+                            return true;
+                        }
+                        if (ContainsSettingDefinition(entry.Value, settingDefinitionId))
+                        {
+                            return true;
+                        }
+                    }
+                    return false;
+                case IEnumerable items when node is not string:
+                    foreach (var item in items)
+                    {
+                        if (item is Hashtable nested &&
+                            string.Equals(nested["settingDefinitionId"] as string, settingDefinitionId, StringComparison.OrdinalIgnoreCase))
+                        {
+                            return true;
+                        }
+                        if (ContainsSettingDefinition(item, settingDefinitionId))
+                        {
+                            return true;
+                        }
+                    }
+                    return false;
+                default:
+                    return false;
+            }
         }
 
         #endregion

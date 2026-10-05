@@ -140,7 +140,11 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             }
             It 'Should Create the group from the Set method' {
                 (New-M365DSCResourceInstance -ResourceName 'IntuneManagedInstallerPolicyWindows10' -Property $testParams).Set()
-                Should -Invoke -CommandName New-MgBetaDeviceManagementDeviceHealthScript -Exactly 1
+                Should -Invoke -CommandName New-MgBetaDeviceManagementDeviceHealthScript -Exactly 1 -ParameterFilter {
+                    $BodyParameter.DisplayName -eq 'FakeStringValue' -and
+                    $BodyParameter.Description -eq 'FakeStringValue' -and
+                    $BodyParameter.ContainsKey('RoleScopeTagIds')
+                }
             }
         }
 

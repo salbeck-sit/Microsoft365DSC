@@ -181,6 +181,8 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                                 })
                         })
                     BlockAccess                         = $False
+                    SentToMemberOf                      = @('finance@contoso.com')
+                    FromAddressContainsWords            = @('payroll')
                     Name                                = 'TestPolicy'
                     Credential                          = $Credential
                 }
@@ -192,6 +194,9 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                         ParentPolicyName                    = 'MyParentPolicy'
                         ContentContainsSensitiveInformation = @(@{maxconfidence = '100'; id = 'cb353f78-2b72-4c3c-8827-92ebe4f69fdf'; minconfidence = '75'; rulePackId = '00000000-0000-0000-0000-000000000000'; classifiertype = 'Content'; name = 'ABA Routing Number'; mincount = '1'; maxcount = '-1'; })
                         BlockAccess                         = $False
+                        SentToMemberOf                      = @('finance@contoso.com')
+                        FromAddressMatchesPatterns          = @('^alerts@')
+                        FromAddressContainsWords            = @('payroll')
                     }
                 }
             }

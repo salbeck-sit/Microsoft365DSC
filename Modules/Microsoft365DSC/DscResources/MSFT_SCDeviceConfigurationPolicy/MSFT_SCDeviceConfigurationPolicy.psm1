@@ -154,7 +154,7 @@ class SCDeviceConfigurationPolicy : M365DSCResourceBase
         elseif ($this.Ensure -eq 'Absent' -and $CurrentPolicy.Ensure -eq 'Present')
         {
             # If the Policy exists and it shouldn't, simply remove it;
-            Remove-DeviceConfigurationPolicy -Identity $this.Name
+            Remove-DeviceConfigurationPolicy -Identity $this.Name -Confirm:$false
         }
     }
 

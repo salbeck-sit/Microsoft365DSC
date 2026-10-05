@@ -210,11 +210,12 @@ class IntuneEndpointDetectionAndResponsePolicyMacOS : M365DSCResourceBase
         $currentInstance = $this.Get().ToHashtable()
         $boundParameters = Remove-M365DSCAuthenticationParameter -BoundParameters $this.GetBoundParameters()
 
-        $resolvedRoleScopeTagIds = $this.RoleScopeTagIds
-        if ($boundParameters.ContainsKey('RoleScopeTagIds'))
+        $desiredRoleScopeTagIds = $this.RoleScopeTagIds
+        if (-not $boundParameters.ContainsKey('RoleScopeTagIds'))
         {
-            $resolvedRoleScopeTagIds = Resolve-M365DSCIntuneRoleScopeTagIds -RoleScopeTagIds $this.RoleScopeTagIds
+            $desiredRoleScopeTagIds = $currentInstance.RoleScopeTagIds
         }
+        $resolvedRoleScopeTagIds = Resolve-M365DSCIntuneRoleScopeTagIds -RoleScopeTagIds $desiredRoleScopeTagIds
 
         $templateReferenceId = 'a6ff37f6-c841-4264-9249-1ecf793d94ef_1'
         $platforms = 'macOS'

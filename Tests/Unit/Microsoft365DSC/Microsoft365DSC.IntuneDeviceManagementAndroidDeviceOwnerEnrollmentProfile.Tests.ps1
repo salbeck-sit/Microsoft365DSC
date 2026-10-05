@@ -72,7 +72,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     DisplayName             = "Android Owner Enrollment Profile"
                     Description             = "Profile for enrolling Android devices"
                     DeviceNameTemplate      = "Android-{{SERIAL}}"
-                    TokenExpirationDateTime = "2024-12-31T23:59:59Z"
+                    TokenExpirationDateTime = "12/31/2024 11:59:59 PM +00:00"
                     EnrollmentMode          = "corporateOwnedWorkProfile"
                     WifiSsid                = "your-wifi-ssid"
                     WifiPassword            = New-Object System.Management.Automation.PSCredential ($userName, (ConvertTo-SecureString "your-wifi-password" -AsPlainText -Force))
@@ -94,7 +94,9 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
 
             It 'Should create a new instance from the Set method' {
                 (New-M365DSCResourceInstance -ResourceName 'IntuneDeviceManagementAndroidDeviceOwnerEnrollmentProfile' -Property $testParams).Set()
-                Should -Invoke -CommandName New-MgBetaDeviceManagementAndroidDeviceOwnerEnrollmentProfile -Exactly 1
+                Should -Invoke -CommandName New-MgBetaDeviceManagementAndroidDeviceOwnerEnrollmentProfile -Exactly 1 -ParameterFilter {
+                    $BodyParameter.TokenExpirationDateTime -eq '2024-12-31T23:59:59.0000000Z'
+                }
             }
         }
 

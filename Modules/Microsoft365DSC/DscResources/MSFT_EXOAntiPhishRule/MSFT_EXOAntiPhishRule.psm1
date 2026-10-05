@@ -194,14 +194,6 @@ class EXOAntiPhishRule : M365DSCResourceBase
                     "doesn't exist. Make sure you either create it first or specify a valid policy."
             }
 
-            # New-AntiPhishRule has the Enabled parameter, Set-AntiPhishRule does not.
-            # There doesn't appear to be any way to change the Enabled state of a rule once created.
-            if ($CurrentValues.State -eq 'Disabled')
-            {
-                Write-Verbose -Message "AntiPhishRule {$($this.Identity)} already exists but is disabled, we need to delete it first. Deleting Rule"
-                Remove-AntiphishRule -Identity $this.Identity -Confirm:$false
-            }
-
             Write-Verbose -Message "Creating AntiPhishRule {$($this.Identity)}"
             New-AntiPhishRule @createParameters
         }
@@ -229,6 +221,18 @@ class EXOAntiPhishRule : M365DSCResourceBase
 
             Write-Verbose -Message "Updating AntiPhishRule {$($this.Identity)}."
             Set-AntiPhishRule @updateParameters
+
+            if ($null -ne $this.Enabled -and $this.Enabled -ne $CurrentValues.Enabled)
+            {
+                if ($this.Enabled)
+                {
+                    Enable-AntiPhishRule -Identity $this.Identity -Confirm:$false
+                }
+                else
+                {
+                    Disable-AntiPhishRule -Identity $this.Identity -Confirm:$false
+                }
+            }
         }
         if ($this.Ensure -eq 'Absent' -and $CurrentValues.Ensure -eq 'Present')
         {

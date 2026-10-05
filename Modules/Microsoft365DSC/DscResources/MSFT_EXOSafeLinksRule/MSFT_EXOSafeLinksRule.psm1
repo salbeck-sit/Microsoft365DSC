@@ -192,26 +192,25 @@ class EXOSafeLinksRule : M365DSCResourceBase
 
         if ('Present' -eq $this.Ensure -and $SafeLinksRule)
         {
-            if ($this.GetBoundParameters().Enabled -and ('Disabled' -eq $SafeLinksRule.State))
+            $SafeLinksRuleParams.Remove('Enabled') | Out-Null
+            if ($SafeLinksRuleParams.SafeLinksPolicy -eq $SafeLinksRule.SafeLinksPolicy)
             {
-                # New-SafeLinksRule has the Enabled parameter, Set-SafeLinksRule does not.
-                # There doesn't appear to be any way to change the Enabled state of a rule once created.
-                Write-Verbose -Message "Removing SafeLinksRule $($this.Identity) in order to change Enabled state."
-                Remove-SafeLinksRule -Identity $this.Identity -Confirm:$false
-                $SafeLinksRuleParams.Add('Name', $SafeLinksRuleParams.Identity)
-                $SafeLinksRuleParams.Remove('Identity') | Out-Null
-                $SafeLinksRuleParams.Remove('MakeDefault') | Out-Null
-                New-SafeLinksRule @SafeLinksRuleParams -Confirm:$false
+                $SafeLinksRuleParams.Remove('SafeLinksPolicy')
             }
-            else
+            Write-Verbose -Message "Setting SafeLinksRule $($this.Identity)"
+            Set-SafeLinksRule @SafeLinksRuleParams -Confirm:$false
+
+            $currentEnabled = $SafeLinksRule.State -eq 'Enabled'
+            if ($null -ne $this.Enabled -and $this.Enabled -ne $currentEnabled)
             {
-                $SafeLinksRuleParams.Remove('Enabled') | Out-Null
-                if ($SafeLinksRuleParams.SafeLinksPolicy -eq $SafeLinksRule.SafeLinksPolicy)
+                if ($this.Enabled)
                 {
-                    $SafeLinksRuleParams.Remove('SafeLinksPolicy')
+                    Enable-SafeLinksRule -Identity $this.Identity -Confirm:$false
                 }
-                Write-Verbose -Message "Setting SafeLinksRule $($this.Identity)"
-                Set-SafeLinksRule @SafeLinksRuleParams -Confirm:$false
+                else
+                {
+                    Disable-SafeLinksRule -Identity $this.Identity -Confirm:$false
+                }
             }
         }
 

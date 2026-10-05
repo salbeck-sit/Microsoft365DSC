@@ -73,6 +73,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
 
             It 'Should call the Set method' {
                 (New-M365DSCResourceInstance -ResourceName 'SCFilePlanPropertyCategory' -Property $testParams).Set()
+                Should -Invoke -CommandName New-FilePlanPropertyCategory -Exactly 1
             }
         }
 
@@ -115,7 +116,26 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                 Mock -CommandName Get-FilePlanPropertyCategory -MockWith {
                     return @{
                         DisplayName = 'Demo Category'
+                        Guid        = '11111-22222-33333-44444-55555'
                     }
+                }
+
+                Mock -CommandName Get-FilePlanPropertySubCategory -MockWith {
+                    return @(
+                        @{
+                            DisplayName = 'Demo Sub-Category'
+                            ParentId    = '11111-22222-33333-44444-55555'
+                            Guid        = '66666-77777-88888-99999-00000'
+                        },
+                        @{
+                            DisplayName = 'Other Sub-Category'
+                            ParentId    = '00000-99999-88888-77777-66666'
+                            Guid        = '12345-12345-12345-12345-12345'
+                        }
+                    )
+                }
+
+                Mock -CommandName Remove-FilePlanPropertySubCategory -MockWith {
                 }
             }
 
@@ -125,6 +145,8 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
 
             It 'Should delete from the Set method' {
                 (New-M365DSCResourceInstance -ResourceName 'SCFilePlanPropertyCategory' -Property $testParams).Set()
+                Should -Invoke -CommandName Remove-FilePlanPropertySubCategory -Exactly 1 -ParameterFilter { $Identity -eq '66666-77777-88888-99999-00000' }
+                Should -Invoke -CommandName Remove-FilePlanPropertyCategory -Exactly 1
             }
 
             It 'Should return Present from the Get method' {

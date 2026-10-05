@@ -143,8 +143,8 @@ class IntuneMobileAppsMicrosoft365SuiteMacOS : M365DSCResourceBase
                     if (-not [System.String]::IsNullOrEmpty($this.DisplayName))
                     {
                         $getValue = Get-MgBetaDeviceAppManagementMobileApp -All `
-                            -Filter "DisplayName eq '$($this.DisplayName -replace "'", "''")' and isof('microsoft.graph.macOSOfficeSuiteApp')" `
-                            -ErrorAction SilentlyContinue
+                            -Filter "DisplayName eq '$($this.DisplayName -replace "'", "''")'" `
+                            -ErrorAction SilentlyContinue | Where-Object -Property '@odata.type' -EQ '#microsoft.graph.macOSOfficeSuiteApp'
                     }
                 }
                 #endregion
@@ -212,7 +212,7 @@ class IntuneMobileAppsMicrosoft365SuiteMacOS : M365DSCResourceBase
             $assignmentResult = @()
             if ($assignmentsValues.Count -gt 0)
             {
-                [array]$assignmentsValues = $assignmentsValues | Where-Object -FilterScript { $_.source -eq 'direct' }
+                [array]$assignmentsValues = $assignmentsValues | Where-Object -Property source -EQ 'direct'
                 $assignmentResult += ConvertFrom-IntuneMobileAppAssignment -Assignments $assignmentsValues -IncludeDeviceFilter $true
             }
             $results.Add('Assignments', $assignmentResult)

@@ -34,10 +34,11 @@ The October 2026 release is the largest one so far. Every resource is now a clas
 15. [Intune App Assignments and Targeted Apps - New Class Types](#intune-app-assignments-and-targeted-apps-new-class-types-7445)
 16. [SCRetentionCompliancePolicy - Adaptive Scopes](#scretentioncompliancepolicy-adaptive-scopes-7484)
 17. [TeamsChannelTab - New Configuration Property](#teamschanneltab-new-configuration-property-7445)
-18. [Renamed Properties](#renamed-properties)
-19. [Removed Properties](#removed-properties)
-20. [Changed Types and Accepted Values](#changed-types-and-accepted-values)
-21. [Renamed Embedded Classes](#renamed-embedded-classes-7487)
+18. [SCInsiderRiskPolicy - Tenant Settings Policy](#scinsiderriskpolicy-tenant-settings-policy)
+19. [Renamed Properties](#renamed-properties)
+20. [Removed Properties](#removed-properties)
+21. [Changed Types and Accepted Values](#changed-types-and-accepted-values)
+22. [Renamed Embedded Classes](#renamed-embedded-classes-7487)
 
 ## PowerShell 7.6 and Class-Based Resources ([#7445](https://github.com/Microsoft365DSC/Microsoft365DSC/pull/7445))
 
@@ -86,15 +87,19 @@ Configurations that still use IDs keep working. On apply, the resource first loo
 
 ## Removed Resources ([#7445](https://github.com/Microsoft365DSC/Microsoft365DSC/pull/7445))
 
-Three resources were removed. Each of them has a replacement that covers the same settings:
+Five resources were removed. The first three have a replacement that covers the same settings:
 
 | Removed resource | Use instead |
 | --- | --- |
 | `AADIdentityGovernanceProgram` | `AADAccessReviewDefinition` and `AADAccessReviewPolicy` |
 | `IntuneApplicationControlPolicyWindows10` | `IntuneDeviceConfigurationEndpointProtectionPolicyWindows10` |
 | `IntuneDiskEncryptionMacOS` | `IntuneDiskEncryptionFileVaultPolicyMacOS` |
+| `SCSupervisoryReviewPolicy` | none |
+| `SCSupervisoryReviewRule` | none |
 
 The replacements don't share the schema of the removed resources, which means that you cannot simply rename the instances. The fastest way to get there is to export the replacement resource from your tenant with `Export-M365DSCConfiguration -Components @('IntuneDiskEncryptionFileVaultPolicyMacOS')` and swap the old instances in your configuration for the exported ones.
+
+Microsoft retired supervision in the Security & Compliance Center in favor of Communication Compliance, and the service now rejects new supervisory review policies with `LegacySupervisionPolicyCreationException`. Remove the `SCSupervisoryReviewPolicy` and `SCSupervisoryReviewRule` instances from your configuration and manage these policies in Communication Compliance instead.
 
 ## Intune Resources Lose Their V2 Suffix ([#7445](https://github.com/Microsoft365DSC/Microsoft365DSC/pull/7445), [#7513](https://github.com/Microsoft365DSC/Microsoft365DSC/pull/7513))
 
@@ -278,6 +283,12 @@ Configuration = MSFT_MicrosoftGraphTeamsTabConfiguration {
 
 `SortOrderIndex` is now a string, matching Microsoft Graph. A number in an existing configuration keeps working.
 
+## SCInsiderRiskPolicy - Tenant Settings Policy
+
+An instance with `InsiderRiskScenario = 'TenantSetting'` manages the tenant settings policy of Insider Risk Management. The service creates that policy when you turn on Insider Risk Management and allows only one per tenant. The resource used to create and remove it like any other policy. Now it only updates the existing tenant settings policy, whatever its name, and throws an error for `Ensure = 'Absent'` or when Insider Risk Management isn't turned on.
+
+If one of your instances removes the tenant settings policy, set it to `Ensure = 'Present'` or remove the instance. `InsiderRiskScenario` also accepts only the scenario names the service defines now, see [Changed Types and Accepted Values](#changed-types-and-accepted-values).
+
 ## Renamed Properties
 
 Most of these renames align a property with the name Microsoft Graph or the underlying cmdlet uses. To fix your configuration, rename the property and keep its value.
@@ -310,12 +321,18 @@ To fix your configuration, remove these properties from the instances of the res
 | Resource | Removed properties | Replacement | PR |
 | --- | --- | --- | --- |
 | `AADAgreement` | `AcceptanceStatement` | none, Microsoft Graph doesn't define it | [#7445](https://github.com/Microsoft365DSC/Microsoft365DSC/pull/7445) |
+| `AADClaimsMappingPolicy` | `Description` | none, Microsoft Graph doesn't store it | |
+| `AADHomeRealmDiscoveryPolicy` | `Description` | none, Microsoft Graph doesn't store it | |
 | `AADRoleAssignmentScheduleRequest` | `Action`, `IsValidationOnly`, `TicketInfo` | none | [#7445](https://github.com/Microsoft365DSC/Microsoft365DSC/pull/7445) |
 | `AADRoleEligibilityScheduleRequest` | `Action`, `IsValidationOnly` | none | [#7445](https://github.com/Microsoft365DSC/Microsoft365DSC/pull/7445) |
+| `AADTokenIssuancePolicy` | `Description` | none, Microsoft Graph doesn't store it | |
+| `AADTokenLifetimePolicy` | `Description` | none, Microsoft Graph doesn't store it | |
 | `AADUser` | `PasswordNeverExpires` | `PasswordPolicies = 'DisablePasswordExpiration'` | [#7445](https://github.com/Microsoft365DSC/Microsoft365DSC/pull/7445) |
+| `EXOActiveSyncMailboxPolicy` | `IsDefaultPolicy` | `IsDefault` | |
 | `EXOAtpPolicyForO365` | `Identity` | none, the resource has a single instance | [#7508](https://github.com/Microsoft365DSC/Microsoft365DSC/pull/7508) |
 | `EXODistributionGroup` | `Notes` | none | [#7445](https://github.com/Microsoft365DSC/Microsoft365DSC/pull/7445) |
 | `EXOIRMConfiguration` | `EnablePortalTrackingLogs` | none | [#7445](https://github.com/Microsoft365DSC/Microsoft365DSC/pull/7445) |
+| `EXOMigration` | `BadItemLimit`, `LargeItemLimit` | none, Exchange Online no longer offers them | |
 | `EXOPlace` | `Desks` | none | [#7445](https://github.com/Microsoft365DSC/Microsoft365DSC/pull/7445) |
 | `EXOTenantAllowBlockListItems` | `AppliationSecret` | `ApplicationSecret` | [#7445](https://github.com/Microsoft365DSC/Microsoft365DSC/pull/7445) |
 | `IntuneAppProtectionPolicyiOS` | `DeployedAppCount` | none, the value is read-only | [#7445](https://github.com/Microsoft365DSC/Microsoft365DSC/pull/7445) |
@@ -326,6 +343,7 @@ To fix your configuration, remove these properties from the instances of the res
 | `SPOTenantSettings` | `OneDriveSharingCapability` | `MySiteSharingCapability` in `SPOSharingSettings` | [#7445](https://github.com/Microsoft365DSC/Microsoft365DSC/pull/7445) |
 | `TeamsCallingPolicy` | `SafeTransferEnabled` | none, MicrosoftTeams 8.0.0 removed it | [#7516](https://github.com/Microsoft365DSC/Microsoft365DSC/pull/7516) |
 | `TeamsGuestMessagingConfiguration` | `UsersCanDeleteBotMessages` | `UsersCanDeleteBotMessages` in `TeamsMessagingPolicy` | [#7445](https://github.com/Microsoft365DSC/Microsoft365DSC/pull/7445) |
+| `TeamsMessagingPolicy` | `AllowExtendedWorkInfoInSearch` | `ExtendedWorkInfoInPeopleSearch` in `TeamsClientConfiguration` | |
 | `TeamsOnlineVoicemailUserSettings` | `OofGreetingFollowCalendarEnabled` | none | [#7445](https://github.com/Microsoft365DSC/Microsoft365DSC/pull/7445) |
 | `TeamsTenantNetworkSite` | `SiteAddress` | none | [#7445](https://github.com/Microsoft365DSC/Microsoft365DSC/pull/7445) |
 
@@ -334,9 +352,17 @@ To fix your configuration, remove these properties from the instances of the res
 | Resource | Property | Change | What to do | PR |
 | --- | --- | --- | --- | --- |
 | `AADConditionalAccessPolicy` | `TermsOfUse` | `String` to `String[]` | Wrap the value in `@()`. A policy can now require more than one agreement. | [#7445](https://github.com/Microsoft365DSC/Microsoft365DSC/pull/7445) |
+| `EXODynamicDistributionGroup` | `IncludedRecipients` | value `MailboxContacts` to `MailContacts` | Replace `MailboxContacts` with `MailContacts`. Exchange Online never accepted the old value. | |
+| `EXOQuarantinePolicy` | `QuarantinePolicyType` | accepts only `PolicyQuarantineTag` and `GlobalQuarantineTag` | Replace `QuarantinePolicy` with `PolicyQuarantineTag` and `GlobalQuarantinePolicy` with `GlobalQuarantineTag`, the values Exchange Online returns. | |
+| `EXOSweepRule` | `Mailbox` | now a key property | Set `Mailbox` on every instance. A sweep rule is identified by its name and its mailbox. | |
 | `IntuneMobileAppsBundleMacOS` | `PackageFileType` | now mandatory | Add `PackageFileType = 'Dmg'` or `'Pkg'`. Intune rejected a policy without it. | [#7445](https://github.com/Microsoft365DSC/Microsoft365DSC/pull/7445) |
 | `IntuneSecurityBaselineMicrosoft365AppsForEnterprise` | `Pol_SecGuide_Block_Flash` | lowercase values to `Block all Flash activation`, `Block embedded Flash activation only` and `Allow all Flash activation` | Update the casing of the value. | [#7448](https://github.com/Microsoft365DSC/Microsoft365DSC/pull/7448) |
 | `IntuneSecurityBaselineWindows10` | `EnableSmartScreenDropdown` | `block` and `warn` to `Block` and `Warn` | Update the casing of the value. | [#7448](https://github.com/Microsoft365DSC/Microsoft365DSC/pull/7448) |
+| `SCAutoSensitivityLabelRule` | `ExceptIfHeaderMatchesPatterns` | `String[]` to `MSFT_SCHeaderPattern` | Use the same class as `HeaderMatchesPatterns`, with the header in `Name` and the pattern in `Value`. | |
+| `SCAutoSensitivityLabelRule` | `Values` in `MSFT_SCHeaderPattern` | `String[]` to a single `String` named `Value` | Rename `Values` to `Value`. It holds a single pattern. | |
+| `SCDeviceConditionalAccessRule`, `SCDeviceConfigurationRule` | `FirewallStatus` | `Boolean` to `String`, only `Required` | Replace `$true` with `'Required'`. Remove the property where it was `$false`. | |
+| `SCDeviceConditionalAccessRule`, `SCDeviceConfigurationRule` | `MaxPasswordGracePeriod` | `UInt32` to a time span `String` | Write the value as `dd.hh:mm:ss`, for example `'5.00:00:00'`. | |
+| `SCInsiderRiskPolicy` | `InsiderRiskScenario` | free text to the scenario names the service defines | Check that the value is one of the names the resource lists, for example `LeakOfInformation` or `TenantSetting`. | |
 | `TeamsAudioConferencingPolicy` | `MeetingInvitePhoneNumbers` | comma-separated `String` to `String[]` | Split the value into an array, for example `@('+41441234567', '+41447654321')`. A comma-separated string keeps reporting drift. | [#7445](https://github.com/Microsoft365DSC/Microsoft365DSC/pull/7445) |
 
 ## Renamed Embedded Classes ([#7487](https://github.com/Microsoft365DSC/Microsoft365DSC/pull/7487))
@@ -351,7 +377,6 @@ A few complex types had a number at the end of their class name. They were renam
 | `IntuneDeviceConfigurationNetworkBoundaryPolicyWindows10` | `MSFT_MicrosoftGraphIpRange1` | `MSFT_MicrosoftGraphIpRange` |
 | `IntuneDeviceConfigurationNetworkBoundaryPolicyWindows10` | `MSFT_MicrosoftGraphProxiedDomain1` | `MSFT_MicrosoftGraphProxiedDomain` |
 | `IntuneDeviceConfigurationPolicyWindows10` | `MSFT_MicrosoftGraphdefenderDetectedMalwareActions1` | `MSFT_MicrosoftGraphdefenderDetectedMalwareActions` |
-| `IntuneDeviceFeaturesConfigurationPolicyMacOS` | `MSFT_MicrosoftGraphIpRange2` | `MSFT_MicrosoftGraphContentCachingIpRange` |
 | `IntuneWindowsAutopilotDeploymentProfileAzureADJoined` | `MSFT_MicrosoftGraphwindowsEnrollmentStatusScreenSettings1` | `MSFT_MicrosoftGraphwindowsEnrollmentStatusScreenSettings` |
 
 A search and replace on the old class name fixes your configuration.

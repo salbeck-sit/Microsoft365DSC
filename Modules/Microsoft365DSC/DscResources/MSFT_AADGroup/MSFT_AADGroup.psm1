@@ -421,6 +421,7 @@ class AADGroup : M365DSCResourceBase
         $currentParameters.Remove('GroupAsMembers') | Out-Null
         $currentParameters.Remove('MemberOf') | Out-Null
         $currentParameters.Remove('AssignedToRole') | Out-Null
+        $currentParameters.Remove('GroupLifecyclePolicySelectedEnabled') | Out-Null
 
         if ($null -ne $this.WritebackConfiguration)
         {
@@ -682,7 +683,9 @@ class AADGroup : M365DSCResourceBase
                         }
                         try
                         {
-                            New-MgGroupOwnerByRef -GroupId ($currentGroup.Id) -BodyParameter $ownerObject -ErrorAction Stop | Out-Null
+                            Invoke-M365DSCCommand -ScriptBlock {
+                                New-MgGroupOwnerByRef -GroupId ($currentGroup.Id) -BodyParameter $ownerObject -ErrorAction Stop | Out-Null
+                            } -RetryOnNotFoundError -MaxRetries 5
                         }
                         catch
                         {
@@ -752,8 +755,21 @@ class AADGroup : M365DSCResourceBase
                     if ($diff.SideIndicator -eq '=>')
                     {
                         Write-Verbose -Message "Adding new member {$($diff.InputObject)} to AAD Group {$($currentGroup.DisplayName)}"
-                        New-MgBetaGroupMemberByRef -GroupId ($currentGroup.Id) -BodyParameter @{
-                            '@odata.id' = (Get-MSCloudLoginConnectionProfile -Workload MicrosoftGraph).ResourceUrl + "v1.0/directoryObjects/{$($directoryObject.Id)}"
+                        try
+                        {
+                            $memberObject = @{
+                                '@odata.id' = (Get-MSCloudLoginConnectionProfile -Workload MicrosoftGraph).ResourceUrl + "v1.0/directoryObjects/{$($directoryObject.Id)}"
+                            }
+                            Invoke-M365DSCCommand -ScriptBlock {
+                                New-MgBetaGroupMemberByRef -GroupId ($currentGroup.Id) -BodyParameter $memberObject -ErrorAction Stop
+                            } -RetryOnNotFoundError -MaxRetries 5
+                        }
+                        catch
+                        {
+                            if ($_.Exception.Message -notlike '*One or more added object references already exist for the following modified properties*')
+                            {
+                                throw $_
+                            }
                         }
                     }
                     elseif ($diff.SideIndicator -eq '<=')

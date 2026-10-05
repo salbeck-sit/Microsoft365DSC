@@ -12,11 +12,6 @@ class IntuneMobileAppsStoreApp : M365DSCResourceBase
     [System.String] $DisplayName
 
     [DscProperty()]
-    [System.ComponentModel.Description('The protocol used to deliver the app to the apple device(s). When the property is set to Declarative Device Management (DDM) protocol ''declarativeDeviceManagement'' then it can no longer be modified or updated to ''mobileDeviceManagement'' or ''default''. The default value is ''default'', which indicates the Apple MDM protocol. Possible values are: default, mobileDeviceManagement, declarativeDeviceManagement. Only applicable for the ''iOS'' TargetPlatform.')]
-    [ValidateSet('default', 'mobileDeviceManagement', 'declarativeDeviceManagement')]
-    [System.String] $AppleDeviceAppDeliveryProtocolType
-
-    [DscProperty()]
     [System.ComponentModel.Description('The architecture for which this app can run on. Only applicable for the ''iOS'' TargetPlatform.')]
     [MSFT_MicrosoftGraphiosDeviceType] $ApplicableDeviceType
 
@@ -181,8 +176,8 @@ class IntuneMobileAppsStoreApp : M365DSCResourceBase
                     if (-not [System.String]::IsNullOrEmpty($this.DisplayName))
                     {
                         $getValue = Get-MgBetaDeviceAppManagementMobileApp -All `
-                            -Filter "DisplayName eq '$($this.DisplayName -replace "'", "''")' and (isof('microsoft.graph.androidStoreApp') or isof('microsoft.graph.iosStoreApp'))" `
-                            -ErrorAction SilentlyContinue
+                            -Filter "DisplayName eq '$($this.DisplayName -replace "'", "''")'" `
+                            -ErrorAction SilentlyContinue | Where-Object -Property '@odata.type' -In @('#microsoft.graph.androidStoreApp', '#microsoft.graph.iosStoreApp')
                     }
                 }
                 #endregion
@@ -259,7 +254,6 @@ class IntuneMobileAppsStoreApp : M365DSCResourceBase
 
             $results = @{
                 #region resource generator code
-                AppleDeviceAppDeliveryProtocolType = $getValue.appleDeviceAppDeliveryProtocolType
                 ApplicableDeviceType               = $complexApplicableDeviceType
                 AppStoreUrl                        = $getValue.appStoreUrl
                 BundleId                           = $getValue.bundleId
@@ -293,7 +287,7 @@ class IntuneMobileAppsStoreApp : M365DSCResourceBase
             $assignmentResult = @()
             if ($assignmentsValues.Count -gt 0)
             {
-                [array]$assignmentsValues = $assignmentsValues | Where-Object -FilterScript { $_.source -eq 'direct' }
+                [array]$assignmentsValues = $assignmentsValues | Where-Object -Property source -EQ 'direct'
                 $assignmentResult += ConvertFrom-IntuneMobileAppAssignment -Assignments $assignmentsValues -IncludeDeviceFilter $true
             }
             foreach ($assignment in $assignmentResult)
@@ -343,9 +337,7 @@ class IntuneMobileAppsStoreApp : M365DSCResourceBase
             {
                 if (-not [System.Guid]::TryParse($assignment.assignmentSettings.vpnConfigurationId, [ref][System.Guid]::Empty))
                 {
-                    [array]$vpnConfiguration = Get-MgBetaDeviceManagementDeviceConfiguration -All -Filter "displayName eq '$($assignment.assignmentSettings.vpnConfigurationId)'" | Where-Object {
-                        $_.'@odata.type' -like "#microsoft.graph.*VpnConfiguration"
-                    }
+                    [array]$vpnConfiguration = Get-MgBetaDeviceManagementDeviceConfiguration -All -Filter "displayName eq '$($assignment.assignmentSettings.vpnConfigurationId)'" | Where-Object -Property '@odata.type' -Like '#microsoft.graph.*VpnConfiguration'
                     if ($null -eq $vpnConfiguration -or $vpnConfiguration.Count -eq 0)
                     {
                         throw "Could not find a VPN Configuration Policy with DisplayName '$($assignment.assignmentSettings.vpnConfigurationId)'."
@@ -641,14 +633,9 @@ class IntuneMobileAppsStoreApp : M365DSCResourceBase
             throw 'BundleId is only applicable for iOS Store Apps.'
         }
 
-        if ($boundParameters.ContainsKey('AppleDeviceAppDeliveryProtocolType') -and $boundParameters.TargetPlatform -ne 'iOS')
-        {
-            throw 'AppleDeviceAppDeliveryProtocolType is only applicable for iOS Store Apps.'
-        }
-
         if ($boundParameters.ContainsKey('MinimumSupportedOperatingSystem'))
         {
-            foreach ($property in $boundParameters.MinimumSupportedOperatingSystem.PSObject.Properties | Where-Object { $null -ne $_.Value })
+            foreach ($property in $boundParameters.MinimumSupportedOperatingSystem.PSObject.Properties | Where-Object -Property Value -NE $null)
             {
                 if ($property.Name -in $this.ResourceCache['androidExclusive'] -and $this.TargetPlatform -ne 'Android')
                 {

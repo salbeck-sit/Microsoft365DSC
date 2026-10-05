@@ -162,8 +162,8 @@ class IntuneMobileAppsMicrosoftEdge : M365DSCResourceBase
                     if (-not [System.String]::IsNullOrEmpty($this.DisplayName))
                     {
                         $getValue = Get-MgBetaDeviceAppManagementMobileApp -All `
-                            -Filter "DisplayName eq '$($this.DisplayName -replace "'", "''")' and (isof('microsoft.graph.windowsMicrosoftEdgeApp') or isof('microsoft.graph.macOSMicrosoftEdgeApp'))" `
-                            -ErrorAction SilentlyContinue
+                            -Filter "DisplayName eq '$($this.DisplayName -replace "'", "''")'" `
+                            -ErrorAction SilentlyContinue | Where-Object -Property '@odata.type' -In @('#microsoft.graph.windowsMicrosoftEdgeApp', '#microsoft.graph.macOSMicrosoftEdgeApp')
                     }
                 }
                 #endregion
@@ -234,7 +234,7 @@ class IntuneMobileAppsMicrosoftEdge : M365DSCResourceBase
             $assignmentResult = @()
             if ($assignmentsValues.Count -gt 0)
             {
-                [array]$assignmentsValues = $assignmentsValues | Where-Object -FilterScript { $_.source -eq 'direct' }
+                [array]$assignmentsValues = $assignmentsValues | Where-Object -Property source -EQ 'direct'
                 $assignmentResult += ConvertFrom-IntuneMobileAppAssignment -Assignments $assignmentsValues -IncludeDeviceFilter $true
             }
             $results.Add('Assignments', $assignmentResult)

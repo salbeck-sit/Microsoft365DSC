@@ -100,11 +100,14 @@ class AADAppManagementPolicy : M365DSCResourceBase
                 if ($null -eq $instance)
                 {
                     Write-Verbose -Message "Could not find App Management Policy with ID {$($this.Id)}"
-                    $instance = Get-MgBetaPolicyAppManagementPolicy -Filter "displayName eq '$($this.DisplayName)'" -All `
-                        -ErrorAction SilentlyContinue
+                    [array] $instance = Get-MgBetaPolicyAppManagementPolicy -All -ErrorAction Stop | Where-Object -Property DisplayName -EQ $this.DisplayName
+                    if ($instance.Count -gt 1)
+                    {
+                        throw "Multiple App Management Policies with DisplayName {$($this.DisplayName)} were found. Specify the Id of the desired policy."
+                    }
                 }
 
-                if ($null -eq $instance)
+                if ($null -eq $instance -or $instance.Count -eq 0)
                 {
                     Write-Verbose -Message "Could not find App Management Policy with DisplayName {$($this.DisplayName)}"
                     return $this.AsResult($nullResult)
@@ -123,14 +126,13 @@ class AADAppManagementPolicy : M365DSCResourceBase
             foreach ($passwordCred in $instance.Restrictions.PasswordCredentials)
             {
                 $newItem = @{
-                    restrictForAppsCreatedAfterDateTime = $passwordCred.RestrictForAppsCreatedAfterDateTime.ToString('o')
+                    restrictForAppsCreatedAfterDateTime = [M365DSCResourceBase]::FormatDateTime($passwordCred.RestrictForAppsCreatedAfterDateTime)
                     restrictionType                     = $passwordCred.RestrictionType
                     state                               = $passwordCred.State
                 }
                 if ($null -ne $passwordCred.MaxLifetime)
                 {
-                    $iso8601Duration = 'P{0}DT{1}H{2}M{3}S' -f $passwordCred.MaxLifetime.Days, $passwordCred.MaxLifetime.Hours, $passwordCred.MaxLifetime.Minutes, $passwordCred.MaxLifetime.Seconds
-                    $newItem.Add('maxLifetime', $iso8601Duration)
+                    $newItem.Add('maxLifetime', [M365DSCResourceBase]::FormatDuration($passwordCred.MaxLifetime))
                 }
                 $restrictionsValue.passwordCredentials += $newItem
             }
@@ -138,14 +140,13 @@ class AADAppManagementPolicy : M365DSCResourceBase
             foreach ($keyCred in $instance.Restrictions.KeyCredentials)
             {
                 $newItem = @{
-                    restrictForAppsCreatedAfterDateTime = $keyCred.RestrictForAppsCreatedAfterDateTime.ToString('o')
+                    restrictForAppsCreatedAfterDateTime = [M365DSCResourceBase]::FormatDateTime($keyCred.RestrictForAppsCreatedAfterDateTime)
                     restrictionType                     = $keyCred.RestrictionType
                     state                               = $keyCred.State
                 }
                 if ($null -ne $keyCred.MaxLifetime)
                 {
-                    $iso8601Duration = 'P{0}DT{1}H{2}M{3}S' -f $keyCred.MaxLifetime.Days, $keyCred.MaxLifetime.Hours, $keyCred.MaxLifetime.Minutes, $keyCred.MaxLifetime.Seconds
-                    $newItem.Add('maxLifetime', $iso8601Duration)
+                    $newItem.Add('maxLifetime', [M365DSCResourceBase]::FormatDuration($keyCred.MaxLifetime))
                 }
                 if ($null -ne $keyCred.CertificateBasedApplicationConfigurationIds -and $keyCred.CertificateBasedApplicationConfigurationIds.Count -gt 0)
                 {
@@ -205,13 +206,13 @@ class AADAppManagementPolicy : M365DSCResourceBase
         foreach ($passwordCred in $this.Restrictions.PasswordCredentials)
         {
             $newItem = @{
-                restrictForAppsCreatedAfterDateTime = [System.DateTime]::Parse($passwordCred.RestrictForAppsCreatedAfterDateTime)
+                restrictForAppsCreatedAfterDateTime = [M365DSCResourceBase]::FormatDateTime($passwordCred.RestrictForAppsCreatedAfterDateTime)
                 restrictionType                     = $passwordCred.RestrictionType
                 state                               = $passwordCred.State
             }
             if ($null -ne $passwordCred.MaxLifetime)
             {
-                $newItem.Add('maxLifetime', $passwordCred.MaxLifetime.ToString())
+                $newItem.Add('maxLifetime', [M365DSCResourceBase]::FormatDuration($passwordCred.MaxLifetime))
             }
             $restrictionsValue.passwordCredentials += $newItem
         }
@@ -219,13 +220,13 @@ class AADAppManagementPolicy : M365DSCResourceBase
         foreach ($keyCred in $this.Restrictions.KeyCredentials)
         {
             $newItem = @{
-                restrictForAppsCreatedAfterDateTime = [System.DateTime]::Parse($keyCred.RestrictForAppsCreatedAfterDateTime)
+                restrictForAppsCreatedAfterDateTime = [M365DSCResourceBase]::FormatDateTime($keyCred.RestrictForAppsCreatedAfterDateTime)
                 restrictionType                     = $keyCred.RestrictionType
                 state                               = $keyCred.State
             }
             if ($null -ne $keyCred.MaxLifetime)
             {
-                $newItem.Add('maxLifetime', $keyCred.MaxLifetime.ToString())
+                $newItem.Add('maxLifetime', [M365DSCResourceBase]::FormatDuration($keyCred.MaxLifetime))
             }
             if ($null -ne $keyCred.CertificateBasedApplicationConfigurationIds -and $keyCred.CertificateBasedApplicationConfigurationIds.Count -gt 0)
             {
@@ -365,6 +366,25 @@ class AADAppManagementPolicy : M365DSCResourceBase
             $this.LogError($_, 'Error during Export:')
 
             throw
+        }
+    }
+
+    [System.Collections.Hashtable] GetCompareParameters()
+    {
+        return @{
+            PostProcessing = {
+                param($DesiredValues, $CurrentValues, $ValuesToCheck, $ignore)
+                foreach ($credential in @($DesiredValues.Restrictions.PasswordCredentials) + @($DesiredValues.Restrictions.KeyCredentials))
+                {
+                    if ($null -eq $credential)
+                    {
+                        continue
+                    }
+                    $credential.MaxLifetime = [M365DSCResourceBase]::FormatDuration($credential.MaxLifetime)
+                    $credential.RestrictForAppsCreatedAfterDateTime = [M365DSCResourceBase]::FormatDateTime($credential.RestrictForAppsCreatedAfterDateTime)
+                }
+                return [System.Tuple[Hashtable, Hashtable, Hashtable]]::new($DesiredValues, $CurrentValues, $ValuesToCheck)
+            }
         }
     }
 

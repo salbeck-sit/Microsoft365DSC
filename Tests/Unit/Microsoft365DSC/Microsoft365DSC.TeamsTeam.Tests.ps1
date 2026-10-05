@@ -116,6 +116,26 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                 Mock -CommandName Get-Team -MockWith {
                     return $null
                 }
+
+                Mock -CommandName New-M365DSCConnection -ModuleName '_Shared' -MockWith {
+                    return 'ServicePrincipalWithThumbprint'
+                }
+
+                Mock -CommandName Get-MgGroup -MockWith {
+                    return $null
+                }
+
+                Mock -CommandName Get-MgUser -MockWith {
+                    return @{
+                        Id = '5678-5678-5678-5678'
+                    }
+                }
+
+                Mock -CommandName New-MgGroup -MockWith {
+                    return @{
+                        Id = '1234-1234-1234-1234'
+                    }
+                }
             }
 
             It 'Should return absent from the Get method' {
@@ -128,6 +148,13 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
 
             It 'Updates the Team fun settings in the Set method' {
                 (New-M365DSCResourceInstance -ResourceName 'TeamsTeam' -Property $testParams).Set()
+                Should -Invoke -CommandName Get-MgUser -Exactly 1 -ParameterFilter { $UserId -eq 'JohnDoe@contoso.com' }
+                Should -Invoke -CommandName New-MgGroup -Exactly 1 -ParameterFilter {
+                    $BodyParameter.description -eq 'Test Team' -and $BodyParameter.visibility -eq 'Private' -and
+                    $BodyParameter.'owners@odata.bind' -like '*/directoryObjects/5678-5678-5678-5678'
+                }
+                Should -Invoke -CommandName New-Team -Exactly 1 -ParameterFilter { $GroupId -eq '1234-1234-1234-1234' }
+                Should -Invoke -CommandName Set-Team -Exactly 1 -ParameterFilter { $GroupId -eq '1234-1234-1234-1234' -and $GiphyContentRating -eq 'Moderate' }
             }
         }
 

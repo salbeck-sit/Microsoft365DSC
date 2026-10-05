@@ -311,11 +311,7 @@ class SPOSite : M365DSCResourceBase
                 $DisableFlowValue = $false
             }
 
-            $DenyAddAndCustomizePagesValue = $true
-            if ($site.DenyAddAndCustomizePagesValue -eq 'Enabled')
-            {
-                $DenyAddAndCustomizePagesValue = $false
-            }
+            $DenyAddAndCustomizePagesValue = $site.DenyAddAndCustomizePages -eq 'Enabled'
 
             $RequestFilesLinkExpirationInDaysValue = $site.RequestFilesLinkExpirationInDays
             if ($RequestFilesLinkExpirationInDaysValue -eq -1)
@@ -366,6 +362,7 @@ class SPOSite : M365DSCResourceBase
                 OverrideSharingCapability                                      = $site.OverrideSharingCapability
                 OverrideTenantOrganizationSharingLinkExpirationPolicy          = $site.OverrideTenantOrganizationSharingLinkExpirationPolicy
                 ReadOnlyForUnmanagedDevices                                    = $site.ReadOnlyForUnmanagedDevices
+                RequestFilesLinkEnabled                                        = $site.RequestFilesLinkEnabled
                 RequestFilesLinkExpirationInDays                               = $RequestFilesLinkExpirationInDaysValue
                 RestrictContentOrgWideSearch                                   = $site.RestrictContentOrgWideSearch
                 RestrictedAccessControl                                        = $site.RestrictedAccessControl
@@ -555,9 +552,9 @@ class SPOSite : M365DSCResourceBase
             }
             $UpdateParams = Remove-NullEntriesFromHashtable -Hash $UpdateParams
 
-            if ($this.GetBoundParameters().ContainsKey('RestrictedAccessControl'))
+            if ($this.GetBoundParameters().ContainsKey('RestrictedAccessControlGroups'))
             {
-                $diff = Compare-Object -ReferenceObject $this.RestrictedAccessControlGroups -DifferenceObject $CurrentValues.RestrictedAccessControl
+                $diff = Compare-Object -ReferenceObject @($this.RestrictedAccessControlGroups) -DifferenceObject @($CurrentValues.RestrictedAccessControlGroups)
                 $groupsToAdd = @()
                 $groupsToRemove = @()
                 foreach ($delta in $diff)
@@ -572,8 +569,14 @@ class SPOSite : M365DSCResourceBase
                     }
                 }
 
-                $UpdateParams.Add('RemoveRestrictedAccessControlGroups', $groupsToRemove)
-                $UpdateParams.Add('AddRestrictedAccessControlGroups', $groupsToAdd)
+                if ($groupsToRemove.Count -gt 0)
+                {
+                    $UpdateParams.Add('RemoveRestrictedAccessControlGroups', $groupsToRemove)
+                }
+                if ($groupsToAdd.Count -gt 0)
+                {
+                    $UpdateParams.Add('AddRestrictedAccessControlGroups', $groupsToAdd)
+                }
             }
 
             $UpdateParams.Add('StorageQuota', $this.StorageMaximumLevel)

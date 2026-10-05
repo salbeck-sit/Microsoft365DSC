@@ -212,16 +212,33 @@ class TeamsEmergencyCallingPolicy : M365DSCResourceBase
 
         $CurrentValues = $this.Get().ToHashtable()
         $SetParameters = Remove-M365DSCAuthenticationParameter -BoundParameters $this.GetBoundParameters()
-        if ($this.GetBoundParameters().ContainsKey('ExtendedNotifications'))
+        if ($SetParameters.ContainsKey('ExtendedNotifications'))
         {
-            if ($SetParameters.ExtendedNotifications.Count -gt 0)
+            $extendedNotificationsValue = @()
+            foreach ($notification in $this.ExtendedNotifications)
             {
-                $SetParameters.ExtendedNotifications = Convert-M365DSCDRGComplexTypeToHashtable -ComplexObject $SetParameters.ExtendedNotifications
-                for ($i = 0; $i -lt $SetParameters.ExtendedNotifications.Count; $i++)
-                {
-                    $SetParameters.ExtendedNotifications[$i].NotificationGroup -join ';'
+                $notificationParameters = @{
+                    EmergencyDialString = $notification.EmergencyDialString
                 }
+
+                if ($null -ne $notification.NotificationGroup -and $notification.NotificationGroup.Count -gt 0)
+                {
+                    $notificationParameters.NotificationGroup = $notification.NotificationGroup -join ';'
+                }
+
+                if (-not [System.String]::IsNullOrEmpty($notification.NotificationDialOutNumber))
+                {
+                    $notificationParameters.NotificationDialOutNumber = $notification.NotificationDialOutNumber
+                }
+
+                if (-not [System.String]::IsNullOrEmpty($notification.NotificationMode))
+                {
+                    $notificationParameters.NotificationMode = $notification.NotificationMode
+                }
+
+                $extendedNotificationsValue += New-CsTeamsEmergencyCallingExtendedNotification @notificationParameters
             }
+            $SetParameters.ExtendedNotifications = $extendedNotificationsValue
         }
 
         if ($this.Ensure -eq 'Present' -and $CurrentValues.Ensure -eq 'Absent')

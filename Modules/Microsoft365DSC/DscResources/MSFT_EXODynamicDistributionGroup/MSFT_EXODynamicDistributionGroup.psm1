@@ -210,7 +210,7 @@ class EXODynamicDistributionGroup : M365DSCResourceBase
 
     [DscProperty()]
     [System.ComponentModel.Description('The IncludedRecipients parameter specifies a precanned filter that''s based on the recipient type. Valid values are: AllRecipients: This value can be used only by itself. MailboxUsers. MailContacts. MailGroups. MailUsers. Resources: This value indicates room or equipment mailboxes. You can specify multiple values separated by commas. When you use multiple values, the OR Boolean operator is applied.')]
-    [ValidateSet('AllRecipients', 'MailboxUsers', 'MailboxContacts', 'MailGroups', 'MailUsers', 'Resources')]
+    [ValidateSet('AllRecipients', 'MailboxUsers', 'MailContacts', 'MailGroups', 'MailUsers', 'Resources')]
     [System.String[]] $IncludedRecipients
 
     [DscProperty()]
@@ -444,6 +444,27 @@ class EXODynamicDistributionGroup : M365DSCResourceBase
                 $rejectMessagesFromDLMembersValue += $this.GetElementFromRecipientsCacheAsPrimarySmtpAddress($instance.RejectMessagesFromDLMembers)
             }
 
+            $includedRecipientsValue = @()
+            foreach ($includedRecipient in $instance.IncludedRecipients)
+            {
+                foreach ($recipientType in ("$includedRecipient" -split ',\s*'))
+                {
+                    if (-not [System.String]::IsNullOrEmpty($recipientType))
+                    {
+                        $includedRecipientsValue += $recipientType
+                    }
+                }
+            }
+
+            $mailTipTranslationsValue = @()
+            foreach ($mailTipTranslation in $instance.MailTipTranslations)
+            {
+                if ($mailTipTranslation -notlike 'default:*')
+                {
+                    $mailTipTranslationsValue += [EXODynamicDistributionGroup]::RemoveMailTipHtml($mailTipTranslation)
+                }
+            }
+
             $results = @{
                 AcceptMessagesOnlyFrom                 = $acceptMessagesOnlyFromValue
                 AcceptMessagesOnlyFromDLMembers        = $acceptMessagesOnlyFromDLMembersValue
@@ -493,9 +514,9 @@ class EXODynamicDistributionGroup : M365DSCResourceBase
                 GrantSendOnBehalfTo                    = $grantSendOnBehalfToValue
                 HiddenFromAddressListsEnabled          = $instance.HiddenFromAddressListsEnabled
                 Identity                               = $instance.Identity
-                IncludedRecipients                     = $instance.IncludedRecipients
-                MailTip                                = $instance.MailTip
-                MailTipTranslations                    = $instance.MailTipTranslations
+                IncludedRecipients                     = [System.String[]]$includedRecipientsValue
+                MailTip                                = [EXODynamicDistributionGroup]::RemoveMailTipHtml($instance.MailTip)
+                MailTipTranslations                    = [System.String[]]$mailTipTranslationsValue
                 ManagedBy                              = $managedByValue
                 ModeratedBy                            = $moderatedByValue
                 ModerationEnabled                      = $instance.ModerationEnabled
@@ -616,7 +637,7 @@ class EXODynamicDistributionGroup : M365DSCResourceBase
             }
 
             Write-Verbose -Message "Creating an EXO Dynamic Distribution Group with Identity {$($this.Identity)}"
-            $group = New-DynamicDistributionGroup @createParameters
+            $group = New-DynamicDistributionGroup @createParameters -ErrorAction Stop
 
             if ($updateParameters.Count -gt 1)
             {
@@ -645,7 +666,7 @@ class EXODynamicDistributionGroup : M365DSCResourceBase
         elseif ($this.Ensure -eq 'Absent' -and $currentInstance.Ensure -eq 'Present')
         {
             Write-Verbose -Message "Removing the EXO Dynamic Distribution Group with Identity {$($this.Identity)}"
-            Remove-DynamicDistributionGroup -Identity $currentInstance.Identity
+            Remove-DynamicDistributionGroup -Identity $currentInstance.Identity -Confirm:$false
         }
     }
 
@@ -829,6 +850,16 @@ class EXODynamicDistributionGroup : M365DSCResourceBase
         }
 
         return $trimmed
+    }
+
+    hidden static [System.String] RemoveMailTipHtml([System.String] $Value)
+    {
+        if ([System.String]::IsNullOrEmpty($Value))
+        {
+            return $Value
+        }
+
+        return $Value -replace '(?is)<html>\s*<body>\s*(.*?)\s*</body>\s*</html>\s*', '$1'
     }
 
     hidden static [System.String] ToExchangeFilterSyntax([System.String] $Expression)

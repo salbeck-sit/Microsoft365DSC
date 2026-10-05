@@ -144,6 +144,31 @@ class AADEntitlementManagementAccessPackageCatalogResource : M365DSCResourceBase
                         -Filter "DisplayName eq '$($this.DisplayName -replace "'", "''")'" -ErrorAction SilentlyContinue
                 }
             }
+            else
+            {
+                Write-Verbose -Message "No CatalogId was specified. Searching all catalogs for resource {$($this.DisplayName)}."
+                foreach ($catalog in (Get-MgBetaEntitlementManagementAccessPackageCatalog -All -ErrorAction Stop))
+                {
+                    [Array] $catalogMatches = Get-MgBetaEntitlementManagementAccessPackageCatalogAccessPackageResource `
+                        -AccessPackageCatalogId $catalog.Id `
+                        -Filter "DisplayName eq '$($this.DisplayName -replace "'", "''")'" `
+                        -ErrorAction SilentlyContinue
+
+                    if ($catalogMatches.Count -eq 0)
+                    {
+                        continue
+                    }
+
+                    if ($null -ne $getValue)
+                    {
+                        throw "The access package resource {$($this.DisplayName)} exists in more than one catalog. Specify the CatalogId."
+                    }
+
+                    $getValue = $catalogMatches[0]
+                    $resolvedCatalogId = $catalog.Id
+                    $CatalogIdValue = $catalog.DisplayName
+                }
+            }
 
             if ($null -eq $getValue)
             {
@@ -259,11 +284,17 @@ class AADEntitlementManagementAccessPackageCatalogResource : M365DSCResourceBase
             }
         }
 
-        $resolvedCatalogId = $this.CatalogId
-        if (-not [System.Guid]::TryParse($this.CatalogId, [ref][System.Guid]::Empty))
+        $catalogIdValue = $this.CatalogId
+        if ([System.String]::IsNullOrEmpty($catalogIdValue))
+        {
+            $catalogIdValue = $currentInstance.CatalogId
+        }
+
+        $resolvedCatalogId = $catalogIdValue
+        if (-not [System.Guid]::TryParse($catalogIdValue, [ref][System.Guid]::Empty))
         {
             Write-Verbose -Message 'Retrieving Catalog by Display Name'
-            $catalogInstance = Get-MgBetaEntitlementManagementAccessPackageCatalog -Filter "DisplayName eq '$($this.CatalogId -replace "'", "''")'"
+            $catalogInstance = Get-MgBetaEntitlementManagementAccessPackageCatalog -Filter "DisplayName eq '$($catalogIdValue -replace "'", "''")'"
             if ($catalogInstance)
             {
                 $resolvedCatalogId = $catalogInstance.Id
@@ -327,23 +358,12 @@ class AADEntitlementManagementAccessPackageCatalogResource : M365DSCResourceBase
         elseif ($this.Ensure -eq 'Absent' -and $currentInstance.Ensure -eq 'Present')
         {
             Write-Verbose -Message "Removing resource {$($this.DisplayName)} from catalog {$($resolvedCatalogId)}"
-            $resource = ([Hashtable]$boundParameters).Clone()
-
-            $resource.Remove('Id') | Out-Null
-            $resource.Remove('CatalogId') | Out-Null
-
-            $mapping = @{
-                odataType    = '@odata.type'
-                questionText = 'text'
-                sequencePosition = 'sequence'
-            }
-            $resource = Rename-M365DSCCimInstanceParameter -Properties $resource `
-                -KeyMapping $mapping
-
             $resourceRequest = @{
                 catalogId             = $resolvedCatalogId
                 requestType           = 'AdminRemove'
-                accessPackageResource = $resource
+                accessPackageResource = @{
+                    id = $currentInstance.Id
+                }
             }
             New-MgBetaEntitlementManagementAccessPackageResourceRequest -BodyParameter $resourceRequest
         }

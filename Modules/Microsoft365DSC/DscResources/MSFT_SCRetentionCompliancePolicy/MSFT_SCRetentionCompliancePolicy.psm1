@@ -723,6 +723,12 @@ class SCRetentionCompliancePolicy : M365DSCResourceBase
         }
         if ($this.Ensure -eq 'Present' -and $CurrentPolicy.Ensure -eq 'Absent')
         {
+            $pendingPolicy = Invoke-M365DSCCommand -ScriptBlock { Get-RetentionCompliancePolicy -Identity $this.Name -ErrorAction Stop } -SuppressNotFoundError
+            if ($null -ne $pendingPolicy -and "$($pendingPolicy.Mode)" -eq 'PendingDeletion')
+            {
+                throw "Retention compliance policy '$($this.Name)' is pending deletion and cannot be created again until the deletion completes. To complete the deletion now, run Remove-RetentionCompliancePolicy -Identity '$($pendingPolicy.Guid)' -ForceDeletion."
+            }
+
             $CreationParams.Add('Name', $this.Name)
             $CreationParams.Remove('Identity') | Out-Null
             Write-Verbose -Message "Creating new Retention Compliance Policy $($this.Name) with values: $(Convert-M365DscHashtableToString -Hashtable $CreationParams)"

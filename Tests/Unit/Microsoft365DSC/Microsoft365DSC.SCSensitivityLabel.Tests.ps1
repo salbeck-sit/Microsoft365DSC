@@ -444,7 +444,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                 $desiredValues = @{ AutoLabelingSettings = @{ Operator = 'And'; Groups = @(@{ Name = 'Group1'; Operator = 'Or'; SensitiveInformationType = @(@{ name = 'ABA Routing Number'; mincount = '1' }) }) } }
                 $currentValues = @{ AutoLabelingSettings = @{ Operator = 'And'; Groups = @(@{ Name = 'Group1'; Operator = 'Or'; SensitiveInformationType = @(@{ name = 'ABA Routing Number'; mincount = '5' }) }) } }
                 $result = $postProcessing.Invoke($desiredValues, $currentValues, $desiredValues.Clone(), @(@{ IsReport = $true }))
-                $result.Item1.AutoLabelingSettings | Should -Be 'AutoLabelingSettings drift detected'
+                $result.Item1.AutoLabelingSettings.Drift | Should -Be 'desired'
                 Should -Invoke -CommandName New-M365DSCLogEntry -Times 0 -Exactly -Scope It
             }
 
@@ -452,7 +452,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                 $desiredValues = @{ AutoLabelingSettings = @{ Operator = 'And'; Groups = @(@{ Name = 'Group1'; Operator = 'Or'; SensitiveInformationType = @(@{ name = 'ABA Routing Number'; mincount = '1' }) }) } }
                 $currentValues = @{ AutoLabelingSettings = @{ Operator = 'And'; Groups = @(@{ Name = 'Group1'; Operator = 'Or'; SensitiveInformationType = @(@{ name = 'ABA Routing Number'; mincount = '5' }) }) } }
                 $result = $postProcessing.Invoke($desiredValues, $currentValues, $desiredValues.Clone(), @())
-                $result.Item1.AutoLabelingSettings | Should -Be 'AutoLabelingSettings drift detected'
+                $result.Item1.AutoLabelingSettings.Drift | Should -Be 'desired'
                 Should -Invoke -CommandName New-M365DSCLogEntry -Times 1 -Exactly -Scope It -ParameterFilter {
                     $Message -like "AutoLabelingSettings do not match: *`r`n- Parameter 'mincount' does not match*Current: '5'. Desired: '1'.*"
                 }

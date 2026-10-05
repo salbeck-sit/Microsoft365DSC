@@ -148,7 +148,8 @@ class EXORecipientPermission : M365DSCResourceBase
         # Receipient Permission exists but shouldn't
         elseif ($this.Ensure -eq 'Absent' -and $currentState.Ensure -eq 'Present')
         {
-            Write-Verbose -Message "Recipient Permission for '$($this.Trustee)' with Access Rights '$($this.AccessRights -join ', ')' on mailbox '$($this.Identity)' exists but shouldn't. Removing it."
+            Write-Verbose -Message "Recipient Permission for '$($this.Trustee)' with Access Rights '$($currentState.AccessRights -join ', ')' on mailbox '$($this.Identity)' exists but shouldn't. Removing it."
+            $parameters.AccessRights = $currentState.AccessRights
             Remove-RecipientPermission @parameters -Confirm:$false
         }
         elseif ($this.Ensure -eq 'Present' -and $currentState.Ensure -eq 'Present')

@@ -171,9 +171,18 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                 Mock -CommandName Get-MgBetaDeviceAppManagementMobileApp -MockWith {
                     return $null
                 }
+
+                Mock -CommandName Get-MgBetaDeviceAppManagementMobileApp -ParameterFilter { -not [System.String]::IsNullOrEmpty($Filter) } -MockWith {
+                    return @{
+                        '@odata.type' = '#microsoft.graph.officeSuiteApp'
+                        id            = 'FakeStringValue'
+                        displayName   = 'FakeStringValue'
+                    }
+                }
             }
             It 'Should return Values from the Get method' {
                 ((New-M365DSCResourceInstance -ResourceName 'IntuneMobileAppsMicrosoft365SuiteMacOS' -Property $testParams).Get().ToHashtable()).Ensure | Should -Be 'Absent'
+                Should -Invoke -CommandName Get-MgBetaDeviceAppManagementMobileApp -ParameterFilter { $Filter -eq "DisplayName eq 'FakeStringValue'" }
             }
             It 'Should return false from the Test method' {
                 (New-M365DSCResourceInstance -ResourceName 'IntuneMobileAppsMicrosoft365SuiteMacOS' -Property $testParams).Test() | Should -Be $false

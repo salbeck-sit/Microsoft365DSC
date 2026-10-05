@@ -319,7 +319,7 @@ class EXODistributionGroup : M365DSCResourceBase
 
             $acceptMessagesOnlyFromValue = $this.GetDisplayNameSimplified($distributionGroup.AcceptMessagesOnlyFromWithDisplayNames)
             $acceptMessagesOnlyFromDlMembersValue = $this.GetDisplayNameSimplified($distributionGroup.AcceptMessagesOnlyFromDLMembersWithDisplayNames)
-            $acceptMessagesOnlyFromSendersOrMembersValue = $this.GetDisplayNameSimplified($distributionGroup.AcceptMessagesOnlyFromWithDisplayNames)
+            $acceptMessagesOnlyFromSendersOrMembersValue = $this.GetDisplayNameSimplified($distributionGroup.AcceptMessagesOnlyFromSendersOrMembersWithDisplayNames)
             $bypassModerationFromSendersOrMembersValue = $this.GetDisplayNameSimplified($distributionGroup.BypassModerationFromSendersOrMembersWithDisplayNames)
             $grantSendOnBehalfToValue = $this.GetDisplayNameSimplified($distributionGroup.GrantSendOnBehalfToWithDisplayNames)
             $managedByValue = $this.GetDisplayNameSimplified($distributionGroup.ManagedByWithDisplayName)
@@ -344,7 +344,7 @@ class EXODistributionGroup : M365DSCResourceBase
                 OrganizationalUnit                     = $distributionGroup.OrganizationalUnit
                 PrimarySmtpAddress                     = $distributionGroup.PrimarySmtpAddress
                 RequireSenderAuthenticationEnabled     = $distributionGroup.RequireSenderAuthenticationEnabled
-                RoomList                               = $distributionGroup.RoomList
+                RoomList                               = $distributionGroup.RecipientTypeDetails -eq 'RoomList'
                 SendModerationNotifications            = $distributionGroup.SendModerationNotifications
                 AcceptMessagesOnlyFrom                 = $acceptMessagesOnlyFromValue
                 AcceptMessagesOnlyFromDLMembers        = $acceptMessagesOnlyFromDlMembersValue

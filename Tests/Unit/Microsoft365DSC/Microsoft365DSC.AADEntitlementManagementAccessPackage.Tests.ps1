@@ -272,13 +272,11 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     IsRoleScopesVisible             = $true
                     IncompatibleAccessPackages      = @('packageId1', 'packageId2')
                     IncompatibleGroups              = @('groupId1', 'groupId2')
-                    AccessPackageResourceRoleScopes = ([MSFT_AccessPackageResourceRoleScope] @{
-                            Id                                   = 'FakeStringValue'
-                            AccessPackageResourceOriginId        = '123456789'
-                            AccessPackageResourceRoleDisplayName = 'TestRole'
-                        })
                     Ensure                          = 'Present'
                     Credential                      = $Credential
+                }
+
+                Mock -CommandName Remove-MgBetaEntitlementManagementAccessPackageResourceRoleScope -MockWith {
                 }
             }
 
@@ -293,6 +291,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             It 'Should call the Set method' {
                 (New-M365DSCResourceInstance -ResourceName 'AADEntitlementManagementAccessPackage' -Property $testParams).Set()
                 Should -Invoke -CommandName Update-MgBetaEntitlementManagementAccessPackage -Exactly 1
+                Should -Invoke -CommandName Remove-MgBetaEntitlementManagementAccessPackageResourceRoleScope -Exactly 0
             }
         }
 

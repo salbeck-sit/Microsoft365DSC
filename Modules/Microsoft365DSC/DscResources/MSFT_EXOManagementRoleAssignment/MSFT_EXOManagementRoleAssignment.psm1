@@ -13,7 +13,7 @@ class EXOManagementRoleAssignment : M365DSCResourceBase
     [System.String] $Role
 
     [DscProperty()]
-    [System.ComponentModel.Description('The App parameter specifies the service principal to assign the management role to. Specifically, the ServiceId GUID value from the output of the Get-ServicePrincipal cmdlet (for example, 6233fba6-0198-4277-892f-9275bf728bcc).')]
+    [System.ComponentModel.Description('The App parameter specifies the service principal to assign the management role to. Specifically, the ObjectId GUID value from the output of the Get-ServicePrincipal cmdlet (for example, 6233fba6-0198-4277-892f-9275bf728bcc).')]
     [System.String] $App
 
     [DscProperty()]
@@ -37,7 +37,7 @@ class EXOManagementRoleAssignment : M365DSCResourceBase
     [System.String] $CustomResourceScope
 
     [DscProperty()]
-    [System.ComponentModel.Description('The ExclusiveConfigWriteScope parameter specifies the exclusive configuration-based management scope to associate with the new role assignment.')]
+    [System.ComponentModel.Description('The ExclusiveRecipientWriteScope parameter specifies the exclusive recipient-based management scope to associate with the new role assignment. If you use the ExclusiveRecipientWriteScope parameter, you can''t use the CustomRecipientWriteScope or RecipientOrganizationalUnitScope parameters.')]
     [System.String] $ExclusiveRecipientWriteScope
 
     [DscProperty()]
@@ -141,14 +141,52 @@ class EXOManagementRoleAssignment : M365DSCResourceBase
                 }
             }
 
+            $RecipientRelativeWriteScopeValue = $null
+            if ([System.String]$roleAssignment.RecipientWriteScope -in @('None', 'Organization', 'MyGAL', 'Self', 'MyDistributionGroups'))
+            {
+                $RecipientRelativeWriteScopeValue = [System.String]$roleAssignment.RecipientWriteScope
+            }
+
+            $CustomRecipientWriteScopeValue = $null
+            $ExclusiveRecipientWriteScopeValue = $null
+            $RecipientOrganizationalUnitScopeValue = $null
+            switch ([System.String]$roleAssignment.RecipientWriteScope)
+            {
+                'CustomRecipientScope'
+                {
+                    $CustomRecipientWriteScopeValue = $roleAssignment.CustomRecipientWriteScope
+                }
+                'ExclusiveRecipientScope'
+                {
+                    $ExclusiveRecipientWriteScopeValue = $roleAssignment.CustomRecipientWriteScope
+                    if (-not [System.String]::IsNullOrEmpty($this.ExclusiveRecipientWriteScope) -and `
+                            $this.ExclusiveRecipientWriteScope -ne $ExclusiveRecipientWriteScopeValue)
+                    {
+                        $exclusiveScope = Get-ManagementScope -Identity $this.ExclusiveRecipientWriteScope -ErrorAction SilentlyContinue
+                        if ($null -ne $exclusiveScope -and $exclusiveScope.Name -eq $ExclusiveRecipientWriteScopeValue)
+                        {
+                            $ExclusiveRecipientWriteScopeValue = $this.ExclusiveRecipientWriteScope
+                        }
+                    }
+                }
+                'OU'
+                {
+                    $RecipientOrganizationalUnitScopeValue = $roleAssignment.CustomRecipientWriteScope
+                    if ([EXOManagementRoleAssignment]::GetOrganizationalUnitName($this.RecipientOrganizationalUnitScope) -eq $RecipientOrganizationalUnitScopeValue)
+                    {
+                        $RecipientOrganizationalUnitScopeValue = $this.RecipientOrganizationalUnitScope
+                    }
+                }
+            }
+
             $result = @{
                 Name                             = $roleAssignment.Name
-                CustomRecipientWriteScope        = $roleAssignment.CustomRecipientWriteScope
+                CustomRecipientWriteScope        = $CustomRecipientWriteScopeValue
                 CustomResourceScope              = $roleAssignment.CustomResourceScope
-                ExclusiveRecipientWriteScope     = $roleAssignment.ExclusiveRecipientWriteScope
+                ExclusiveRecipientWriteScope     = $ExclusiveRecipientWriteScopeValue
                 RecipientAdministrativeUnitScope = $RecipientAdministrativeUnitScopeValue
-                RecipientOrganizationalUnitScope = $roleAssignment.RecipientOrganizationalUnitScope
-                RecipientRelativeWriteScope      = $roleAssignment.RecipientRelativeWriteScope
+                RecipientOrganizationalUnitScope = $RecipientOrganizationalUnitScopeValue
+                RecipientRelativeWriteScope      = $RecipientRelativeWriteScopeValue
                 Role                             = $roleAssignment.Role
                 Ensure                           = 'Present'
                 Credential                       = $this.Credential
@@ -349,6 +387,21 @@ class EXOManagementRoleAssignment : M365DSCResourceBase
 
             throw
         }
+    }
+
+    hidden static [System.String] GetOrganizationalUnitName([System.String] $Value)
+    {
+        if ([System.String]::IsNullOrEmpty($Value))
+        {
+            return $null
+        }
+
+        if ($Value -match '^OU=([^,]+),')
+        {
+            return $Matches[1]
+        }
+
+        return ($Value.TrimEnd('/') -split '/')[-1]
     }
 
     hidden [EXOManagementRoleAssignment] AsResult([System.Object] $Values)

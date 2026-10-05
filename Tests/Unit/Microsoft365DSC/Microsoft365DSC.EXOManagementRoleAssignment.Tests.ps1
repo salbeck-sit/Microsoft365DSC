@@ -106,19 +106,22 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
         Context -Name 'Management Role Assignment exists and is in the desired state' -Fixture {
             BeforeAll {
                 $testParams = @{
-                    Name       = 'Contoso Management Role'
-                    Role       = 'MyRole'
-                    User       = 'John.Smith'
-                    Ensure     = 'Present'
-                    Credential = $Credential
+                    Name                             = 'Contoso Management Role'
+                    Role                             = 'MyRole'
+                    User                             = 'John.Smith'
+                    RecipientOrganizationalUnitScope = 'contoso.com/Legal'
+                    Ensure                           = 'Present'
+                    Credential                       = $Credential
                 }
 
                 Mock -CommandName Get-ManagementRoleAssignment -MockWith {
                     return @{
-                        Name             = 'Contoso Management Role'
-                        Role             = 'MyRole'
-                        RoleAssignee     = 'John.Smith'
-                        RoleAssigneeType = 'User'
+                        Name                      = 'Contoso Management Role'
+                        Role                      = 'MyRole'
+                        RoleAssignee              = 'John.Smith'
+                        RoleAssigneeType          = 'User'
+                        RecipientWriteScope       = 'OU'
+                        CustomRecipientWriteScope = 'Legal'
                     }
                 }
             }
@@ -128,7 +131,10 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             }
 
             It 'Should return Present from the Get Method' {
-                ((New-M365DSCResourceInstance -ResourceName 'EXOManagementRoleAssignment' -Property $testParams).Get().ToHashtable()).Ensure | Should -Be 'Present'
+                $result = (New-M365DSCResourceInstance -ResourceName 'EXOManagementRoleAssignment' -Property $testParams).Get().ToHashtable()
+                $result.Ensure | Should -Be 'Present'
+                $result.RecipientOrganizationalUnitScope | Should -Be 'contoso.com/Legal'
+                $result.CustomRecipientWriteScope | Should -BeNullOrEmpty
             }
         }
 
@@ -145,11 +151,11 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
 
                 Mock -CommandName Get-ManagementRoleAssignment -MockWith {
                     return @{
-                        Name                             = 'Contoso Management Role'
-                        Role                             = 'MyRole'
-                        RecipientOrganizationalUnitScope = 'contoso.com/Drift/Users'
-                        RoleAssignee                     = 'Bob.Houle'
-                        RoleAssigneeType                 = 'User'
+                        Name                = 'Contoso Management Role'
+                        Role                = 'MyRole'
+                        RecipientWriteScope = 'Organization'
+                        RoleAssignee        = 'Bob.Houle'
+                        RoleAssigneeType    = 'User'
                     }
                 }
             }
@@ -159,7 +165,10 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             }
 
             It 'Should return Present from the Get Method' {
-                ((New-M365DSCResourceInstance -ResourceName 'EXOManagementRoleAssignment' -Property $testParams).Get().ToHashtable()).Ensure | Should -Be 'Present'
+                $result = (New-M365DSCResourceInstance -ResourceName 'EXOManagementRoleAssignment' -Property $testParams).Get().ToHashtable()
+                $result.Ensure | Should -Be 'Present'
+                $result.RecipientRelativeWriteScope | Should -Be 'Organization'
+                $result.RecipientOrganizationalUnitScope | Should -BeNullOrEmpty
             }
 
             It 'Should call the Set method' {
@@ -180,10 +189,12 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
 
                 Mock -CommandName Get-ManagementRoleAssignment -MockWith {
                     return @{
-                        Name             = 'Contoso Management Role'
-                        Role             = 'MyRole'
-                        RoleAssignee     = 'Bob.Houle'
-                        RoleAssigneeType = 'User'
+                        Name                      = 'Contoso Management Role'
+                        Role                      = 'MyRole'
+                        RoleAssignee              = 'Bob.Houle'
+                        RoleAssigneeType          = 'User'
+                        RecipientWriteScope       = 'ExclusiveRecipientScope'
+                        CustomRecipientWriteScope = 'Executives'
                     }
                 }
             }
@@ -193,7 +204,10 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             }
 
             It 'Should return Present from the Get Method' {
-                ((New-M365DSCResourceInstance -ResourceName 'EXOManagementRoleAssignment' -Property $testParams).Get().ToHashtable()).Ensure | Should -Be 'Present'
+                $result = (New-M365DSCResourceInstance -ResourceName 'EXOManagementRoleAssignment' -Property $testParams).Get().ToHashtable()
+                $result.Ensure | Should -Be 'Present'
+                $result.ExclusiveRecipientWriteScope | Should -Be 'Executives'
+                $result.CustomRecipientWriteScope | Should -BeNullOrEmpty
             }
 
             It 'Should call the Set method' {

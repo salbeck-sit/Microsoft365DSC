@@ -57,6 +57,9 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             Mock -CommandName Remove-RoleGroup -MockWith {
             }
 
+            Mock -CommandName Set-RoleGroup -MockWith {
+            }
+
             # Mock Write-M365DSCHost to hide output during the tests
             Mock -CommandName Write-M365DSCHost -MockWith {
             }
@@ -118,6 +121,36 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
 
             It 'Should return Present from the Get Method' {
                 ((New-M365DSCResourceInstance -ResourceName 'SCRoleGroup' -Property $testParams).Get().ToHashtable()).Ensure | Should -Be 'Present'
+            }
+        }
+
+        Context -Name 'Role Group should exist. Role Group exists but is not in the desired state. Test should fail.' -Fixture {
+            BeforeAll {
+                $testParams = @{
+                    Name        = 'Contoso Role Group'
+                    Roles       = 'Address Lists'
+                    Description = 'This is the Contoso Role Group'
+                    Ensure      = 'Present'
+                    Credential  = $Credential
+                }
+
+                Mock -CommandName Get-RoleGroup -MockWith {
+                    return @{
+                        Name        = 'Contoso Role Group'
+                        Roles       = 'Address Lists'
+                        Description = 'Outdated description'
+                    }
+                }
+            }
+
+            It 'Should return false from the Test method' {
+                (New-M365DSCResourceInstance -ResourceName 'SCRoleGroup' -Property $testParams).Test() | Should -Be $false
+            }
+
+            It 'Should call the Set method' {
+                (New-M365DSCResourceInstance -ResourceName 'SCRoleGroup' -Property $testParams).Set()
+                Should -Invoke -CommandName Set-RoleGroup -Exactly 1 -ParameterFilter { $Identity -eq 'Contoso Role Group' -and $Description -eq 'This is the Contoso Role Group' }
+                Should -Invoke -CommandName New-RoleGroup -Exactly 0
             }
         }
 

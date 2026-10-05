@@ -312,6 +312,8 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                         DisableCompanyWideSharingLinks = 'NotDisabled'
                         DisableFlows                   = 'NotDisabled'
                         DisableSharingForNonOwners     = $False
+                        DenyAddAndCustomizePages       = 'Enabled'
+                        RequestFilesLinkEnabled        = $False
                         LCID                           = 1033
                         RestrictedToRegion             = 'Unknown'
                         SocialBarOnSitePagesDisabled   = $False
@@ -360,7 +362,10 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             }
 
             It 'Should return present from the Get method' {
-                ((New-M365DSCResourceInstance -ResourceName 'SPOSite' -Property $testParams).Get().ToHashtable()).Ensure | Should -Be 'Present'
+                $result = (New-M365DSCResourceInstance -ResourceName 'SPOSite' -Property $testParams).Get().ToHashtable()
+                $result.Ensure | Should -Be 'Present'
+                $result.DenyAddAndCustomizePages | Should -Be $true
+                $result.RequestFilesLinkEnabled | Should -Be $false
             }
 
             It 'Should return false from the Test method' {

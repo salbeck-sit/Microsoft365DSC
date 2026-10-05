@@ -271,6 +271,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
 
                 Mock -CommandName Set-PnPHubSite -MockWith { }
                 Mock -CommandName Grant-PnPHubSiteRights -MockWith { }
+                Mock -CommandName Revoke-PnPHubSiteRights -MockWith { }
             }
 
             It 'Should return present from the Get method' {
@@ -284,7 +285,8 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             It 'Should call mocks in the Set method' {
                 (New-M365DSCResourceInstance -ResourceName 'SPOHubSite' -Property $testParams).Set()
                 Should -Invoke Set-PnPHubSite -Exactly 1
-                Should -Invoke Grant-PnPHubSiteRights -Exactly 4
+                Should -Invoke Grant-PnPHubSiteRights -Exactly 2
+                Should -Invoke Revoke-PnPHubSiteRights -Exactly 2
             }
         }
 

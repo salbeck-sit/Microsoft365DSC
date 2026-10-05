@@ -40,6 +40,12 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             Mock -CommandName Remove-JournalRule -MockWith {
             }
 
+            Mock -CommandName Enable-JournalRule -MockWith {
+            }
+
+            Mock -CommandName Disable-JournalRule -MockWith {
+            }
+
             Mock -CommandName Get-JournalRule -MockWith {
                 return @{
                     Name                = 'TestRule'
@@ -105,6 +111,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             It 'Should set Call into the Set-JournalRule command exactly once' {
                 (New-M365DSCResourceInstance -ResourceName 'EXOJournalRule' -Property $testParams).Set()
                 Should -Invoke -CommandName 'Set-JournalRule' -Exactly 1
+                Should -Invoke -CommandName 'Enable-JournalRule' -Exactly 1 -ParameterFilter { $PesterBoundParameters.ContainsKey('Confirm') -and -not $Confirm }
             }
         }
 
@@ -124,7 +131,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
 
             It 'Should call into the Remove-JournalRule cmdlet once' {
                 (New-M365DSCResourceInstance -ResourceName 'EXOJournalRule' -Property $testParams).Set()
-                Should -Invoke -CommandName 'Remove-JournalRule' -Exactly 1
+                Should -Invoke -CommandName 'Remove-JournalRule' -Exactly 1 -ParameterFilter { $PesterBoundParameters.ContainsKey('Confirm') -and -not $Confirm }
             }
         }
 

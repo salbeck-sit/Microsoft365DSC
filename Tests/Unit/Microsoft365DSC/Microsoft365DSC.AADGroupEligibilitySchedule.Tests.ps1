@@ -208,7 +208,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     MemberType = "direct"
                     GroupDisplayName = "FakeStringValue"
                     Principal = "John.Smith@contoso.com"
-                    PrincipalType = "User"
                     ScheduleInfo         = ([MSFT_MicrosoftGraphrequestSchedule] @{
                         startDateTime = '2025-01-23T08:59:00.0000000+00:00'
                         Expiration = ([MSFT_MicrosoftGraphExpirationPattern] @{
@@ -309,9 +308,9 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     Principal            = "John.Smith@contoso.com";
                     PrincipalType        = "User"
                     ScheduleInfo         = ([MSFT_MicrosoftGraphrequestSchedule] @{
-                        startDateTime = '2025-01-23T08:59:00.0000000+00:00'
+                        startDateTime = '2025-01-23T08:59:00.0000000Z'
                         Expiration = ([MSFT_MicrosoftGraphExpirationPattern] @{
-                                EndDateTime = '2025-12-23T08:59:00.0000000+00:00'
+                                EndDateTime = '2025-12-23T08:59:00.0000000Z'
                                 Type = 'afterDateTime'})
                         })
                     Ensure = "Present"

@@ -83,10 +83,11 @@ class SPOSiteDesignRights : M365DSCResourceBase
                 $nullReturn.Ensure = 'Absent'
 
                 Write-Verbose -Message "Getting Site Design Rights for $($this.SiteDesignTitle)"
-                $siteDesign = Get-PnPSiteDesign -Identity $this.SiteDesignTitle -ErrorAction Stop
+                $siteDesign = Get-PnPSiteDesign -Identity $this.SiteDesignTitle -ErrorAction SilentlyContinue
                 if ($null -eq $siteDesign)
                 {
-                    throw "Site Design with title $($this.SiteDesignTitle) doesn't exist in tenant"
+                    Write-Verbose -Message "Site Design with title $($this.SiteDesignTitle) doesn't exist in tenant"
+                    return $this.AsResult($nullReturn)
                 }
             }
             else
@@ -150,60 +151,62 @@ class SPOSiteDesignRights : M365DSCResourceBase
 
         $null = $this.Connect('PNP')
 
-        $cursiteDesign = Get-PnPSiteDesign -Identity $this.SiteDesignTitle
+        $cursiteDesign = Get-PnPSiteDesign -Identity $this.SiteDesignTitle -ErrorAction SilentlyContinue
         if ($null -eq $cursiteDesign)
         {
+            if ($this.Ensure -eq 'Absent')
+            {
+                return
+            }
+
             throw "Site Design with title $($this.SiteDesignTitle) doesn't exist in tenant"
         }
 
         $currentSiteDesignRights = $this.Get().ToHashtable()
         $CurrentParameters = $this.GetBoundParameters()
 
-        if ($currentSiteDesignRights.Ensure -eq 'Present')
-        {
-            $difference = Compare-Object -ReferenceObject $currentSiteDesignRights.UserPrincipals -DifferenceObject $CurrentParameters.UserPrincipals
-
-            if ($difference.InputObject)
-            {
-                Write-Verbose -Message 'Detected a difference in the current design rights of user principals and the desired one'
-                $principalsToRemove = @()
-                $principalsToAdd = @()
-                foreach ($diff in $difference)
-                {
-                    if ($diff.SideIndicator -eq '<=')
-                    {
-                        $principalsToRemove += $diff.InputObject
-                    }
-                    elseif ($diff.SideIndicator -eq '=>')
-                    {
-                        $principalsToAdd += $diff.InputObject
-                    }
-                }
-
-                if ($principalsToAdd.Count -gt 0 -and $this.Ensure -eq 'Present')
-                {
-                    Write-Verbose -Message "Granting SiteDesign rights on site design $($this.SiteDesignTitle)"
-                    Grant-PnPSiteDesignRights -Identity $cursiteDesign.Id -Principals $principalsToAdd -Rights $this.Rights
-                }
-
-                if ($principalsToRemove.Count -gt 0)
-                {
-                    Write-Verbose -Message "Revoking SiteDesign rights on $principalsToRemove for site design $($this.SiteDesignTitle) with Id $($cursiteDesign.Id)"
-                    Revoke-PnPSiteDesignRights -Identity $cursiteDesign.Id -Principals $principalsToRemove
-                }
-            }
-        }
         if ($this.Ensure -eq 'Absent')
         {
-            Write-Verbose -Message "Revoking SiteDesign rights on  $($this.UserPrincipals) for site design $($this.SiteDesignTitle)"
-            Revoke-PnPSiteDesignRights -Identity $cursiteDesign.Id -Principals $this.UserPrincipals
+            if ($currentSiteDesignRights.Ensure -eq 'Present')
+            {
+                Write-Verbose -Message "Revoking SiteDesign rights on $($currentSiteDesignRights.UserPrincipals) for site design $($this.SiteDesignTitle)"
+                Revoke-PnPSiteDesignRights -Identity $cursiteDesign.Id -Principals $currentSiteDesignRights.UserPrincipals
+            }
+            return
         }
 
-        #No site design rights currently exist so add them
         if ($currentSiteDesignRights.Ensure -eq 'Absent')
         {
             Write-Verbose -Message "Granting SiteDesign rights on site design $($this.SiteDesignTitle)"
             Grant-PnPSiteDesignRights -Identity $cursiteDesign.Id -Principals $this.UserPrincipals -Rights $this.Rights
+            return
+        }
+
+        $difference = Compare-Object -ReferenceObject @($currentSiteDesignRights.UserPrincipals) -DifferenceObject @($CurrentParameters.UserPrincipals)
+        $principalsToRemove = @()
+        $principalsToAdd = @()
+        foreach ($delta in $difference)
+        {
+            if ($delta.SideIndicator -eq '<=')
+            {
+                $principalsToRemove += $delta.InputObject
+            }
+            elseif ($delta.SideIndicator -eq '=>')
+            {
+                $principalsToAdd += $delta.InputObject
+            }
+        }
+
+        if ($principalsToAdd.Count -gt 0)
+        {
+            Write-Verbose -Message "Granting SiteDesign rights on site design $($this.SiteDesignTitle)"
+            Grant-PnPSiteDesignRights -Identity $cursiteDesign.Id -Principals $principalsToAdd -Rights $this.Rights
+        }
+
+        if ($principalsToRemove.Count -gt 0)
+        {
+            Write-Verbose -Message "Revoking SiteDesign rights on $principalsToRemove for site design $($this.SiteDesignTitle) with Id $($cursiteDesign.Id)"
+            Revoke-PnPSiteDesignRights -Identity $cursiteDesign.Id -Principals $principalsToRemove
         }
     }
 

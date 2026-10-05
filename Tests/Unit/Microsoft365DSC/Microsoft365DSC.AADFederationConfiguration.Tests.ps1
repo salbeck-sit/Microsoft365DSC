@@ -152,7 +152,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     MetadataExchangeUri             = 'https://contoso.com/metadataExchangeUri'
                     PassiveSignInUri                = 'https://contoso.com/Drift' # Drift
                     PreferredAuthenticationProtocol = 'wsFed'
-                    Domains                         = @('contoso.com')
+                    Domains                         = @('fabrikam.com') # Drift
                     SigningCertificate              = 'MIIDADCCAeigAwIBAgIQEX41y8r6'
                     Ensure                          = 'Present'
                     Credential                      = $Credential;
@@ -169,7 +169,16 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
 
             It 'Should call the Set method' {
                 (New-M365DSCResourceInstance -ResourceName 'AADFederationConfiguration' -Property $testParams).Set()
-                Should -Invoke -CommandName Invoke-M365DSCGraphRequest -Exactly 2
+                Should -Invoke -CommandName Invoke-M365DSCGraphRequest -Exactly 4
+                Should -Invoke -CommandName Invoke-M365DSCGraphRequest -ParameterFilter {
+                    $Method -eq 'PATCH' -and $Body -notmatch '"domains"'
+                } -Exactly 1
+                Should -Invoke -CommandName Invoke-M365DSCGraphRequest -ParameterFilter {
+                    $Method -eq 'POST' -and $Uri -like '*/domains' -and $Body -match 'fabrikam.com'
+                } -Exactly 1
+                Should -Invoke -CommandName Invoke-M365DSCGraphRequest -ParameterFilter {
+                    $Method -eq 'DELETE' -and $Uri -like '*/domains/contoso.com'
+                } -Exactly 1
             }
         }
 

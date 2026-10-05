@@ -106,7 +106,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
 
             It 'Should remove the instance from the Set method' {
                 (New-M365DSCResourceInstance -ResourceName 'EXOActiveSyncMailboxPolicy' -Property $testParams).Set()
-                Should -Invoke -CommandName Remove-MobileDeviceMailboxPolicy -Exactly 1
+                Should -Invoke -CommandName Remove-MobileDeviceMailboxPolicy -Exactly 1 -ParameterFilter { $PesterBoundParameters.ContainsKey('Confirm') -and -not $Confirm }
             }
         }
 

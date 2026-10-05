@@ -121,6 +121,8 @@ Describe 'Test-M365DSCNotFoundError' {
         It 'Should return $true for "<Message>"' -ForEach @(
             @{ Message = "The operation couldn't be completed because object 'TestDomain.com' couldn't be found on 'YOURSERVER.outlook.com'." }
             @{ Message = "The specified object was not found in the store." }
+            @{ Message = "|Microsoft.Exchange.Management.Tasks.ComplianceCaseTaskException|Unable to execute the task. Reason: The compliance case ""Contoso Litigation 2026"" doesn't exist. Please create the case." }
+            @{ Message = "|Microsoft.Exchange.Configuration.Tasks.ManagementObjectNotFoundException|Policy ""Litigation Hold 2026"" wasn't found.  Make sure you typed the policy name correctly." }
         ) {
             try
             {

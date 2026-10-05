@@ -65,6 +65,7 @@ BeforeAll {
 
 Describe 'Settings Catalog engine against captured Security Baseline payloads' -ForEach @(
     @{ Baseline = 'IntuneSecurityBaselineDefenderForEndpoint'; Settings = 57; Templates = 65 }
+    @{ Baseline = 'IntuneSecurityBaselineHoloLens2Standard'; Settings = 23; Templates = 23 }
     @{ Baseline = 'IntuneSecurityBaselineMicrosoft365AppsForEnterprise'; Settings = 125; Templates = 128 }
     @{ Baseline = 'IntuneSecurityBaselineWindows10'; Settings = 329; Templates = 330 }
 ) {

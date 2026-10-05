@@ -140,7 +140,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
 
             It 'Should remove the permission in the Set method' {
                 (New-M365DSCResourceInstance -ResourceName 'EXORecipientPermission' -Property $testParams).Set()
-                Should -Invoke -CommandName Remove-RecipientPermission -Exactly 1
+                Should -Invoke -CommandName Remove-RecipientPermission -Exactly 1 -ParameterFilter { $AccessRights -contains 'SendAs' }
             }
         }
 

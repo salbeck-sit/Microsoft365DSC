@@ -1886,7 +1886,7 @@ class AADApplication : M365DSCResourceBase
 
     hidden [void] UpdateAppRoles([System.String] $ObjectId, [System.Object[]] $AppRoles)
     {
-        for ($attempt = 1; ; $attempt++)
+        for ($attempt = 1; $attempt -le 6; $attempt++)
         {
             try
             {

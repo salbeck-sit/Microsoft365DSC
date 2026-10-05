@@ -381,7 +381,7 @@ class AADEntitlementManagementAccessPackage : M365DSCResourceBase
             #region basic information
             $updateParameters = Remove-M365DSCAuthenticationParameter -BoundParameters $this.GetBoundParameters()
 
-            if (-not [System.Guid]::TryParse($createParameters.CatalogId, [ref][System.Guid]::Empty))
+            if (-not [System.Guid]::TryParse($updateParameters.CatalogId, [ref][System.Guid]::Empty))
             {
                 $catalogInstance = Get-MgBetaEntitlementManagementAccessPackageCatalog -Filter "DisplayName eq '$($updateParameters.CatalogId -replace "'", "''")'"
                 if ($catalogInstance)
@@ -640,12 +640,18 @@ class AADEntitlementManagementAccessPackage : M365DSCResourceBase
             }
 
             #region remove roleScope
-            $desiredAccessPackageResourceOriginKeys = @($this.AccessPackageResourceRoleScopes | ForEach-Object {
-                    Get-M365DSCAccessPackageResourceOriginDisplayName -OriginId $_.AccessPackageResourceOriginId `
-                        -OriginSystem $_.AccessPackageResourceScopeOriginSystem
-                })
-            $currentAccessPackageResourceOriginIdsToRemove = $currentAccessPackageResourceOriginIds | Where-Object `
-                -FilterScript { $_ -notin $desiredAccessPackageResourceOriginKeys }
+            $currentAccessPackageResourceOriginIdsToRemove = @()
+            if ($this.GetBoundParameters().ContainsKey('AccessPackageResourceRoleScopes'))
+            {
+                $desiredAccessPackageResourceOriginKeys = @()
+                foreach ($desiredRoleScope in $this.AccessPackageResourceRoleScopes)
+                {
+                    $desiredAccessPackageResourceOriginKeys += Get-M365DSCAccessPackageResourceOriginDisplayName -OriginId $desiredRoleScope.AccessPackageResourceOriginId `
+                        -OriginSystem $desiredRoleScope.AccessPackageResourceScopeOriginSystem
+                }
+                $currentAccessPackageResourceOriginIdsToRemove = $currentAccessPackageResourceOriginIds | Where-Object `
+                    -FilterScript { $_ -notin $desiredAccessPackageResourceOriginKeys }
+            }
             foreach ($originId in $currentAccessPackageResourceOriginIdsToRemove)
             {
 

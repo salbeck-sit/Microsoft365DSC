@@ -271,7 +271,10 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
 
             It 'Should create the policy in the Set method' {
                 (New-M365DSCResourceInstance -ResourceName 'AADConditionalAccessPolicy' -Property $testParams).Set()
-                Should -Invoke -CommandName New-MgBetaIdentityConditionalAccessPolicy -Exactly 1
+                Should -Invoke -CommandName New-MgBetaIdentityConditionalAccessPolicy -Exactly 1 -ParameterFilter {
+                    ($BodyParameter.conditions.platforms.includePlatforms -join ',') -ceq 'android,iOS' -and
+                    ($BodyParameter.conditions.platforms.excludePlatforms -join ',') -ceq 'windows,windowsPhone,macOS'
+                }
             }
         }
 

@@ -127,6 +127,11 @@ class SPOOrgAssetsLibrary : M365DSCResourceBase
                         break
                     }
                 }
+
+                if ($null -eq $orgAsset)
+                {
+                    return $this.AsResult($nullReturn)
+                }
             }
             else
             {
@@ -182,26 +187,29 @@ class SPOOrgAssetsLibrary : M365DSCResourceBase
         $currentOrgSiteAsset = $this.Get().ToHashtable()
         $currentParameters = Remove-M365DSCAuthenticationParameter -BoundParameters $this.GetBoundParameters()
 
-        $cdn = $null
-        if ($this.CdnType -eq 'Public')
+        if ($this.Ensure -eq 'Present')
         {
-            if (Get-PnPTenantCdnEnabled -CdnType $this.CdnType)
+            $cdn = $null
+            if ($this.CdnType -eq 'Public')
             {
-                $cdn = 'Public'
+                if ((Get-PnPTenantCdnEnabled -CdnType $this.CdnType).Value)
+                {
+                    $cdn = 'Public'
+                }
             }
-        }
 
-        if ($this.CdnType -eq 'Private')
-        {
-            if (Get-PnPTenantCdnEnabled -CdnType $this.CdnType)
+            if ($this.CdnType -eq 'Private')
             {
-                $cdn = 'Private'
+                if ((Get-PnPTenantCdnEnabled -CdnType $this.CdnType).Value)
+                {
+                    $cdn = 'Private'
+                }
             }
-        }
 
-        if ($null -eq $cdn)
-        {
-            throw "Tenant $($this.CdnType) CDN must be configured before setting site organization Library"
+            if ($null -eq $cdn)
+            {
+                throw "Tenant $($this.CdnType) CDN must be configured before setting site organization Library"
+            }
         }
 
         if ($this.Ensure -eq 'Present' -and $currentOrgSiteAsset.Ensure -eq 'Present')
@@ -235,6 +243,17 @@ class SPOOrgAssetsLibrary : M365DSCResourceBase
         {
             Write-Verbose -Message 'Removing existing Org Asset Library'
             Remove-PnPOrgAssetsLibrary -LibraryUrl $currentOrgSiteAsset.LibraryUrl
+
+            $originUrl = [System.Uri]::UnescapeDataString(([System.Uri]$currentOrgSiteAsset.LibraryUrl).AbsolutePath).Trim('/')
+            foreach ($cdnType in @('Public', 'Private'))
+            {
+                $origins = @(Get-PnPTenantCdnOrigin -CdnType $cdnType -ErrorAction SilentlyContinue) -replace '\s*\(configuration pending\)$', ''
+                if ($origins -contains $originUrl)
+                {
+                    Write-Verbose -Message "Removing $cdnType CDN origin {$originUrl}"
+                    Remove-PnPTenantCdnOrigin -OriginUrl $originUrl -CdnType $cdnType
+                }
+            }
         }
     }
 

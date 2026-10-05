@@ -68,7 +68,7 @@ class SCFilePlanPropertyCategory : M365DSCResourceBase
                 $nullReturn = $this.GetBoundParameters()
                 $nullReturn.Ensure = 'Absent'
 
-                $property = Get-FilePlanPropertyCategory -ErrorAction Stop | Where-Object -FilterScript { $_.DisplayName -eq $this.Name }
+                $property = Get-FilePlanPropertyCategory -ErrorAction Stop | Where-Object -FilterScript { $_.DisplayName -eq $this.Name -and "$($_.Mode)" -ne 'PendingDeletion' }
 
                 if ($null -eq $property)
                 {
@@ -124,6 +124,12 @@ class SCFilePlanPropertyCategory : M365DSCResourceBase
 
         if ($this.Ensure -eq 'Present' -and $Current.Ensure -eq 'Absent')
         {
+            $pendingProperty = Get-FilePlanPropertyCategory -ErrorAction Stop | Where-Object -FilterScript { $_.DisplayName -eq $this.Name -and "$($_.Mode)" -eq 'PendingDeletion' }
+            if ($null -ne $pendingProperty)
+            {
+                throw "File plan category '$($this.Name)' is pending deletion and cannot be created again until the deletion completes. To complete the deletion now, run Remove-FilePlanPropertyCategory -Identity '$(@($pendingProperty)[0].Guid)' -ForceDeletion."
+            }
+
             $CreationParams = Remove-M365DSCAuthenticationParameter -BoundParameters $this.GetBoundParameters()
             New-FilePlanPropertyCategory @CreationParams
         }
@@ -142,6 +148,12 @@ class SCFilePlanPropertyCategory : M365DSCResourceBase
                 }
                 elseif ("$($property.Mode)" -ne 'PendingDeletion')
                 {
+                    $subCategories = Get-FilePlanPropertySubCategory -ErrorAction Stop | Where-Object -FilterScript { $_.ParentId -eq $property.Guid -and "$($_.Mode)" -ne 'PendingDeletion' }
+                    foreach ($subCategory in $subCategories)
+                    {
+                        Remove-FilePlanPropertySubCategory -Identity $subCategory.Guid -Confirm:$false -ErrorAction Stop
+                    }
+
                     Remove-FilePlanPropertyCategory -Identity $this.Name -Confirm:$false -ErrorAction Stop
                 }
                 else

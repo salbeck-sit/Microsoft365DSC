@@ -72,7 +72,7 @@ class SCFilePlanPropertySubCategory : M365DSCResourceBase
                 $nullReturn = $this.GetBoundParameters()
                 $nullReturn.Ensure = 'Absent'
 
-                $parent = Get-FilePlanPropertyCategory -ErrorAction Stop | Where-Object -FilterScript { $_.DisplayName -eq $this.Category }
+                $parent = Get-FilePlanPropertyCategory -ErrorAction Stop | Where-Object -FilterScript { $_.DisplayName -eq $this.Category -and "$($_.Mode)" -ne 'PendingDeletion' }
 
                 if ($null -eq $parent)
                 {
@@ -82,7 +82,7 @@ class SCFilePlanPropertySubCategory : M365DSCResourceBase
 
                 $parentId = $parent.Guid
                 $property = Get-FilePlanPropertySubCategory | Where-Object -FilterScript { $_.DisplayName -eq $this.Name -and `
-                        $_.ParentId -eq $parentId }
+                        $_.ParentId -eq $parentId -and "$($_.Mode)" -ne 'PendingDeletion' }
 
                 if ($null -eq $property)
                 {
@@ -139,6 +139,12 @@ class SCFilePlanPropertySubCategory : M365DSCResourceBase
 
         if ($this.Ensure -eq 'Present' -and $Current.Ensure -eq 'Absent')
         {
+            $pendingProperty = Get-FilePlanPropertySubCategory -ErrorAction Stop | Where-Object -FilterScript { $_.DisplayName -eq $this.Name -and "$($_.Mode)" -eq 'PendingDeletion' }
+            if ($null -ne $pendingProperty)
+            {
+                throw "File plan sub-category '$($this.Name)' is pending deletion and cannot be created again until the deletion completes. To complete the deletion now, run Remove-FilePlanPropertySubCategory -Identity '$(@($pendingProperty)[0].Guid)' -ForceDeletion."
+            }
+
             $CreationParams = Remove-M365DSCAuthenticationParameter -BoundParameters $this.GetBoundParameters()
             $CreationParams.Add('ParentId', $this.Category)
             $CreationParams.Remove('Category') | Out-Null
@@ -153,6 +159,7 @@ class SCFilePlanPropertySubCategory : M365DSCResourceBase
         {
             try
             {
+                $parentId = (Get-FilePlanPropertyCategory -ErrorAction Stop | Where-Object -Property DisplayName -EQ $this.Category).Guid
                 $property = Get-FilePlanPropertySubCategory | Where-Object -FilterScript { $_.DisplayName -eq $this.Name -and `
                         $_.ParentId -eq $parentId }
                 if ($null -eq $property)
@@ -161,7 +168,7 @@ class SCFilePlanPropertySubCategory : M365DSCResourceBase
                 }
                 elseif ("$($property.Mode)" -ne 'PendingDeletion')
                 {
-                    Remove-FilePlanPropertySubCategory -Identity $this.Name -Confirm:$false -ErrorAction Stop
+                    Remove-FilePlanPropertySubCategory -Identity $property.Guid -Confirm:$false -ErrorAction Stop
                 }
                 else
                 {

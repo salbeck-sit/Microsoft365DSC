@@ -8,7 +8,7 @@ class AADOrganizationCertificateBasedAuthConfiguration : M365DSCResourceBase
     [MSFT_MicrosoftGraphcertificateAuthority[]] $CertificateAuthorities
 
     [DscProperty(Key)]
-    [System.ComponentModel.Description('The Organization ID. Read-only.')]
+    [System.ComponentModel.Description('The Organization ID, or a verified domain name of the organization.')]
     [System.String] $OrganizationId
 
     [DscProperty()]
@@ -88,7 +88,7 @@ class AADOrganizationCertificateBasedAuthConfiguration : M365DSCResourceBase
             $CertificateBasedAuthConfigurationId = '29728ade-6ae4-4ee9-9103-412912537da5'
             $getValue = Get-MgBetaOrganizationCertificateBasedAuthConfiguration `
                 -CertificateBasedAuthConfigurationId $CertificateBasedAuthConfigurationId `
-                -OrganizationId $this.OrganizationId -ErrorAction SilentlyContinue
+                -OrganizationId $this.GetOrganizationId() -ErrorAction SilentlyContinue
 
             #endregion
             if ($null -eq $getValue)
@@ -154,16 +154,19 @@ class AADOrganizationCertificateBasedAuthConfiguration : M365DSCResourceBase
 
         $this.AddTelemetry('Set')
 
-        $null = $this.Get().ToHashtable()
+        $currentInstance = $this.Get().ToHashtable()
         $boundParameters = Remove-M365DSCAuthenticationParameter -BoundParameters $this.GetBoundParameters()
+        $organizationIdValue = $this.GetOrganizationId()
 
         # This GUID is ALWAYS fixed as per the documentation.
         $CertificateBasedAuthConfigurationId = '29728ade-6ae4-4ee9-9103-412912537da5'
 
-        # Delete the old configuration
-        Write-Verbose -Message 'Removing the current Azure AD Organization Certificate Based Auth Configuration.'
-        Remove-MgBetaOrganizationCertificateBasedAuthConfiguration -OrganizationId $this.OrganizationId `
-            -CertificateBasedAuthConfigurationId $CertificateBasedAuthConfigurationId
+        if ($currentInstance.Ensure -eq 'Present')
+        {
+            Write-Verbose -Message 'Removing the current Azure AD Organization Certificate Based Auth Configuration.'
+            Remove-MgBetaOrganizationCertificateBasedAuthConfiguration -OrganizationId $organizationIdValue `
+                -CertificateBasedAuthConfigurationId $CertificateBasedAuthConfigurationId
+        }
 
         if ($this.Ensure -eq 'Present')
         {
@@ -187,7 +190,7 @@ class AADOrganizationCertificateBasedAuthConfiguration : M365DSCResourceBase
             }
 
             Write-Verbose -Message "Creating with Parameters:`r`n$(ConvertTo-Json $params -Depth 10)"
-            New-MgBetaOrganizationCertificateBasedAuthConfiguration -OrganizationId $this.OrganizationId `
+            New-MgBetaOrganizationCertificateBasedAuthConfiguration -OrganizationId $organizationIdValue `
                 -BodyParameter $params
         }
     }
@@ -283,6 +286,23 @@ class AADOrganizationCertificateBasedAuthConfiguration : M365DSCResourceBase
 
             throw
         }
+    }
+
+    hidden [System.String] GetOrganizationId()
+    {
+        $parsedId = [System.Guid]::Empty
+        if ([System.Guid]::TryParse($this.OrganizationId, [ref] $parsedId))
+        {
+            return $this.OrganizationId
+        }
+
+        $organization = Get-MgBetaOrganization -ErrorAction Stop | Select-Object -First 1
+        if ($organization.VerifiedDomains.Name -notcontains $this.OrganizationId)
+        {
+            throw "OrganizationId {$($this.OrganizationId)} is neither a GUID nor a verified domain of the organization."
+        }
+
+        return $organization.Id
     }
 
     hidden [AADOrganizationCertificateBasedAuthConfiguration] AsResult([System.Object] $Values)

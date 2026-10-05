@@ -16,10 +16,6 @@ class AADTokenIssuancePolicy : M365DSCResourceBase
     [System.Nullable[System.Boolean]] $IsOrganizationDefault
 
     [DscProperty()]
-    [System.ComponentModel.Description('Description for this policy.')]
-    [System.String] $Description
-
-    [DscProperty()]
     [System.ComponentModel.Description('A string collection containing a JSON string that defines the rules and settings for this policy. See below for more details about the JSON schema for this property. Required.')]
     [System.String[]] $Definition
 
@@ -122,7 +118,6 @@ class AADTokenIssuancePolicy : M365DSCResourceBase
 
             $results = @{
                 DisplayName           = $instance.DisplayName
-                Description           = $instance.Description
                 Id                    = $instance.Id
                 IsOrganizationDefault = $instance.IsOrganizationDefault
                 Definition            = $DefinitionValue

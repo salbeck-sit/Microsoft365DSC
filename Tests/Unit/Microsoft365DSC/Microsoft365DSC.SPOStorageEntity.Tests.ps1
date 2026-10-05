@@ -258,6 +258,9 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
 
             It 'Remove storage entity in the Set method' {
                 (New-M365DSCResourceInstance -ResourceName 'SPOStorageEntity' -Property $testParams).Set()
+                Should -Invoke -CommandName Remove-PnPStorageEntity -Exactly 1 -ParameterFilter { $Key -eq 'DSCKey' -and $Scope -eq 'Site' }
+                Should -Invoke -CommandName Set-PnPTenantSite -Exactly 1 -ParameterFilter { $NoScriptSite -eq $false }
+                Should -Invoke -CommandName Set-PnPTenantSite -Exactly 1 -ParameterFilter { $NoScriptSite -eq $true }
             }
         }
 

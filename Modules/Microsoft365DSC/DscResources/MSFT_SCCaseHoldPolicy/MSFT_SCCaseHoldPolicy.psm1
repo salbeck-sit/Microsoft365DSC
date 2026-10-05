@@ -91,9 +91,16 @@ class SCCaseHoldPolicy : M365DSCResourceBase
 
                 $nullReturn = $this.GetBoundParameters()
                 $nullReturn.Ensure = 'Absent'
+                $CaseObject = Invoke-M365DSCCommand -ScriptBlock { Get-ComplianceCase -Identity $this.Case -ErrorAction Stop } -SuppressNotFoundError
+                if ($null -eq $CaseObject)
+                {
+                    Write-Verbose -Message "Compliance case $($this.Case) does not exist."
+                    return $this.AsResult($nullReturn)
+                }
+
                 $PolicyObject = Invoke-M365DSCCommand -ScriptBlock { Get-CaseHoldPolicy -Case $this.Case -Identity $this.Name -ErrorAction Stop } -SuppressNotFoundError
 
-                if ($null -eq $PolicyObject)
+                if ($null -eq $PolicyObject -or "$($PolicyObject.Mode)" -eq 'PendingDeletion')
                 {
                     Write-Verbose -Message "SCCaseHoldPolicy $($this.Name) does not exist."
                     return $this.AsResult($nullReturn)
@@ -154,7 +161,14 @@ class SCCaseHoldPolicy : M365DSCResourceBase
         if ($this.Ensure -eq 'Present' -and $CurrentPolicy.Ensure -eq 'Absent')
         {
             $CreationParams = Remove-M365DSCAuthenticationParameter -BoundParameters $this.GetBoundParameters()
-            New-CaseHoldPolicy @CreationParams
+            try
+            {
+                New-CaseHoldPolicy @CreationParams -ErrorAction Stop
+            }
+            catch
+            {
+                [SCCaseHoldPolicy]::ThrowUnlessDeploymentFailure($_)
+            }
         }
         elseif ($this.Ensure -eq 'Present' -and $CurrentPolicy.Ensure -eq 'Present')
         {
@@ -231,13 +245,40 @@ class SCCaseHoldPolicy : M365DSCResourceBase
             }
 
             Write-Verbose "Updating Policy with values: $(Convert-M365DscHashtableToString -Hashtable $CreationParams)"
-            Set-CaseHoldPolicy @CreationParams
+            try
+            {
+                Set-CaseHoldPolicy @CreationParams -ErrorAction Stop
+            }
+            catch
+            {
+                [SCCaseHoldPolicy]::ThrowUnlessDeploymentFailure($_)
+            }
         }
         elseif ($this.Ensure -eq 'Absent' -and $CurrentPolicy.Ensure -eq 'Present')
         {
             # If the Policy exists and it shouldn't, simply remove it;
             $policy = Get-CaseHoldPolicy -Identity $this.Name -Case $this.Case
-            Remove-CaseHoldPolicy -Identity $policy.Name
+            try
+            {
+                Remove-CaseHoldPolicy -Identity $policy.Name -Confirm:$false -ErrorAction Stop
+            }
+            catch
+            {
+                [SCCaseHoldPolicy]::ThrowUnlessDeploymentFailure($_)
+            }
+
+            foreach ($rule in @(Get-CaseHoldRule -Policy $policy.Name -ErrorAction SilentlyContinue))
+            {
+                Remove-CaseHoldRule -Identity $rule.Name -ForceDeletion -Confirm:$false
+            }
+            try
+            {
+                Remove-CaseHoldPolicy -Identity $policy.Name -ForceDeletion -Confirm:$false -ErrorAction Stop
+            }
+            catch
+            {
+                [SCCaseHoldPolicy]::ThrowUnlessDeploymentFailure($_)
+            }
         }
     }
 
@@ -316,6 +357,15 @@ class SCCaseHoldPolicy : M365DSCResourceBase
 
             throw
         }
+    }
+
+    hidden static [void] ThrowUnlessDeploymentFailure([System.Management.Automation.ErrorRecord] $ErrorRecord)
+    {
+        if ($ErrorRecord.Exception.Message -notlike '*failed to be deployed*')
+        {
+            throw $ErrorRecord
+        }
+        Write-Warning -Message ($ErrorRecord.Exception.Message -split "`r?`n")[0]
     }
 
     hidden [SCCaseHoldPolicy] AsResult([System.Object] $Values)

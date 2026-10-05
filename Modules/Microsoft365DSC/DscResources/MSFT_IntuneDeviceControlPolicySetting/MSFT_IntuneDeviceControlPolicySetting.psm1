@@ -260,6 +260,26 @@ class IntuneDeviceControlPolicySetting : M365DSCResourceBase
         $this.AddTelemetry('Set')
 
         $currentInstance = $this.Get().ToHashtable()
+
+        if ($this.Ensure -eq 'Absent')
+        {
+            if ($currentInstance.Ensure -eq 'Present')
+            {
+                Write-Verbose -Message "Removing the Intune Device Control Policy Setting with Id {$($currentInstance.Id)}"
+                try
+                {
+                    Invoke-M365DSCGraphRequest -Uri "/beta/deviceManagement/reusablePolicySettings/$($currentInstance.Id)" -Method DELETE
+                }
+                catch
+                {
+                    $errorMessage = "Failed to remove the Intune Device Control Policy Setting with Id {$($currentInstance.Id)} and Name {$($currentInstance.DisplayName)}."
+                    $errorMessage += ' Please make sure it is not referenced by a Device Control policy.'
+                    throw $errorMessage
+                }
+            }
+            return
+        }
+
         $boundParameters = @{
             description         = "$($this.Description)"
             displayName         = "$($this.DisplayName)"
@@ -377,22 +397,6 @@ class IntuneDeviceControlPolicySetting : M365DSCResourceBase
 
             #region resource generator code
             Invoke-M365DSCGraphRequest -Uri "/beta/deviceManagement/reusablePolicySettings/$($currentInstance.Id)" -Method PUT -Body $($updateParameters | ConvertTo-Json -Depth 20)
-            #endregion
-        }
-        elseif ($this.Ensure -eq 'Absent' -and $currentInstance.Ensure -eq 'Present')
-        {
-            Write-Verbose -Message "Removing the Intune Firewall Policy Setting with Id {$($currentInstance.Id)}"
-            #region resource generator code
-            try
-            {
-                Invoke-M365DSCGraphRequest -Uri "/beta/deviceManagement/reusablePolicySettings/$($currentInstance.Id)" -Method DELETE
-            }
-            catch
-            {
-                $errorMessage = "Failed to remove the Intune Device Control Policy Setting with Id {$($currentInstance.Id)} and Name {$($currentInstance.DisplayName)}."
-                $errorMessage += ' Please make sure it is not referenced by a Device Control policy.'
-                throw $errorMessage
-            }
             #endregion
         }
     }

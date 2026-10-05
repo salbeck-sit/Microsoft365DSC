@@ -193,13 +193,6 @@ class EXOHostedOutboundSpamFilterRule : M365DSCResourceBase
                     "{$($this.HostedOutboundSpamFilterPolicy)} doesn't exist. Make sure you either create it first or specify a valid policy."
             }
 
-            if ($this.Enabled -and ('Disabled' -eq $CurrentValues.State))
-            {
-                # New-HostedOutboundSpamFilterRule has the Enabled parameter, Set-HostedOutboundSpamFilterRule does not.
-                # There doesn't appear to be any way to change the Enabled state of a rule once created.
-                Write-Verbose -Message "Removing HostedOutboundSpamFilterRule {$($this.Identity)} in order to change Enabled state."
-                Remove-HostedOutboundSpamFilterRule -Identity $this.Identity -Confirm:$false
-            }
             Write-Verbose -Message "Creating new HostedOutboundSpamFilterRule {$($this.Identity)}"
             $createParameters.Add('Name', $this.Identity)
             $createParameters.Remove('Identity') | Out-Null
@@ -224,6 +217,17 @@ class EXOHostedOutboundSpamFilterRule : M365DSCResourceBase
             }
             Write-Verbose -Message "Updating HostedOutboundSpamFilterRule {$($this.Identity)}"
             Set-HostedOutboundSpamFilterRule @updateParameters
+            if ($null -ne $this.Enabled -and $this.Enabled -ne $CurrentValues.Enabled)
+            {
+                if ($this.Enabled)
+                {
+                    Enable-HostedOutboundSpamFilterRule -Identity $this.Identity -Confirm:$false
+                }
+                else
+                {
+                    Disable-HostedOutboundSpamFilterRule -Identity $this.Identity -Confirm:$false
+                }
+            }
         }
         elseif ($this.Ensure -eq 'Absent' -and $CurrentValues.Ensure -eq 'Present')
         {

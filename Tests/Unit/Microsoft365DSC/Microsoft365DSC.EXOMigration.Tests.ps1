@@ -68,12 +68,10 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             BeforeAll {
                 $testParams = @{
                     AddUsers             = $False;
-                    BadItemLimit         = "Unlimited";
                     CompleteAfter        = "07/30/2020 9:00:00 PM";
                     Credential           = $Credscredential;
                     Ensure               = "Present";
                     Identity             = "Arpita";
-                    LargeItemLimit       = "Unlimited";
                     MigrationUsers       = @("peixintest1@bellred.org","akstest39@bellred.org");
                     MoveOptions          = @();
                     NotificationEmails   = @("eac_admin@bellred.org","abc@bellred.org");
@@ -98,7 +96,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
 
             It 'Should create a new instance from the Set method' {
                 (New-M365DSCResourceInstance -ResourceName 'EXOMigration' -Property $testParams).Set()
-                Should -Invoke -CommandName New-MigrationBatch -Exactly 1
+                Should -Invoke -CommandName New-MigrationBatch -Exactly 1 -ParameterFilter { -not $PesterBoundParameters.ContainsKey('BadItemLimit') -and -not $PesterBoundParameters.ContainsKey('LargeItemLimit') }
             }
         }
 
@@ -106,12 +104,10 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             BeforeAll {
                 $testParams = @{
                     AddUsers             = $False;
-                    BadItemLimit         = "Unlimited";
                     CompleteAfter        = "07/30/2020 9:00:00 PM";
                     Credential           = $Credscredential;
                     Ensure               = "Absent";
                     Identity             = "Arpita";
-                    LargeItemLimit       = "Unlimited";
                     MigrationUsers       = @("peixintest1@bellred.org","akstest39@bellred.org");
                     MoveOptions          = @();
                     NotificationEmails   = @("eac_admin@bellred.org","abc@bellred.org");
@@ -172,12 +168,10 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             BeforeAll {
                 $testParams = @{
                     AddUsers             = $False;
-                    BadItemLimit         = "Unlimited";
                     CompleteAfter        = "07/30/2020 9:00:00 PM";
                     Credential           = $Credscredential;
                     Ensure               = "Absent";
                     Identity             = "Arpita";
-                    LargeItemLimit       = "Unlimited";
                     MigrationUsers       = @("peixintest1@bellred.org","akstest39@bellred.org");
                     MoveOptions          = @();
                     NotificationEmails   = @("eac_admin@bellred.org","abc@bellred.org");
@@ -236,11 +230,9 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             BeforeAll {
                 $testParams = @{
                     AddUsers             = $False;
-                    BadItemLimit         = "Unlimited";
                     Credential           = $Credscredential;
                     Ensure               = "Present";
                     Identity             = "Arpita";
-                    LargeItemLimit       = "Unlimited";
                     MigrationUsers       = @("peixintest1@bellred.org","akstest39@bellred.org");
                     MoveOptions          = @();
                     NotificationEmails   = @("eac_admin@bellred.org","abc@bellred.org");
@@ -290,12 +282,10 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             BeforeAll {
                 $testParams = @{
                     AddUsers             = $False;
-                    BadItemLimit         = "Unlimited";
                     CompleteAfter        = "07/30/2020 9:00:00 PM"
                     Credential           = $Credscredential;
                     Ensure               = "Present";
                     Identity             = "Arpita";
-                    LargeItemLimit       = "Unlimited";
                     MigrationUsers       = @("peixintest1@bellred.org","akstest39@bellred.org");
                     MoveOptions          = @();
                     NotificationEmails   = @("eac_admin@bellred.org","abc@bellred.org");
@@ -339,7 +329,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
 
             It 'Should call the Set method' {
                 (New-M365DSCResourceInstance -ResourceName 'EXOMigration' -Property $testParams).Set()
-                Should -Invoke -CommandName Set-MigrationBatch -Exactly 1
+                Should -Invoke -CommandName Set-MigrationBatch -Exactly 1 -ParameterFilter { -not $PesterBoundParameters.ContainsKey('BadItemLimit') -and -not $PesterBoundParameters.ContainsKey('LargeItemLimit') }
             }
         }
 

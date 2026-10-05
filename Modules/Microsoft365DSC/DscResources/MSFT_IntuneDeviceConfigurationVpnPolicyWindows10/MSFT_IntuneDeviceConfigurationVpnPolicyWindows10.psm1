@@ -30,7 +30,7 @@ class IntuneDeviceConfigurationVpnPolicyWindows10 : M365DSCResourceBase
     [System.String[]] $DnsSuffixes
 
     [DscProperty()]
-    [System.ComponentModel.Description('Extensible Authentication Protocol (EAP) XML. (UTF8 encoded byte array)')]
+    [System.ComponentModel.Description('Extensible Authentication Protocol (EAP) XML, Base64 encoded.')]
     [System.String] $EapXml
 
     [DscProperty()]
@@ -107,7 +107,7 @@ class IntuneDeviceConfigurationVpnPolicyWindows10 : M365DSCResourceBase
     [System.String] $ConnectionName
 
     [DscProperty()]
-    [System.ComponentModel.Description('Custom XML commands that configures the VPN connection. (UTF8 encoded byte array)')]
+    [System.ComponentModel.Description('Custom XML commands that configure the VPN connection, Base64 encoded.')]
     [System.String] $CustomXml
 
     [DscProperty()]

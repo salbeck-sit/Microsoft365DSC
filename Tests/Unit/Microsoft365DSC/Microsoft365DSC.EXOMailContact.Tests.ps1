@@ -46,8 +46,21 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             Mock -CommandName Remove-MailContact -MockWith {
             }
 
+            Mock -CommandName Set-Contact -MockWith {
+            }
+
+            Mock -CommandName Get-Contact -MockWith {
+                return @{
+                    Identity  = 'My Test Contact'
+                    FirstName = 'Alberto'
+                    Initials  = 'R'
+                    LastName  = 'Pereira'
+                }
+            }
+
             Mock -CommandName Get-MailContact -MockWith {
                 return @{
+                    Identity                    = 'My Test Contact'
                     Alias                       = 'TestMailContact'
                     DisplayName                 = 'My Test Contact'
                     ExternalEmailAddress        = 'SMTP:test@tailspintoys.com'
@@ -117,6 +130,8 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     DisplayName                 = 'My Test Contact'
                     Ensure                      = 'Present'
                     ExternalEmailAddress        = 'SMTP:test@tailspintoys.com'
+                    FirstName                   = 'Alberto'
+                    LastName                    = 'Ferreira' # Drift
                     MacAttachmentFormat         = 'BinHex'
                     MessageBodyFormat           = 'Text' # Drift
                     MessageFormat               = 'Mime'
@@ -140,6 +155,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             It 'Should update from the Set method' {
                 (New-M365DSCResourceInstance -ResourceName 'EXOMailContact' -Property $testParams).Set()
                 Should -Invoke -CommandName Set-MailContact -Exactly 1
+                Should -Invoke -CommandName Set-Contact -Exactly 1 -ParameterFilter { $LastName -eq 'Ferreira' -and -not $PesterBoundParameters.ContainsKey('FirstName') }
             }
         }
 
@@ -160,6 +176,9 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     OrganizationalUnit          = 'nampr03a010.prod.outlook.com/Microsoft Exchange Hosted Organizations/tailspintoys.com'
                     SendModerationNotifications = 'Always'
                     UsePreferMessageFormat      = $True
+                    FirstName                   = 'Alberto'
+                    Initials                    = 'R'
+                    LastName                    = 'Pereira'
                 }
             }
 
@@ -168,7 +187,9 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             }
 
             It 'Should return Present from the Get Method' {
-                ((New-M365DSCResourceInstance -ResourceName 'EXOMailContact' -Property $testParams).Get().ToHashtable()).Ensure | Should -Be 'Present'
+                $result = (New-M365DSCResourceInstance -ResourceName 'EXOMailContact' -Property $testParams).Get().ToHashtable()
+                $result.Ensure | Should -Be 'Present'
+                $result.LastName | Should -Be 'Pereira'
             }
         }
 

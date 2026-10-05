@@ -64,6 +64,8 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     RequireSenderAuthenticationEnabled = $True
                     SendModerationNotifications        = 'Always'
                     GroupType                          = @('Universal')
+                    RecipientTypeDetails               = 'MailUniversalDistributionGroup'
+                    AcceptMessagesOnlyFromSendersOrMembersWithDisplayNames = @('john.smith@contoso.com')
                 }
             }
             Mock -CommandName Get-Recipient -MockWith {
@@ -184,6 +186,8 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     PrimarySmtpAddress                 = 'demodg@contoso.com'
                     RequireSenderAuthenticationEnabled = $True
                     SendModerationNotifications        = 'Always'
+                    RoomList                           = $False
+                    AcceptMessagesOnlyFromSendersOrMembers = @('john.smith@contoso.com')
                     Credential                         = $Credential
                 }
             }

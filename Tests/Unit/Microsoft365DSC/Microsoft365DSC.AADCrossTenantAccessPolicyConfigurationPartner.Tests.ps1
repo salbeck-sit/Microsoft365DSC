@@ -272,6 +272,14 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                                 }))
                         })
                     })
+                    IdentitySynchronization            = ([MSFT_AADCrossTenantIdentitySyncPolicyPartnerInbound] @{
+                        GroupSyncInbound = ([MSFT_AADCrossTenantGroupSyncInbound] @{
+                            IsSyncAllowed = $false
+                        })
+                        UserSyncInbound  = ([MSFT_AADCrossTenantUserSyncInbound] @{
+                            IsSyncAllowed = $true
+                        })
+                    })
                     Credential                         = $Credential;
                     Ensure                             = "Present";
                     PartnerTenantId                    = "12345-12345-12345-12345-12345";
@@ -279,6 +287,28 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
 
                 Mock -CommandName Get-MgBetaPolicyCrossTenantAccessPolicyPartner -MockWith {
                     return $null
+                }
+
+                Mock -CommandName New-MgBetaPolicyCrossTenantAccessPolicyPartner -MockWith {
+                    return @{
+                        TenantId = '12345-12345-12345-12345-12345'
+                    }
+                }
+
+                Mock -CommandName Set-MgBetaPolicyCrossTenantAccessPolicyPartnerIdentitySynchronization -MockWith {
+                    throw 'Request_MultipleObjectsWithSameKeyValue: A conflicting object with one or more of the specified property values is present in the directory.'
+                }
+
+                $script:identitySyncPatchCalls = 0
+                Mock -CommandName Invoke-M365DSCGraphRequest -ParameterFilter { $Method -eq 'PATCH' -and $Uri -like '*/identitySynchronization' } -MockWith {
+                    $script:identitySyncPatchCalls++
+                    if ($script:identitySyncPatchCalls -eq 1)
+                    {
+                        throw 'Directory_ObjectNotFound: Unable to read the company information from the directory.'
+                    }
+                }
+
+                Mock -CommandName Start-Sleep -MockWith {
                 }
             }
             It 'Should return Values from the Get method' {
@@ -291,6 +321,8 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             It 'Should create the instance from the Set method' {
                 (New-M365DSCResourceInstance -ResourceName 'AADCrossTenantAccessPolicyConfigurationPartner' -Property $testParams).Set()
                 Should -Invoke -CommandName New-MgBetaPolicyCrossTenantAccessPolicyPartner -Exactly 1
+                Should -Invoke -CommandName Set-MgBetaPolicyCrossTenantAccessPolicyPartnerIdentitySynchronization -Exactly 2
+                Should -Invoke -CommandName Invoke-M365DSCGraphRequest -ParameterFilter { $Method -eq 'PATCH' -and $Uri -like '*/identitySynchronization' } -Exactly 2
             }
         }
         Context -Name "The policy is already in the desired state" -Fixture {

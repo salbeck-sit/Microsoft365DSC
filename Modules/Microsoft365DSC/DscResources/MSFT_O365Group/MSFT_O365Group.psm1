@@ -226,12 +226,47 @@ class O365Group : M365DSCResourceBase
                 {
                     $groupParams.Add('theme', $this.Theme)
                 }
+
+                $directoryObjectsUrl = "$((Get-MSCloudLoginConnectionProfile -Workload MicrosoftGraph).ResourceUrl)v1.0/directoryObjects/"
+                $ownerReferences = @()
+                foreach ($owner in $this.ManagedBy)
+                {
+                    if (-not [System.String]::IsNullOrEmpty($owner))
+                    {
+                        $ownerReferences += $directoryObjectsUrl + (Get-MgUser -UserId $owner -ErrorAction Stop).Id
+                    }
+                }
+
+                $memberReferences = @()
+                foreach ($member in $this.Members)
+                {
+                    if (-not [System.String]::IsNullOrEmpty($member))
+                    {
+                        $memberReferences += $directoryObjectsUrl + (Get-MgUser -UserId $member -ErrorAction Stop).Id
+                    }
+                }
+
+                $bindOnCreation = ($ownerReferences.Count + $memberReferences.Count) -le 20
+                if ($bindOnCreation -and $ownerReferences.Count -gt 0)
+                {
+                    $groupParams.Add('owners@odata.bind', [System.String[]] $ownerReferences)
+                }
+
+                if ($bindOnCreation -and $memberReferences.Count -gt 0)
+                {
+                    $groupParams.Add('members@odata.bind', [System.String[]] $memberReferences)
+                }
+
                 Write-Verbose -Message 'Initiating Group Creation'
-                Write-Verbose -Message "Owner = $($groupParams.Owners)"
                 Write-Verbose -Message "Creating New Group with values: $(Convert-M365DscHashtableToString -Hashtable $groupParams)"
                 $groupParams.Add('GroupTypes', @('Unified'))
                 $newGroup = New-MgGroup -BodyParameter $groupParams
+
                 Write-Verbose -Message 'Group Created'
+                if ($bindOnCreation)
+                {
+                    return
+                }
                 $groupCreated = $true
             }
 
@@ -284,7 +319,7 @@ class O365Group : M365DSCResourceBase
 
             #region Members
             $membersList = $null
-            for ($attempt = 1; ; $attempt++)
+            for ($attempt = 1; $attempt -le 6; $attempt++)
             {
                 try
                 {
@@ -477,9 +512,7 @@ class O365Group : M365DSCResourceBase
                 $ExportParameters.Add('CountVariable', 'count')
                 $ExportParameters.Add('ConsistencyLevel', 'eventual')
             }
-            $groups = Get-MgGroup @ExportParameters | Where-Object -FilterScript {
-                $_.MailNickName -ne '00000000-0000-0000-0000-000000000000'
-            }
+            $groups = Get-MgGroup @ExportParameters | Where-Object -Property MailNickName -NE '00000000-0000-0000-0000-000000000000'
 
             $i = 1
             Write-M365DSCHost -Message "`r`n" -DeferWrite

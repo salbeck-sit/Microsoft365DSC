@@ -149,8 +149,8 @@ class IntuneMobileAppsAutoUpdateCatalogAppWindows10 : M365DSCResourceBase
                 {
                     $getValue = Get-MgBetaDeviceAppManagementMobileApp `
                         -All `
-                        -Filter "DisplayName eq '$($this.DisplayName -replace "'", "''")' and isof('microsoft.graph.windowsAutoUpdateCatalogApp')" `
-                        -ErrorAction SilentlyContinue | Select-Object -First 1
+                        -Filter "DisplayName eq '$($this.DisplayName -replace "'", "''")'" `
+                        -ErrorAction SilentlyContinue | Where-Object -Property '@odata.type' -EQ '#microsoft.graph.windowsAutoUpdateCatalogApp' | Select-Object -First 1
                 }
 
                 if ($null -eq $getValue)
@@ -229,7 +229,7 @@ class IntuneMobileAppsAutoUpdateCatalogAppWindows10 : M365DSCResourceBase
             $assignmentResult = @()
             if ($null -ne $assignmentsValues -and $assignmentsValues.Count -gt 0)
             {
-                [array] $assignmentsValues = $assignmentsValues | Where-Object -FilterScript { $_.source -eq 'direct' }
+                [array] $assignmentsValues = $assignmentsValues | Where-Object -Property source -EQ 'direct'
                 $assignmentResult += ConvertFrom-IntuneMobileAppAssignment `
                     -IncludeDeviceFilter $true `
                     -Assignments $assignmentsValues

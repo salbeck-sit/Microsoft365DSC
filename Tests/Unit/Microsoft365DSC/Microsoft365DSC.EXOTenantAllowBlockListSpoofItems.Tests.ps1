@@ -109,7 +109,9 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
 
             It 'Should remove the instance from the Set method' {
                 (New-M365DSCResourceInstance -ResourceName 'EXOTenantAllowBlockListSpoofItems' -Property $testParams).Set()
-                Should -Invoke -CommandName Remove-TenantAllowBlockListSpoofItems -Exactly 1
+                Should -Invoke -CommandName Remove-TenantAllowBlockListSpoofItems -Exactly 1 -ParameterFilter {
+                    $Identity -eq 'Default' -and $Ids -contains '1234-1234-1234-1234-1234'
+                }
             }
         }
 

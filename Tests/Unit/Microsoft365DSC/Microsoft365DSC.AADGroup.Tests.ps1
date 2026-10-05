@@ -135,6 +135,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                         IsEnabled           = $true
                         OnPremisesGroupType = 'universalDistributionGroup'
                     })
+                    GroupLifecyclePolicySelectedEnabled = $false
                     Ensure                 = 'Present'
                     Credential             = $Credential
                 }
@@ -145,6 +146,13 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
 
                 Mock -CommandName Get-MgBetaGroup -MockWith {
                     return $null
+                }
+
+                Mock -CommandName Get-MgBetaGroupLifecyclePolicy -MockWith {
+                    return @{
+                        Id                = '12345-12345-12345-12345-12345'
+                        ManagedGroupTypes = 'Selected'
+                    }
                 }
             }
 
@@ -157,7 +165,9 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             }
             It 'Should Create the group from the Set method' {
                 (New-M365DSCResourceInstance -ResourceName 'AADGroup' -Property $testParams).Set()
-                Should -Invoke -CommandName 'New-MgBetaGroup' -Exactly 1
+                Should -Invoke -CommandName 'New-MgBetaGroup' -Exactly 1 -ParameterFilter {
+                    -not $BodyParameter.ContainsKey('GroupLifecyclePolicySelectedEnabled')
+                }
             }
         }
 

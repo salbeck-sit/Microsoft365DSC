@@ -515,8 +515,7 @@ class AADUser : M365DSCResourceBase
 
                     $StringSet = $Upper + $Lower + $Number + $Special
 
-                    $stringPassword = (Get-Random -Count 30 -InputObject $StringSet) -join ''
-                    $passwordValue = ConvertTo-SecureString $stringPassword -AsPlainText -Force
+                    $passwordValue = (Get-Random -Count 30 -InputObject $StringSet) -join ''
                 }
 
                 $PasswordProfile = @{

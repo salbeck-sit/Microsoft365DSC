@@ -265,6 +265,12 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                 Mock -CommandName Get-MgBetaDeviceManagementConfigurationPolicy -MockWith {
                     return $null
                 }
+
+                Mock -CommandName Set-MgBetaDeviceManagementConfigurationPolicyEnrollmentTimeDeviceMembershipTarget -MockWith {
+                    return @{
+                        validationSucceeded = $true
+                    }
+                }
             }
             It 'Should return Values from the Get method' {
                 ((New-M365DSCResourceInstance -ResourceName 'IntuneWindowsAutopilotDevicePreparationAutomaticPolicy' -Property $testParams).Get().ToHashtable()).Ensure | Should -Be 'Absent'
@@ -275,6 +281,12 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             It 'Should Create the group from the Set method' {
                 (New-M365DSCResourceInstance -ResourceName 'IntuneWindowsAutopilotDevicePreparationAutomaticPolicy' -Property $testParams).Set()
                 Should -Invoke -CommandName New-MgBetaDeviceManagementConfigurationPolicy -Exactly 1
+                Should -Invoke -CommandName Get-MgBetaDeviceManagementConfigurationPolicy -ParameterFilter {
+                    $Filter -like "*templateReference/templateId eq 'a6157a7f-aa00-42d9-ac82-7d2479f545db_1'*"
+                }
+                Should -Invoke -CommandName Set-MgBetaDeviceManagementConfigurationPolicyEnrollmentTimeDeviceMembershipTarget -Exactly 1 -ParameterFilter {
+                    $BodyParameter.enrollmentTimeDeviceMembershipTargets[0].targetId -eq '12345-12345-12345-12345-12345'
+                }
             }
         }
 

@@ -96,6 +96,37 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             }
         }
 
+        Context -Name 'Application Access Policy should not exist. Tenant has no Application Access Policy. Test should pass.' -Fixture {
+            BeforeAll {
+                $testParams = @{
+                    Identity   = 'ApplicationAccessPolicy1'
+                    Ensure     = 'Absent'
+                    Credential = $Credential
+                }
+
+                Mock -CommandName Get-ApplicationAccessPolicy -ParameterFilter { $PesterBoundParameters.ContainsKey('Identity') } -MockWith {
+                    return $null
+                }
+
+                Mock -CommandName Get-ApplicationAccessPolicy -ParameterFilter { -not $PesterBoundParameters.ContainsKey('Identity') } -MockWith {
+                    throw "||The operation couldn't be performed because object 'OU=contoso.onmicrosoft.com\*' couldn't be found."
+                }
+
+                Mock -CommandName Get-Group -MockWith {
+                    return @(@{ WindowsEmailAddress = 'group1@contoso.com' }, @{ WindowsEmailAddress = 'group2@contoso.com' })
+                }
+            }
+
+            It 'Should return Absent from the Get method' {
+                ((New-M365DSCResourceInstance -ResourceName 'EXOApplicationAccessPolicy' -Property $testParams).Get().ToHashtable()).Ensure | Should -Be 'Absent'
+                Should -Invoke -CommandName Get-Group -Exactly 0
+            }
+
+            It 'Should return true from the Test method' {
+                (New-M365DSCResourceInstance -ResourceName 'EXOApplicationAccessPolicy' -Property $testParams).Test() | Should -Be $true
+            }
+        }
+
         Context -Name 'Application Access Policy should exist. Application Access Policy exists. Test should pass.' -Fixture {
             BeforeAll {
                 $testParams = @{

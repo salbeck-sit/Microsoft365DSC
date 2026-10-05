@@ -137,7 +137,6 @@ class AADUserFlowAttribute : M365DSCResourceBase
 
     [void] Set()
     {
-        $DisplayNameName = $null
         if ($this.RequiresPowerShellCore())
         {
             $null = $this.InvokeInPowerShellCore('Set')
@@ -170,19 +169,19 @@ class AADUserFlowAttribute : M365DSCResourceBase
         elseif ($this.Ensure -eq 'Absent' -and $currentUserFlowAttribute.Ensure -eq 'Present')
         {
             Write-Verbose -Message "User flow attribute '$($this.DisplayName)' exists but shouldn't. Removing it."
-            Remove-MgBetaIdentityUserFlowAttribute -IdentityUserFlowAttributeId $this.Id
+            Remove-MgBetaIdentityUserFlowAttribute -IdentityUserFlowAttributeId $currentUserFlowAttribute.Id
         }
         elseif ($this.Ensure -eq 'Present' -and $currentUserFlowAttribute.Ensure -eq 'Present')
         {
-            Write-Verbose -Message "User flow attribute '$($DisplayNameName)' already exists. Updating settings"
+            Write-Verbose -Message "User flow attribute '$($this.DisplayName)' already exists. Updating settings"
 
             if ($currentUserFlowAttribute.DisplayName -ne $this.DisplayName -or $currentUserFlowAttribute.DataType -ne $this.DataType)
             {
-                Write-Warning -Message "There is a deviation in display name and data type for the resource with ID '$($this.Id)' but these values are not settable so cannot update them."
+                Write-Warning -Message "There is a deviation in display name and data type for the resource with ID '$($currentUserFlowAttribute.Id)' but these values are not settable so cannot update them."
             }
 
             Write-Verbose -Message "Updating description of user flow attribute with display name '$($this.DisplayName)'"
-            Update-MgBetaIdentityUserFlowAttribute -IdentityUserFlowAttributeId $this.Id -Description $this.Description
+            Update-MgBetaIdentityUserFlowAttribute -IdentityUserFlowAttributeId $currentUserFlowAttribute.Id -Description $this.Description
         }
     }
 

@@ -871,6 +871,7 @@ function Get-M365DSCIntuneGroup
 .DESCRIPTION
     Builds and submits assignment payloads for a device configuration policy.
     It resolves groups when needed and posts the final assignment set to the selected Graph endpoint.
+    Throws when Graph rejects the assignments.
 
 .PARAMETER DeviceConfigurationPolicyId
     Specifies the identifier of the device configuration policy to update.
@@ -1002,13 +1003,14 @@ function Update-DeviceConfigurationPolicyAssignment
     }
     catch
     {
-        New-M365DSCLogEntry -Message 'Error updating data:' `
+        $message = "Failed to update the assignments of policy {$DeviceConfigurationPolicyId}: $($_.ToString())"
+        New-M365DSCLogEntry -Message $message `
             -Exception $_ `
             -Source $($MyInvocation.MyCommand.Source) `
             -TenantId $TenantId `
             -Credential $Credential
 
-        return $null
+        throw $message
     }
 }
 
@@ -1019,6 +1021,7 @@ function Update-DeviceConfigurationPolicyAssignment
 .DESCRIPTION
     Creates and submits mobile app assignment payloads for the target app policy.
     The function resolves assignment groups and filter settings before posting the payload to Graph.
+    Throws when Graph rejects the assignments.
 
 .PARAMETER AppManagementPolicyId
     Specifies the identifier of the app management policy to update.
@@ -1147,13 +1150,14 @@ function Update-DeviceAppManagementPolicyAssignment
     }
     catch
     {
-        New-M365DSCLogEntry -Message 'Error updating data:' `
+        $message = "Failed to update the assignments of policy {$AppManagementPolicyId}: $($_.ToString())"
+        New-M365DSCLogEntry -Message $message `
             -Exception $_ `
             -Source $($MyInvocation.MyCommand.Source) `
             -TenantId $TenantId `
             -Credential $Credential
 
-        return $null
+        throw $message
     }
 }
 

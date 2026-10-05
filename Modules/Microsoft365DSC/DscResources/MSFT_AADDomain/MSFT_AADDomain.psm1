@@ -190,10 +190,19 @@ class AADDomain : M365DSCResourceBase
                 $setParameters.Remove('PasswordValidityPeriodInDays') | Out-Null
             }
 
+            foreach ($property in @('AvailabilityStatus', 'IsAdminManaged', 'IsDefault', 'IsRoot', 'IsVerified'))
+            {
+                $setParameters.Remove($property) | Out-Null
+            }
+
             Write-Verbose -Message "Creating new custom domain name {$($this.Id)}"
             $domain = New-MgBetaDomain -BodyParameter $setParameters
 
-            if ($NeedAdditionalUpdate)
+            if ($NeedAdditionalUpdate -and -not $domain.IsVerified)
+            {
+                Write-Warning -Message "Domain {$($this.Id)} is not verified. PasswordNotificationWindowInDays and PasswordValidityPeriodInDays can only be set once the domain is verified."
+            }
+            elseif ($NeedAdditionalUpdate)
             {
                 $UpdateParams = @{}
                 if ($UpdatePasswordNotificationWindowInDays)
@@ -213,8 +222,10 @@ class AADDomain : M365DSCResourceBase
         # UPDATE
         elseif ($this.Ensure -eq 'Present' -and $currentInstance.Ensure -eq 'Present')
         {
-            $setParameters.Remove('Id') | Out-Null
-            $setParameters.Remove('IsVerified') | Out-Null
+            foreach ($property in @('Id', 'AvailabilityStatus', 'IsAdminManaged', 'IsRoot', 'IsVerified'))
+            {
+                $setParameters.Remove($property) | Out-Null
+            }
             Write-Verbose -Message "Updating custom domain name {$($this.Id)}"
             Update-MgBetaDomain -DomainId $this.Id -BodyParameter $setParameters
         }

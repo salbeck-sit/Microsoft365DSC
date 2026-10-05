@@ -66,6 +66,9 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             Mock -CommandName Remove-MgBetaPolicyPermissionGrantPolicyExclude -MockWith {
             }
 
+            Mock -CommandName Start-Sleep -MockWith {
+            }
+
             Mock -CommandName Get-MgServicePrincipal -MockWith {
                 return @{
                     AppId                  = '00000003-0000-0000-c000-000000000000'
@@ -139,12 +142,32 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     Description                       = 'Test policy description'
                     IncludeAllPreApprovedApplications = $false
                     ResourceScopeType                 = 'tenant'
+                    Includes                          = @(
+                        [MSFT_AADPermissionGrantConditionSet] @{
+                            PermissionType       = 'delegated'
+                            ClientApplicationIds = @('all')
+                        }
+                    )
                     Ensure                            = 'Present'
                     Credential                        = $Credential
                 }
 
+                $script:includeCreated = $false
+
                 Mock -CommandName Get-MgBetaPolicyPermissionGrantPolicy -MockWith {
-                    return $null
+                    if (-not $script:includeCreated)
+                    {
+                        return $null
+                    }
+                    return @{
+                        Id       = 'test-policy'
+                        Includes = @(@{ Id = 'include-1' })
+                    }
+                }
+
+                Mock -CommandName New-MgBetaPolicyPermissionGrantPolicyInclude -MockWith {
+                    $script:includeCreated = $true
+                    return @{ Id = 'include-1' }
                 }
             }
 
@@ -160,6 +183,8 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             It 'Should create the Policy from the Set method' {
                 (New-M365DSCResourceInstance -ResourceName 'AADPermissionGrantPolicy' -Property $testParams).Set()
                 Should -Invoke -CommandName 'New-MgBetaPolicyPermissionGrantPolicy' -Exactly 1
+                Should -Invoke -CommandName 'New-MgBetaPolicyPermissionGrantPolicyInclude' -Exactly 1
+                Should -Invoke -CommandName 'Get-MgBetaPolicyPermissionGrantPolicy' -Exactly 3
             }
         }
 
@@ -870,12 +895,16 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                 }
 
                 $set2 = @{
-                    Id                       = 'auto-generated-guid'
-                    PermissionType           = 'delegated'
-                    PermissionClassification = 'all'
-                    ClientApplicationIds     = @('all')
-                    Permissions              = @('User.Read')
-                    ResourceApplication      = '00000003-0000-0000-c000-000000000000'
+                    Id                                          = 'auto-generated-guid'
+                    CertifiedClientApplicationsOnly             = $false
+                    PermissionType                              = 'delegated'
+                    PermissionClassification                    = 'all'
+                    ClientApplicationIds                        = @('all')
+                    ClientApplicationPublisherIds               = @('all')
+                    ClientApplicationTenantIds                  = @('all')
+                    ClientApplicationsFromVerifiedPublisherOnly = $false
+                    Permissions                                 = @('User.Read')
+                    ResourceApplication                         = '00000003-0000-0000-c000-000000000000'
                 }
 
                 $resource.TestConditionSetsEqual($testCache, $set1, $set2) | Should -Be $true
@@ -910,7 +939,14 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     PermissionType = 'application'
                 }
 
+                $set3 = @{
+                    Id                       = 'same-id'
+                    PermissionType           = 'delegated'
+                    PermissionClassification = 'low'
+                }
+
                 $resource.TestConditionSetsEqual($testCache, $set1, $set2) | Should -Be $false
+                $resource.TestConditionSetsEqual($testCache, $set1, $set3) | Should -Be $false
             }
         }
 

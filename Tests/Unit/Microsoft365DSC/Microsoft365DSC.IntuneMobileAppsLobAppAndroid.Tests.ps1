@@ -265,16 +265,25 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                 Mock -CommandName Get-MgBetaDeviceAppManagementMobileApp -MockWith {
                     return $null
                 }
+
+                Mock -CommandName Get-MgBetaDeviceAppManagementMobileApp -ParameterFilter { -not [System.String]::IsNullOrEmpty($Filter) } -MockWith {
+                    return @{
+                        '@odata.type' = '#microsoft.graph.iosLobApp'
+                        id            = 'FakeStringValue'
+                        displayName   = 'FakeStringValue'
+                    }
+                }
             }
             It 'Should return Values from the Get method' {
                 ((New-M365DSCResourceInstance -ResourceName 'IntuneMobileAppsLobAppAndroid' -Property $testParams).Get().ToHashtable()).Ensure | Should -Be 'Absent'
+                Should -Invoke -CommandName Get-MgBetaDeviceAppManagementMobileApp -ParameterFilter { $Filter -eq "DisplayName eq 'FakeStringValue'" }
             }
             It 'Should return false from the Test method' {
                 (New-M365DSCResourceInstance -ResourceName 'IntuneMobileAppsLobAppAndroid' -Property $testParams).Test() | Should -Be $false
             }
             It 'Should Create the group from the Set method' {
                 (New-M365DSCResourceInstance -ResourceName 'IntuneMobileAppsLobAppAndroid' -Property $testParams).Set()
-                Should -Invoke -CommandName New-MgBetaDeviceAppManagementMobileApp -Exactly 1
+                Should -Invoke -CommandName New-MgBetaDeviceAppManagementMobileApp -ParameterFilter { $BodyParameter.fileName -eq 'FakeStringValue.apk' } -Exactly 1
             }
         }
 

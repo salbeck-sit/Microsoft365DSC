@@ -210,10 +210,27 @@ class AADFederationConfiguration : M365DSCResourceBase
         # UPDATE
         elseif ($this.Ensure -eq 'Present' -and $currentInstance.Ensure -eq 'Present')
         {
+            $instanceParams.Remove('domains') | Out-Null
             $uri = "/beta/directory/federationConfigurations/microsoft.graph.samlOrWsFedExternalDomainFederation/$($currentInstance.Id)"
             $body = ConvertTo-Json $instanceParams -Depth 10 -Compress
             Write-Verbose -Message "Updating federation configuration {$($this.DisplayName)} with:`r`n$body"
             Invoke-M365DSCGraphRequest -Uri $uri -Method PATCH -Body $body
+
+            if ($null -ne $this.Domains)
+            {
+                $domainsUri = "/beta/directory/federationConfigurations/$($currentInstance.Id)/microsoft.graph.samlOrWsFedExternalDomainFederation/domains"
+                foreach ($domain in $this.Domains | Where-Object -FilterScript { $_ -notin $currentInstance.Domains })
+                {
+                    Write-Verbose -Message "Adding domain {$domain} to federation configuration {$($this.DisplayName)}"
+                    $domainBody = ConvertTo-Json @{ '@odata.type' = 'microsoft.graph.externalDomainName'; id = $domain } -Compress
+                    Invoke-M365DSCGraphRequest -Uri $domainsUri -Method POST -Body $domainBody
+                }
+                foreach ($domain in $currentInstance.Domains | Where-Object -FilterScript { $_ -notin $this.Domains })
+                {
+                    Write-Verbose -Message "Removing domain {$domain} from federation configuration {$($this.DisplayName)}"
+                    Invoke-M365DSCGraphRequest -Uri "$domainsUri/$domain" -Method DELETE
+                }
+            }
         }
         # REMOVE
         elseif ($this.Ensure -eq 'Absent' -and $currentInstance.Ensure -eq 'Present')

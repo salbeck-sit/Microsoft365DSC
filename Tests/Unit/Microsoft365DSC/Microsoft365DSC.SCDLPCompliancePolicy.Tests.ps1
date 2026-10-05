@@ -78,6 +78,14 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
 
             It 'Should return Absent from the Get method' {
                 ((New-M365DSCResourceInstance -ResourceName 'SCDLPCompliancePolicy' -Property $testParams).Get().ToHashtable()).Ensure | Should -Be 'Absent'
+
+                Mock -CommandName Get-DLPCompliancePolicy -MockWith {
+                    return @{
+                        Name = 'TestPolicy'
+                        Mode = 'PendingDeletion'
+                    }
+                }
+                ((New-M365DSCResourceInstance -ResourceName 'SCDLPCompliancePolicy' -Property $testParams).Get().ToHashtable()).Ensure | Should -Be 'Absent'
             }
 
             It 'Should call the Set method' {

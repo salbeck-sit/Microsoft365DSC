@@ -105,7 +105,13 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                 }
 
                 Mock -CommandName Get-SweepRule -MockWith {
-                    return $null
+                    return @{
+                        KeepForDays    = 10;
+                        MailboxOwnerId = "Test2";
+                        Name           = "Newsletters";
+                        Provider       = "Exchange16";
+                        SystemCategory = "Newsletter";
+                    }
                 }
             }
             It 'Should return Values from the Get method' {

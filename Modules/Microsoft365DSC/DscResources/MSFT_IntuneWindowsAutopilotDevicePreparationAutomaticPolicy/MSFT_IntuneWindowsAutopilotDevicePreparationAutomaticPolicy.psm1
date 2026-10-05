@@ -122,7 +122,7 @@ class IntuneWindowsAutopilotDevicePreparationAutomaticPolicy : M365DSCResourceBa
                         $getValue = Invoke-M365DSCCommand -ScriptBlock {
                             Get-MgBetaDeviceManagementConfigurationPolicy `
                                 -All `
-                                -Filter "Name eq '$($this.DisplayName -replace "'", "''")'" `
+                                -Filter "Name eq '$($this.DisplayName -replace "'", "''")' and templateReference/templateId eq 'a6157a7f-aa00-42d9-ac82-7d2479f545db_1'" `
                                 -ErrorAction SilentlyContinue
                         }
                     }
@@ -318,17 +318,7 @@ class IntuneWindowsAutopilotDevicePreparationAutomaticPolicy : M365DSCResourceBa
             {
                 if (-not [System.String]::IsNullOrEmpty($this.AssignmentTarget))
                 {
-                    $groupId = Get-MgGroup -All -Filter "displayName eq '$($this.AssignmentTarget)'" -Property "id" -ErrorAction Stop
-                    Set-MgBetaDeviceManagementConfigurationPolicyEnrollmentTimeDeviceMembershipTarget `
-                        -DeviceManagementConfigurationPolicyId $policy.Id `
-                        -BodyParameter @{
-                            enrollmentTimeDeviceMembershipTargets = @(
-                                @{
-                                    targetId = $groupId.Id
-                                    targetType = 'staticSecurityGroup'
-                                }
-                            )
-                        }
+                    [IntuneWindowsAutopilotDevicePreparationAutomaticPolicy]::SetAssignmentTarget($policy.Id, $this.AssignmentTarget)
                 }
             }
         }
@@ -354,17 +344,7 @@ class IntuneWindowsAutopilotDevicePreparationAutomaticPolicy : M365DSCResourceBa
             {
                 if (-not [System.String]::IsNullOrEmpty($this.AssignmentTarget))
                 {
-                    $group = Get-MgGroup -All -Filter "displayName eq '$($this.AssignmentTarget)'" -Property "id" -ErrorAction Stop
-                    Set-MgBetaDeviceManagementConfigurationPolicyEnrollmentTimeDeviceMembershipTarget `
-                        -DeviceManagementConfigurationPolicyId $currentInstance.Id `
-                        -BodyParameter @{
-                            enrollmentTimeDeviceMembershipTargets = @(
-                                @{
-                                    targetId = $group.Id
-                                    targetType = 'staticSecurityGroup'
-                                }
-                            )
-                        }
+                    [IntuneWindowsAutopilotDevicePreparationAutomaticPolicy]::SetAssignmentTarget($currentInstance.Id, $this.AssignmentTarget)
                 }
                 else
                 {
@@ -491,5 +471,30 @@ class IntuneWindowsAutopilotDevicePreparationAutomaticPolicy : M365DSCResourceBa
         }
 
         return $result
+    }
+
+    hidden static [void] SetAssignmentTarget([System.String] $PolicyId, [System.String] $GroupDisplayName)
+    {
+        $group = Get-MgGroup -All -Filter "displayName eq '$($GroupDisplayName -replace "'", "''")'" -Property 'id' -ErrorAction Stop
+        if ($null -eq $group)
+        {
+            throw "Could not find the device group {$GroupDisplayName}."
+        }
+
+        $result = Set-MgBetaDeviceManagementConfigurationPolicyEnrollmentTimeDeviceMembershipTarget `
+            -DeviceManagementConfigurationPolicyId $PolicyId `
+            -BodyParameter @{
+                enrollmentTimeDeviceMembershipTargets = @(
+                    @{
+                        targetId   = $group.Id
+                        targetType = 'staticSecurityGroup'
+                    }
+                )
+            }
+        if ($null -ne $result -and $result.validationSucceeded -eq $false)
+        {
+            $errorCodes = @($result.enrollmentTimeDeviceMembershipTargetValidationStatuses.targetValidationErrorCode) -join ', '
+            throw "The device group {$GroupDisplayName} was rejected as the target of the policy: $errorCodes"
+        }
     }
 }

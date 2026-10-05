@@ -37,6 +37,12 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             Mock -CommandName Set-HostedContentFilterRule -MockWith {
             }
 
+            Mock -CommandName Enable-HostedContentFilterRule -MockWith {
+            }
+
+            Mock -CommandName Disable-HostedContentFilterRule -MockWith {
+            }
+
             Mock -CommandName Remove-HostedContentFilterRule -MockWith {
             }
 
@@ -124,7 +130,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     Identity                  = 'TestRule'
                     Credential                = $Credential
                     HostedContentFilterPolicy = 'TestPolicy'
-                    Enabled                   = $true
+                    Enabled                   = $false
                     Priority                  = 0
                     ExceptIfRecipientDomainIs = @('notdev.contoso.com') # Drift
                     ExceptIfSentTo            = @('test@contoso.com')
@@ -142,6 +148,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             It 'Should call the Set method' {
                 (New-M365DSCResourceInstance -ResourceName 'EXOHostedContentFilterRule' -Property $testParams).Set()
                 Should -Invoke -CommandName Set-HostedContentFilterRule -Exactly 1
+                Should -Invoke -CommandName Disable-HostedContentFilterRule -Exactly 1
             }
         }
 

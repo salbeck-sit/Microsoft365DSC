@@ -260,7 +260,7 @@ class EXORemoteDomain : M365DSCResourceBase
                 Start-Sleep -Seconds 10
                 $remoteDomain = Get-RemoteDomain -Identity $remoteDomainName -ErrorAction SilentlyContinue
                 $tries++
-            } until ($null -eq $remoteDomain -or $tries -le 12)
+            } until ($null -ne $remoteDomain -or $tries -gt 12)
 
             # Configure new remote domain
             $RemoteDomainParams.Remove('DomainName') | Out-Null
@@ -269,8 +269,8 @@ class EXORemoteDomain : M365DSCResourceBase
         # CASE: Remote Domain exists but it shouldn't;
         elseif ($this.Ensure -eq 'Absent' -and $currentRemoteDomainConfig.Ensure -eq 'Present')
         {
-            Write-Verbose -Message "Remote Domain '$($this.Name)' exists but it shouldn't. Remove it."
-            Remove-RemoteDomain -Identity $this.Name -Confirm:$false
+            Write-Verbose -Message "Remote Domain '$($this.Identity)' exists but it shouldn't. Remove it."
+            Remove-RemoteDomain -Identity $currentRemoteDomainConfig.Identity -Confirm:$false
         }
         # CASE: Remote Domain exists and it should, but has different values than the desired ones
         elseif ($this.Ensure -eq 'Present' -and $currentRemoteDomainConfig.Ensure -eq 'Present')

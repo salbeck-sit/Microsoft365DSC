@@ -159,6 +159,10 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     }
                 }
 
+                Mock -CommandName Remove-CaseHoldRule -MockWith {
+                    throw "Policy '11111111-2222-3333-4444-555555555555' failed to be deployed. To fix this issue, please retry the policy operation after some time."
+                }
+
                 Mock -CommandName Get-CaseHoldPolicy -MockWith {
                     return @{
                         Name     = 'TestPolicy'
@@ -172,7 +176,8 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             }
 
             It 'Should update from the Set method' {
-                (New-M365DSCResourceInstance -ResourceName 'SCCaseHoldRule' -Property $testParams).Set()
+                { (New-M365DSCResourceInstance -ResourceName 'SCCaseHoldRule' -Property $testParams).Set() } | Should -Not -Throw
+                Should -Invoke -CommandName Remove-CaseHoldRule -Exactly 1
             }
 
             It 'Should return Present from the Get method' {

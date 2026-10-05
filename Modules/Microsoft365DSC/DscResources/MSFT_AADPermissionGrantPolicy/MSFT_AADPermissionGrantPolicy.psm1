@@ -228,7 +228,7 @@ class AADPermissionGrantPolicy : M365DSCResourceBase
                     {
                         Write-Verbose -Message "Adding include condition set {$($include.Id)}"
                         $includeParams = $this.GetPermissionGrantConditionSetAsParameters($this.ResourceCache, $include)
-                        $this.AddConditionSetToNewPolicy('Include', $includeParams)
+                        $this.AddConditionSet('Include', $includeParams)
                     }
                 }
 
@@ -239,7 +239,7 @@ class AADPermissionGrantPolicy : M365DSCResourceBase
                     {
                         Write-Verbose -Message "Adding exclude condition set {$($exclude.Id)}"
                         $excludeParams = $this.GetPermissionGrantConditionSetAsParameters($this.ResourceCache, $exclude)
-                        $this.AddConditionSetToNewPolicy('Exclude', $excludeParams)
+                        $this.AddConditionSet('Exclude', $excludeParams)
                     }
                 }
             }
@@ -272,6 +272,7 @@ class AADPermissionGrantPolicy : M365DSCResourceBase
                 if ($updateParameters.Count -gt 0)
                 {
                     Update-MgBetaPolicyPermissionGrantPolicy -PermissionGrantPolicyId $this.Id -BodyParameter $updateParameters | Out-Null
+                    $this.WaitForPolicyProperties($updateParameters)
                 }
 
                 # Sync Includes - use content-based matching since desired state
@@ -300,7 +301,7 @@ class AADPermissionGrantPolicy : M365DSCResourceBase
                         {
                             Write-Verbose -Message "Adding include condition set"
                             $includeParams = $this.GetPermissionGrantConditionSetAsParameters($this.ResourceCache, $desiredInclude)
-                            New-MgBetaPolicyPermissionGrantPolicyInclude -PermissionGrantPolicyId $this.Id -BodyParameter $includeParams | Out-Null
+                            $this.AddConditionSet('Include', $includeParams)
                         }
                     }
 
@@ -310,9 +311,7 @@ class AADPermissionGrantPolicy : M365DSCResourceBase
                         if ($currentInclude.Id -notin $matchedCurrentIncludeIds)
                         {
                             Write-Verbose -Message "Removing include condition set {$($currentInclude.Id)}"
-                            Remove-MgBetaPolicyPermissionGrantPolicyInclude `
-                                -PermissionGrantPolicyId $this.Id `
-                                -PermissionGrantConditionSetId $currentInclude.Id | Out-Null
+                            $this.RemoveConditionSet('Include', $currentInclude.Id)
                         }
                     }
                 }
@@ -343,7 +342,7 @@ class AADPermissionGrantPolicy : M365DSCResourceBase
                         {
                             Write-Verbose -Message "Adding exclude condition set"
                             $excludeParams = $this.GetPermissionGrantConditionSetAsParameters($this.ResourceCache, $desiredExclude)
-                            New-MgBetaPolicyPermissionGrantPolicyExclude -PermissionGrantPolicyId $this.Id -BodyParameter $excludeParams | Out-Null
+                            $this.AddConditionSet('Exclude', $excludeParams)
                         }
                     }
 
@@ -353,9 +352,7 @@ class AADPermissionGrantPolicy : M365DSCResourceBase
                         if ($currentExclude.Id -notin $matchedCurrentExcludeIds)
                         {
                             Write-Verbose -Message "Removing exclude condition set {$($currentExclude.Id)}"
-                            Remove-MgBetaPolicyPermissionGrantPolicyExclude `
-                                -PermissionGrantPolicyId $this.Id `
-                                -PermissionGrantConditionSetId $currentExclude.Id | Out-Null
+                            $this.RemoveConditionSet('Exclude', $currentExclude.Id)
                         }
                     }
                 }
@@ -534,21 +531,22 @@ class AADPermissionGrantPolicy : M365DSCResourceBase
         }
     }
 
-    hidden [void] AddConditionSetToNewPolicy([System.String] $Kind, [System.Collections.Hashtable] $Parameters)
+    hidden [void] AddConditionSet([System.String] $Kind, [System.Collections.Hashtable] $Parameters)
     {
-        for ($attempt = 1; ; $attempt++)
+        $created = $null
+        for ($attempt = 1; $attempt -le 6; $attempt++)
         {
             try
             {
                 if ($Kind -eq 'Include')
                 {
-                    New-MgBetaPolicyPermissionGrantPolicyInclude -PermissionGrantPolicyId $this.Id -BodyParameter $Parameters -ErrorAction Stop | Out-Null
+                    $created = New-MgBetaPolicyPermissionGrantPolicyInclude -PermissionGrantPolicyId $this.Id -BodyParameter $Parameters -ErrorAction Stop
                 }
                 else
                 {
-                    New-MgBetaPolicyPermissionGrantPolicyExclude -PermissionGrantPolicyId $this.Id -BodyParameter $Parameters -ErrorAction Stop | Out-Null
+                    $created = New-MgBetaPolicyPermissionGrantPolicyExclude -PermissionGrantPolicyId $this.Id -BodyParameter $Parameters -ErrorAction Stop
                 }
-                return
+                break
             }
             catch
             {
@@ -559,6 +557,94 @@ class AADPermissionGrantPolicy : M365DSCResourceBase
                 Start-Sleep -Seconds 5
             }
         }
+
+        $this.WaitForConditionSet($Kind, $created.Id, $true)
+    }
+
+    hidden [void] RemoveConditionSet([System.String] $Kind, [System.String] $ConditionSetId)
+    {
+        if ($Kind -eq 'Include')
+        {
+            Remove-MgBetaPolicyPermissionGrantPolicyInclude -PermissionGrantPolicyId $this.Id -PermissionGrantConditionSetId $ConditionSetId | Out-Null
+        }
+        else
+        {
+            Remove-MgBetaPolicyPermissionGrantPolicyExclude -PermissionGrantPolicyId $this.Id -PermissionGrantConditionSetId $ConditionSetId | Out-Null
+        }
+
+        $this.WaitForConditionSet($Kind, $ConditionSetId, $false)
+    }
+
+    hidden [void] WaitForConditionSet([System.String] $Kind, [System.String] $ConditionSetId, [System.Boolean] $Present)
+    {
+        if ([System.String]::IsNullOrEmpty($ConditionSetId))
+        {
+            return
+        }
+
+        $consecutiveReads = 0
+        for ($attempt = 1; $attempt -le 6; $attempt++)
+        {
+            $policy = Get-MgBetaPolicyPermissionGrantPolicy -PermissionGrantPolicyId $this.Id -ErrorAction SilentlyContinue
+            $conditionSets = $policy.Excludes
+            if ($Kind -eq 'Include')
+            {
+                $conditionSets = $policy.Includes
+            }
+
+            if (($conditionSets.Id -contains $ConditionSetId) -eq $Present)
+            {
+                $consecutiveReads++
+            }
+            else
+            {
+                $consecutiveReads = 0
+            }
+
+            if ($consecutiveReads -ge 2)
+            {
+                return
+            }
+
+            Start-Sleep -Seconds 5
+        }
+
+        Write-Warning -Message "Timed out waiting for the $Kind condition set {$ConditionSetId} of permission grant policy {$($this.Id)} to replicate."
+    }
+
+    hidden [void] WaitForPolicyProperties([System.Collections.Hashtable] $Properties)
+    {
+        $consecutiveReads = 0
+        for ($attempt = 1; $attempt -le 6; $attempt++)
+        {
+            $policy = Get-MgBetaPolicyPermissionGrantPolicy -PermissionGrantPolicyId $this.Id -ErrorAction SilentlyContinue
+            $mismatch = $null -eq $policy
+            foreach ($key in $Properties.Keys)
+            {
+                if ($policy.$key -ne $Properties[$key])
+                {
+                    $mismatch = $true
+                }
+            }
+
+            if ($mismatch)
+            {
+                $consecutiveReads = 0
+            }
+            else
+            {
+                $consecutiveReads++
+            }
+
+            if ($consecutiveReads -ge 2)
+            {
+                return
+            }
+
+            Start-Sleep -Seconds 5
+        }
+
+        Write-Warning -Message "Timed out waiting for the updated properties of permission grant policy {$($this.Id)} to replicate."
     }
 
     hidden static [System.Collections.Hashtable] GetServicePrincipalCache([System.Collections.Hashtable] $Cache, [System.Boolean] $Reset)
@@ -682,6 +768,27 @@ class AADPermissionGrantPolicy : M365DSCResourceBase
         # Convert both to hashtables for comparison
         $hash1 = [AADPermissionGrantPolicy]::GetPermissionGrantConditionSetAsHashtable($Cache, $ConditionSet1)
         $hash2 = [AADPermissionGrantPolicy]::GetPermissionGrantConditionSetAsHashtable($Cache, $ConditionSet2)
+
+        $serviceDefaults = @{
+            CertifiedClientApplicationsOnly             = $false
+            ClientApplicationIds                        = [System.String[]] @('all')
+            ClientApplicationPublisherIds               = [System.String[]] @('all')
+            ClientApplicationTenantIds                  = [System.String[]] @('all')
+            ClientApplicationsFromVerifiedPublisherOnly = $false
+            PermissionClassification                    = 'all'
+            Permissions                                 = [System.String[]] @('all')
+            ResourceApplication                         = 'any'
+        }
+        foreach ($hash in @($hash1, $hash2))
+        {
+            foreach ($key in $serviceDefaults.Keys)
+            {
+                if (-not $hash.ContainsKey($key))
+                {
+                    $hash.Add($key, $serviceDefaults[$key])
+                }
+            }
+        }
 
         # Compare each property, skipping Id (auto-generated by Graph API)
         foreach ($key in $hash1.Keys)

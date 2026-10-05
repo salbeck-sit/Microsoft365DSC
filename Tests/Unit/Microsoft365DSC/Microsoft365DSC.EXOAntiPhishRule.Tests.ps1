@@ -38,6 +38,12 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                 return @{}
             }
 
+            Mock -CommandName Enable-AntiPhishRule -MockWith {
+            }
+
+            Mock -CommandName Disable-AntiPhishRule -MockWith {
+            }
+
             Mock -CommandName Remove-AntiPhishRule -MockWith {
                 return @{}
             }
@@ -126,7 +132,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     Identity                  = 'TestRule'
                     Credential                = $Credential
                     AntiPhishPolicy           = 'TestPolicy'
-                    Enabled                   = $true
+                    Enabled                   = $false
                     Priority                  = 0
                     ExceptIfRecipientDomainIs = @('notdev.contoso.com') # Drift
                     ExceptIfSentTo            = @('test@contoso.com')
@@ -144,6 +150,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             It 'Should call the Set method' {
                 (New-M365DSCResourceInstance -ResourceName 'EXOAntiPhishRule' -Property $testParams).Set()
                 Should -Invoke -CommandName Set-AntiPhishRule -Exactly 1
+                Should -Invoke -CommandName Disable-AntiPhishRule -Exactly 1
             }
         }
 

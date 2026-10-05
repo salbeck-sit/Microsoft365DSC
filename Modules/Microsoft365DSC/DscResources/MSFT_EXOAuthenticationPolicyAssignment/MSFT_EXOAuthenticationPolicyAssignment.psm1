@@ -50,7 +50,6 @@ class EXOAuthenticationPolicyAssignment : M365DSCResourceBase
 
     [EXOAuthenticationPolicyAssignment] Get()
     {
-        $Identity = $null
         if ($this.RequiresPowerShellCore())
         {
             $remote = [EXOAuthenticationPolicyAssignment]::new()
@@ -58,20 +57,20 @@ class EXOAuthenticationPolicyAssignment : M365DSCResourceBase
             return $remote
         }
 
-        Write-Verbose -Message "Getting Authentication Policy configuration for $Identity"
+        Write-Verbose -Message "Getting Authentication Policy assignment for $($this.UserName)"
 
         try
         {
-            if (-not $this.ExportedInstance -or $this.ExportedInstance.Identity -ne $Identity)
+            $nullReturn = $this.GetBoundParameters()
+            $nullReturn.Ensure = 'Absent'
+
+            if (-not $this.ExportedInstance -or $this.ExportedInstance.UserPrincipalName -ne $this.UserName)
             {
                 $null = $this.Connect('ExchangeOnline')
 
                 Confirm-M365DSCDependencies
 
                 $this.AddTelemetry('Get')
-
-                $nullReturn = $this.GetBoundParameters()
-                $nullReturn.Ensure = 'Absent'
 
                 $user = Get-User -Identity $this.UserName -ErrorAction SilentlyContinue
                 if ($null -eq $user)
@@ -83,6 +82,12 @@ class EXOAuthenticationPolicyAssignment : M365DSCResourceBase
             else
             {
                 $user = $this.ExportedInstance
+            }
+
+            if ([System.String]::IsNullOrEmpty($user.AuthenticationPolicy))
+            {
+                Write-Verbose -Message "User {$($this.UserName)} has no Authentication Policy assigned."
+                return $this.AsResult($nullReturn)
             }
 
             Write-Verbose -Message "Found user {$($this.UserName)} with Authentication Policy {$($user.AuthenticationPolicy)}"

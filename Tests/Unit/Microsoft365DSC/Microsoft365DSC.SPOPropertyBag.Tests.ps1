@@ -85,7 +85,12 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                 }
 
                 Mock -CommandName Get-PnPPropertyBag -MockWith {
-                    'MyValue'
+                    return @(
+                        [PSCustomObject]@{
+                            Key   = 'MyKey'
+                            Value = 'MyValue'
+                        }
+                    )
                 }
             }
 
@@ -95,6 +100,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
 
             It 'Remove the property in Set method' {
                 (New-M365DSCResourceInstance -ResourceName 'SPOPropertyBag' -Property $testParams).Set()
+                Should -Invoke -CommandName Remove-PnPPropertyBagValue -Exactly 1 -ParameterFilter { $Key -eq 'MyKey' -and $Force }
             }
 
             It 'Return ensure is Absent from the Get method' {

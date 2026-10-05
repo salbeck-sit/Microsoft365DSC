@@ -46,6 +46,16 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             Mock -CommandName Remove-RoleAssignmentPolicy -MockWith {
             }
 
+            Mock -CommandName Get-ManagementRoleAssignment -MockWith {
+                return @(
+                    @{ Name = 'MyPersonalInformation-Contoso Role Assignment Policy' },
+                    @{ Name = 'MyDistributionGroupMembership-Contoso Role Assignment Policy' }
+                )
+            }
+
+            Mock -CommandName Remove-ManagementRoleAssignment -MockWith {
+            }
+
             Mock -CommandName Get-RoleAssignmentPolicy -MockWith {
                 return @{
                     Name          = 'Contoso Role Assignment Policy'
@@ -133,6 +143,26 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             It 'Should call the Set method' {
                 (New-M365DSCResourceInstance -ResourceName 'EXORoleAssignmentPolicy' -Property $testParams).Set()
                 Should -Invoke -CommandName Set-RoleAssignmentPolicy -Exactly 1
+            }
+        }
+
+        Context -Name 'Role Assignment Policy should not exist. Role Assignment Policy exists. Test should fail.' -Fixture {
+            BeforeAll {
+                $testParams = @{
+                    Name       = 'Contoso Role Assignment Policy'
+                    Ensure     = 'Absent'
+                    Credential = $Credential
+                }
+            }
+
+            It 'Should return false from the Test method' {
+                (New-M365DSCResourceInstance -ResourceName 'EXORoleAssignmentPolicy' -Property $testParams).Test() | Should -Be $false
+            }
+
+            It 'Should remove the role assignments and then the policy from the Set method' {
+                (New-M365DSCResourceInstance -ResourceName 'EXORoleAssignmentPolicy' -Property $testParams).Set()
+                Should -Invoke -CommandName Remove-ManagementRoleAssignment -Exactly 2
+                Should -Invoke -CommandName Remove-RoleAssignmentPolicy -Exactly 1 -ParameterFilter { $Identity -eq 'Contoso Role Assignment Policy' }
             }
         }
 

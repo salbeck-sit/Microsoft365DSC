@@ -191,20 +191,22 @@ class AADFilteringProfile : M365DSCResourceBase
         foreach ($policy in $this.Policies)
         {
             $policyInfo = Get-MgBetaNetworkAccessFilteringPolicy -All | Where-Object -FilterScript { $_.Name -eq $policy.PolicyName }
-            if ($null -ne $policyInfo)
+            if ($null -eq $policyInfo -and $this.Ensure -eq 'Present')
             {
-                $entry = @{
-                    '@odata.type' = '#microsoft.graph.networkaccess.filteringPolicyLink'
-                    loggingState  = $policy.LoggingState
-                    priority      = $policy.Priority
-                    state         = $policy.State
-                    policy        = @{
-                        '@odata.type' = '#microsoft.graph.networkaccess.filteringPolicy'
-                        id            = $policyInfo.Id
-                    }
-                }
-                $instanceParams.policies += $entry
+                throw "Could not find filtering policy {$($policy.PolicyName)}."
             }
+
+            $entry = @{
+                '@odata.type' = '#microsoft.graph.networkaccess.filteringPolicyLink'
+                loggingState  = $policy.LoggingState
+                priority      = $policy.Priority
+                state         = $policy.State
+                policy        = @{
+                    '@odata.type' = '#microsoft.graph.networkaccess.filteringPolicy'
+                    id            = $policyInfo.Id
+                }
+            }
+            $instanceParams.policies += $entry
         }
 
         # CREATE

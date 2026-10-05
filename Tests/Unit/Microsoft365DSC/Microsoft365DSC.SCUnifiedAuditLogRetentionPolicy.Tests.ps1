@@ -109,7 +109,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
 
             It 'Should Remove the group from the Set method' {
                 (New-M365DSCResourceInstance -ResourceName 'SCUnifiedAuditLogRetentionPolicy' -Property $testParams).Set()
-                Should -Invoke -CommandName Remove-UnifiedAuditLogRetentionPolicy -Exactly 1
+                Should -Invoke -CommandName Remove-UnifiedAuditLogRetentionPolicy -Exactly 1 -ParameterFilter { $Identity -eq 'Test Policy' }
             }
         }
         Context -Name "The SCUnifiedAuditLogRetentionPolicy Exists and Values are already in the desired state" -Fixture {
@@ -169,7 +169,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
 
             It 'Should call the Set method' {
                 (New-M365DSCResourceInstance -ResourceName 'SCUnifiedAuditLogRetentionPolicy' -Property $testParams).Set()
-                Should -Invoke -CommandName Set-UnifiedAuditLogRetentionPolicy -Exactly 1
+                Should -Invoke -CommandName Set-UnifiedAuditLogRetentionPolicy -Exactly 1 -ParameterFilter { $Identity -eq 'Test Policy' }
             }
         }
 

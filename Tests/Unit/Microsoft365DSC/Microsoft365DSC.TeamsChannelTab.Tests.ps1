@@ -147,6 +147,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
 
             It 'Should return Present from the Get method' {
                 ((New-M365DSCResourceInstance -ResourceName 'TeamsChannelTab' -Property $testParams).Get().ToHashtable()).Ensure | Should -Be 'Present'
+                Should -Invoke -CommandName Get-MgBetaTeamChannelTab -ParameterFilter { $All -and $NoPageSize }
             }
 
             It 'Should return false from the Test method' {
@@ -156,6 +157,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             It 'Should update the settings from the Set method' {
                 (New-M365DSCResourceInstance -ResourceName 'TeamsChannelTab' -Property $testParams).Set()
                 Should -Invoke -CommandName Update-MgBetaTeamChannelTab -Exactly 1
+                Should -Invoke -CommandName Get-MgBetaTeamChannel -ParameterFilter { -not [System.String]::IsNullOrEmpty($Filter) -and $All -and $NoPageSize }
             }
         }
 

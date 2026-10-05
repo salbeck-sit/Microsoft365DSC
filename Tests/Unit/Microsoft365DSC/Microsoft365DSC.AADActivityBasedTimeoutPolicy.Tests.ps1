@@ -45,7 +45,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             Mock -CommandName Get-MgBetaPolicyActivityBasedTimeoutPolicy -MockWith {
                 return @{
                     DisplayName = "displayName-value"
-                    Description = "Signs out inactive administrators after two hours"
                     AzurePortalTimeOut = "02:00:00"
                     DefaultTimeOut = "03:00:00"
                     Id = "000000-0000-0000-0000-000000000000"
@@ -69,7 +68,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             BeforeAll {
                 $testParams = @{
                     DisplayName = "displayName-value"
-                    Description = "Signs out inactive administrators after two hours"
                     AzurePortalTimeOut = "02:00:00"
                     DefaultTimeOut = "03:00:00"
                     Id = "000000-0000-0000-0000-000000000000"
@@ -97,7 +95,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             BeforeAll {
                 $testParams = @{
                     DisplayName = "displayName-value"
-                    Description = "Signs out inactive administrators after two hours"
                     AzurePortalTimeOut = "02:00:00"
                     DefaultTimeOut = "03:00:00"
                     Id = "000000-0000-0000-0000-000000000000"
@@ -123,7 +120,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             BeforeAll {
                 $testParams = @{
                     DisplayName = "displayName-value"
-                    Description = "Signs out inactive administrators after two hours"
                     AzurePortalTimeOut = "02:00:00"
                     DefaultTimeOut = "04:00:00"
                     Id = "000000-0000-0000-0000-000000000000"
@@ -141,7 +137,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             BeforeAll {
                 $testParams = @{
                     DisplayName = "displayName-value"
-                    Description = "Signs out inactive administrators after two hours"
                     AzurePortalTimeOut = "02:00:00"
                     DefaultTimeOut = "03:00:00" # Drift
                     Id = "000000-0000-0000-0000-000000000000"

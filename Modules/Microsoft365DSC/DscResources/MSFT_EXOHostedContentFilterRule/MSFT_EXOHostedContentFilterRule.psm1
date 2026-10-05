@@ -206,13 +206,6 @@ class EXOHostedContentFilterRule : M365DSCResourceBase
                 throw "Policy $($this.Identity) is marked as the default. Creating a rule to apply the default policy is not allowed."
             }
 
-            if ($this.Enabled -and ('Disabled' -eq $CurrentValues.State))
-            {
-                # New-HostedContentFilterRule has the Enabled parameter, Set-HostedContentFilterRule does not.
-                # There doesn't appear to be any way to change the Enabled state of a rule once created.
-                Write-Verbose -Message "Removing HostedContentFilterRule {$($this.Identity)} in order to change Enabled state."
-                Remove-HostedContentFilterRule -Identity $this.Identity -Confirm:$false
-            }
             Write-Verbose -Message "Creating new HostedContentFilterRule {$($this.Identity)}"
             Write-Verbose -Message "With Parameters: $(Convert-M365DscHashtableToString -Hashtable $createParameters)"
             $createParameters.Add('Name', $this.Identity)
@@ -243,6 +236,17 @@ class EXOHostedContentFilterRule : M365DSCResourceBase
             }
             Write-Verbose -Message "Updating HostedContentFilterRule {$($this.Identity)}"
             Set-HostedContentFilterRule @updateParameters
+            if ($null -ne $this.Enabled -and $this.Enabled -ne $CurrentValues.Enabled)
+            {
+                if ($this.Enabled)
+                {
+                    Enable-HostedContentFilterRule -Identity $this.Identity -Confirm:$false
+                }
+                else
+                {
+                    Disable-HostedContentFilterRule -Identity $this.Identity -Confirm:$false
+                }
+            }
         }
         elseif ($this.Ensure -eq 'Absent' -and $CurrentValues.Ensure -eq 'Present')
         {

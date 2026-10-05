@@ -218,8 +218,13 @@ class TeamsChannel : M365DSCResourceBase
         {
             if ($channel.DisplayName)
             {
-                Write-Verbose -Message "Removing team channel $($this.DisplayName)"
-                Remove-TeamChannel -GroupId $team.GroupId -DisplayName $this.DisplayName
+                # Teams never frees the name of a deleted channel
+                # Rename first to keep the name reusable
+                $deletedDisplayName = "Deleted-$([System.Guid]::NewGuid().ToString('N'))"
+                Write-Verbose -Message "Renaming team channel $($this.DisplayName) to $deletedDisplayName before removal"
+                Set-TeamChannel -GroupId $team.GroupId -CurrentDisplayName $this.DisplayName -NewDisplayName $deletedDisplayName
+                Write-Verbose -Message "Removing team channel $deletedDisplayName"
+                Remove-TeamChannel -GroupId $team.GroupId -DisplayName $deletedDisplayName
             }
         }
     }

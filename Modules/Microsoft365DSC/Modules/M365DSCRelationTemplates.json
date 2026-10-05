@@ -1338,18 +1338,6 @@
         "SCRetentionComplianceRule"
       ]
     },
-    "SCSupervisoryReviewRuleRelations": {
-      "relations": [
-        {
-          "property": "Policy",
-          "targetResource": "SCSupervisoryReviewPolicy",
-          "targetKeyProperty": "Name"
-        }
-      ],
-      "resources": [
-        "SCSupervisoryReviewRule"
-      ]
-    },
     "SCDeviceConditionalAccessRuleRelations": {
       "relations": [
         {
@@ -1480,18 +1468,6 @@
       ],
       "resources": [
         "SCSecurityFilter"
-      ]
-    },
-    "SCSupervisoryReviewPolicyRelations": {
-      "relations": [
-        {
-          "property": "Reviewers",
-          "targetResource": "AADUser",
-          "targetKeyProperty": "UserPrincipalName"
-        }
-      ],
-      "resources": [
-        "SCSupervisoryReviewPolicy"
       ]
     },
 

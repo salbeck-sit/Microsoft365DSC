@@ -189,6 +189,16 @@ class EXOEmailAddressPolicy : M365DSCResourceBase
         elseif ($this.Ensure -eq 'Present' -and $currentEmailAddressPolicyConfig.Ensure -eq 'Present')
         {
             Write-Verbose -Message "Email Address Policy '$($this.Name)' already exists, but needs updating."
+
+            $managedByFilterChanged = $this.GetBoundParameters().ContainsKey('ManagedByFilter') -and [System.String]$this.ManagedByFilter -ne [System.String]$currentEmailAddressPolicyConfig.ManagedByFilter
+            if ($managedByFilterChanged -and $this.Name -ne 'Default Policy')
+            {
+                Write-Verbose -Message "ManagedByFilter of Email Address Policy '$($this.Name)' changed. Recreating the policy."
+                Remove-EmailAddressPolicy -Identity $this.Name -Confirm:$false
+                New-EmailAddressPolicy @NewEmailAddressPolicyParams
+                return
+            }
+
             if ($this.Name -eq 'Default Policy')
             {
                 $SetEmailAddressPolicyParams.Remove('Priority')

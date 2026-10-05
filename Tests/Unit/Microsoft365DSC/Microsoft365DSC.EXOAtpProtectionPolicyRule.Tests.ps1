@@ -133,6 +133,15 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     Ensure              = 'Present'
                     Credential          = $Credential;
                 }
+
+                Mock -CommandName Get-ATPProtectionPolicyRule -MockWith {
+                    return @{
+                        Identity             = 'TestRule'
+                        State                = 'Enabled'
+                        SafeAttachmentPolicy = 'Standard Preset Security Policy1'
+                        SafeLinksPolicy      = 'Standard Preset Security Policy2'
+                    }
+                }
             }
 
             It 'Should return Values from the Get method' {
@@ -146,6 +155,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             It 'Should call the Set method' {
                 (New-M365DSCResourceInstance -ResourceName 'EXOAtpProtectionPolicyRule' -Property $testParams).Set()
                 Should -Invoke -CommandName Set-ATPProtectionPolicyRule -Exactly 1
+                Should -Invoke -CommandName Disable-ATPProtectionPolicyRule -Exactly 0
             }
         }
 

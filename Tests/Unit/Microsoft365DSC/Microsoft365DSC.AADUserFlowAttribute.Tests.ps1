@@ -99,7 +99,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
         Context -Name 'The user flow attribute exists but it should not' -Fixture {
             BeforeAll {
                 $testParams = @{
-                    Id                 = "testIdSai"
                     DisplayName        = "saitest"
                     Description        = "sai test description"
                     DataType           = "string"
@@ -119,7 +118,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
 
             It 'Should remove the app from the set method' {
                 (New-M365DSCResourceInstance -ResourceName 'AADUserFlowAttribute' -Property $testParams).Set()
-                Should -Invoke -CommandName 'Remove-MgBetaIdentityUserFlowAttribute' -Exactly 1
+                Should -Invoke -CommandName 'Remove-MgBetaIdentityUserFlowAttribute' -Exactly 1 -ParameterFilter { $IdentityUserFlowAttributeId -eq 'testIdSai' }
             }
         }
         Context -Name 'The user flow attribute exists and values are already in the desired state' -Fixture {
@@ -147,7 +146,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
         Context -Name 'Values are not in the desired state' -Fixture {
             BeforeAll {
                 $testParams = @{
-                    Id                 = "testIdSai"
                     DisplayName        = "saitest"
                     Description        = "sai test description changed" # Drift
                     DataType           = "string"
@@ -167,7 +165,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
 
             It 'Should call the set method' {
                 (New-M365DSCResourceInstance -ResourceName 'AADUserFlowAttribute' -Property $testParams).Set()
-                Should -Invoke -CommandName 'Update-MgBetaIdentityUserFlowAttribute' -Exactly 1
+                Should -Invoke -CommandName 'Update-MgBetaIdentityUserFlowAttribute' -Exactly 1 -ParameterFilter { $IdentityUserFlowAttributeId -eq 'testIdSai' }
             }
         }
 

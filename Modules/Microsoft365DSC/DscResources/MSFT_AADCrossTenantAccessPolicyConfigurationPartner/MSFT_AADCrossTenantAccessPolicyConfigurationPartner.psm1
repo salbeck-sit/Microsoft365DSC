@@ -416,20 +416,7 @@ class AADCrossTenantAccessPolicyConfigurationPartner : M365DSCResourceBase
             Start-Sleep -Seconds 2
             if ($newPartner.TenantId -and $null -ne $identitySynchronizationValue)
             {
-                try
-                {
-                    Set-MgBetaPolicyCrossTenantAccessPolicyPartnerIdentitySynchronization `
-                        -CrossTenantAccessPolicyConfigurationPartnerTenantId $newPartner.TenantId `
-                        -BodyParameter $identitySynchronizationValue
-                }
-                catch
-                {
-                    if ($_.ErrorDetails.Message -notlike '*Conflict*')
-                    {
-                        throw
-                    }
-                    Invoke-M365DSCGraphRequest -Uri "/beta/policies/crossTenantAccessPolicy/partners/$($newPartner.TenantId)/identitySynchronization" -Method PATCH -Body $identitySynchronizationValue
-                }
+                $this.SetIdentitySynchronization($newPartner.TenantId, $identitySynchronizationValue, $false)
             }
         }
         elseif ($this.Ensure -eq 'Present' -and $currentInstance.Ensure -eq 'Present')
@@ -439,20 +426,7 @@ class AADCrossTenantAccessPolicyConfigurationPartner : M365DSCResourceBase
             Update-MgBetaPolicyCrossTenantAccessPolicyPartner -CrossTenantAccessPolicyConfigurationPartnerTenantId $this.PartnerTenantId -BodyParameter $OperationParams
             if ($null -ne $identitySynchronizationValue)
             {
-                try
-                {
-                    Invoke-M365DSCGraphRequest -Uri "/beta/policies/crossTenantAccessPolicy/partners/$($this.PartnerTenantId)/identitySynchronization" -Method PATCH -Body $identitySynchronizationValue
-                }
-                catch
-                {
-                    if ($_.ErrorDetails.Message -notlike '*Not Found*')
-                    {
-                        throw
-                    }
-                    Set-MgBetaPolicyCrossTenantAccessPolicyPartnerIdentitySynchronization `
-                        -CrossTenantAccessPolicyConfigurationPartnerTenantId $this.PartnerTenantId `
-                        -BodyParameter $identitySynchronizationValue
-                }
+                $this.SetIdentitySynchronization($this.PartnerTenantId, $identitySynchronizationValue, $true)
             }
         }
         elseif ($this.Ensure -eq 'Absent' -and $currentInstance.Ensure -eq 'Present')
@@ -1044,6 +1018,53 @@ class AADCrossTenantAccessPolicyConfigurationPartner : M365DSCResourceBase
             }
             userSyncInbound = @{
                 isSyncAllowed = $Setting.UserSyncInbound.IsSyncAllowed
+            }
+        }
+    }
+
+    hidden [void] SetIdentitySynchronization([System.String] $PartnerTenantId, [System.Collections.Hashtable] $Value, [System.Boolean] $UsePatch)
+    {
+        for ($attempt = 1; $attempt -le 6; $attempt++)
+        {
+            try
+            {
+                if ($UsePatch)
+                {
+                    $null = Invoke-M365DSCGraphRequest -Uri "/beta/policies/crossTenantAccessPolicy/partners/$PartnerTenantId/identitySynchronization" `
+                        -Method PATCH `
+                        -Body $Value `
+                        -ErrorAction Stop
+                }
+                else
+                {
+                    Set-MgBetaPolicyCrossTenantAccessPolicyPartnerIdentitySynchronization `
+                        -CrossTenantAccessPolicyConfigurationPartnerTenantId $PartnerTenantId `
+                        -BodyParameter $Value `
+                        -ErrorAction Stop
+                }
+                return
+            }
+            catch
+            {
+                $message = "$($_.ErrorDetails.Message) $($_.Exception.Message)"
+                if ($attempt -ge 6)
+                {
+                    throw
+                }
+
+                if (-not $UsePatch -and ($message -like '*Conflict*' -or $message -like '*MultipleObjectsWithSameKeyValue*'))
+                {
+                    $UsePatch = $true
+                    continue
+                }
+
+                if ($message -notlike '*Directory_ObjectNotFound*' -and $message -notlike '*Not Found*')
+                {
+                    throw
+                }
+
+                $UsePatch = -not $UsePatch
+                Start-Sleep -Seconds 5
             }
         }
     }

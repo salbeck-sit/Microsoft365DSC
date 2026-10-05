@@ -220,7 +220,7 @@ class AADAuthenticationStrengthPolicy : M365DSCResourceBase
             [array]$getValue = Get-MgBetaPolicyAuthenticationStrengthPolicy `
                 -All `
                 -Filter $mergedFilter `
-                -Top 0 `
+                -NoPageSize `
                 -ErrorAction Stop
             #endregion
 

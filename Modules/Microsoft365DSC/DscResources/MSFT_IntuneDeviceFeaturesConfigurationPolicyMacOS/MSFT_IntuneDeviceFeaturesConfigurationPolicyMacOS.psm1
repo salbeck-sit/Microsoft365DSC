@@ -348,7 +348,6 @@ class IntuneDeviceFeaturesConfigurationPolicyMacOS : M365DSCResourceBase
             foreach ($currentContentCachingClientListenRanges in $getValue.contentCachingClientListenRanges)
             {
                 $myContentCachingClientListenRanges = [ordered]@{}
-                $myContentCachingClientListenRanges.Add('CidrAddress', $currentContentCachingClientListenRanges.cidrAddress)
                 $myContentCachingClientListenRanges.Add('LowerAddress', $currentContentCachingClientListenRanges.lowerAddress)
                 if ($null -ne $currentContentCachingClientListenRanges.'@odata.type')
                 {
@@ -365,7 +364,6 @@ class IntuneDeviceFeaturesConfigurationPolicyMacOS : M365DSCResourceBase
             foreach ($currentContentCachingPeerFilterRanges in $getValue.contentCachingPeerFilterRanges)
             {
                 $myContentCachingPeerFilterRanges = [ordered]@{}
-                $myContentCachingPeerFilterRanges.Add('CidrAddress', $currentContentCachingPeerFilterRanges.cidrAddress)
                 $myContentCachingPeerFilterRanges.Add('LowerAddress', $currentContentCachingPeerFilterRanges.lowerAddress)
                 if ($null -ne $currentContentCachingPeerFilterRanges.'@odata.type')
                 {
@@ -382,7 +380,6 @@ class IntuneDeviceFeaturesConfigurationPolicyMacOS : M365DSCResourceBase
             foreach ($currentContentCachingPeerListenRanges in $getValue.contentCachingPeerListenRanges)
             {
                 $myContentCachingPeerListenRanges = [ordered]@{}
-                $myContentCachingPeerListenRanges.Add('CidrAddress', $currentContentCachingPeerListenRanges.cidrAddress)
                 $myContentCachingPeerListenRanges.Add('LowerAddress', $currentContentCachingPeerListenRanges.lowerAddress)
                 if ($null -ne $currentContentCachingPeerListenRanges.'@odata.type')
                 {
@@ -399,7 +396,6 @@ class IntuneDeviceFeaturesConfigurationPolicyMacOS : M365DSCResourceBase
             foreach ($currentContentCachingPublicRanges in $getValue.contentCachingPublicRanges)
             {
                 $myContentCachingPublicRanges = [ordered]@{}
-                $myContentCachingPublicRanges.Add('CidrAddress', $currentContentCachingPublicRanges.cidrAddress)
                 $myContentCachingPublicRanges.Add('LowerAddress', $currentContentCachingPublicRanges.lowerAddress)
                 if ($null -ne $currentContentCachingPublicRanges.'@odata.type')
                 {
@@ -458,7 +454,7 @@ class IntuneDeviceFeaturesConfigurationPolicyMacOS : M365DSCResourceBase
             $complexMacOSSingleSignOnExtension.Add('PasswordPreviousPasswordBlockCount', $getValue.macOSSingleSignOnExtension.passwordPreviousPasswordBlockCount)
             $complexMacOSSingleSignOnExtension.Add('PasswordRequireActiveDirectoryComplexity', $getValue.macOSSingleSignOnExtension.passwordRequireActiveDirectoryComplexity)
             $complexMacOSSingleSignOnExtension.Add('PasswordRequirementsDescription', $getValue.macOSSingleSignOnExtension.passwordRequirementsDescription)
-            $complexMacOSSingleSignOnExtension.Add('PreferredKDCs', [Array]$getValue.macOSSingleSignOnExtension.preferredKDCs)
+            $complexMacOSSingleSignOnExtension.Add('PreferredKDCs', [Array]($getValue.macOSSingleSignOnExtension.preferredKDCs | Select-Object -Unique))
             $complexMacOSSingleSignOnExtension.Add('Realm', $getValue.macOSSingleSignOnExtension.realm)
             $complexMacOSSingleSignOnExtension.Add('RequireUserPresence', $getValue.macOSSingleSignOnExtension.requireUserPresence)
             $complexMacOSSingleSignOnExtension.Add('SignInHelpText', $getValue.macOSSingleSignOnExtension.signInHelpText)
@@ -1073,16 +1069,12 @@ class MSFT_MicrosoftGraphMacOSLaunchItem
 class MSFT_MicrosoftGraphIpRange2
 {
     [DscProperty()]
-    [System.ComponentModel.Description('IPv4 address in CIDR notation. Not nullable.')]
-    [System.String] $CidrAddress
-
-    [DscProperty()]
     [System.ComponentModel.Description('Lower address.')]
     [System.String] $LowerAddress
 
     [DscProperty()]
     [System.ComponentModel.Description('The type of the entity.')]
-    [ValidateSet('#microsoft.graph.iPv4CidrRange', '#microsoft.graph.iPv4Range', '#microsoft.graph.iPv6CidrRange', '#microsoft.graph.iPv6Range')]
+    [ValidateSet('#microsoft.graph.iPv4Range', '#microsoft.graph.iPv6Range')]
     [System.String] $ODataType
 
     [DscProperty()]

@@ -85,7 +85,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     Description = "FakeStringValue"
                     DisplayName = "DeviceComplianceScript"
                     EnforceSignatureCheck = $True
-                    Id = "12345-12345-12345-12345-12345"
                     Publisher = "FakeStringValue"
                     RoleScopeTagIds = @("FakeStringValue")
                     RunAs32Bit = $True
@@ -98,10 +97,16 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                 Mock -CommandName Invoke-M365DSCGraphRequest -ParameterFilter { $Method -eq 'GET' -and $Uri -eq '/beta/deviceManagement/deviceComplianceScripts' } -MockWith {
                     return $noComplianceScripts
                 }
+
+                Mock -CommandName Invoke-M365DSCGraphRequest -ParameterFilter { $Method -eq 'GET' -and $Uri -eq '/beta/deviceManagement/deviceComplianceScripts/' } -MockWith {
+                    return $allComplianceScripts
+                }
             }
 
             It 'Should return Values from the Get method' {
                 ((New-M365DSCResourceInstance -ResourceName 'IntuneDeviceComplianceScriptWindows10' -Property $testParams).Get().ToHashtable()).Ensure | Should -Be 'Absent'
+                Should -Invoke -CommandName Invoke-M365DSCGraphRequest -ParameterFilter { $Uri -eq '/beta/deviceManagement/deviceComplianceScripts/' } -Exactly 0
+                Should -Invoke -CommandName Invoke-M365DSCGraphRequest -ParameterFilter { $Uri -eq '/beta/deviceManagement/deviceComplianceScripts?$filter=DisplayName eq ''DeviceComplianceScript'' and platform eq ''windows10''' } -Exactly 1
             }
 
             It 'Should return false from the Test method' {

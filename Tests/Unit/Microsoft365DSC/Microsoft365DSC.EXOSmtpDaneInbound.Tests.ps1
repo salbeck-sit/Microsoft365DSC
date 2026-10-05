@@ -89,6 +89,14 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             It 'Should Enable SmtpDaneInbound from the Set method' {
                 (New-M365DSCResourceInstance -ResourceName 'EXOSmtpDaneInbound' -Property $testParams).Set()
                 Should -Invoke -CommandName Enable-SmtpDaneInbound -Exactly 1
+
+                Mock -CommandName Enable-SmtpDaneInbound -MockWith {
+                    return [PSCustomObject]@{
+                        Result    = 'Error'
+                        ErrorData = "ErrorCode:'DomainNotFound'"
+                    }
+                }
+                { (New-M365DSCResourceInstance -ResourceName 'EXOSmtpDaneInbound' -Property $testParams).Set() } | Should -Throw "*DomainNotFound*"
             }
         }
 
@@ -112,6 +120,14 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             It 'Should disable SmtpDaneInbound from the Set method' {
                 (New-M365DSCResourceInstance -ResourceName 'EXOSmtpDaneInbound' -Property $testParams).Set()
                 Should -Invoke -CommandName Disable-SmtpDaneInbound -Exactly 1
+
+                Mock -CommandName Disable-SmtpDaneInbound -MockWith {
+                    return [PSCustomObject]@{
+                        Result    = 'Error'
+                        ErrorData = "ErrorCode:'DomainNotFound'"
+                    }
+                }
+                { (New-M365DSCResourceInstance -ResourceName 'EXOSmtpDaneInbound' -Property $testParams).Set() } | Should -Throw "*DomainNotFound*"
             }
         }
 

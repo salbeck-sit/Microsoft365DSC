@@ -117,7 +117,8 @@ class SCDeviceConditionalAccessRule : M365DSCResourceBase
 
     [DscProperty()]
     [System.ComponentModel.Description('The FirewallStatus parameter specifies the acceptable firewall status values on devices.')]
-    [System.Nullable[System.Boolean]] $FirewallStatus
+    [ValidateSet('Required')]
+    [System.String] $FirewallStatus
 
     [DscProperty()]
     [System.ComponentModel.Description('The ForceAppStorePassword parameter specifies whether to require a password to use the app store on devices.')]
@@ -132,8 +133,8 @@ class SCDeviceConditionalAccessRule : M365DSCResourceBase
     [System.Nullable[System.UInt32]] $MaxPasswordAttemptsBeforeWipe
 
     [DscProperty()]
-    [System.ComponentModel.Description('The MaxPasswordGracePeriod parameter specifies the length of time users are allowed to reset expired passwords on devices.')]
-    [System.Nullable[System.UInt32]] $MaxPasswordGracePeriod
+    [System.ComponentModel.Description('The MaxPasswordGracePeriod parameter specifies the length of time users are allowed to reset expired passwords on devices, as a time span dd.hh:mm:ss.')]
+    [System.String] $MaxPasswordGracePeriod
 
     [DscProperty()]
     [System.ComponentModel.Description('The MoviesRating parameter species the maximum or most restrictive rating of movies that are allowed on devices. You specify the country/region rating system to use with the RegionRatings parameter.')]
@@ -259,6 +260,12 @@ class SCDeviceConditionalAccessRule : M365DSCResourceBase
 
         Write-Verbose -Message "Getting configuration of Purview Device Conditional Access Rule for $($this.Name)"
 
+        $policyName = $this.Policy
+        if ([System.String]::IsNullOrEmpty($policyName))
+        {
+            $policyName = $this.Name.Split('{')[0]
+        }
+
         try
         {
             if (-not $this.ExportedInstance -or $this.ExportedInstance.Name -ne $this.Name)
@@ -274,10 +281,10 @@ class SCDeviceConditionalAccessRule : M365DSCResourceBase
                 $nullResult = $this.GetBoundParameters()
                 $nullResult.Ensure = 'Absent'
 
-                $policyObj = Get-DeviceConditionalAccessPolicy | Where-Object -FilterScript { $_.Name -eq $this.Policy }
+                $policyObj = Get-DeviceConditionalAccessPolicy | Where-Object -Property Name -EQ $policyName
                 if ($null -ne $policyObj)
                 {
-                    Write-Verbose -Message "Found policy object {$($this.Policy)}"
+                    Write-Verbose -Message "Found policy object {$policyName}"
                     $instance = Get-DeviceConditionalAccessRule | Where-Object -FilterScript { $_.Policy -eq $policyObj.ExchangeObjectId }
                 }
                 if ($null -eq $instance)
@@ -288,7 +295,7 @@ class SCDeviceConditionalAccessRule : M365DSCResourceBase
             else
             {
                 $instance = $this.ExportedInstance
-                $policyObj = Get-DeviceConditionalAccessPolicy | Where-Object -FilterScript { $_.Name -eq $this.Policy }
+                $policyObj = Get-DeviceConditionalAccessPolicy | Where-Object -Property Name -EQ $policyName
             }
 
             $groupNames = @()

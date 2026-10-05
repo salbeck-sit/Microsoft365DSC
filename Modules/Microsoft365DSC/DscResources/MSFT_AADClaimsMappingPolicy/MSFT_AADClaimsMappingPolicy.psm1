@@ -11,10 +11,6 @@ class AADClaimsMappingPolicy : M365DSCResourceBase
     [System.ComponentModel.Description('If set to true, activates this policy. There can be many policies for the same policy type, but only one can be activated as the organization default. Optional, default value is false.')]
     [System.Nullable[System.Boolean]] $IsOrganizationDefault
 
-    [DscProperty()]
-    [System.ComponentModel.Description('Description for this policy. Required.')]
-    [System.String] $Description
-
     [DscProperty(Key)]
     [System.ComponentModel.Description('Display name for this policy. Required.')]
     [System.String] $DisplayName
@@ -177,7 +173,6 @@ class AADClaimsMappingPolicy : M365DSCResourceBase
                 #region resource generator code
                 Definition            = $complexDefinition
                 IsOrganizationDefault = $getValue.IsOrganizationDefault
-                Description           = $getValue.Description
                 DisplayName           = $getValue.DisplayName
                 Id                    = $getValue.Id
                 Ensure                = 'Present'
@@ -229,7 +224,12 @@ class AADClaimsMappingPolicy : M365DSCResourceBase
 
             $complexDefinitions = $createParameters.Definition
             $createParameters.Remove('Definition') | Out-Null
-            $createParameters.Definition = $complexDefinitions | ConvertTo-Json -Depth 10 -Compress:$true
+            $definitions = @()
+            foreach ($definition in $complexDefinitions)
+            {
+                $definitions += ConvertTo-Json -InputObject $definition -Depth 10 -Compress
+            }
+            $createParameters.Definition = $definitions
 
             $policy = New-MgBetaPolicyClaimMappingPolicy -BodyParameter $createParameters
         }
@@ -242,7 +242,12 @@ class AADClaimsMappingPolicy : M365DSCResourceBase
 
             $complexDefinitions = $updateParameters.Definition
             $updateParameters.Remove('Definition') | Out-Null
-            $updateParameters.Definition = $complexDefinitions | ConvertTo-Json -Depth 10 -Compress:$true
+            $definitions = @()
+            foreach ($definition in $complexDefinitions)
+            {
+                $definitions += ConvertTo-Json -InputObject $definition -Depth 10 -Compress
+            }
+            $updateParameters.Definition = $definitions
 
             #region resource generator code
             Update-MgBetaPolicyClaimMappingPolicy `

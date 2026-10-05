@@ -248,6 +248,9 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             It 'Should Create the id from the Set method' {
                 (New-M365DSCResourceInstance -ResourceName 'AADVerifiedIdAuthorityContract' -Property $testParams).Set()
                 Should -Invoke -CommandName Invoke-WebRequest -Exactly 4
+                Should -Invoke -CommandName Invoke-WebRequest -ParameterFilter {
+                    $Method -eq 'POST' -and ($Body | ConvertFrom-Json).displays -is [System.Array]
+                } -Exactly 1
             }
         }
 
@@ -457,6 +460,9 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             It 'Should call the Set method' {
                 (New-M365DSCResourceInstance -ResourceName 'AADVerifiedIdAuthorityContract' -Property $testParams).Set()
                 Should -Invoke -CommandName Invoke-WebRequest -Exactly 3
+                Should -Invoke -CommandName Invoke-WebRequest -ParameterFilter {
+                    $Method -eq 'PATCH' -and $Uri -eq 'https://verifiedid.did.msidentity.com/v1.0/verifiableCredentials/authorities/FakeStringValue/contracts/FakeStringValue'
+                } -Exactly 1
             }
         }
 

@@ -191,7 +191,7 @@ class AADVerifiedIdAuthorityContract : M365DSCResourceBase
         $body = @{
             name     = $this.Name
             rules    = $rulesHashmap
-            displays = $displaysHashmap
+            displays = @($displaysHashmap)
         }
         if ($this.Ensure -eq 'Present' -and $currentInstance.Ensure -eq 'Absent')
         {
@@ -207,8 +207,8 @@ class AADVerifiedIdAuthorityContract : M365DSCResourceBase
         }
         elseif ($this.Ensure -eq 'Present' -and $currentInstance.Ensure -eq 'Present')
         {
-            Write-Verbose -Message "Updating an VerifiedId Authority Contract with Name {$($this.name)} for Authority Id $($authority.Id)"
-            $uri = "https://verifiedid.did.msidentity.com/v1.0/verifiableCredentials/authorities/$($authority.Id)/contracts/$($currentInstance.id)"
+            Write-Verbose -Message "Updating an VerifiedId Authority Contract with Name {$($this.name)} for Authority Id $($currentInstance.authorityId)"
+            $uri = "https://verifiedid.did.msidentity.com/v1.0/verifiableCredentials/authorities/$($currentInstance.authorityId)/contracts/$($currentInstance.id)"
             $body.Remove('name') | Out-Null
             $null = $this.InvokeVerifiedIdWebRequest($uri, 'PATCH', $body)
         }

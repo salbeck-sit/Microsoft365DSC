@@ -35,24 +35,46 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                 return "Credentials"
             }
 
-            Mock -CommandName Set-EXOPhishSimOverrideRule -MockWith {
+            Mock -CommandName Set-ExoPhishSimOverrideRule -MockWith {
             }
 
-            Mock -CommandName Remove-EXOPhishSimOverrideRule -MockWith {
+            Mock -CommandName Remove-ExoPhishSimOverrideRule -MockWith {
             }
 
-            Mock -CommandName New-EXOPhishSimOverrideRule -MockWith {
+            Mock -CommandName New-ExoPhishSimOverrideRule -MockWith {
             }
 
-            Mock -CommandName Get-EXOPhishSimOverrideRule -MockWith {
+            Mock -CommandName New-PhishSimOverridePolicy -MockWith {
                 return @{
-                    Ensure              = 'Present'
-                    Credential          = $Credential;
-                    Comment             = "Comment note";
-                    Domains             = @("fabrikam.com","wingtiptoys.com");
-                    Identity            = "_Exe:PhishSimOverr:d779965e-ab14-4dd8-b3f5-0876a99f988b";
-                    SenderIpRanges      = @("192.168.1.55");
+                    Identity = 'PhishSimOverridePolicy'
+                    Mode     = 'Enable'
                 }
+            }
+
+            Mock -CommandName Get-PhishSimOverridePolicy -MockWith {
+                return @{
+                    Identity = 'PhishSimOverridePolicy'
+                    Mode     = 'Enable'
+                }
+            }
+
+            Mock -CommandName Get-ExoPhishSimOverrideRule -MockWith {
+                return @(
+                    @{
+                        Identity       = '_Exe:PhishSimOverr:6fed4b63-3563-495d-a481-b24a311f8329'
+                        Mode           = 'PendingDeletion'
+                        Comment        = 'Previous vendor'
+                        Domains        = @('contoso.net')
+                        SenderIpRanges = @('192.168.1.1')
+                    },
+                    @{
+                        Identity       = '_Exe:PhishSimOverr:d779965e-ab14-4dd8-b3f5-0876a99f988b'
+                        Mode           = 'Enforce'
+                        Comment        = 'Comment note'
+                        Domains        = @('fabrikam.com', 'wingtiptoys.com')
+                        SenderIpRanges = @('192.168.1.55')
+                    }
+                )
             }
 
             # Mock Write-M365DSCHost to hide output during the tests
@@ -65,16 +87,21 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
         Context -Name "The instance should exist but it DOES NOT" -Fixture {
             BeforeAll {
                 $testParams = @{
+                    IsSingleInstance    = 'Yes'
                     Ensure              = 'Present'
                     Credential          = $Credential;
                     Comment             = "Comment note";
                     Domains             = @("fabrikam.com","wingtiptoys.com");
-                    Identity            = "_Exe:PhishSimOverr:d779965e-ab14-4dd8-b3f5-0876a99f988b";
                     SenderIpRanges      = @("192.168.1.55");
                 }
 
-                Mock -CommandName Get-EXOPhishSimOverrideRule -MockWith {
-                    return $null
+                Mock -CommandName Get-ExoPhishSimOverrideRule -MockWith {
+                    return @{
+                        Identity       = '_Exe:PhishSimOverr:6fed4b63-3563-495d-a481-b24a311f8329'
+                        Mode           = 'PendingDeletion'
+                        Domains        = @('fabrikam.com', 'wingtiptoys.com')
+                        SenderIpRanges = @('192.168.1.55')
+                    }
                 }
             }
             It 'Should return Values from the Get method' {
@@ -84,21 +111,39 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                 (New-M365DSCResourceInstance -ResourceName 'EXOPhishSimOverrideRule' -Property $testParams).Test() | Should -Be $false
             }
 
-            It 'Should create a new instance from the Set method' {
+            It 'Should create a new instance against the existing policy from the Set method' {
                 (New-M365DSCResourceInstance -ResourceName 'EXOPhishSimOverrideRule' -Property $testParams).Set()
-                Should -Invoke -CommandName New-EXOPhishSimOverrideRule -Exactly 1
+                Should -Invoke -CommandName New-PhishSimOverridePolicy -Exactly 0
+                Should -Invoke -CommandName New-ExoPhishSimOverrideRule -Exactly 1 -ParameterFilter {
+                    $Policy -eq 'PhishSimOverridePolicy' -and $Comment -eq 'Comment note' -and $Domains.Count -eq 2 -and $SenderIpRanges -contains '192.168.1.55'
+                }
+            }
+
+            It 'Should create the policy and the rule from the Set method when no policy exists' {
+                Mock -CommandName Get-PhishSimOverridePolicy -MockWith {
+                    return $null
+                }
+
+                (New-M365DSCResourceInstance -ResourceName 'EXOPhishSimOverrideRule' -Property $testParams).Set()
+                Should -Invoke -CommandName New-PhishSimOverridePolicy -Exactly 1 -ParameterFilter { $Name -eq 'PhishSimOverridePolicy' }
+                Should -Invoke -CommandName New-ExoPhishSimOverrideRule -Exactly 1
+            }
+
+            It 'Should throw from the Get method when the service returns an error' {
+                Mock -CommandName Get-ExoPhishSimOverrideRule -MockWith {
+                    Write-Error -Message 'A server side error has occurred because of which the operation could not be completed.'
+                }
+
+                { (New-M365DSCResourceInstance -ResourceName 'EXOPhishSimOverrideRule' -Property $testParams).Get() } | Should -Throw '*server side error*'
             }
         }
 
         Context -Name "The instance exists but it SHOULD NOT" -Fixture {
             BeforeAll {
                 $testParams = @{
+                    IsSingleInstance    = 'Yes'
                     Ensure              = 'Absent'
                     Credential          = $Credential;
-                    Comment             = "Comment note";
-                    Domains             = @("fabrikam.com","wingtiptoys.com");
-                    Identity            = "_Exe:PhishSimOverr:d779965e-ab14-4dd8-b3f5-0876a99f988b";
-                    SenderIpRanges      = @("192.168.1.55");
                 }
             }
             It 'Should return Values from the Get method' {
@@ -108,20 +153,23 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                 (New-M365DSCResourceInstance -ResourceName 'EXOPhishSimOverrideRule' -Property $testParams).Test() | Should -Be $false
             }
 
-            It 'Should remove the instance from the Set method' {
+            It 'Should remove the active rule and keep the policy from the Set method' {
                 (New-M365DSCResourceInstance -ResourceName 'EXOPhishSimOverrideRule' -Property $testParams).Set()
-                Should -Invoke -CommandName Remove-EXOPhishSimOverrideRule -Exactly 1
+                Should -Invoke -CommandName Remove-ExoPhishSimOverrideRule -Exactly 1 -ParameterFilter {
+                    $Identity -eq '_Exe:PhishSimOverr:d779965e-ab14-4dd8-b3f5-0876a99f988b'
+                }
+                Should -Invoke -CommandName New-PhishSimOverridePolicy -Exactly 0
             }
         }
 
         Context -Name "The instance exists and values are already in the desired state" -Fixture {
             BeforeAll {
                 $testParams = @{
+                    IsSingleInstance    = 'Yes'
                     Ensure              = 'Present'
                     Credential          = $Credential;
                     Comment             = "Comment note";
                     Domains             = @("fabrikam.com","wingtiptoys.com");
-                    Identity            = "_Exe:PhishSimOverr:d779965e-ab14-4dd8-b3f5-0876a99f988b";
                     SenderIpRanges      = @("192.168.1.55");
                 }
             }
@@ -134,12 +182,11 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
         Context -Name "The instance exists and values are NOT in the desired state" -Fixture {
             BeforeAll {
                 $testParams = @{
-                    ##TODO - Add Parameters
+                    IsSingleInstance    = 'Yes'
                     Ensure              = 'Present'
                     Credential          = $Credential;
                     Comment             = "Comment note";
-                    Domains             = @("fabrikam.com","wingtiptoys.com", "newdomain.com"); # Drift
-                    Identity            = "_Exe:PhishSimOverr:d779965e-ab14-4dd8-b3f5-0876a99f988b";
+                    Domains             = @("fabrikam.com","newdomain.com");
                     SenderIpRanges      = @("192.168.1.55");
                 }
             }
@@ -152,9 +199,16 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                 (New-M365DSCResourceInstance -ResourceName 'EXOPhishSimOverrideRule' -Property $testParams).Test() | Should -Be $false
             }
 
-            It 'Should call the Set method' {
+            It 'Should add and remove the drifted domains only from the Set method' {
                 (New-M365DSCResourceInstance -ResourceName 'EXOPhishSimOverrideRule' -Property $testParams).Set()
-                Should -Invoke -CommandName Set-EXOPhishSimOverrideRule -Exactly 1
+                Should -Invoke -CommandName Set-ExoPhishSimOverrideRule -Exactly 1 -ParameterFilter {
+                    $Identity -eq '_Exe:PhishSimOverr:d779965e-ab14-4dd8-b3f5-0876a99f988b' -and
+                    $AddDomains -contains 'newdomain.com' -and
+                    $RemoveDomains -contains 'wingtiptoys.com' -and
+                    -not $PesterBoundParameters.ContainsKey('Comment') -and
+                    -not $PesterBoundParameters.ContainsKey('AddSenderIpRanges') -and
+                    -not $PesterBoundParameters.ContainsKey('RemoveSenderIpRanges')
+                }
             }
         }
 
@@ -169,6 +223,8 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             It 'Should Reverse Engineer resource from the Export method' {
                 $result = Invoke-M365DSCResourceMethod -ResourceName 'EXOPhishSimOverrideRule' -MethodName 'Export' -Parameters $testParams
                 $result | Should -Not -BeNullOrEmpty
+                $result | Should -Match 'IsSingleInstance\s+=\s+"Yes"'
+                $result | Should -Not -Match 'contoso\.net'
             }
         }
     }

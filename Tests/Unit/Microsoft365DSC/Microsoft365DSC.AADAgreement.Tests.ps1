@@ -59,11 +59,24 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                 }
             }
 
-            Mock -CommandName Invoke-M365DSCGraphRequest -ParameterFilter { $Method -eq 'GET' -and $Uri -like '*/termsOfUse/agreements/*/file' } -MockWith {
+            Mock -CommandName Invoke-M365DSCGraphRequest -ParameterFilter { $Method -eq 'GET' -and $Uri -like '*/termsOfUse/agreements/*/file/localizations' } -MockWith {
                 return @{
-                    fileName = 'terms.txt'
-                    language = 'en-US'
+                    value = @(
+                        @{
+                            fileName  = 'nutzungsbedingungen.pdf'
+                            language  = 'de-DE'
+                            isDefault = $false
+                        },
+                        @{
+                            fileName  = 'terms.txt'
+                            language  = 'en-US'
+                            isDefault = $true
+                        }
+                    )
                 }
+            }
+
+            Mock -CommandName Invoke-M365DSCGraphRequest -ParameterFilter { $Method -eq 'POST' -and $Uri -like '*/termsOfUse/agreements/*/files' } -MockWith {
             }
 
             Mock -CommandName New-MgBetaAgreement -MockWith {
@@ -90,8 +103,8 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     IsViewingBeforeAcceptanceRequired    = $true
                     IsPerDeviceAcceptanceRequired        = $false
                     UserReacceptRequiredFrequency        = 'P90D'
-                    FileData                             = 'Terms content'
-                    FileName                             = 'terms.txt'
+                    FileData                             = 'JVBERi0xLjQKJSVFT0Y='
+                    FileName                             = 'terms.pdf'
                     Language                             = 'en-US'
                     TermsExpiration                      = @{
                         Frequency     = 'P365D'
@@ -116,7 +129,9 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
 
             It 'Should Create the agreement from the Set method' {
                 (New-M365DSCResourceInstance -ResourceName 'AADAgreement' -Property $testParams).Set()
-                Should -Invoke -CommandName New-MgBetaAgreement -Exactly 1
+                Should -Invoke -CommandName New-MgBetaAgreement -Exactly 1 -ParameterFilter {
+                    $BodyParameter.files[0].fileData.data -eq 'JVBERi0xLjQKJSVFT0Y=' -and $BodyParameter.files[0].isDefault -eq $true
+                }
             }
         }
 
@@ -155,7 +170,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     Language                             = 'en-US'
                     TermsExpiration                      = @{
                         Frequency     = 'P365D'
-                        StartDateTime = '2026-01-01T00:00:00Z'
+                        StartDateTime = '2026-01-01T00:00:00.0000000Z'
                     }
                     Ensure                               = 'Present'
                     Credential                           = $Credential
@@ -174,8 +189,8 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     IsViewingBeforeAcceptanceRequired    = $false
                     IsPerDeviceAcceptanceRequired        = $true
                     UserReacceptRequiredFrequency        = 'P30D'
-                    FileData                             = 'Updated terms content'
-                    FileName                             = 'updated_terms.txt'
+                    FileData                             = "%PDF-1.4`n%%EOF"
+                    FileName                             = 'updated_terms.pdf'
                     Language                             = 'en-US'
                     TermsExpiration                      = @{
                         Frequency     = 'P365D'
@@ -192,7 +207,13 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
 
             It 'Should call the Set method' {
                 (New-M365DSCResourceInstance -ResourceName 'AADAgreement' -Property $testParams).Set()
-                Should -Invoke -CommandName Update-MgBetaAgreement -Exactly 1
+                Should -Invoke -CommandName Update-MgBetaAgreement -Exactly 1 -ParameterFilter {
+                    $BodyParameter.Count -eq 2 -and $BodyParameter.isViewingBeforeAcceptanceRequired -eq $false -and $BodyParameter.displayName -eq 'Test Agreement'
+                }
+                Should -Invoke -CommandName Invoke-M365DSCGraphRequest -Exactly 1 -ParameterFilter {
+                    $Method -eq 'POST' -and $Body.fileName -eq 'updated_terms.pdf' -and $Body.language -eq 'en-US' -and
+                    $Body.isDefault -eq $true -and $Body.fileData.data -eq 'JVBERi0xLjQKJSVFT0Y='
+                }
             }
         }
 

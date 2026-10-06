@@ -107,6 +107,9 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
 
             Mock -CommandName Update-MgBetaDeviceAppManagementMobileAppAssignment -MockWith{}
 
+            Mock -CommandName Wait-M365DSCIntuneMobileAppPublished -MockWith {
+            }
+
             # Mock Write-M365DSCHost to hide output during the tests
             Mock -CommandName Write-M365DSCHost -MockWith {
             }
@@ -162,6 +165,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             It '1.3 Should create a new instance from the Set method' {
                 (New-M365DSCResourceInstance -ResourceName 'IntuneMobileAppsMacOSLobApp' -Property $testParams).Set()
                 Should -Invoke -CommandName New-MgBetaDeviceAppManagementMobileApp -Exactly 1
+                Should -Invoke -CommandName Wait-M365DSCIntuneMobileAppPublished -Exactly 1
             }
         }
 

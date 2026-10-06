@@ -68,6 +68,9 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                 }
             }
 
+            Mock -CommandName Start-Sleep -ModuleName M365DSCErrorHandler -MockWith {
+            }
+
             # Mock Write-M365DSCHost to hide output during the tests
             Mock -CommandName Write-M365DSCHost -MockWith {
             }
@@ -97,6 +100,8 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             It 'Should call the Set method' {
                 (New-M365DSCResourceInstance -ResourceName 'EXOHostedOutboundSpamFilterRule' -Property $testParams).Set()
                 Should -Invoke -CommandName New-HostedOutboundSpamFilterRule -Exactly 1
+                Should -Invoke -CommandName Get-HostedOutboundSpamFilterPolicy -Exactly 2 -ParameterFilter { $Identity -eq 'TestPolicy' }
+                Should -Invoke -CommandName Start-Sleep -ModuleName M365DSCErrorHandler -Exactly 0
             }
         }
 
@@ -149,6 +154,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                 (New-M365DSCResourceInstance -ResourceName 'EXOHostedOutboundSpamFilterRule' -Property $testParams).Set()
                 Should -Invoke -CommandName Set-HostedOutboundSpamFilterRule -Exactly 1
                 Should -Invoke -CommandName Disable-HostedOutboundSpamFilterRule -Exactly 1
+                Should -Invoke -CommandName Get-HostedOutboundSpamFilterPolicy -Exactly 2 -ParameterFilter { $Identity -eq 'TestPolicy' }
             }
         }
 

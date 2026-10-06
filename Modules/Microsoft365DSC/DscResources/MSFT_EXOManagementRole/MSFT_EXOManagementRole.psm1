@@ -159,6 +159,10 @@ class EXOManagementRole : M365DSCResourceBase
             Write-Verbose -Message "Setting Management Role $($this.Name) with values: $(Convert-M365DscHashtableToString -Hashtable $newManagementRoleParams)"
             # Since there is no Set-ManagementRole cmdlet available, remove management role and re-create it
             Remove-ManagementRole -Identity $this.Name -Confirm:$false -Force
+            $null = Wait-M365DSCCondition -Description "removal of Management Role {$($newManagementRoleParams.Name)}" -ConsecutiveCount 2 -ScriptBlock {
+                $null -eq (Invoke-M365DSCCommand -ScriptBlock { Get-ManagementRole -Identity $newManagementRoleParams.Name -ErrorAction Stop } -SuppressNotFoundError)
+            }
+
             New-ManagementRole @newManagementRoleParams
         }
     }

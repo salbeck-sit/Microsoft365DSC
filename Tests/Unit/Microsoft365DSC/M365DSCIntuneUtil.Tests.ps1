@@ -1,5 +1,6 @@
 BeforeAll {
     $Script:IntuneUtilModule = $null
+    $Script:ErrorHandlerModule = $null
     $Script:DefinedStubs = @()
     if ($null -eq (Get-Module -Name 'Microsoft365DSC'))
     {
@@ -11,6 +12,7 @@ BeforeAll {
                 $Script:DefinedStubs += $stubName
             }
         }
+        $Script:ErrorHandlerModule = Import-Module "$PSScriptRoot/../../../Modules/Microsoft365DSC/Modules/M365DSCErrorHandler.psm1" -Global -PassThru
         $Script:IntuneUtilModule = Import-Module "$PSScriptRoot/../../../Modules/Microsoft365DSC/Modules/M365DSCIntuneUtil.psm1" -DisableNameChecking -PassThru
     }
 
@@ -21,6 +23,10 @@ AfterAll {
     if ($null -ne $Script:IntuneUtilModule)
     {
         Remove-Module -ModuleInfo $Script:IntuneUtilModule -Force -ErrorAction SilentlyContinue
+    }
+    if ($null -ne $Script:ErrorHandlerModule)
+    {
+        Remove-Module -ModuleInfo $Script:ErrorHandlerModule -Force -ErrorAction SilentlyContinue
     }
     foreach ($stubName in $Script:DefinedStubs)
     {
@@ -118,6 +124,45 @@ Describe 'Update-DeviceAppManagementPolicyAssignment' {
                 Should -Throw -ExpectedMessage "Failed to update the assignments of policy {$($Script:PolicyId)}:*NotSupported*"
 
             Should -Invoke -ModuleName M365DSCIntuneUtil -CommandName New-M365DSCLogEntry -Exactly -Times 1
+        }
+    }
+}
+
+Describe 'Wait-M365DSCIntuneMobileAppPublished' {
+    BeforeEach {
+        Mock -ModuleName M365DSCErrorHandler -CommandName Start-Sleep
+    }
+
+    Context 'When the app is already published' {
+        BeforeEach {
+            Mock -ModuleName M365DSCIntuneUtil -CommandName Invoke-MgGraphRequest -MockWith {
+                return @{ publishingState = 'published' }
+            }
+        }
+
+        It 'Should read the publishing state once without waiting' {
+            Wait-M365DSCIntuneMobileAppPublished -AppId $Script:PolicyId
+
+            Should -Invoke -ModuleName M365DSCIntuneUtil -CommandName Invoke-MgGraphRequest -Exactly -Times 1 -ParameterFilter {
+                $Method -eq 'GET' -and $Uri -eq "/beta/deviceAppManagement/mobileApps/$($Script:PolicyId)?`$select=publishingState"
+            }
+            Should -Invoke -ModuleName M365DSCErrorHandler -CommandName Start-Sleep -Exactly -Times 0
+        }
+    }
+
+    Context 'When the app is still processing' {
+        BeforeEach {
+            $Script:publishingStates = @('processing', 'processing', 'published')
+            $Script:stateIndex = 0
+            Mock -ModuleName M365DSCIntuneUtil -CommandName Invoke-MgGraphRequest -MockWith {
+                return @{ publishingState = $Script:publishingStates[$Script:stateIndex++] }
+            }
+        }
+
+        It 'Should read the publishing state until the app is published' {
+            Wait-M365DSCIntuneMobileAppPublished -AppId $Script:PolicyId -RetryDelayInSeconds 0
+
+            Should -Invoke -ModuleName M365DSCIntuneUtil -CommandName Invoke-MgGraphRequest -Exactly -Times 3
         }
     }
 }

@@ -70,6 +70,9 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                 }
             }
 
+            Mock -CommandName Start-Sleep -ModuleName M365DSCErrorHandler -MockWith {
+            }
+
             # Mock Write-M365DSCHost to hide output during the tests
             Mock -CommandName Write-M365DSCHost -MockWith {
             }
@@ -99,6 +102,8 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             It 'Should call the Set method' {
                 (New-M365DSCResourceInstance -ResourceName 'EXOAntiPhishRule' -Property $testParams).Set()
                 Should -Invoke -CommandName New-AntiPhishRule -Exactly 1
+                Should -Invoke -CommandName Get-AntiPhishPolicy -Exactly 2 -ParameterFilter { $Identity -eq 'TestPolicy' }
+                Should -Invoke -CommandName Start-Sleep -ModuleName M365DSCErrorHandler -Exactly 0
             }
         }
 
@@ -151,6 +156,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                 (New-M365DSCResourceInstance -ResourceName 'EXOAntiPhishRule' -Property $testParams).Set()
                 Should -Invoke -CommandName Set-AntiPhishRule -Exactly 1
                 Should -Invoke -CommandName Disable-AntiPhishRule -Exactly 1
+                Should -Invoke -CommandName Get-AntiPhishPolicy -Exactly 2 -ParameterFilter { $Identity -eq 'TestPolicy' }
             }
         }
 

@@ -294,6 +294,7 @@ class IntuneMobileAppsAutoUpdateCatalogAppWindows10 : M365DSCResourceBase
                 $assignmentsHash = ConvertTo-IntuneMobileAppAssignment -IncludeDeviceFilter:$true -Assignments $this.Assignments
                 if ($createdInstance.Id)
                 {
+                    Wait-M365DSCIntuneMobileAppPublished -AppId $createdInstance.Id
                     Update-DeviceAppManagementPolicyAssignment `
                         -AppManagementPolicyId $createdInstance.Id `
                         -Assignments $assignmentsHash

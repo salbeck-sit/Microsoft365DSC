@@ -185,13 +185,7 @@ class EXOHostedOutboundSpamFilterRule : M365DSCResourceBase
         if ($this.Ensure -eq 'Present' -and $CurrentValues.Ensure -eq 'Absent')
         {
             $createParameters = $boundParameters
-            # Make sure that the associated Policy exists;
-            $AssociatedPolicy = Get-HostedOutboundSpamFilterPolicy -Identity $this.HostedOutboundSpamFilterPolicy -ErrorAction 'SilentlyContinue'
-            if ($null -eq $AssociatedPolicy)
-            {
-                throw "Error attempting to create EXOHostedOutboundSpamFilterRule {$($this.Identity)}. The specified HostedOutboundSpamFilterPolicy " + `
-                    "{$($this.HostedOutboundSpamFilterPolicy)} doesn't exist. Make sure you either create it first or specify a valid policy."
-            }
+            [EXOHostedOutboundSpamFilterRule]::WaitForHostedOutboundSpamFilterPolicy($this.Identity, $this.HostedOutboundSpamFilterPolicy)
 
             Write-Verbose -Message "Creating new HostedOutboundSpamFilterRule {$($this.Identity)}"
             $createParameters.Add('Name', $this.Identity)
@@ -203,13 +197,7 @@ class EXOHostedOutboundSpamFilterRule : M365DSCResourceBase
             $updateParameters = $boundParameters
             $updateParameters.Remove('Enabled') | Out-Null
 
-            # Make sure that the associated Policy exists;
-            $AssociatedPolicy = Get-HostedOutboundSpamFilterPolicy -Identity $this.HostedOutboundSpamFilterPolicy -ErrorAction 'SilentlyContinue'
-            if ($null -eq $AssociatedPolicy)
-            {
-                throw "Error attempting to create EXOHostedOutboundSpamFilterRule {$($this.Identity)}. The specified HostedOutboundSpamFilterPolicy " + `
-                    "{$($this.HostedOutboundSpamFilterPolicy)} doesn't exist. Make sure you either create it first or specify a valid policy."
-            }
+            [EXOHostedOutboundSpamFilterRule]::WaitForHostedOutboundSpamFilterPolicy($this.Identity, $this.HostedOutboundSpamFilterPolicy)
 
             if ($CurrentValues.HostedOutboundSpamFilterPolicy -eq $updateParameters.HostedOutboundSpamFilterPolicy)
             {
@@ -310,6 +298,19 @@ class EXOHostedOutboundSpamFilterRule : M365DSCResourceBase
             $this.LogError($_, 'Error during Export:')
 
             throw
+        }
+    }
+
+    hidden static [void] WaitForHostedOutboundSpamFilterPolicy([System.String] $Identity, [System.String] $PolicyName)
+    {
+        $policyExists = Wait-M365DSCCondition -Description "HostedOutboundSpamFilterPolicy {$PolicyName}" -ConsecutiveCount 2 -ScriptBlock {
+            $null -ne (Get-HostedOutboundSpamFilterPolicy -Identity $PolicyName -ErrorAction 'SilentlyContinue')
+        }
+
+        if (-not $policyExists)
+        {
+            throw "Error attempting to create EXOHostedOutboundSpamFilterRule {$Identity}. The specified HostedOutboundSpamFilterPolicy " + `
+                "{$PolicyName} doesn't exist. Make sure you either create it first or specify a valid policy."
         }
     }
 

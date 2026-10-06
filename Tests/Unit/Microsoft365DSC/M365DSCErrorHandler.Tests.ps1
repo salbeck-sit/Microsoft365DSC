@@ -300,6 +300,49 @@ Describe 'Invoke-M365DSCCommand' {
     }
 }
 
+Describe 'Wait-M365DSCCondition' {
+    BeforeAll {
+        Mock -CommandName Start-Sleep -ModuleName M365DSCErrorHandler -MockWith {}
+    }
+
+    Context 'When the condition is met' {
+        It 'Should return $true without sleeping when met on the first attempt' {
+            $script:callCount = 0
+            $result = Wait-M365DSCCondition -Description 'object' -ScriptBlock {
+                $script:callCount++
+                $true
+            }
+            $result | Should -BeTrue
+            $script:callCount | Should -Be 1
+            Should -Invoke -CommandName Start-Sleep -ModuleName M365DSCErrorHandler -Exactly 0
+        }
+
+        It 'Should reset the count after an unmet result and require consecutive met results' {
+            $script:results = @($true, $false, $true, $true)
+            $script:callCount = 0
+            $result = Wait-M365DSCCondition -Description 'object' -ConsecutiveCount 2 -RetryDelayInSeconds 3 -ScriptBlock {
+                $script:results[$script:callCount++]
+            }
+            $result | Should -BeTrue
+            $script:callCount | Should -Be 4
+            Should -Invoke -CommandName Start-Sleep -ModuleName M365DSCErrorHandler -Exactly 1 -ParameterFilter { $Seconds -eq 3 }
+        }
+    }
+
+    Context 'When the condition is never met' {
+        It 'Should return $false after the maximum attempts' {
+            $script:callCount = 0
+            $result = Wait-M365DSCCondition -Description 'object' -MaxAttempts 3 -ScriptBlock {
+                $script:callCount++
+                $null
+            }
+            $result | Should -BeFalse
+            $script:callCount | Should -Be 3
+            Should -Invoke -CommandName Start-Sleep -ModuleName M365DSCErrorHandler -Exactly 2
+        }
+    }
+}
+
 Describe 'Save-M365DSCPartialExport' {
     BeforeAll {
         Import-Module "$PSScriptRoot/../../../Modules/Microsoft365DSC/Modules/M365DSCDllLoader.psm1" -Force -Global

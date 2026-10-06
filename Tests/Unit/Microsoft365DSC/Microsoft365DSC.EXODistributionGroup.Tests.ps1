@@ -83,6 +83,9 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
 
             Mock -CommandName Get-DistributionGroupMember -MockWith {
             }
+
+            Mock -CommandName Start-Sleep -ModuleName M365DSCErrorHandler -MockWith {
+            }
         }
 
         # Test contexts
@@ -112,6 +115,18 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                 Mock -CommandName Get-DistributionGroup -MockWith {
                     return $null
                 }
+
+                Mock -CommandName Get-DistributionGroup -ParameterFilter { $Identity -eq 'DemoDG' } -MockWith {
+                    return @{
+                        Identity = 'DemoDG'
+                    }
+                }
+
+                Mock -CommandName New-DistributionGroup -MockWith {
+                    return @{
+                        Identity = 'DemoDG'
+                    }
+                }
             }
 
             It 'Should return false from the Test method' {
@@ -121,6 +136,9 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             It 'Should call the Set method' {
                 (New-M365DSCResourceInstance -ResourceName 'EXODistributionGroup' -Property $testParams).Set()
                 Should -Invoke -CommandName 'New-DistributionGroup' -Exactly 1
+                Should -Invoke -CommandName 'Get-DistributionGroup' -Exactly 2 -ParameterFilter { $Identity -eq 'DemoDG' }
+                Should -Invoke -CommandName Start-Sleep -ModuleName M365DSCErrorHandler -Exactly 0
+                Should -Invoke -CommandName 'Set-DistributionGroup' -Exactly 1 -ParameterFilter { $Identity -eq 'DemoDG' }
             }
 
             It 'Should return Absent from the Get method' {

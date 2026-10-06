@@ -336,6 +336,7 @@ class IntuneMobileAppsMacOSLobApp : M365DSCResourceBase
             if ($app.Id)
             {
                 $assignmentsHash = ConvertTo-IntuneMobileAppAssignment -IncludeDeviceFilter:$true -Assignments $this.Assignments
+                Wait-M365DSCIntuneMobileAppPublished -AppId $app.Id
                 Update-DeviceAppManagementPolicyAssignment -AppManagementPolicyId $app.Id `
                     -Assignments $assignmentsHash
             }

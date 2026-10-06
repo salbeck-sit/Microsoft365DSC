@@ -440,7 +440,10 @@ class EXODistributionGroup : M365DSCResourceBase
             $createParameters.Remove('SendOofMessageToOriginatorEnabled') | Out-Null
             $createParameters.Remove('BypassModerationFromSendersOrMembers') | Out-Null
             $newGroup = New-DistributionGroup @createParameters
-            Start-Sleep -Seconds 5
+            $null = Wait-M365DSCCondition -Description "Distribution Group {$($newGroup.Identity)}" -ConsecutiveCount 2 -ScriptBlock {
+                $null -ne (Get-DistributionGroup -Identity $newGroup.Identity -ErrorAction 'SilentlyContinue')
+            }
+
             Write-Verbose -Message "New Distribution Group with Identity {$($newGroup.Identity)} was successfully created"
         }
         # Distribution group exists but shouldn't

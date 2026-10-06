@@ -1,4 +1,4 @@
-﻿# Change log for Microsoft365DSC
+# Change log for Microsoft365DSC
 
 # UNRELEASED
 
@@ -44,6 +44,8 @@
     left out of the policy.
   * Fixed an issue where creating or updating a policy with `IncludePlatforms` or
     `ExcludePlatforms` failed.
+  * Fixed an issue where `DisableResilienceDefaultsIsEnabled = $false` always reported
+    drift.
 * AADCrossTenantAccessPolicyConfigurationDefault
   * Added support for the `AutomaticUserConsentSettings`, `AppServiceConnectInbound`,
     `BlockServiceProviderOutboundAccess`, `M365CollaborationOutbound` and
@@ -97,6 +99,10 @@
   * Fixed an issue where creating or updating a group failed with
     `Request_ResourceNotFound`.
   * Fixed an issue where adding owners or members to a new group failed.
+  * Fixed an issue where creating a group failed with `Request_ResourceNotFound` when a
+    deleted group with the same name was restored.
+  * Fixed an issue where the application used to authenticate was added as an owner of a
+    new group.
 * AADGroupEligibilitySchedule
   * [BREAKING CHANGE] Renamed the embedded class `MSFT_MicrosoftGraphRecurrenceRange1` to
     `MSFT_MicrosoftGraphRecurrenceRange`.
@@ -178,6 +184,8 @@
     specified.
   * Fixed an issue where a schedule found through the Graph lookup returned empty
     values.
+  * Fixed an issue where removing a request made other requests with the same role,
+    principal or scope appear absent.
 * AADRoleDefinition
   * Fixed an issue where roles with empty permissions were not exported.
 * AADRoleEligibilityScheduleRequest
@@ -188,6 +196,8 @@
     specified.
   * Fixed an issue where a schedule found through the Graph lookup returned empty
     values.
+  * Fixed an issue where removing a request made other requests with the same role,
+    principal or scope appear absent.
 * AADRoleSetting
   * Fixed an issue where a configuration that identified the role by its display name
     instead of its id was always reported as compliant and never applied its settings.
@@ -250,6 +260,8 @@
   * Fixed an issue where the property description contained an invalid character.
 * EXOAntiPhishRule
   * Fixed an issue where changing `Enabled` on an existing rule had no effect.
+  * Fixed an issue where creating a rule failed because the anti-phishing policy created
+    in the same configuration was not yet visible.
 * EXOApplicationAccessPolicy
   * Deprecated resource. Replaced with `EXOManagementScope`, `EXOServicePrincipal` and
     `EXOManagementRoleAssignment` (RBAC for Applications).
@@ -275,6 +287,8 @@
   * [BREAKING CHANGE] Removed deprecated property `Notes`.
   * Fixed an issue where `AcceptMessagesOnlyFromSendersOrMembers` and `RoomList` always
     reported drift.
+  * Fixed an issue where creating a distribution group failed with "couldn't be found"
+    because the new group was not yet visible.
 * EXODynamicDistributionGroup
   * [BREAKING CHANGE] Replaced the invalid `IncludedRecipients` value `MailboxContacts` with
     `MailContacts`.
@@ -287,6 +301,8 @@
   * Fixed an issue where changing `Enabled` on an existing rule had no effect.
 * EXOHostedOutboundSpamFilterRule
   * Fixed an issue where changing `Enabled` on an existing rule had no effect.
+  * Fixed an issue where creating a rule failed because the outbound spam filter policy
+    created in the same configuration was not yet visible.
 * EXOIRMConfiguration
   * [BREAKING CHANGE] Removed deprecated property `EnablePortalTrackingLogs`.
 * EXOJournalRule
@@ -295,8 +311,13 @@
 * EXOMailContact
   * Fixed an issue where `FirstName`, `Initials` and `LastName` were always reported as empty.
   * Fixed an issue where `FirstName`, `Initials` and `LastName` were not updated.
+  * Fixed an issue where creating a mail contact failed with "couldn't be found" because
+    the new contact was not yet visible.
 * EXOMalwareFilterRule
   * Fixed an issue where changing `Enabled` on an existing rule had no effect.
+* EXOManagementRole
+  * Fixed an issue where updating a management role failed with "there's already another
+    role with the same name".
 * EXOManagementRoleAssignment
   * Fixed an issue where `RecipientRelativeWriteScope` was always reported as empty.
   * Fixed an issue where `RecipientOrganizationalUnitScope` and
@@ -972,6 +993,8 @@
 * SCUnifiedAuditLogRetentionPolicy
   * Fixed an issue where updating or removing a policy failed with
     `Cannot bind argument to parameter 'Identity' because it is null`.
+  * Fixed an issue where a removed policy that was still pending deletion blocked creating
+    a policy with the same name.
 * SPOAccessControlSettings
   * Added property `RestrictResourceAccountAccess`.
 * SPOHubSite
@@ -983,6 +1006,16 @@
 * SPOPropertyBag
   * Fixed an issue where `Ensure = 'Absent'` did not remove the property.
   * Fixed an issue where a missing property was reported as present.
+* SPOSearchResultSource
+  * [BREAKING CHANGE] Removed the `ShowPartialSearch` property.
+  * [BREAKING CHANGE] Removed the `Remote` and `OpenSearch` values from `Protocol`.
+  * Fixed the resource failing with "Current site is not a tenant administration site" by
+    connecting to the tenant administration site.
+  * Fixed an issue where removing a result source failed.
+  * Fixed an issue where `QueryTransform` was not applied.
+  * Fixed an issue where updates to an existing result source were not applied.
+  * Fixed an issue where an Exchange result source with `UseAutoDiscover` set to `$true` was
+    created without the AutoDiscover URL.
 * SPOSharingSettings
   * Added properties `AllowGuestUserShareToUsersNotInSiteCollection`,
     `CoreDefaultShareLinkRole`, `CoreDefaultShareLinkScope`,
@@ -1016,6 +1049,10 @@
 * SPOSiteDesignRights
   * Fixed an issue where the resource failed when the site design did not exist.
   * Fixed an issue where `Ensure = 'Absent'` granted rights or failed.
+* SPOSiteGroup
+  * Fixed an issue where permission levels were not applied to a new group.
+  * Fixed an issue where `Owner` was always reported as drifted.
+  * Fixed an issue where removing a group failed in a non-interactive session.
 * SPOStorageEntity
   * Fixed an issue where removing a storage entity failed with access denied.
 * SPOTenantSettings
@@ -1408,6 +1445,8 @@
     this breaking change.
 
   * Fixed an issue where a configuration that omitted `Ensure` reported drift but `Set`
+  * Fixed an issue where creating an Intune app with assignments failed with "app's
+    PublishingState is not 'Published'".
     made no change.
 # 1.26.909.1
 

@@ -340,6 +340,7 @@ To fix your configuration, remove these properties from the instances of the res
 | `IntuneSecurityBaselineMicrosoft365AppsForEnterprise` | `MicrosoftAccess_Security_TrustCenter_L_RequirethatApplicationExtensionsaresigned` | none, the v2512 baseline removed it | [#7448](https://github.com/Microsoft365DSC/Microsoft365DSC/pull/7448) |
 | `IntuneSecurityBaselineMicrosoftEdge` | `WebSQLAccess`, `EdgeEnhanceImagesEnabled` | none | [#7445](https://github.com/Microsoft365DSC/Microsoft365DSC/pull/7445) |
 | `IntuneSecurityBaselineWindows10` | `Pol_SecGuide_0202_WDigestAuthn`, `Scan_DisablePackedExeScanning` | none, the 25H2 baseline removed them | [#7448](https://github.com/Microsoft365DSC/Microsoft365DSC/pull/7448) |
+| `SPOSearchResultSource` | `ShowPartialSearch` | none, SharePoint Online never applied it |  |
 | `SPOTenantSettings` | `OneDriveSharingCapability` | `MySiteSharingCapability` in `SPOSharingSettings` | [#7445](https://github.com/Microsoft365DSC/Microsoft365DSC/pull/7445) |
 | `TeamsCallingPolicy` | `SafeTransferEnabled` | none, MicrosoftTeams 8.0.0 removed it | [#7516](https://github.com/Microsoft365DSC/Microsoft365DSC/pull/7516) |
 | `TeamsGuestMessagingConfiguration` | `UsersCanDeleteBotMessages` | `UsersCanDeleteBotMessages` in `TeamsMessagingPolicy` | [#7445](https://github.com/Microsoft365DSC/Microsoft365DSC/pull/7445) |
@@ -363,6 +364,7 @@ To fix your configuration, remove these properties from the instances of the res
 | `SCDeviceConditionalAccessRule`, `SCDeviceConfigurationRule` | `FirewallStatus` | `Boolean` to `String`, only `Required` | Replace `$true` with `'Required'`. Remove the property where it was `$false`. | |
 | `SCDeviceConditionalAccessRule`, `SCDeviceConfigurationRule` | `MaxPasswordGracePeriod` | `UInt32` to a time span `String` | Write the value as `dd.hh:mm:ss`, for example `'5.00:00:00'`. | |
 | `SCInsiderRiskPolicy` | `InsiderRiskScenario` | free text to the scenario names the service defines | Check that the value is one of the names the resource lists, for example `LeakOfInformation` or `TenantSetting`. | |
+| `SPOSearchResultSource` | `Protocol` | values `Remote` and `OpenSearch` removed | Remove the result sources that use them. Microsoft retired both protocols in September 2024, and they don't return any results. |  |
 | `TeamsAudioConferencingPolicy` | `MeetingInvitePhoneNumbers` | comma-separated `String` to `String[]` | Split the value into an array, for example `@('+41441234567', '+41447654321')`. A comma-separated string keeps reporting drift. | [#7445](https://github.com/Microsoft365DSC/Microsoft365DSC/pull/7445) |
 
 ## Renamed Embedded Classes ([#7487](https://github.com/Microsoft365DSC/Microsoft365DSC/pull/7487))

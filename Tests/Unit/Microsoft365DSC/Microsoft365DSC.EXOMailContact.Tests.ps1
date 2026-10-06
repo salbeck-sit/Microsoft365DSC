@@ -76,6 +76,9 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                 }
             }
 
+            Mock -CommandName Start-Sleep -ModuleName M365DSCErrorHandler -MockWith {
+            }
+
             # Mock Write-M365DSCHost to hide output during the tests
             Mock -CommandName Write-M365DSCHost -MockWith {
             }
@@ -104,8 +107,22 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                 }
 
                 Mock -CommandName Get-MailContact -MockWith {
+                    if ($Script:contactCreated)
+                    {
+                        return @{
+                            Name = 'My Test Contact'
+                        }
+                    }
                     return $null
                 }
+
+                Mock -CommandName New-MailContact -MockWith {
+                    $Script:contactCreated = $true
+                }
+            }
+
+            BeforeEach {
+                $Script:contactCreated = $false
             }
 
             It 'Should return false from the Test method' {
@@ -115,6 +132,9 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             It 'Should create from the Set method' {
                 (New-M365DSCResourceInstance -ResourceName 'EXOMailContact' -Property $testParams).Set()
                 Should -Invoke -CommandName New-MailContact -Exactly 1
+                Should -Invoke -CommandName Get-MailContact -Exactly 3 -ParameterFilter { $Identity -eq 'My Test Contact' }
+                Should -Invoke -CommandName Start-Sleep -ModuleName M365DSCErrorHandler -Exactly 0
+                Should -Invoke -CommandName Set-MailContact -Exactly 1 -ParameterFilter { $Identity -eq 'My Test Contact' }
             }
 
             It 'Should return Absent from the Get method' {

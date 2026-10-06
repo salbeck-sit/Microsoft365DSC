@@ -343,6 +343,10 @@ class EXOMailContact : M365DSCResourceBase
             $updateParameters.Add('Identity', $this.Name)
 
             New-MailContact @createParameters -ErrorAction Stop
+            $null = Wait-M365DSCCondition -Description "Mail Contact {$($createParameters.Name)}" -ConsecutiveCount 2 -ScriptBlock {
+                $null -ne (Get-MailContact -Identity $createParameters.Name -ErrorAction 'SilentlyContinue')
+            }
+
             Set-MailContact @updateParameters -ErrorAction Stop
         }
         elseif ($this.Ensure -eq 'Present' -and $currentContact.Ensure -eq 'Present')

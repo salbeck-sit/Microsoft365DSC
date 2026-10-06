@@ -186,13 +186,7 @@ class EXOAntiPhishRule : M365DSCResourceBase
             $createParameters.Add('Name', $this.Identity) | Out-Null
             $createParameters.Remove('Identity') | Out-Null
 
-            # Make sure that the associated Policy exists;
-            $AssociatedPolicy = Get-AntiPhishPolicy -Identity $this.AntiPhishPolicy -ErrorAction 'SilentlyContinue'
-            if ($null -eq $AssociatedPolicy)
-            {
-                throw "Error attempting to create EXOAntiPhishRule {$($this.Identity)}. The specified AntiPhishPolicy {$($this.AntiPhishPolicy)} " + `
-                    "doesn't exist. Make sure you either create it first or specify a valid policy."
-            }
+            [EXOAntiPhishRule]::WaitForAntiPhishPolicy($this.Identity, $this.AntiPhishPolicy)
 
             Write-Verbose -Message "Creating AntiPhishRule {$($this.Identity)}"
             New-AntiPhishRule @createParameters
@@ -202,13 +196,7 @@ class EXOAntiPhishRule : M365DSCResourceBase
             $updateParameters = $boundParameters
             $updateParameters.Remove('Enabled') | Out-Null
 
-            # Make sure that the associated Policy exists;
-            $AssociatedPolicy = Get-AntiPhishPolicy -Identity $this.AntiPhishPolicy -ErrorAction 'SilentlyContinue'
-            if ($null -eq $AssociatedPolicy)
-            {
-                throw "Error attempting to create EXOAntiPhishRule {$($this.Identity)}. The specified AntiPhishPolicy {$($this.AntiPhishPolicy)} " + `
-                    "doesn't exist. Make sure you either create it first or specify a valid policy."
-            }
+            [EXOAntiPhishRule]::WaitForAntiPhishPolicy($this.Identity, $this.AntiPhishPolicy)
 
             # Check to see if the specified policy already has the rule assigned;
             $existingRule = Get-AntiPhishRule | Where-Object -FilterScript { $_.AntiPhishPolicy -eq $this.AntiPhishPolicy }
@@ -316,6 +304,19 @@ class EXOAntiPhishRule : M365DSCResourceBase
             $this.LogError($_, 'Error during Export:')
 
             throw
+        }
+    }
+
+    hidden static [void] WaitForAntiPhishPolicy([System.String] $Identity, [System.String] $PolicyName)
+    {
+        $policyExists = Wait-M365DSCCondition -Description "AntiPhishPolicy {$PolicyName}" -ConsecutiveCount 2 -ScriptBlock {
+            $null -ne (Get-AntiPhishPolicy -Identity $PolicyName -ErrorAction 'SilentlyContinue')
+        }
+
+        if (-not $policyExists)
+        {
+            throw "Error attempting to create EXOAntiPhishRule {$Identity}. The specified AntiPhishPolicy {$PolicyName} " + `
+                "doesn't exist. Make sure you either create it first or specify a valid policy."
         }
     }
 

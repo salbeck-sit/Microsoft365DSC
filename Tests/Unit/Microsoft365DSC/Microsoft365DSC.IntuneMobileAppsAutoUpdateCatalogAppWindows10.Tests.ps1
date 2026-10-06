@@ -103,6 +103,9 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             Mock -CommandName Update-DeviceAppManagementPolicyAssignment -MockWith {
             }
 
+            Mock -CommandName Wait-M365DSCIntuneMobileAppPublished -MockWith {
+            }
+
             Mock -CommandName Write-M365DSCHost -MockWith {
             }
 
@@ -180,6 +183,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             It 'Should create the instance from the Set method' {
                 (New-M365DSCResourceInstance -ResourceName 'IntuneMobileAppsAutoUpdateCatalogAppWindows10' -Property $testParams).Set()
                 Should -Invoke -CommandName 'New-MgBetaDeviceAppManagementMobileApp' -Exactly 1
+                Should -Invoke -CommandName Wait-M365DSCIntuneMobileAppPublished -Exactly 1
                 Should -Invoke -CommandName 'Update-DeviceAppManagementAppCategory' -Exactly 1
             }
         }

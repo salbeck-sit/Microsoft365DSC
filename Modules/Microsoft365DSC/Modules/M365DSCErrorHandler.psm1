@@ -381,10 +381,93 @@ function Invoke-M365DSCCommand
     }
 }
 
+<#
+.SYNOPSIS
+    Waits until a condition is met, with a maximum number of attempts.
+
+.DESCRIPTION
+    Invokes the scriptblock until it returns a truthy value the required number of times in a row.
+    Sleeps between attempts only after an unmet result. Used to wait for objects that the service
+    replicates with a delay.
+
+.PARAMETER ScriptBlock
+    The condition to evaluate. A truthy result counts as met.
+
+.PARAMETER Description
+    Describes what is awaited, used in the verbose messages.
+
+.PARAMETER MaxAttempts
+    Maximum number of evaluations. Default is 6.
+
+.PARAMETER RetryDelayInSeconds
+    Delay after an unmet result. Default is 5 seconds.
+
+.PARAMETER ConsecutiveCount
+    Number of consecutive met results required. Default is 1.
+
+.OUTPUTS
+    System.Boolean. $true when the condition was met, otherwise $false.
+
+.FUNCTIONALITY
+    Internal
+#>
+function Wait-M365DSCCondition
+{
+    [CmdletBinding()]
+    [OutputType([System.Boolean])]
+    param
+    (
+        [Parameter(Mandatory = $true)]
+        [scriptblock]
+        $ScriptBlock,
+
+        [Parameter(Mandatory = $true)]
+        [System.String]
+        $Description,
+
+        [Parameter()]
+        [System.Int32]
+        $MaxAttempts = 6,
+
+        [Parameter()]
+        [System.Int32]
+        $RetryDelayInSeconds = 5,
+
+        [Parameter()]
+        [System.Int32]
+        $ConsecutiveCount = 1
+    )
+
+    $metCount = 0
+    for ($attempt = 1; $attempt -le $MaxAttempts; $attempt++)
+    {
+        if (& $ScriptBlock)
+        {
+            $metCount++
+            if ($metCount -ge $ConsecutiveCount)
+            {
+                return $true
+            }
+            continue
+        }
+
+        $metCount = 0
+        if ($attempt -lt $MaxAttempts)
+        {
+            Write-Verbose -Message "Waiting for $Description (attempt $attempt of $MaxAttempts). Retrying in $RetryDelayInSeconds seconds."
+            Start-Sleep -Seconds $RetryDelayInSeconds
+        }
+    }
+
+    Write-Verbose -Message "Stopped waiting for $Description after $MaxAttempts attempts."
+    return $false
+}
+
 Export-ModuleMember -Function @(
     'Close-M365DSCPartialExport',
     'Invoke-M365DSCCommand',
     'Save-M365DSCPartialExport',
     'Test-M365DSCNotFoundError',
-    'Test-M365DSCTransientError'
+    'Test-M365DSCTransientError',
+    'Wait-M365DSCCondition'
 )

@@ -59,7 +59,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                 $testParams = @{
                     IsSingleInstance       = 'Yes'
                     Credential             = $Credential
-                    Ensure                 = 'Present'
                     ResourcePropertySchema = @('Room/Phones', 'Equipment/Laptop') # Drift
                 }
             }
@@ -80,7 +79,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                 $testParams = @{
                     IsSingleInstance       = 'Yes'
                     Credential             = $Credential
-                    Ensure                 = 'Present'
                     ResourcePropertySchema = @('Room/TV', 'Equipment/Laptop')
                 }
             }

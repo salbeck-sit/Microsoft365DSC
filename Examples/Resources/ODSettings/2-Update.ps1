@@ -38,7 +38,6 @@ Configuration Example
             ODBAccessRequests                         = "On"
             ODBMembersCanShare                        = "On"
             NotificationsInOneDriveForBusinessEnabled = $false
-            Ensure                                    = "Present"
             ApplicationId                             = $ApplicationId
             TenantId                                  = $TenantId
             CertificateThumbprint                     = $CertificateThumbprint

@@ -348,6 +348,10 @@ To fix your configuration, remove these properties from the instances of the res
 | `TeamsOnlineVoicemailUserSettings` | `OofGreetingFollowCalendarEnabled` | none | [#7445](https://github.com/Microsoft365DSC/Microsoft365DSC/pull/7445) |
 | `TeamsTenantNetworkSite` | `SiteAddress` | none | [#7445](https://github.com/Microsoft365DSC/Microsoft365DSC/pull/7445) |
 
+Removed the `Ensure` property from the following resources. Their settings always exist and can't be removed. Remove `Ensure` from their instances to make them work again:
+
+`AADB2CAuthenticationMethodsPolicy`, `AADMultiTenantOrganizationIdentitySyncPolicyTemplate`, `AADSecurityDefaults`, `EXOIRMConfiguration`, `EXOPerimeterConfiguration`, `EXOResourceConfiguration`, `ODSettings`, `SPOAccessControlSettings`, `SPOSharingSettings` and `SPOTenantSettings`.
+
 ## Changed Types and Accepted Values
 
 | Resource | Property | Change | What to do | PR |

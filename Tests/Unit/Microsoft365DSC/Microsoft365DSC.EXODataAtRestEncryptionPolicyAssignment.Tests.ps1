@@ -78,6 +78,12 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
 
             It 'Should return false from the Test method' {
                 (New-M365DSCResourceInstance -ResourceName 'EXODataAtRestEncryptionPolicyAssignment' -Property $testParams).Test() | Should -Be $false
+
+                Mock -CommandName Get-M365DataAtRestEncryptionPolicyAssignment -MockWith {
+                    return $null
+                }
+                ((New-M365DSCResourceInstance -ResourceName 'EXODataAtRestEncryptionPolicyAssignment' -Property $testParams).Get().ToHashtable()).DataEncryptionPolicy | Should -BeNullOrEmpty
+                (New-M365DSCResourceInstance -ResourceName 'EXODataAtRestEncryptionPolicyAssignment' -Property $testParams).Test() | Should -Be $false
             }
 
             It 'Should call the Set method' {

@@ -28,7 +28,6 @@ Configuration Example
         {
             IsSingleInstance       = 'Yes'
             ResourcePropertySchema = @('Room/TV', 'Equipment/Laptop')
-            Ensure                 = 'Present'
             ApplicationId          = $ApplicationId
             TenantId               = $TenantId
             CertificateThumbprint  = $CertificateThumbprint

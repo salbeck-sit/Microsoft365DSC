@@ -84,14 +84,11 @@ class AADTenantAppManagementPolicy : M365DSCResourceBase
 
                 $this.AddTelemetry('Get')
 
-                $nullResult = $this.GetBoundParameters()
-                $nullResult.Ensure = 'Absent'
-
                 $instance = Get-MgBetaPolicyDefaultAppManagementPolicy -ErrorAction SilentlyContinue
 
                 if ($null -eq $instance)
                 {
-                    return $this.AsResult($nullResult)
+                    throw 'Could not find the tenant app management policy.'
                 }
             }
             else

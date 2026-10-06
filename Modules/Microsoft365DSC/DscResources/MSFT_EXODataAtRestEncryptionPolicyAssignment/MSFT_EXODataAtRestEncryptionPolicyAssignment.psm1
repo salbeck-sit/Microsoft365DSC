@@ -68,22 +68,14 @@ class EXODataAtRestEncryptionPolicyAssignment : M365DSCResourceBase
 
                 $this.AddTelemetry('Get')
 
-                $nullResult = $this.GetBoundParameters()
-                $nullResult.Ensure = 'Absent'
-
                 $instance = Get-M365DataAtRestEncryptionPolicyAssignment -ErrorAction SilentlyContinue
-                if ($null -eq $instance)
-                {
-                    Write-Verbose -Message 'No EXO DataAtRestEncryptionPolicyAssignment found'
-                    return $this.AsResult($nullResult)
-                }
             }
             else
             {
                 $instance = $this.ExportedInstance
             }
 
-            Write-Verbose -Message "An EXO DataAtRestEncryptionPolicyAssignment with DataEncryptionPolicy $($instance.Name) was found."
+            Write-Verbose -Message "The tenant uses the DataEncryptionPolicy {$($instance.Name)}"
 
             $results = @{
                 DataEncryptionPolicy  = [System.String]$instance.Name

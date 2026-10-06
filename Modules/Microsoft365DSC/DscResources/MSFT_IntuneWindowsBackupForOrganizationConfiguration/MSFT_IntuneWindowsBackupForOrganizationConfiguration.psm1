@@ -71,17 +71,13 @@ class IntuneWindowsBackupForOrganizationConfiguration : M365DSCResourceBase
             $this.AddTelemetry('Get')
             #endregion
 
-            $nullResult = $this.GetBoundParameters()
-            $nullResult.Ensure = 'Absent'
-
             $getValue = Get-MgBetaDeviceManagementDeviceEnrollmentConfiguration -All `
                 -Filter "deviceEnrollmentConfigurationType eq 'WindowsRestore'" `
                 -ErrorAction SilentlyContinue
             #endregion
             if ($null -eq $getValue)
             {
-                Write-Verbose -Message 'Could not find an Intune Windows Backup For Organization Configuration.'
-                return $this.AsResult($nullResult)
+                throw 'Could not find the Intune Windows Backup For Organization Configuration.'
             }
             $this.ResourceCache['IntuneWindowsBackupForOrganizationConfigurationId'] = $getValue.Id
             Write-Verbose -Message 'An Intune Windows Backup For Organization Configuration was found'

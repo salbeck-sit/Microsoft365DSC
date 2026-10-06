@@ -70,11 +70,6 @@ class EXOIRMConfiguration : M365DSCResourceBase
     [System.String] $TransportDecryptionSetting
 
     [DscProperty()]
-    [System.ComponentModel.Description('Specifies if this Outbound connector should exist.')]
-    [ValidateSet('Present', 'Absent')]
-    [System.String] $Ensure
-
-    [DscProperty()]
     [System.ComponentModel.Description('Credentials of the Exchange Global Admin')]
     [System.Management.Automation.PSCredential] $Credential
 
@@ -166,7 +161,6 @@ class EXOIRMConfiguration : M365DSCResourceBase
                 SimplifiedClientAccessEncryptOnlyDisabled  = $IRMConfiguration.SimplifiedClientAccessEncryptOnlyDisabled
                 TransportDecryptionSetting                 = $IRMConfiguration.TransportDecryptionSetting
                 Credential                                 = $this.Credential
-                Ensure                                     = 'Present'
                 ApplicationId                              = $this.ApplicationId
                 CertificateThumbprint                      = $this.CertificateThumbprint
                 CertificatePath                            = $this.CertificatePath
@@ -207,7 +201,7 @@ class EXOIRMConfiguration : M365DSCResourceBase
         $IRMConfigurationParams = Remove-M365DSCAuthenticationParameter -BoundParameters $boundParameters
         $IRMConfigurationParams.Remove('IsSingleInstance') | Out-Null
 
-        if ($this.Ensure -eq 'Present' -and $null -ne $IRMConfigurationParams)
+        if ($null -ne $IRMConfigurationParams)
         {
             Write-Verbose -Message "Setting IRM Configuration with values: $(Convert-M365DscHashtableToString -Hashtable $IRMConfigurationParams)"
             Set-IRMConfiguration @IRMConfigurationParams -Confirm:$false

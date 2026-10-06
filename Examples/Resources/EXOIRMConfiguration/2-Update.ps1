@@ -40,7 +40,6 @@ Configuration Example
             SimplifiedClientAccessEnabled              = $True
             SimplifiedClientAccessEncryptOnlyDisabled  = $True
             TransportDecryptionSetting                 = 'Mandatory'
-            Ensure                                     = 'Present'
             ApplicationId                              = $ApplicationId
             TenantId                                   = $TenantId
             CertificateThumbprint                      = $CertificateThumbprint

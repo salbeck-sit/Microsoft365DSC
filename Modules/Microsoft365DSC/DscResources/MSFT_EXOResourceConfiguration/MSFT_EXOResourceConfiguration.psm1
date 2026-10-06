@@ -13,11 +13,6 @@ class EXOResourceConfiguration : M365DSCResourceBase
     [System.String[]] $ResourcePropertySchema
 
     [DscProperty()]
-    [System.ComponentModel.Description('Specifies if this Outbound connector should exist.')]
-    [ValidateSet('Present', 'Absent')]
-    [System.String] $Ensure
-
-    [DscProperty()]
     [System.ComponentModel.Description('Credentials of the Exchange Global Admin')]
     [System.Management.Automation.PSCredential] $Credential
 
@@ -83,7 +78,6 @@ class EXOResourceConfiguration : M365DSCResourceBase
                 IsSingleInstance       = 'Yes'
                 ResourcePropertySchema = $ResourceConfiguration.ResourcePropertySchema
                 Credential             = $this.Credential
-                Ensure                 = 'Present'
                 ApplicationId          = $this.ApplicationId
                 CertificateThumbprint  = $this.CertificateThumbprint
                 CertificatePath        = $this.CertificatePath
@@ -122,7 +116,7 @@ class EXOResourceConfiguration : M365DSCResourceBase
         $ResourceConfigurationParams = Remove-M365DSCAuthenticationParameter -BoundParameters $this.GetBoundParameters()
         $ResourceConfigurationParams.Remove('IsSingleInstance') | Out-Null
 
-        if ('Present' -eq $this.Ensure -and $null -ne $ResourceConfigurationParams)
+        if ($null -ne $ResourceConfigurationParams)
         {
             Write-Verbose -Message "Setting Resource Configuration with values: $(Convert-M365DscHashtableToString -Hashtable $ResourceConfigurationParams)"
             Set-ResourceConfig @ResourceConfigurationParams -Confirm:$false

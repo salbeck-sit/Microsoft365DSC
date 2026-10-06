@@ -71,6 +71,11 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
 
             It 'Should return false from the Test method' {
                 (New-M365DSCResourceInstance -ResourceName 'EXOEmailTenantSettings' -Property $testParams).Test() | Should -Be $false
+
+                Mock -CommandName Get-EmailTenantSettings -MockWith {
+                    return $null
+                }
+                { (New-M365DSCResourceInstance -ResourceName 'EXOEmailTenantSettings' -Property $testParams).Get() } | Should -Throw '*Could not find the Email Tenant Settings.*'
             }
 
             It 'Should call the Set method' {

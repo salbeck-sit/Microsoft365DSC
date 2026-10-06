@@ -200,11 +200,6 @@ class SPOSharingSettings : M365DSCResourceBase
     [System.String] $DefaultLinkPermission
 
     [DscProperty()]
-    [System.ComponentModel.Description('Only accepted value is ''Present''.')]
-    [ValidateSet('Present', 'Absent')]
-    [System.String] $Ensure
-
-    [DscProperty()]
     [System.ComponentModel.Description('Credentials of the account to authenticate with.')]
     [System.Management.Automation.PSCredential] $Credential
 
@@ -395,7 +390,6 @@ class SPOSharingSettings : M365DSCResourceBase
                 # TODO: Look up the principal id
                 WhoCanShareAllowListInTenant                               = Get-M365DSCArrayFromProperty -PropertyValue $SPOSharingSettings.WhoCanShareAllowListInTenant -ElementType ([System.String])
                 WhoCanShareAllowListInTenantByPrincipalIdentity            = Get-M365DSCArrayFromProperty -PropertyValue $SPOSharingSettings.WhoCanShareAllowListInTenantByPrincipalIdentity -ElementType ([System.String])
-                Ensure                                                     = 'Present'
                 Credential                                                 = $this.Credential
                 ApplicationId                                              = $this.ApplicationId
                 TenantId                                                   = $this.TenantId

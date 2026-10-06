@@ -68,11 +68,6 @@ class ODSettings : M365DSCResourceBase
     [System.Nullable[System.Boolean]] $DisplayNamesOfFileViewers
 
     [DscProperty()]
-    [System.ComponentModel.Description('Present ensures the user exists, absent ensures it is removed')]
-    [ValidateSet('Present', 'Absent')]
-    [System.String] $Ensure
-
-    [DscProperty()]
     [System.ComponentModel.Description('Credentials of the account to authenticate with.')]
     [System.Management.Automation.PSCredential] $Credential
 
@@ -126,16 +121,12 @@ class ODSettings : M365DSCResourceBase
             $this.AddTelemetry('Get')
             #endregion
 
-            $nullReturn = $this.GetBoundParameters()
-            $nullReturn.Ensure = 'Absent'
-
             Write-Verbose -Message 'Getting OneDrive quota size for tenant'
             $tenant = Get-PnPTenant -ErrorAction Stop
 
             if ($null -eq $tenant)
             {
-                Write-Verbose -Message 'Failed to get Tenant information'
-                return $this.AsResult($nullReturn)
+                throw 'Failed to get Tenant information'
             }
 
             Write-Verbose -Message "Getting OneDrive quota size for tenant $($tenant.OneDriveStorageQuota)"
@@ -144,8 +135,7 @@ class ODSettings : M365DSCResourceBase
 
             if ($null -eq $tenantRestrictions)
             {
-                Write-Verbose -Message 'Failed to get Tenant client sync settings!'
-                return $this.AsResult($nullReturn)
+                throw 'Failed to get Tenant client sync settings!'
             }
 
             $GrooveOption = $null
@@ -202,7 +192,6 @@ class ODSettings : M365DSCResourceBase
                 ODBAccessRequests                         = $tenant.ODBAccessRequests
                 ODBMembersCanShare                        = $ODBMembersCanShareValue
                 NotificationsInOneDriveForBusinessEnabled = $tenant.NotificationsInOneDriveForBusinessEnabled
-                Ensure                                    = 'Present'
                 ApplicationId                             = $this.ApplicationId
                 TenantId                                  = $this.TenantId
                 CertificatePassword                       = $this.CertificatePassword

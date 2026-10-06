@@ -96,6 +96,11 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
 
             It 'Should return Values from the Get method' {
                 ((New-M365DSCResourceInstance -ResourceName 'AADB2BManagementPolicy' -Property $testParams).Get().ToHashtable()).IsSingleInstance | Should -Be 'Yes'
+
+                Mock -CommandName Get-MgBetaPolicyB2BManagementPolicy -MockWith {
+                    return $null
+                }
+                { (New-M365DSCResourceInstance -ResourceName 'AADB2BManagementPolicy' -Property $testParams).Get() } | Should -Throw '*Could not find the Azure AD B2B Management Policy.*'
             }
 
             It 'Should return false from the Test method' {

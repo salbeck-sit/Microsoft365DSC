@@ -71,17 +71,13 @@ class AADB2BManagementPolicy : M365DSCResourceBase
 
                 $this.AddTelemetry('Get')
 
-                $nullResult = $this.GetBoundParameters()
-                $nullResult.Ensure = 'Absent'
-
                 $getValue = Get-MgBetaPolicyB2BManagementPolicy `
                     -Filter "DisplayName eq 'B2BManagementPolicy'" `
                     -ErrorAction SilentlyContinue
                 #endregion
                 if ($null -eq $getValue)
                 {
-                    Write-Verbose -Message "Could not find an Azure AD B2B Management Policy"
-                    return $this.AsResult($nullResult)
+                    throw 'Could not find the Azure AD B2B Management Policy.'
                 }
             }
             else

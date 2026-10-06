@@ -21,11 +21,6 @@ class AADSecurityDefaults : M365DSCResourceBase
     [System.Nullable[System.Boolean]] $IsEnabled
 
     [DscProperty()]
-    [System.ComponentModel.Description('Specify if the Azure AD App should exist or not.')]
-    [ValidateSet('Present', 'Absent')]
-    [System.String] $Ensure
-
-    [DscProperty()]
     [System.ComponentModel.Description('Credentials of the Azure AD Admin')]
     [System.Management.Automation.PSCredential] $Credential
 

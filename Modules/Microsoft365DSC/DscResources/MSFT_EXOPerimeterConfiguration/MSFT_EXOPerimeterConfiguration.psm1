@@ -13,11 +13,6 @@ class EXOPerimeterConfiguration : M365DSCResourceBase
     [System.String[]] $GatewayIPAddresses
 
     [DscProperty()]
-    [System.ComponentModel.Description('Specifies if this Outbound connector should exist.')]
-    [ValidateSet('Present', 'Absent')]
-    [System.String] $Ensure
-
-    [DscProperty()]
     [System.ComponentModel.Description('Credentials of the Exchange Global Admin')]
     [System.Management.Automation.PSCredential] $Credential
 
@@ -70,9 +65,6 @@ class EXOPerimeterConfiguration : M365DSCResourceBase
 
                 $this.AddTelemetry('Get')
 
-                $nullReturn = $this.GetBoundParameters()
-                $nullReturn.Ensure = 'Absent'
-
                 $PerimeterConfiguration = Get-PerimeterConfig -ErrorAction Stop
             }
             else
@@ -86,7 +78,6 @@ class EXOPerimeterConfiguration : M365DSCResourceBase
                 IsSingleInstance      = 'Yes'
                 GatewayIPAddresses    = $PerimeterConfiguration.GatewayIPAddresses
                 Credential            = $this.Credential
-                Ensure                = 'Present'
                 ApplicationId         = $this.ApplicationId
                 CertificateThumbprint = $this.CertificateThumbprint
                 CertificatePath       = $this.CertificatePath
@@ -125,7 +116,7 @@ class EXOPerimeterConfiguration : M365DSCResourceBase
         $PerimeterConfigurationParams = Remove-M365DSCAuthenticationParameter -BoundParameters $this.GetBoundParameters()
         $PerimeterConfigurationParams.Remove('IsSingleInstance') | Out-Null
 
-        if ('Present' -eq $this.Ensure -and $null -ne $PerimeterConfigurationParams)
+        if ($null -ne $PerimeterConfigurationParams)
         {
             Write-Verbose -Message "Setting Perimeter Configuration with values: $(Convert-M365DscHashtableToString -Hashtable $PerimeterConfigurationParams)"
             Set-PerimeterConfig @PerimeterConfigurationParams -Confirm:$false

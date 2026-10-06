@@ -81,14 +81,10 @@ class EXOEmailTenantSettings : M365DSCResourceBase
 
                 $this.AddTelemetry('Get')
 
-                $nullReturn = $this.GetBoundParameters()
-                $nullReturn.Ensure = 'Absent'
-
                 $EmailTenantSettings = Get-EmailTenantSettings -ErrorAction SilentlyContinue
                 if ($null -eq $EmailTenantSettings)
                 {
-                    Write-Verbose -Message 'Failed to find Email Tenant Settings'
-                    return $this.AsResult($nullReturn)
+                    throw 'Could not find the Email Tenant Settings.'
                 }
             }
             else

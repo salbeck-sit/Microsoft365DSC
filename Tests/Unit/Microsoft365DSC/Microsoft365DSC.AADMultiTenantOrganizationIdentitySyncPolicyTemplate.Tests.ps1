@@ -62,7 +62,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     UserSyncInbound          = ([MSFT_AADMultiTenantOrganizationIdentitySyncPolicyTemplateUserSyncInbound] @{
                         isSyncAllowed = $True
                     })
-                    Ensure              = 'Present'
                     Credential          = $Credential;
                 }
             }
@@ -80,13 +79,12 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     UserSyncInbound          = ([MSFT_AADMultiTenantOrganizationIdentitySyncPolicyTemplateUserSyncInbound] @{
                         isSyncAllowed = $True
                     })
-                    Ensure              = 'Present'
                     Credential          = $Credential;
                 }
             }
 
             It 'Should return Values from the Get method' {
-                ((New-M365DSCResourceInstance -ResourceName 'AADMultiTenantOrganizationIdentitySyncPolicyTemplate' -Property $testParams).Get().ToHashtable()).Ensure | Should -Be 'Present'
+                ((New-M365DSCResourceInstance -ResourceName 'AADMultiTenantOrganizationIdentitySyncPolicyTemplate' -Property $testParams).Get().ToHashtable()).TemplateApplicationLevel | Should -Be 'newPartners,existingPartners'
             }
 
             It 'Should return false from the Test method' {

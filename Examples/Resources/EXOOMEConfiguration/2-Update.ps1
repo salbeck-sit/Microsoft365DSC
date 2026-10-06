@@ -26,14 +26,15 @@ Configuration Example
     {
         EXOOMEConfiguration 'EXOOMEConfiguration-Example'
         {
-            Identity                 = "Contoso Marketing"
-            BackgroundColor          = "0x00FFFF00"
-            DisclaimerText           = "Encryption security disclaimer."
+            Identity                 = "OME Configuration"
+            BackgroundColor          = "#ffffff"
+            DisclaimerText           = "This message is confidential and intended only for the named recipients."
             EmailText                = "Encrypted message enclosed."
-            ExternalMailExpiryInDays = 1 # Updated Property
-            IntroductionText         = "You have received an encypted message"
+            IntroductionText         = "has sent you a secure message."
             OTPEnabled               = $True
-            PortalText               = "This portal is encrypted."
+            PortalText               = "Contoso secure message portal"
+            PrivacyStatementUrl      = "https://www.contoso.com/privacy"
+            ReadButtonText           = "Read the secure message"
             SocialIdSignIn           = $True
             Ensure                   = "Present"
             ApplicationId            = $ApplicationId

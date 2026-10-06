@@ -25,8 +25,8 @@ Configuration Example
     {
         IntuneDeviceCompliancePolicyAndroidDeviceOwner 'IntuneDeviceCompliancePolicyAndroidDeviceOwner-Example'
         {
-            DisplayName           = 'DeviceOwner'
-            Ensure                = 'Present'
+            DisplayName           = 'Android Corporate-Owned Device Compliance'
+            Ensure                = 'Absent'
             ApplicationId         = $ApplicationId;
             TenantId              = $TenantId;
             CertificateThumbprint = $CertificateThumbprint;

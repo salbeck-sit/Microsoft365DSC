@@ -26,9 +26,9 @@ Configuration Example
     {
         SPOSiteGroup 'SPOSiteGroup-Example'
         {
-            Url                   = "https://contoso.sharepoint.com/sites/marketing"
-            Identity              = "Contoso Site Owners"
-            Owner                 = "admin@$TenantId"
+            Url                   = "https://contoso.sharepoint.com/sites/Mark8ProjectTeam"
+            Identity              = "Mark 8 Design Reviewers"
+            Owner                 = "AdeleV@$TenantId"
             PermissionLevels      = @("Edit", "Read")
             Ensure                = "Present"
             ApplicationId         = $ApplicationId

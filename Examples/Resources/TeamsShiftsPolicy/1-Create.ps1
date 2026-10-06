@@ -26,7 +26,7 @@ Configuration Example
     {
         TeamsShiftsPolicy 'TeamsShiftsPolicy-Example'
         {
-            Identity                       = 'Global'
+            Identity                       = 'Retail Shifts'
             AccessGracePeriodMinutes       = 15
             AccessType                     = 'UnrestrictedAccess_TeamsApp'
             EnableScheduleOwnerPermissions = $False

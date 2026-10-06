@@ -25,7 +25,7 @@ Configuration Example
     {
         IntuneDeviceCleanupRule 'IntuneDeviceCleanupRule-Example'
         {
-            DisplayName           = "Rule 1";
+            DisplayName           = "iOS Inactive Device Cleanup";
             Ensure                = 'Absent';
             ApplicationId         = $ApplicationId;
             TenantId              = $TenantId;

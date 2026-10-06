@@ -29,16 +29,9 @@ Configuration Example
             DisplayName                                                                = 'Attack Surface Reduction (ConfigMgr)'
             Assignments                                                                = @(
                 MSFT_DeviceManagementConfigurationPolicyAssignments{
-                    dataType                                   = '#microsoft.graph.groupAssignmentTarget'
+                    dataType                                   = '#microsoft.graph.configurationManagerCollectionAssignmentTarget'
                     deviceAndAppManagementAssignmentFilterType = 'none'
-                    groupDisplayName                           = 'Co-managed Windows Workstations'
-                    groupId                                    = '7a1d4c58-93b2-4e07-8f6a-0c3e5b8d21f9'
-                }
-                MSFT_DeviceManagementConfigurationPolicyAssignments{
-                    dataType                                   = '#microsoft.graph.exclusionGroupAssignmentTarget'
-                    deviceAndAppManagementAssignmentFilterType = 'none'
-                    groupDisplayName                           = 'Engineering Build Servers'
-                    groupId                                    = '2e9f0b73-15ca-4d38-9b41-6d7a8c2e5f04'
+                    collectionId                               = 'CM100014'
                 }
             )
             AttackSurfaceReductionOnlyExclusions                                       = @('C:\Program Files\Contoso Payroll\', 'C:\ProgramData\Contoso\Agent\agent.exe')

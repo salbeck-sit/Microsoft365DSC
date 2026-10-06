@@ -34,7 +34,7 @@ Configuration Example
                 }
                 MSFT_DeviceManagementConfigurationPolicyAssignments{
                     dataType         = '#microsoft.graph.exclusionGroupAssignmentTarget'
-                    groupDisplayName = 'Cloud PC Baseline Exclusions'
+                    groupDisplayName = 'Intune Excluded Devices'
                 }
             )
             Description           = 'Baseline hardening for Cloud PCs used by remote staff'

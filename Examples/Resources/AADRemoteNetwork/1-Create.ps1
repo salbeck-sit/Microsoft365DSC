@@ -28,7 +28,6 @@ Configuration Example
         {
             Ensure                = "Present";
             ForwardingProfiles    = @("Microsoft 365 traffic forwarding profile");
-            Id                    = "c60c41bb-e512-48e3-8134-c312439a5343";
             Name                  = "Sydney Branch Network";
             Region                = "australiaSouthEast";
             DeviceLinks           = @(
@@ -47,8 +46,8 @@ Configuration Example
                         ZoneLocalIPAddress = '1.1.1.8'
                     }
                     TunnelConfiguration     = MSFT_AADRemoteNetworkDeviceLinkTunnelConfiguration {
-                        PreSharedKey               = 'blah'
-                        ZoneRedundancyPreSharedKey = 'blah'
+                        PreSharedKey               = '<vpn-pre-shared-key>'
+                        ZoneRedundancyPreSharedKey = '<vpn-zone-redundancy-pre-shared-key>'
                         SaLifeTimeSeconds          = 300
                         IPSecEncryption            = 'gcmAes192'
                         IPSecIntegrity             = 'gcmAes192'

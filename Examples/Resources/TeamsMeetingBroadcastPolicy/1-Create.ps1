@@ -25,7 +25,7 @@ Configuration Example
     {
         TeamsMeetingBroadcastPolicy 'TeamsMeetingBroadcastPolicy-Example'
         {
-            Identity                        = "MyDemoPolicy"
+            Identity                        = "Town Hall Broadcasts"
             AllowBroadcastScheduling        = $True
             AllowBroadcastTranscription     = $False
             BroadcastAttendeeVisibilityMode = "EveryoneInCompany"

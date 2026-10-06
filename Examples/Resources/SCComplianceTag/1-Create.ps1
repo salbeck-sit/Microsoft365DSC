@@ -34,10 +34,10 @@ Configuration Example
             RetentionDuration     = "1025"
             RetentionType         = "ModificationAgeInDays"
             FilePlanProperty      = MSFT_SCFilePlanProperty{
-                FilePlanPropertyDepartment  = "Finance"
+                FilePlanPropertyDepartment  = "Treasury"
                 FilePlanPropertyCitation    = "Sarbanes-Oxley Act"
                 FilePlanPropertyReferenceId = "FIN-1025"
-                FilePlanPropertyAuthority   = "Regulatory"
+                FilePlanPropertyAuthority   = "Audit Committee"
                 FilePlanPropertyCategory    = "Financial Reporting"
                 FilePlanPropertySubCategory = "Annual Statements"
             }

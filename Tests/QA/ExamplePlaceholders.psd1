@@ -217,6 +217,12 @@
             Properties = @('KioskModeExitCode')
         }
         @{
+            Name       = '<key-vault-name>'
+            Meaning    = 'Name of an Azure Key Vault.'
+            Sample     = 'contoso-eastus-kv'
+            Properties = @('ResourceName')
+        }
+        @{
             Name       = '<key-vault-uri>'
             Meaning    = 'Base URI of an Azure Key Vault.'
             Sample     = 'https://contoso-eastus-kv.vault.azure.net/'
@@ -367,12 +373,6 @@
             Properties = @('ChannelUserObjectId')
         }
         @{
-            Name       = '<teams-app-id>'
-            Meaning    = 'ID of a third-party Teams app, which exists only in the tenant that published it.'
-            Sample     = 'd9f4c1b7-3a26-4e58-b0d3-6e91f2a75c48'
-            Properties = @('DefaultFileUploadAppId')
-        }
-        @{
             Name       = '<token-encryption-key-id>'
             Meaning    = 'Key id of a certificate already present on the application or service principal, used to encrypt issued tokens.'
             Sample     = 'a7f3c9d1-6e42-4b58-90ac-5d2e1b874f36'
@@ -385,10 +385,28 @@
             Properties = @('PreferredTokenSigningKeyThumbprint')
         }
         @{
+            Name       = '<user-object-id>'
+            Meaning    = 'Object ID of a user in the tenant.'
+            Sample     = '1b8d6f3a-7e24-4c91-b5a0-9d3e7c2f6a18'
+            Properties = @('Target')
+        }
+        @{
             Name       = '<wifi-pre-shared-key>'
             Meaning    = 'Pre-shared key of a WPA-Personal Wi-Fi network.'
             Sample     = 'Contoso!Corp2026Wifi'
             Properties = @('PreSharedKey')
+        }
+        @{
+            Name       = '<vpn-pre-shared-key>'
+            Meaning    = 'Pre-shared key of the IPsec tunnel between a remote network device and Global Secure Access.'
+            Sample     = 'k7Vq2Lm9Xr4Tz8Wn3Hd6Pb1Sf5Gj0Cy'
+            Properties = @('PreSharedKey')
+        }
+        @{
+            Name       = '<vpn-zone-redundancy-pre-shared-key>'
+            Meaning    = 'Pre-shared key of the zone-redundant IPsec tunnel of a remote network device.'
+            Sample     = 'R3nW8qZ1tY6uK0pD4sF9hJ2mC7vB5xLa'
+            Properties = @('ZoneRedundancyPreSharedKey')
         }
         @{
             Name       = '<subscription-id>'

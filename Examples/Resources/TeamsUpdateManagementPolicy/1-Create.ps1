@@ -33,7 +33,7 @@ Configuration Example
             Identity              = "EarlyAdopters";
             UpdateDayOfWeek       = 1;
             UpdateTime            = "18:00";
-            UpdateTimeOfDay       = "2022-05-06T18:00:00";
+            UpdateTimeOfDay       = "6:00 PM";
             UseNewTeamsClient     = 'MicrosoftChoice'
             ApplicationId         = $ApplicationId;
             TenantId              = $TenantId;

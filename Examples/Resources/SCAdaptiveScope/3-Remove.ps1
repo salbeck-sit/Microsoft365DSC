@@ -27,7 +27,7 @@ Configuration Example
         SCAdaptiveScope 'SCAdaptiveScope-Example'
         {
             LocationType          = "User";
-            Name                  = "Finance Zurich Users";
+            Name                  = "Finance New York Users";
             Ensure                = "Absent";
             ApplicationId         = $ApplicationId;
             TenantId              = $TenantId;

@@ -29,7 +29,7 @@ Configuration Example
             DisableAudioVideoInCallsAndMeetings = $False;
             DisableCallsAndMeetings             = $False;
             Ensure                              = "Present";
-            Identity                            = "Global";
+            Identity                            = "Virtual Desktop Users";
             VDI2Optimization                    = "Enabled";
             ApplicationId                       = $ApplicationId;
             TenantId                            = $TenantId;

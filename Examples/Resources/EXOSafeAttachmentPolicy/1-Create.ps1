@@ -32,7 +32,7 @@ Configuration Example
             QuarantineTag         = "AdminOnlyAccessPolicy"
             Enable                = $True
             Redirect              = $True
-            RedirectAddress       = "admin@$TenantId"
+            RedirectAddress       = "MeganB@$TenantId"
             Ensure                = "Present"
             ApplicationId         = $ApplicationId
             TenantId              = $TenantId

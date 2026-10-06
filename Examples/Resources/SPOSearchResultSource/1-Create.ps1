@@ -31,7 +31,6 @@ Configuration Example
             Protocol              = "Local"
             Type                  = "SharePoint"
             QueryTransform        = "{searchTerms} contentclass:STS_ListItem_DocumentLibrary"
-            ShowPartialSearch     = $true
             Ensure                = "Present"
             ApplicationId         = $ApplicationId
             TenantId              = $TenantId

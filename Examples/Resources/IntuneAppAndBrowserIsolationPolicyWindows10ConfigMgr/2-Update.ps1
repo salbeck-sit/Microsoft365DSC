@@ -29,8 +29,8 @@ Configuration Example
             Assignments                            = @(
                 MSFT_DeviceManagementConfigurationPolicyAssignments{
                     deviceAndAppManagementAssignmentFilterType = 'none'
-                    dataType                                   = '#microsoft.graph.groupAssignmentTarget'
-                    groupDisplayName                           = 'Finance Workstations'
+                    dataType                                   = '#microsoft.graph.configurationManagerCollectionAssignmentTarget'
+                    collectionId                               = 'CM100014'
                 }
             );
             AllowCameraMicrophoneRedirection       = 0; # Updated Property

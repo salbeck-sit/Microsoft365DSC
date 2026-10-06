@@ -27,7 +27,7 @@ Configuration Example
         EXOMailboxFolderPermission "EXOMailboxFolderPermission-Example"
         {
             Ensure                = "Present";
-            Identity              = "admin:\Calendar";
+            Identity              = "MeganB:\Calendar";
             UserPermissions       = @(
                 MSFT_EXOMailboxFolderUserPermission {
                     User         = 'Default'

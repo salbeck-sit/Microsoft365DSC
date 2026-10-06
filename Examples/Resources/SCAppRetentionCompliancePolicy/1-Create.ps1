@@ -31,7 +31,7 @@ Configuration Example
             Comment                   = "Retains the Teams channel messages of every user for seven years";
             Enabled                   = $true;
             ExchangeLocation          = @("All");
-            ExchangeLocationException = @("meetingroom.oslo@contoso.com");
+            ExchangeLocationException = @("AdeleV@$TenantId");
             RestrictiveRetention      = $false;
             Ensure                    = "Present";
             ApplicationId             = $ApplicationId;

@@ -25,9 +25,9 @@ Configuration Example
     {
         IntuneRoleDefinition 'IntuneRoleDefinition-Example'
         {
-            DisplayName               = 'This is my role'
+            DisplayName               = 'Service Desk Role Managers'
             allowedResourceActions    = @('Microsoft.Intune_Organization_Read', 'Microsoft.Intune_Roles_Create', 'Microsoft.Intune_Roles_Read', 'Microsoft.Intune_Roles_Update')
-            Description               = 'My role defined by me.'
+            Description               = 'Allows the service desk to review and maintain Intune roles'
             IsBuiltIn                 = $False
             notallowedResourceActions = @()
             roleScopeTagIds           = @('0', '1')

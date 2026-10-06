@@ -26,9 +26,10 @@ Configuration Example
     {
         TeamsCallParkPolicy 'TeamsCallParkPolicy-Example'
         {
-            AllowCallPark         = $False;
+            AllowCallPark         = $True;
+            Description           = "Lets the front desk park calls and page colleagues to pick them up";
             Ensure                = "Present";
-            Identity              = "Global";
+            Identity              = "Front Desk Call Park";
             ParkTimeoutSeconds    = 300;
             PickupRangeEnd        = 99;
             PickupRangeStart      = 10;

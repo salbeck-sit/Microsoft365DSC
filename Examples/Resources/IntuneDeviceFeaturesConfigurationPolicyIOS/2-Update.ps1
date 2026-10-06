@@ -39,7 +39,7 @@ Configuration Example
                 }
                 MSFT_DeviceManagementConfigurationPolicyAssignments{
                     dataType         = "#microsoft.graph.exclusionGroupAssignmentTarget"
-                    groupDisplayName = "Retail Store iPads"
+                    groupDisplayName = "Intune Excluded Devices"
                 }
             );
             AssetTagTemplate                           = "Contoso IT - Mobile Fleet";

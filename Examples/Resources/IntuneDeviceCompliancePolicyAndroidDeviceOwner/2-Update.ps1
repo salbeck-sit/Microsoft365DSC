@@ -25,7 +25,7 @@ Configuration Example
     {
         IntuneDeviceCompliancePolicyAndroidDeviceOwner 'IntuneDeviceCompliancePolicyAndroidDeviceOwner-Example'
         {
-            DisplayName                                        = 'DeviceOwner'
+            DisplayName                                        = 'Android Corporate-Owned Device Compliance'
             Description                                        = 'Compliance baseline for corporate-owned Android devices'
             Assignments                                        = @(
                 MSFT_DeviceManagementConfigurationPolicyAssignments{
@@ -35,14 +35,14 @@ Configuration Example
                 MSFT_DeviceManagementConfigurationPolicyAssignments{
                     dataType                                   = '#microsoft.graph.exclusionGroupAssignmentTarget'
                     deviceAndAppManagementAssignmentFilterType = 'none'
-                    groupDisplayName                           = 'Android Compliance Exclusions'
+                    groupDisplayName                           = 'Intune Excluded Devices'
                 }
             )
             DeviceThreatProtectionEnabled                      = $False
             DeviceThreatProtectionRequiredSecurityLevel        = 'unavailable'
             AdvancedThreatProtectionRequiredSecurityLevel      = 'unavailable'
             MinAndroidSecurityPatchLevel                       = '2025-06-01'
-            RequireNoPendingSystemUpdates                      = $True
+            RequireNoPendingSystemUpdates                      = $False
             SecurityBlockJailbrokenDevices                     = $True
             SecurityRequireIntuneAppIntegrity                  = $True
             SecurityRequiredAndroidSafetyNetEvaluationType     = 'basic'

@@ -31,17 +31,21 @@ Configuration Example
                     dataType                                   = "#microsoft.graph.allDevicesAssignmentTarget"
                     deviceAndAppManagementAssignmentFilterType = "none"
                 }
+                MSFT_DeviceManagementConfigurationPolicyAssignments{
+                    dataType                                   = "#microsoft.graph.exclusionGroupAssignmentTarget"
+                    deviceAndAppManagementAssignmentFilterType = "none"
+                    groupDisplayName                           = "Intune Excluded Devices"
+                }
             );
-            AuthenticationMethod                 = "certificate";
+            AuthenticationMethod                 = "usernameAndPassword";
             DeploymentChannel                    = "deviceChannel";
             Description                          = "802.1X wired access for managed Macs in the Zurich office"; # Updated Property
             DisplayName                          = "macOS Wired Network";
-            EapFastConfiguration                 = "noProtectedAccessCredential";
-            EapType                              = "eapTls";
+            EapType                              = "eapTtls";
             EnableOuterIdentityPrivacy           = "anonymous";
             NetworkInterface                     = "anyEthernet";
             NetworkName                          = "Contoso Wired";
-            NonEapAuthenticationMethodForEapTtls = "unencryptedPassword";
+            NonEapAuthenticationMethodForEapTtls = "microsoftChapVersionTwo";
             RoleScopeTagIds                      = @("0");
             TrustedServerCertificateNames        = @("radius01.contoso.com", "radius02.contoso.com");
             Ensure                               = "Present";

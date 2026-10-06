@@ -24,14 +24,28 @@ Configuration Example
 
     Node localhost
     {
+        SPOSiteScript 'SPOSiteScript-SiteDesign'
+        {
+            Title                 = "Contoso Team Site Lists"
+            Content               = '{"$schema": "https://developer.microsoft.com/json-schemas/sp/site-design-script-actions.schema.json", "actions": [{"verb": "createSPList", "listName": "Customer Tracking", "templateType": 100}], "version": 1}'
+            Description           = "Creates the customer tracking list on new team sites"
+            Ensure                = "Present"
+            ApplicationId         = $ApplicationId
+            TenantId              = $TenantId
+            CertificateThumbprint = $CertificateThumbprint
+        }
+
         SPOSiteDesign 'SPOSiteDesign-Example'
         {
             Title                 = "Contoso Team Site Design"
-            SiteScriptNames       = @("Cust List", "List_Views")
+            SiteScriptNames       = @("Contoso Team Site Lists")
             WebTemplate           = "TeamSite"
             IsDefault             = $false
             Description           = "Standard layout for departmental team sites"
-            PreviewImageAltText   = "Office 365"
+            PreviewImageAltText   = "Contoso team site layout"
+            PreviewImageUrl       = "https://contoso.sharepoint.com/SiteAssets/team-site-preview.png"
+            Version               = 1
+            DependsOn             = "[SPOSiteScript]SPOSiteScript-SiteDesign"
             Ensure                = "Present"
             ApplicationId         = $ApplicationId
             TenantId              = $TenantId

@@ -26,12 +26,12 @@ Configuration Example
     {
         SCAdaptiveScope 'SCAdaptiveScope-Example'
         {
-            AdministrativeUnit    = "Amsterdam Office";
-            Comment               = "Members of the finance department located in Zurich"; # Updated Property
+            AdministrativeUnit    = "New York Office";
+            Comment               = "Members of the finance department located in New York"; # Updated Property
             EnabledStates         = @("Active", "Inactive");
-            FilterConditions      = '{"Conditions":[{"Value":"Finance","Operator":"Equals","Name":"Department"},{"Value":"Zurich","Operator":"Equals","Name":"City"}],"Conjunction":"And"}';
+            FilterConditions      = '{"Conditions":[{"Value":"Finance","Operator":"Equals","Name":"Department"},{"Value":"New York","Operator":"Equals","Name":"City"}],"Conjunction":"And"}';
             LocationType          = "User";
-            Name                  = "Finance Zurich Users";
+            Name                  = "Finance New York Users";
             Ensure                = "Present";
             ApplicationId         = $ApplicationId;
             TenantId              = $TenantId;

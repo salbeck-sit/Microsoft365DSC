@@ -27,7 +27,7 @@ Configuration Example
         EXOAuthenticationPolicy 'EXOAuthenticationPolicy-Example'
         {
             Identity              = "Block Basic Auth"
-            Ensure                = "Present"
+            Ensure                = "Absent"
             ApplicationId         = $ApplicationId
             TenantId              = $TenantId
             CertificateThumbprint = $CertificateThumbprint

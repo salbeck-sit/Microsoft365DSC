@@ -33,7 +33,7 @@ Configuration Example
                 }
                 MSFT_DeviceManagementConfigurationPolicyAssignments{
                     dataType         = '#microsoft.graph.exclusionGroupAssignmentTarget'
-                    groupDisplayName = 'Policy Exclusions'
+                    groupDisplayName = 'Intune Excluded Users'
                 }
             );
             Description                                 = "Locks shared reception PCs to the visitor sign-in portal in Microsoft Edge";

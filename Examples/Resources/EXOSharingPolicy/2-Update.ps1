@@ -27,8 +27,8 @@ Configuration Example
         EXOSharingPolicy 'EXOSharingPolicy-Example'
         {
             Name                  = "External Calendar Sharing"
-            Default               = $False # Updated Property
-            Domains               = @("Anonymous:CalendarSharingFreeBusyReviewer", "*:CalendarSharingFreeBusySimple")
+            Default               = $False
+            Domains               = @("Anonymous:CalendarSharingFreeBusyDetail", "*:CalendarSharingFreeBusySimple") # Updated Property
             Enabled               = $True
             Ensure                = "Present"
             ApplicationId         = $ApplicationId

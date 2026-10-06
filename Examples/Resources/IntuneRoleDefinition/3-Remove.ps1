@@ -25,7 +25,7 @@ Configuration Example
     {
         IntuneRoleDefinition 'IntuneRoleDefinition-Example'
         {
-            DisplayName           = 'This is my role'
+            DisplayName           = 'Service Desk Role Managers'
             Ensure                = 'Absent'
             ApplicationId         = $ApplicationId;
             TenantId              = $TenantId;

@@ -36,7 +36,7 @@ Configuration Example
                 }
                 MSFT_DeviceManagementConfigurationPolicyAssignments{
                     dataType         = "#microsoft.graph.exclusionGroupAssignmentTarget"
-                    groupDisplayName = "Linux Build Agents"
+                    groupDisplayName = "Intune Excluded Devices"
                 }
             );
             automaticDefinitionUpdateEnabled            = "true";

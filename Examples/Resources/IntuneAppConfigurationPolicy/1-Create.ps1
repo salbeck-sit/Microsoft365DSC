@@ -32,7 +32,7 @@ Configuration Example
                 MSFT_DeviceManagementConfigurationPolicyAssignments{
                     dataType                                   = '#microsoft.graph.groupAssignmentTarget'
                     deviceAndAppManagementAssignmentFilterType = 'none'
-                    groupDisplayName                           = 'Mobile Workforce'
+                    groupDisplayName                           = 'Intune Pilot Users'
                 }
             );
             appGroupType                = "selectedPublicApps"

@@ -34,7 +34,7 @@ Configuration Example
                 }
                 MSFT_DeviceManagementConfigurationPolicyAssignments{
                     dataType         = '#microsoft.graph.exclusionGroupAssignmentTarget'
-                    groupDisplayName = 'Windows Baseline Exclusions'
+                    groupDisplayName = 'Intune Excluded Devices'
                 }
             )
             Description           = 'Baseline hardening for corporate Windows workstations, reviewed each quarter' # Updated Property

@@ -34,7 +34,7 @@ Configuration Example
                 }
                 MSFT_IntuneWindowsInformationProtectionPolicyWindows10MdmEnrolledPolicyAssignments{
                     dataType         = "#microsoft.graph.exclusionGroupAssignmentTarget"
-                    groupDisplayName = "Information Protection Exclusions"
+                    groupDisplayName = "Intune Excluded Users"
                 }
             );
             AzureRightsManagementServicesAllowed   = $true;

@@ -35,11 +35,11 @@ Configuration Example
                 MSFT_DeviceManagementConfigurationPolicyAssignments{
                     dataType                                   = "#microsoft.graph.groupAssignmentTarget"
                     deviceAndAppManagementAssignmentFilterType = "none"
-                    groupDisplayName                           = "Corporate iOS Devices"
+                    groupDisplayName                           = "Intune Pilot Devices"
                 }
                 MSFT_DeviceManagementConfigurationPolicyAssignments{
                     dataType         = "#microsoft.graph.exclusionGroupAssignmentTarget"
-                    groupDisplayName = "iOS Retail Loaner Devices"
+                    groupDisplayName = "Intune Excluded Devices"
                 }
             );
             ApplicationId          = $ApplicationId;

@@ -55,14 +55,12 @@ Configuration Example
                 MSFT_DeviceManagementConfigurationPolicyAssignments{
                     dataType                                   = '#microsoft.graph.groupAssignmentTarget'
                     deviceAndAppManagementAssignmentFilterType = 'none'
-                    groupDisplayName                           = 'Field Technicians'
-                    groupId                                    = '3f7e6d2a-8b45-4c19-9f0e-1a2b3c4d5e6f'
+                    groupDisplayName                           = 'Intune Pilot Users'
                 }
                 MSFT_DeviceManagementConfigurationPolicyAssignments{
                     dataType                                   = '#microsoft.graph.exclusionGroupAssignmentTarget'
                     deviceAndAppManagementAssignmentFilterType = 'none'
-                    groupDisplayName                           = 'Mobile Application Management Exclusions'
-                    groupId                                    = '9c4b1e07-52da-4f83-a6d1-7e8f9a0b1c2d'
+                    groupDisplayName                           = 'Intune Excluded Users'
                 }
             )
             BiometricAuthenticationBlocked                     = $false

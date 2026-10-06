@@ -45,7 +45,7 @@ Configuration Example
             AssignmentReqMFA                                          = $False;
             AuthenticationContextId                                   = "";
             AuthenticationContextRequired                             = $false;
-            DisplayName                                               = "Finance Approvers";
+            DisplayName                                               = "U.S. Sales";
             EligibilityAssignmentReqJustification                     = $False;
             EligibilityAssignmentReqMFA                               = $False;
             EligibleAlertNotificationAdditionalRecipient              = @();

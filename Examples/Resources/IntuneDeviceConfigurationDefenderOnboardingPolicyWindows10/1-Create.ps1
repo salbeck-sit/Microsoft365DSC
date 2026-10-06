@@ -36,7 +36,7 @@ Configuration Example
                 MSFT_DeviceManagementConfigurationPolicyAssignments{
                     dataType                                   = '#microsoft.graph.groupAssignmentTarget'
                     deviceAndAppManagementAssignmentFilterType = 'none'
-                    groupDisplayName                           = 'Corporate Windows Devices'
+                    groupDisplayName                           = 'Intune Pilot Devices'
                 }
             );
             Description                                        = "Onboards corporate Windows endpoints to Microsoft Defender for Endpoint";

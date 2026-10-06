@@ -26,7 +26,7 @@ Configuration Example
     {
         EXOMobileDeviceMailboxPolicy 'EXOMobileDeviceMailboxPolicy-Example'
         {
-            Name                  = "Default"
+            Name                  = "Contoso Mobile Devices"
             Ensure                = "Absent"
             ApplicationId         = $ApplicationId
             TenantId              = $TenantId

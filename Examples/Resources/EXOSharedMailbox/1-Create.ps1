@@ -28,7 +28,7 @@ Configuration Example
         {
             DisplayName                       = "Sales Enquiries"
             PrimarySMTPAddress                = "SalesEnquiries@$TenantId"
-            EmailAddresses                    = @("SalesEnquiries@$TenantId")
+            EmailAddresses                    = @("SalesInfo@$TenantId")
             Alias                             = "SalesEnquiries"
             AuditEnabled                      = $true
             MessageCopyForSendOnBehalfEnabled = $true

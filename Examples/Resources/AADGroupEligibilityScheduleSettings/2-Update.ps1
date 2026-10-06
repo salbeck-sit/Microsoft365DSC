@@ -34,9 +34,9 @@ Configuration Example
             id                    = "Expiration_EndUser_Assignment";
             PIMGroupRole          = "member";
             ruleType              = "#microsoft.graph.unifiedRoleManagementPolicyExpirationRule";
-            ApplicationId         = $ConfigurationData.NonNodeData.ApplicationId;
+            ApplicationId         = $ApplicationId;
             TenantId              = $TenantId;
-            CertificateThumbprint = $ConfigurationData.NonNodeData.CertificateThumbprint;
+            CertificateThumbprint = $CertificateThumbprint;
         }
     }
 }

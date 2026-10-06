@@ -65,7 +65,7 @@ Configuration Example
             MailTipTranslations                    = @("FR: Ce groupe contacte tous les employes, merci de l'utiliser avec parcimonie.")
             MaxReceiveSize                         = "36MB"
             MaxSendSize                            = "35MB"
-            ModeratedBy                            = @("admin@$TenantId")
+            ModeratedBy                            = @("MeganB@$TenantId")
             ModerationEnabled                      = $false
             Notes                                  = "Reaches every employee in the organisation. Announcements only."
             PrimarySmtpAddress                     = "allcompany@$TenantId"

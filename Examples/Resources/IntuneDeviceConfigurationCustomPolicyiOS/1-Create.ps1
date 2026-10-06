@@ -29,7 +29,7 @@ Configuration Example
                 MSFT_DeviceManagementConfigurationPolicyAssignments{
                     dataType                                   = "#microsoft.graph.groupAssignmentTarget"
                     deviceAndAppManagementAssignmentFilterType = "none"
-                    groupDisplayName                           = "Corporate iPhones"
+                    groupDisplayName                           = "Intune Pilot Devices"
                 }
             );
             Description           = "Delivers the corporate Wi-Fi profile to company owned iPhones";

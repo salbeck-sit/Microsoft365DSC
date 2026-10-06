@@ -29,7 +29,7 @@ Configuration Example
                 MSFT_DeviceManagementConfigurationPolicyAssignments{
                     deviceAndAppManagementAssignmentFilterType = 'none'
                     dataType                                   = '#microsoft.graph.groupAssignmentTarget'
-                    groupId                                    = '11111111-1111-1111-1111-111111111111'
+                    groupDisplayName                           = 'Intune Pilot Devices'
                 }
             );
             Description                                                  = "Baseline Windows Defender Firewall settings for corporate laptops";

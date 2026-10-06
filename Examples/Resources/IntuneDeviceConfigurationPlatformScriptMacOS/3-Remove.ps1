@@ -26,7 +26,7 @@ Configuration Example
     {
         IntuneDeviceConfigurationPlatformScriptMacOS 'IntuneDeviceConfigurationPlatformScriptMacOS-Example'
         {
-            DisplayName           = "custom";
+            DisplayName           = "Configure Dock Layout";
             Ensure                = "Absent";
             ApplicationId         = $ApplicationId;
             TenantId              = $TenantId;

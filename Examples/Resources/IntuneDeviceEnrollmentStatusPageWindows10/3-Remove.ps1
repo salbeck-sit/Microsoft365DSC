@@ -25,7 +25,7 @@ Configuration Example
     {
         IntuneDeviceEnrollmentStatusPageWindows10 'IntuneDeviceEnrollmentStatusPageWindows10-Example'
         {
-            DisplayName           = "All users and all devices";
+            DisplayName           = "Autopilot Device Setup Status";
             Ensure                = "Absent";
             ApplicationId         = $ApplicationId;
             TenantId              = $TenantId;

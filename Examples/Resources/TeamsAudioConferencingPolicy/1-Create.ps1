@@ -28,7 +28,7 @@ Configuration Example
         {
             AllowTollFreeDialin       = $True
             Ensure                    = 'Present'
-            Identity                  = 'Global'
+            Identity                  = 'Sales Audio Conferencing'
             MeetingInvitePhoneNumbers = @()
             ApplicationId             = $ApplicationId
             TenantId                  = $TenantId

@@ -29,9 +29,10 @@ Configuration Example
             AllowBetterTogether            = "Enabled";
             AllowHomeScreen                = "EnabledUserOverride";
             AllowHotDesking                = $True;
+            Description                    = "Hot desking phones in the shared office areas";
             Ensure                         = "Present";
             HotDeskingIdleTimeoutInMinutes = 120;
-            Identity                       = "Global";
+            Identity                       = "Hot Desking Phones";
             SearchOnCommonAreaPhoneMode    = "Enabled";
             SignInMode                     = "UserSignIn";
             ApplicationId                  = $ApplicationId;

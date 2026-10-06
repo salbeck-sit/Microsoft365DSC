@@ -28,14 +28,19 @@ Configuration Example
         {
             Assignments                    = @(
                 MSFT_DeviceManagementConfigurationPolicyAssignments{
-                    dataType                                   = "#microsoft.graph.allDevicesAssignmentTarget"
+                    dataType                                   = "#microsoft.graph.groupAssignmentTarget"
                     deviceAndAppManagementAssignmentFilterType = "none"
+                    groupDisplayName                           = "Intune Pilot Devices"
+                }
+                MSFT_DeviceManagementConfigurationPolicyAssignments{
+                    dataType         = "#microsoft.graph.exclusionGroupAssignmentTarget"
+                    groupDisplayName = "Intune Excluded Devices"
                 }
             );
             AssociatedDomains              = @("contoso.com", "corp.contoso.com");
             AuthenticationMethod           = "certificate";
             ConnectionName                 = "Contoso Corporate VPN";
-            ConnectionType                 = "ciscoAnyConnect";
+            ConnectionType                 = "customVpn";
             CustomData                     = @(
                 MSFT_MicrosoftGraphKeyValue{
                     Key   = "tunnelGroup"
@@ -44,8 +49,8 @@ Configuration Example
             );
             CustomKeyValueData             = @(
                 MSFT_MicrosoftGraphKeyValuePair2{
-                    Name  = "vpnProfile"
-                    Value = "contoso-full-tunnel"
+                    Name  = "tunnelGroup"
+                    Value = "CONTOSO-EMPLOYEES"
                 }
             );
             DeploymentChannel              = "deviceChannel";
@@ -54,16 +59,14 @@ Configuration Example
             DisconnectOnIdle               = $true;
             DisconnectOnIdleTimerInSeconds = 300;
             DisplayName                    = "macOS Corporate VPN";
-            EnablePerApp                   = $false;
+            EnablePerApp                   = $true;
             EnableSplitTunneling           = $false;
             ExcludedDomains                = @("guest.contoso.com", "cdn.contoso.com");
-            ExcludeLocalNetworks           = $true;
+            Identifier                     = "com.contoso.vpnclient";
             IncludeAllNetworks             = $false;
-            LoginGroupOrDomain             = "CONTOSO-EMPLOYEES";
             OnDemandRules                  = @(
                 MSFT_MicrosoftGraphVpnOnDemandRule{
-                    Action                = "connect"
-                    DnsSearchDomains      = @("contoso.com", "corp.contoso.com")
+                    Action                = "evaluateConnection"
                     DnsServerAddressMatch = @("10.10.0.10", "10.10.0.11")
                     DomainAction          = "connectIfNeeded"
                     Domains               = @("intranet.contoso.com", "portal.contoso.com")
@@ -73,18 +76,15 @@ Configuration Example
                     Ssids                 = @("Contoso-Corp", "Contoso-Guest")
                 }
             );
-            OptInToDeviceIdSharing         = $true;
-            ProviderType                   = "notConfigured";
+            ProviderType                   = "packetTunnel";
             ProxyServer                    = MSFT_MicrosoftGraphVpnProxyServer{
                 Address                          = "proxy.contoso.com"
                 AutomaticallyDetectProxySettings = $false
                 AutomaticConfigurationScriptUrl  = "https://proxy.contoso.com/proxy.pac"
                 BypassProxyServerForLocalAddress = $true
-                ODataType                        = "#microsoft.graph.windows10VpnProxyServer"
+                ODataType                        = "#microsoft.graph.windows81VpnProxyServer"
                 Port                             = 8080
             };
-            Realm                          = "CONTOSO.COM";
-            Role                           = "Employees";
             RoleScopeTagIds                = @("0");
             SafariDomains                  = @("intranet.contoso.com", "portal.contoso.com");
             Server                         = MSFT_MicrosoftGraphVpnServer1{

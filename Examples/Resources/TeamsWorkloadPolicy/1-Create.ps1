@@ -32,8 +32,9 @@ Configuration Example
             AllowMeetingPinned    = $True;
             AllowMessaging        = $True;
             AllowMessagingPinned  = $True;
+            Description           = "Pins messaging, meetings and calling for frontline staff";
             Ensure                = "Present";
-            Identity              = "Global";
+            Identity              = "Frontline Workloads";
             ApplicationId         = $ApplicationId;
             TenantId              = $TenantId;
             CertificateThumbprint = $CertificateThumbprint;

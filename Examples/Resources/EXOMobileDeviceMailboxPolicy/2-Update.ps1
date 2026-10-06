@@ -26,7 +26,7 @@ Configuration Example
     {
         EXOMobileDeviceMailboxPolicy 'EXOMobileDeviceMailboxPolicy-Example'
         {
-            Name                                     = "Default"
+            Name                                     = "Contoso Mobile Devices"
             AllowApplePushNotifications              = $True
             AllowBluetooth                           = "Allow"
             AllowBrowser                             = $False # Updated Property
@@ -57,7 +57,6 @@ Configuration Example
             DeviceEncryptionEnabled                  = $False
             DevicePolicyRefreshInterval              = "Unlimited"
             IrmEnabled                               = $True
-            IsDefault                                = $True
             MaxAttachmentSize                        = "Unlimited"
             MaxCalendarAgeFilter                     = "All"
             MaxEmailAgeFilter                        = "All"

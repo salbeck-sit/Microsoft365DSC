@@ -32,22 +32,19 @@ Configuration Example
             Assignments                             = @(
                 MSFT_DeviceManagementConfigurationPolicyAssignments{
                     deviceAndAppManagementAssignmentFilterType = 'none'
-                    dataType                                   = '#microsoft.graph.allDevicesAssignmentTarget'
-                }
-                MSFT_DeviceManagementConfigurationPolicyAssignments{
-                    dataType         = '#microsoft.graph.exclusionGroupAssignmentTarget'
-                    groupDisplayName = 'Policy Exclusions'
+                    dataType                                   = '#microsoft.graph.groupAssignmentTarget'
+                    groupDisplayName                           = 'Intune Pilot Devices'
                 }
             );
             BlockDeviceSetupRetryByUser             = $False;
             CustomErrorMessage                      = "Setup could not be completed. Please try again or contact your support person for help.";
-            Description                             = "This is the default enrollment status screen configuration applied with the lowest priority to all users and all devices regardless of group membership.";
+            Description                             = "Tracks app and policy installation while Autopilot provisions corporate devices";
             DisableUserStatusTrackingAfterFirstUser = $True;
-            DisplayName                             = "All users and all devices";
+            DisplayName                             = "Autopilot Device Setup Status";
             Ensure                                  = "Present";
             InstallProgressTimeoutInMinutes         = 60;
             InstallQualityUpdates                   = $False;
-            Priority                                = 0;
+            RoleScopeTagIds                         = @("0");
             SelectedMobileAppIds                    = @();
             ShowInstallationProgress                = $True;
             TrackInstallProgressForAutopilotOnly    = $True;

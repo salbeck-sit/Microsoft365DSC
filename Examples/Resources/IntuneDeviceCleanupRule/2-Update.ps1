@@ -25,10 +25,10 @@ Configuration Example
     {
         IntuneDeviceCleanupRule 'IntuneDeviceCleanupRule-Example'
         {
-            DisplayName                            = "Rule 1";
-            Description                            = "";
-            DeviceCleanupRulePlatformType          = "all";
-            DeviceInactivityBeforeRetirementInDays = 25; # Updated Property
+            DisplayName                            = "iOS Inactive Device Cleanup";
+            Description                            = "Removes iPhone and iPad devices that stopped checking in with Intune";
+            DeviceCleanupRulePlatformType          = "ios";
+            DeviceInactivityBeforeRetirementInDays = 120; # Updated Property
             Ensure                                 = 'Present';
             ApplicationId                          = $ApplicationId;
             TenantId                               = $TenantId;

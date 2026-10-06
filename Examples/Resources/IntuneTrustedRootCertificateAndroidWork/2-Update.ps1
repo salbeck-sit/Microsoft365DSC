@@ -38,7 +38,7 @@ Configuration Example
                 }
                 MSFT_DeviceManagementConfigurationPolicyAssignments{
                     dataType         = "#microsoft.graph.exclusionGroupAssignmentTarget"
-                    groupDisplayName = "Field Service Contractors"
+                    groupDisplayName = "Intune Excluded Users"
                 }
             );
             ApplicationId          = $ApplicationId;

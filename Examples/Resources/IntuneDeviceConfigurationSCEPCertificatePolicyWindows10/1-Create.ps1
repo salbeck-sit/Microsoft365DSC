@@ -33,7 +33,7 @@ Configuration Example
                 }
                 MSFT_DeviceManagementConfigurationPolicyAssignments{
                     dataType         = '#microsoft.graph.exclusionGroupAssignmentTarget'
-                    groupDisplayName = 'Policy Exclusions'
+                    groupDisplayName = 'Intune Excluded Users'
                 }
             );
             CertificateStore                            = "user";
@@ -61,7 +61,7 @@ Configuration Example
                 MaxOSVersion = "10.0.26100.9999"
                 RuleType     = "include"
             };
-            DisplayName                                 = "SCEP";
+            DisplayName                                 = "User Authentication Certificate";
             Ensure                                      = "Present";
             ExtendedKeyUsages                           = @(
                 MSFT_MicrosoftGraphextendedKeyUsage{
@@ -74,11 +74,11 @@ Configuration Example
             KeyStorageProvider                          = "useTpmKspOtherwiseUseSoftwareKsp";
             KeyUsage                                    = @("digitalSignature");
             RenewalThresholdPercentage                  = 25;
-            ScepServerUrls                              = @("https://mydomain.com/certsrv/mscep/mscep.dll");
+            ScepServerUrls                              = @("https://ndes.contoso.com/certsrv/mscep/mscep.dll");
             SubjectAlternativeNameType                  = "none";
             SubjectNameFormat                           = "custom";
             SubjectNameFormatString                     = "CN={{UserName}},E={{EmailAddress}}";
-            RootCertificateId                           = "169bf4fc-5914-40f4-ad33-48c225396183";
+            RootCertificateDisplayName                  = "Contoso Root CA Trust";
             ApplicationId                               = $ApplicationId;
             TenantId                                    = $TenantId;
             CertificateThumbprint                       = $CertificateThumbprint;

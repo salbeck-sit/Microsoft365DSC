@@ -36,7 +36,7 @@ Configuration Example
             JunkReviewResultMessage                     = "Thank you for your submission. Our security team confirmed that the message you reported is junk."
             NotJunkReviewResultMessage                  = "Thank you for your submission. Our security team confirmed that the message you reported is not junk."
             NotificationFooterMessage                   = "This message was sent by the Contoso messaging security team. Please do not reply to it."
-            NotificationSenderAddress                   = "admin@$TenantId"
+            NotificationSenderAddress                   = "MeganB@$TenantId"
             PhishingReviewResultMessage                 = "Thank you for your submission. Our security team confirmed that the message you reported is a phishing attempt."
             PostSubmitMessage                           = "Thank you for reporting this message. Our security team will review it and let you know the outcome."
             PostSubmitMessageEnabled                    = $True
@@ -46,11 +46,11 @@ Configuration Example
             PreSubmitMessageTitle                       = "Report this message?"
             ReportChatMessageEnabled                    = $True
             ReportChatMessageToCustomizedAddressEnabled = $False
-            ReportJunkAddresses                         = @("admin@$TenantId")
+            ReportJunkAddresses                         = @("MeganB@$TenantId")
             ReportJunkToCustomizedAddress               = $True
-            ReportNotJunkAddresses                      = @("admin@$TenantId")
+            ReportNotJunkAddresses                      = @("MeganB@$TenantId")
             ReportNotJunkToCustomizedAddress            = $True
-            ReportPhishAddresses                        = @("admin@$TenantId")
+            ReportPhishAddresses                        = @("MeganB@$TenantId")
             ReportPhishToCustomizedAddress              = $True
             Ensure                                      = "Present"
             ApplicationId                               = $ApplicationId

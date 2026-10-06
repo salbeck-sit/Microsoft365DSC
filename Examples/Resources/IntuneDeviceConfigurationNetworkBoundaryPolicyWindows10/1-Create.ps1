@@ -33,7 +33,7 @@ Configuration Example
                 }
                 MSFT_DeviceManagementConfigurationPolicyAssignments{
                     dataType         = '#microsoft.graph.exclusionGroupAssignmentTarget'
-                    groupDisplayName = 'Policy Exclusions'
+                    groupDisplayName = 'Intune Excluded Devices'
                 }
             );
             Description                                 = "Marks the corporate network, cloud resources and proxies as enterprise boundaries for Windows Information Protection";
@@ -60,7 +60,7 @@ Configuration Example
                 EnterpriseCloudResources               = @(
                     MSFT_MicrosoftGraphProxiedDomain{
                         IpAddressOrFQDN = "contoso.sharepoint.com"
-                        Proxy           = "10.20.30.41:8080"
+                        Proxy           = "10.20.30.41"
                     }
                 )
                 EnterpriseProxyServers                 = @("10.20.30.40:8080")

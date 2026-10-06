@@ -25,31 +25,34 @@ Configuration Example
     {
         IntuneAndroidManagedStoreAppConfiguration "IntuneAndroidManagedStoreAppConfiguration-Example"
         {
-            Description                 = "IntuneAndroidManagedStoreAppConfiguration Description";
+            Assignments                 = @(
+                MSFT_DeviceManagementConfigurationPolicyAssignments{
+                    dataType                                   = "#microsoft.graph.groupAssignmentTarget"
+                    deviceAndAppManagementAssignmentFilterType = "none"
+                    groupDisplayName                           = "Intune Pilot Devices"
+                }
+            );
+            Description                 = "Grants Microsoft Authenticator the camera access it needs to scan sign-in QR codes";
             RoleScopeTagIds             = @("0");
-            DisplayName                 = "IntuneAndroidManagedStoreAppConfiguration DisplayName";
+            DisplayName                 = "Microsoft Authenticator Permissions";
             Ensure                      = "Present";
             appSupportsOemConfig        = $False;
             connectedAppsEnabled        = $False;
             credentialProviderRoleState = "allowed";
-            packageId                   = "app:org.mozilla.firefox";
+            packageId                   = "app:com.azure.authenticator";
             payloadJson                 = "";
             permissionActions           = @(
                 MSFT_androidPermissionAction{
-                    action     = 'prompt'
-                    permission = 'android.permission.RECEIVE_SMS'
+                    action     = 'autoGrant'
+                    permission = 'android.permission.CAMERA'
                 }
                 MSFT_androidPermissionAction{
                     action     = 'prompt'
-                    permission = 'android.permission.READ_SMS'
-                }
-                MSFT_androidPermissionAction{
-                    action     = 'prompt'
-                    permission = 'android.permission.RECEIVE_WAP_PUSH'
+                    permission = 'android.permission.ACCESS_FINE_LOCATION'
                 }
             );
             profileApplicability        = "androidDeviceOwner";
-            targetedMobileApps          = @("30ab8f7a-14fb-4a05-befa-ea7f51141ad9");
+            targetedMobileApps          = @("Microsoft Authenticator");
             ApplicationId               = $ApplicationId;
             TenantId                    = $TenantId;
             CertificateThumbprint       = $CertificateThumbprint;

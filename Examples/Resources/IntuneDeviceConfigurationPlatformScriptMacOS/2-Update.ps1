@@ -33,20 +33,19 @@ Configuration Example
                 }
                 MSFT_DeviceManagementConfigurationPolicyAssignments{
                     dataType         = '#microsoft.graph.exclusionGroupAssignmentTarget'
-                    groupDisplayName = 'Policy Exclusions'
+                    groupDisplayName = 'Intune Excluded Devices'
                 }
             );
-            DisplayName                 = "custom";
+            DisplayName                 = "Configure Dock Layout";
             Ensure                      = "Present";
             BlockExecutionNotifications = $False;
-            Description                 = "";
-            ExecutionFrequency          = "00:00:00";
-            FileName                    = "shellscript.sh";
-            Id                          = "00000000-0000-0000-0000-000000000000";
+            Description                 = "Hides the Dock automatically on managed Macs";
+            ExecutionFrequency          = "1.00:00:00";
+            FileName                    = "configure-dock.sh";
             RetryCount                  = 1; # Updated Property
             RoleScopeTagIds             = @("0");
             RunAsAccount                = "user";
-            ScriptContent               = "Base64 encoded script content";
+            ScriptContent               = "IyEvYmluL3pzaApkZWZhdWx0cyB3cml0ZSBjb20uYXBwbGUuZG9jayBhdXRvaGlkZSAtYm9vbCB0cnVlCmtpbGxhbGwgRG9jawo=";
             ApplicationId               = $ApplicationId;
             TenantId                    = $TenantId;
             CertificateThumbprint       = $CertificateThumbprint;

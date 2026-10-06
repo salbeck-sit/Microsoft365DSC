@@ -26,8 +26,7 @@ Configuration Example
         TeamsGroupPolicyAssignment 'TeamsGroupPolicyAssignment-Example'
         {
             Ensure                = 'Present'
-            GroupDisplayname      = 'SecGroup'
-            GroupId               = ''
+            GroupDisplayname      = 'Sales and Marketing'
             PolicyName            = 'AllowCalling'
             PolicyType            = 'TeamsCallingPolicy'
             Priority              = 1

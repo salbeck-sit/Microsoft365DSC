@@ -27,7 +27,7 @@ Configuration Example
         IntuneDeviceComplianceScriptLinux 'IntuneDeviceComplianceScriptLinux-Example'
         {
             Description           = "Reports whether SSH root login is disabled on Linux endpoints";
-            DisplayName           = "Linux Patch Level Check";
+            DisplayName           = "Linux SSH Root Login Check";
             Ensure                = "Present";
             DiscoveryScript       = "#!/bin/bash
 if grep -q '^PermitRootLogin no' /etc/ssh/sshd_config; then

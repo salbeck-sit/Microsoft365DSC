@@ -26,19 +26,10 @@ Configuration Example
     {
         SPOSiteScript 'SPOSiteScript-Example'
         {
-            Identity = "5c73382d-9643-4aa0-9160-d0cba35e40fd"
-            Title    = "My Site Script"
-            Content  = '{
-                "$schema": "schema.json",
-                "actions": [
-                    {
-                      "verb": "setSiteLogo",
-                      "url": "https://contoso.sharepoint.com/SiteAssets/company-logo.png"
-                    }
-                ]
-            }'
-            Description          = "My custom site script"
-            Ensure               = "Present"
+            Title                 = "Contoso Site Logo"
+            Content               = '{"$schema": "https://developer.microsoft.com/json-schemas/sp/site-design-script-actions.schema.json", "actions": [{"verb": "setSiteLogo", "url": "https://contoso.sharepoint.com/SiteAssets/company-logo.png"}], "version": 1}'
+            Description           = "Applies the corporate logo to new sites"
+            Ensure                = "Present"
             ApplicationId         = $ApplicationId
             TenantId              = $TenantId
             CertificateThumbprint = $CertificateThumbprint

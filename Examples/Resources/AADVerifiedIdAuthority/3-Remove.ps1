@@ -27,7 +27,7 @@ Configuration Example
         AADVerifiedIdAuthority 'AADVerifiedIdAuthority-Example'
         {
             Ensure                = "Absent";
-            LinkedDomainUrl       = "https://nik-charlebois.com/";
+            LinkedDomainUrl       = "https://$TenantId/";
             ApplicationId         = $ApplicationId
             TenantId              = $TenantId
             CertificateThumbprint = $CertificateThumbprint

@@ -51,7 +51,7 @@ Configuration Example
                 MSFT_DeviceManagementConfigurationPolicyAssignments{
                     dataType                                   = "#microsoft.graph.exclusionGroupAssignmentTarget"
                     deviceAndAppManagementAssignmentFilterType = "none"
-                    groupDisplayName                           = "Exclude"
+                    groupDisplayName                           = "Intune Excluded Devices"
                 }
             )
             Ensure                                         = "Present"

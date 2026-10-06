@@ -37,7 +37,7 @@ Configuration Example
                 }
                 MSFT_IntuneAccountProtectionLocalUserGroupMembershipPolicyAssignments{
                     dataType         = "#microsoft.graph.exclusionGroupAssignmentTarget"
-                    groupDisplayName = "Kiosk Workstations"
+                    groupDisplayName = "Intune Excluded Devices"
                 }
             );
             AccessGroup           = @(

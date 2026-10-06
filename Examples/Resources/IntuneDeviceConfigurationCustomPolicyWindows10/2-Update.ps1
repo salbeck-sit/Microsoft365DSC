@@ -30,7 +30,7 @@ Configuration Example
                 MSFT_DeviceManagementConfigurationPolicyAssignments{
                     dataType                                   = '#microsoft.graph.groupAssignmentTarget'
                     deviceAndAppManagementAssignmentFilterType = 'none'
-                    groupDisplayName                           = 'Corporate Windows Devices'
+                    groupDisplayName                           = 'Intune Pilot Devices'
                 }
             );
             Description                                 = "Hardens Bluetooth and trusts the internal certificate authority through OMA-URI settings";

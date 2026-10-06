@@ -34,7 +34,7 @@ Configuration Example
                 MSFT_DeviceManagementConfigurationPolicyAssignments{
                     dataType                                   = "#microsoft.graph.exclusionGroupAssignmentTarget"
                     deviceAndAppManagementAssignmentFilterType = "none"
-                    groupDisplayName                           = "Exclude"
+                    groupDisplayName                           = "Intune Excluded Users"
                 }
             );
             CertFileName                                = "RootNew.cer"; # Updated Property

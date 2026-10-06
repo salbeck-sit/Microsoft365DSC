@@ -25,7 +25,7 @@ Configuration Example
     {
         TeamsVoiceRoutingPolicy 'TeamsVoiceRoutingPolicy-Example'
         {
-            Identity              = 'NewVoiceRoutingPolicy'
+            Identity              = 'Corporate Voice Routing'
             OnlinePstnUsages      = @('Long Distance', 'Local', 'Internal')
             Description           = 'Grants long distance and local calling to corporate users'
             Ensure                = 'Present'

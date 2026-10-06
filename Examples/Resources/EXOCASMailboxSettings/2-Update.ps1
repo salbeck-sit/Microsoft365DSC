@@ -33,7 +33,7 @@ Configuration Example
             ActiveSyncMailboxPolicy                 = 'Default'
             ActiveSyncSuppressReadReceipt           = $False
             EwsEnabled                              = $True
-            Identity                                = "admin@$TenantId"
+            Identity                                = "MeganB@$TenantId"
             ImapEnabled                             = $True # Updated Property
             ImapForceICalForCalendarRetrievalOption = $False
             ImapMessagesRetrievalMimeFormat         = 'BestBodyFormat'

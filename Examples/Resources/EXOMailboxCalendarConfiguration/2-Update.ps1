@@ -42,7 +42,7 @@ Configuration Example
             FirstWeekOfYear                          = "FirstDay";
             FlightEventsFromEmailEnabled             = $True;
             HotelEventsFromEmailEnabled              = $True;
-            Identity                                 = "admin@$TenantId";
+            Identity                                 = "MeganB@$TenantId";
             InvoiceEventsFromEmailEnabled            = $True;
             LocationDetailsInFreeBusy                = "Desk";
             PackageDeliveryEventsFromEmailEnabled    = $False;

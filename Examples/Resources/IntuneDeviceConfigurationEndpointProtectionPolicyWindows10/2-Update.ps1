@@ -49,7 +49,7 @@ Configuration Example
                 }
                 MSFT_DeviceManagementConfigurationPolicyAssignments{
                     dataType         = '#microsoft.graph.exclusionGroupAssignmentTarget'
-                    groupDisplayName = 'Policy Exclusions'
+                    groupDisplayName = 'Intune Excluded Users'
                 }
             );
             BitLockerAllowStandardUserEncryption                                         = $True;
@@ -109,35 +109,15 @@ Configuration Example
             DefenderAllowScanRemovableDrivesDuringFullScan                               = $true;
             DefenderAllowScanScriptsLoadedInInternetExplorer                             = $true;
             DefenderAttackSurfaceReductionExcludedPaths                                  = @("C:\Program Files\Contoso\LineOfBusiness");
-            DefenderBlockEndUserAccess                                                   = $false;
             DefenderBlockPersistenceThroughWmiType                                       = "userDefined";
-            DefenderCheckForSignaturesBeforeRunningScan                                  = $true;
-            DefenderCloudBlockLevel                                                      = "high";
-            DefenderCloudExtendedTimeoutInSeconds                                        = 50;
-            DefenderDaysBeforeDeletingQuarantinedMalware                                 = 30;
             DefenderDetectedMalwareActions                                               = MSFT_MicrosoftGraphdefenderDetectedMalwareActions{
                 HighSeverity     = "quarantine"
                 LowSeverity      = "clean"
                 ModerateSeverity = "quarantine"
                 SevereSeverity   = "remove"
             };
-            DefenderDisableBehaviorMonitoring                                            = $false;
-            DefenderDisableCatchupFullScan                                               = $false;
-            DefenderDisableCatchupQuickScan                                              = $false;
-            DefenderDisableCloudProtection                                               = $false;
-            DefenderDisableIntrusionPreventionSystem                                     = $false;
-            DefenderDisableOnAccessProtection                                            = $false;
-            DefenderDisableRealTimeMonitoring                                            = $false;
-            DefenderDisableScanArchiveFiles                                              = $false;
-            DefenderDisableScanDownloads                                                 = $false;
-            DefenderDisableScanNetworkFiles                                              = $false;
-            DefenderDisableScanRemovableDrivesDuringFullScan                             = $false;
-            DefenderDisableScanScriptsLoadedInInternetExplorer                           = $false;
             DefenderEmailContentExecution                                                = "userDefined";
             DefenderEmailContentExecutionType                                            = "userDefined";
-            DefenderEnableLowCpuPriority                                                 = $true;
-            DefenderEnableScanIncomingMail                                               = $true;
-            DefenderEnableScanMappedNetworkDrivesDuringFullScan                          = $false;
             DefenderExploitProtectionXml                                                 = "PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiPz4NCjxNaXRpZ2F0aW9uUG9saWN5Pg0KICA8QXBwQ29uZmlnIEV4ZWN1dGFibGU9IkFjcm9SZDMyLmV4ZSI+DQogICAgPEFTTFIgRm9yY2VSZWxvY2F0ZUltYWdlcz0idHJ1ZSIgUmVxdWlyZUluZm89ImZhbHNlIiAvPg0KICA8L0FwcENvbmZpZz4NCiAgPEFwcENvbmZpZyBFeGVjdXRhYmxlPSJBY3JvUmQzMkluZm8uZXhlIj4NCiAgICA8QVNMUiBGb3JjZVJlbG9jYXRlSW1hZ2VzPSJ0cnVlIiBSZXF1aXJlSW5mbz0iZmFsc2UiIC8+DQogIDwvQXBwQ29uZmlnPg0KICA8QXBwQ29uZmlnIEV4ZWN1dGFibGU9ImNsdmlldy5leGUiPg0KICAgIDxBU0xSIEZvcmNlUmVsb2NhdGVJbWFnZXM9InRydWUiIFJlcXVpcmVJbmZvPSJmYWxzZSIgLz4NCiAgPC9BcHBDb25maWc+DQogIDxBcHBDb25maWcgRXhlY3V0YWJsZT0iY25mbm90MzIuZXhlIj4NCiAgICA8QVNMUiBGb3JjZVJlbG9jYXRlSW1hZ2VzPSJ0cnVlIiBSZXF1aXJlSW5mbz0iZmFsc2UiIC8+DQogIDwvQXBwQ29uZmlnPg0KICA8QXBwQ29uZmlnIEV4ZWN1dGFibGU9ImV4Y2VsLmV4ZSI+DQogICAgPEFTTFIgRm9yY2VSZWxvY2F0ZUltYWdlcz0idHJ1ZSIgUmVxdWlyZUluZm89ImZhbHNlIiAvPg0KICA8L0FwcENvbmZpZz4NCiAgPEFwcENvbmZpZyBFeGVjdXRhYmxlPSJleGNlbGNudi5leGUiPg0KICAgIDxBU0xSIEZvcmNlUmVsb2NhdGVJbWFnZXM9InRydWUiIFJlcXVpcmVJbmZvPSJmYWxzZSIgLz4NCiAgPC9BcHBDb25maWc+DQogIDxBcHBDb25maWcgRXhlY3V0YWJsZT0iRXh0RXhwb3J0LmV4ZSI+DQogICAgPEFTTFIgRm9yY2VSZWxvY2F0ZUltYWdlcz0idHJ1ZSIgUmVxdWlyZUluZm89ImZhbHNlIiAvPg0KICA8L0FwcENvbmZpZz4NCiAgPEFwcENvbmZpZyBFeGVjdXRhYmxlPSJncmFwaC5leGUiPg0KICAgIDxBU0xSIEZvcmNlUmVsb2NhdGVJbWFnZXM9InRydWUiIFJlcXVpcmVJbmZvPSJmYWxzZSIgLz4NCiAgPC9BcHBDb25maWc+DQogIDxBcHBDb25maWcgRXhlY3V0YWJsZT0iaWU0dWluaXQuZXhlIj4NCiAgICA8QVNMUiBGb3JjZVJlbG9jYXRlSW1hZ2VzPSJ0cnVlIiBSZXF1aXJlSW5mbz0iZmFsc2UiIC8+DQogIDwvQXBwQ29uZmlnPg0KICA8QXBwQ29uZmlnIEV4ZWN1dGFibGU9ImllaW5zdGFsLmV4ZSI+DQogICAgPEFTTFIgRm9yY2VSZWxvY2F0ZUltYWdlcz0idHJ1ZSIgUmVxdWlyZUluZm89ImZhbHNlIiAvPg0KICA8L0FwcENvbmZpZz4NCiAgPEFwcENvbmZpZyBFeGVjdXRhYmxlPSJpZWxvd3V0aWwuZXhlIj4NCiAgICA8QVNMUiBGb3JjZVJlbG9jYXRlSW1hZ2VzPSJ0cnVlIiBSZXF1aXJlSW5mbz0iZmFsc2UiIC8+DQogIDwvQXBwQ29uZmlnPg0KICA8QXBwQ29uZmlnIEV4ZWN1dGFibGU9ImllVW5hdHQuZXhlIj4NCiAgICA8QVNMUiBGb3JjZVJlbG9jYXRlSW1hZ2VzPSJ0cnVlIiBSZXF1aXJlSW5mbz0iZmFsc2UiIC8+DQogIDwvQXBwQ29uZmlnPg0KICA8QXBwQ29uZmlnIEV4ZWN1dGFibGU9ImlleHBsb3JlLmV4ZSI+DQogICAgPEFTTFIgRm9yY2VSZWxvY2F0ZUltYWdlcz0idHJ1ZSIgUmVxdWlyZUluZm89ImZhbHNlIiAvPg0KICA8L0FwcENvbmZpZz4NCiAgPEFwcENvbmZpZyBFeGVjdXRhYmxlPSJseW5jLmV4ZSI+DQogICAgPEFTTFIgRm9yY2VSZWxvY2F0ZUltYWdlcz0idHJ1ZSIgUmVxdWlyZUluZm89ImZhbHNlIiAvPg0KICA8L0FwcENvbmZpZz4NCiAgPEFwcENvbmZpZyBFeGVjdXRhYmxlPSJtc2FjY2Vzcy5leGUiPg0KICAgIDxBU0xSIEZvcmNlUmVsb2NhdGVJbWFnZXM9InRydWUiIFJlcXVpcmVJbmZvPSJmYWxzZSIgLz4NCiAgPC9BcHBDb25maWc+DQogIDxBcHBDb25maWcgRXhlY3V0YWJsZT0ibXNjb3JzdncuZXhlIj4NCiAgICA8RXh0ZW5zaW9uUG9pbnRzIERpc2FibGVFeHRlbnNpb25Qb2ludHM9InRydWUiIC8+DQogIDwvQXBwQ29uZmlnPg0KICA8QXBwQ29uZmlnIEV4ZWN1dGFibGU9Im1zZmVlZHNzeW5jLmV4ZSI+DQogICAgPEFTTFIgRm9yY2VSZWxvY2F0ZUltYWdlcz0idHJ1ZSIgUmVxdWlyZUluZm89ImZhbHNlIiAvPg0KICA8L0FwcENvbmZpZz4NCiAgPEFwcENvbmZpZyBFeGVjdXRhYmxlPSJtc2h0YS5leGUiPg0KICAgIDxBU0xSIEZvcmNlUmVsb2NhdGVJbWFnZXM9InRydWUiIFJlcXVpcmVJbmZvPSJmYWxzZSIgLz4NCiAgPC9BcHBDb25maWc+DQogIDxBcHBDb25maWcgRXhlY3V0YWJsZT0ibXNvYWRmc2IuZXhlIj4NCiAgICA8QVNMUiBGb3JjZVJlbG9jYXRlSW1hZ2VzPSJ0cnVlIiBSZXF1aXJlSW5mbz0iZmFsc2UiIC8+DQogIDwvQXBwQ29uZmlnPg0KICA8QXBwQ29uZmlnIEV4ZWN1dGFibGU9Im1zb2FzYi5leGUiPg0KICAgIDxBU0xSIEZvcmNlUmVsb2NhdGVJbWFnZXM9InRydWUiIFJlcXVpcmVJbmZvPSJmYWxzZSIgLz4NCiAgPC9BcHBDb25maWc+DQogIDxBcHBDb25maWcgRXhlY3V0YWJsZT0ibXNvaHRtZWQuZXhlIj4NCiAgICA8QVNMUiBGb3JjZVJlbG9jYXRlSW1hZ2VzPSJ0cnVlIiBSZXF1aXJlSW5mbz0iZmFsc2UiIC8+DQogIDwvQXBwQ29uZmlnPg0KICA8QXBwQ29uZmlnIEV4ZWN1dGFibGU9Im1zb3NyZWMuZXhlIj4NCiAgICA8QVNMUiBGb3JjZVJlbG9jYXRlSW1hZ2VzPSJ0cnVlIiBSZXF1aXJlSW5mbz0iZmFsc2UiIC8+DQogIDwvQXBwQ29uZmlnPg0KICA8QXBwQ29uZmlnIEV4ZWN1dGFibGU9Im1zb3htbGVkLmV4ZSI+DQogICAgPEFTTFIgRm9yY2VSZWxvY2F0ZUltYWdlcz0idHJ1ZSIgUmVxdWlyZUluZm89ImZhbHNlIiAvPg0KICA8L0FwcENvbmZpZz4NCiAgPEFwcENvbmZpZyBFeGVjdXRhYmxlPSJtc3B1Yi5leGUiPg0KICAgIDxBU0xSIEZvcmNlUmVsb2NhdGVJbWFnZXM9InRydWUiIFJlcXVpcmVJbmZvPSJmYWxzZSIgLz4NCiAgPC9BcHBDb25maWc+DQogIDxBcHBDb25maWcgRXhlY3V0YWJsZT0ibXNxcnkzMi5leGUiPg0KICAgIDxBU0xSIEZvcmNlUmVsb2NhdGVJbWFnZXM9InRydWUiIFJlcXVpcmVJbmZvPSJmYWxzZSIgLz4NCiAgPC9BcHBDb25maWc+DQogIDxBcHBDb25maWcgRXhlY3V0YWJsZT0iTXNTZW5zZS5leGUiPg0KICAgIDxFeHRlbnNpb25Qb2ludHMgRGlzYWJsZUV4dGVuc2lvblBvaW50cz0idHJ1ZSIgLz4NCiAgICA8SW1hZ2VMb2FkIFByZWZlclN5c3RlbTMyPSJ0cnVlIiAvPg0KICA8L0FwcENvbmZpZz4NCiAgPEFwcENvbmZpZyBFeGVjdXRhYmxlPSJuZ2VuLmV4ZSI+DQogICAgPEV4dGVuc2lvblBvaW50cyBEaXNhYmxlRXh0ZW5zaW9uUG9pbnRzPSJ0cnVlIiAvPg0KICA8L0FwcENvbmZpZz4NCiAgPEFwcENvbmZpZyBFeGVjdXRhYmxlPSJuZ2VudGFzay5leGUiPg0KICAgIDxFeHRlbnNpb25Qb2ludHMgRGlzYWJsZUV4dGVuc2lvblBvaW50cz0idHJ1ZSIgLz4NCiAgPC9BcHBDb25maWc+DQogIDxBcHBDb25maWcgRXhlY3V0YWJsZT0ib25lbm90ZS5leGUiPg0KICAgIDxBU0xSIEZvcmNlUmVsb2NhdGVJbWFnZXM9InRydWUiIFJlcXVpcmVJbmZvPSJmYWxzZSIgLz4NCiAgPC9BcHBDb25maWc+DQogIDxBcHBDb25maWcgRXhlY3V0YWJsZT0ib25lbm90ZW0uZXhlIj4NCiAgICA8QVNMUiBGb3JjZVJlbG9jYXRlSW1hZ2VzPSJ0cnVlIiBSZXF1aXJlSW5mbz0iZmFsc2UiIC8+DQogIDwvQXBwQ29uZmlnPg0KICA8QXBwQ29uZmlnIEV4ZWN1dGFibGU9Im9yZ2NoYXJ0LmV4ZSI+DQogICAgPEFTTFIgRm9yY2VSZWxvY2F0ZUltYWdlcz0idHJ1ZSIgUmVxdWlyZUluZm89ImZhbHNlIiAvPg0KICA8L0FwcENvbmZpZz4NCiAgPEFwcENvbmZpZyBFeGVjdXRhYmxlPSJvdXRsb29rLmV4ZSI+DQogICAgPEFTTFIgRm9yY2VSZWxvY2F0ZUltYWdlcz0idHJ1ZSIgUmVxdWlyZUluZm89ImZhbHNlIiAvPg0KICA8L0FwcENvbmZpZz4NCiAgPEFwcENvbmZpZyBFeGVjdXRhYmxlPSJwb3dlcnBudC5leGUiPg0KICAgIDxBU0xSIEZvcmNlUmVsb2NhdGVJbWFnZXM9InRydWUiIFJlcXVpcmVJbmZvPSJmYWxzZSIgLz4NCiAgPC9BcHBDb25maWc+DQogIDxBcHBDb25maWcgRXhlY3V0YWJsZT0iUHJlc2VudGF0aW9uSG9zdC5leGUiPg0KICAgIDxERVAgRW5hYmxlPSJ0cnVlIiBFbXVsYXRlQXRsVGh1bmtzPSJmYWxzZSIgLz4NCiAgICA8QVNMUiBGb3JjZVJlbG9jYXRlSW1hZ2VzPSJ0cnVlIiBSZXF1aXJlSW5mbz0iZmFsc2UiIEJvdHRvbVVwPSJ0cnVlIiBIaWdoRW50cm9weT0idHJ1ZSIgLz4NCiAgICA8U0VIT1AgRW5hYmxlPSJ0cnVlIiBUZWxlbWV0cnlPbmx5PSJmYWxzZSIgLz4NCiAgICA8SGVhcCBUZXJtaW5hdGVPbkVycm9yPSJ0cnVlIiAvPg0KICA8L0FwcENvbmZpZz4NCiAgPEFwcENvbmZpZyBFeGVjdXRhYmxlPSJQcmludERpYWxvZy5leGUiPg0KICAgIDxFeHRlbnNpb25Qb2ludHMgRGlzYWJsZUV4dGVuc2lvblBvaW50cz0idHJ1ZSIgLz4NCiAgPC9BcHBDb25maWc+DQogIDxBcHBDb25maWcgRXhlY3V0YWJsZT0iUmRyQ0VGLmV4ZSI+DQogICAgPEFTTFIgRm9yY2VSZWxvY2F0ZUltYWdlcz0idHJ1ZSIgUmVxdWlyZUluZm89ImZhbHNlIiAvPg0KICA8L0FwcENvbmZpZz4NCiAgPEFwcENvbmZpZyBFeGVjdXRhYmxlPSJSZHJTZXJ2aWNlc1VwZGF0ZXIuZXhlIj4NCiAgICA8QVNMUiBGb3JjZVJlbG9jYXRlSW1hZ2VzPSJ0cnVlIiBSZXF1aXJlSW5mbz0iZmFsc2UiIC8+DQogIDwvQXBwQ29uZmlnPg0KICA8QXBwQ29uZmlnIEV4ZWN1dGFibGU9InJ1bnRpbWVicm9rZXIuZXhlIj4NCiAgICA8RXh0ZW5zaW9uUG9pbnRzIERpc2FibGVFeHRlbnNpb25Qb2ludHM9InRydWUiIC8+DQogIDwvQXBwQ29uZmlnPg0KICA8QXBwQ29uZmlnIEV4ZWN1dGFibGU9InNjYW5vc3QuZXhlIj4NCiAgICA8QVNMUiBGb3JjZVJlbG9jYXRlSW1hZ2VzPSJ0cnVlIiBSZXF1aXJlSW5mbz0iZmFsc2UiIC8+DQogIDwvQXBwQ29uZmlnPg0KICA8QXBwQ29uZmlnIEV4ZWN1dGFibGU9InNjYW5wc3QuZXhlIj4NCiAgICA8QVNMUiBGb3JjZVJlbG9jYXRlSW1hZ2VzPSJ0cnVlIiBSZXF1aXJlSW5mbz0iZmFsc2UiIC8+DQogIDwvQXBwQ29uZmlnPg0KICA8QXBwQ29uZmlnIEV4ZWN1dGFibGU9InNkeGhlbHBlci5leGUiPg0KICAgIDxBU0xSIEZvcmNlUmVsb2NhdGVJbWFnZXM9InRydWUiIFJlcXVpcmVJbmZvPSJmYWxzZSIgLz4NCiAgPC9BcHBDb25maWc+DQogIDxBcHBDb25maWcgRXhlY3V0YWJsZT0ic2VsZmNlcnQuZXhlIj4NCiAgICA8QVNMUiBGb3JjZVJlbG9jYXRlSW1hZ2VzPSJ0cnVlIiBSZXF1aXJlSW5mbz0iZmFsc2UiIC8+DQogIDwvQXBwQ29uZmlnPg0KICA8QXBwQ29uZmlnIEV4ZWN1dGFibGU9InNldGxhbmcuZXhlIj4NCiAgICA8QVNMUiBGb3JjZVJlbG9jYXRlSW1hZ2VzPSJ0cnVlIiBSZXF1aXJlSW5mbz0iZmFsc2UiIC8+DQogIDwvQXBwQ29uZmlnPg0KICA8QXBwQ29uZmlnIEV4ZWN1dGFibGU9IlN5c3RlbVNldHRpbmdzLmV4ZSI+DQogICAgPEV4dGVuc2lvblBvaW50cyBEaXNhYmxlRXh0ZW5zaW9uUG9pbnRzPSJ0cnVlIiAvPg0KICA8L0FwcENvbmZpZz4NCiAgPEFwcENvbmZpZyBFeGVjdXRhYmxlPSJ3aW53b3JkLmV4ZSI+DQogICAgPEFTTFIgRm9yY2VSZWxvY2F0ZUltYWdlcz0idHJ1ZSIgUmVxdWlyZUluZm89ImZhbHNlIiAvPg0KICA8L0FwcENvbmZpZz4NCiAgPEFwcENvbmZpZyBFeGVjdXRhYmxlPSJ3b3JkY29udi5leGUiPg0KICAgIDxBU0xSIEZvcmNlUmVsb2NhdGVJbWFnZXM9InRydWUiIFJlcXVpcmVJbmZvPSJmYWxzZSIgLz4NCiAgPC9BcHBDb25maWc+DQo8L01pdGlnYXRpb25Qb2xpY3k+";
             DefenderExploitProtectionXmlFileName                                         = "Settings.xml";
             DefenderFileExtensionsToExclude                                              = @("mdb", "ldb");
@@ -154,16 +134,11 @@ Configuration Example
             DefenderOfficeCommunicationAppsLaunchChildProcess                            = "notConfigured";
             DefenderOfficeMacroCodeAllowWin32Imports                                     = "userDefined";
             DefenderOfficeMacroCodeAllowWin32ImportsType                                 = "userDefined";
-            DefenderPotentiallyUnwantedAppAction                                         = "enable";
             DefenderPreventCredentialStealingType                                        = "enable";
             DefenderProcessCreation                                                      = "userDefined";
             DefenderProcessCreationType                                                  = "userDefined";
             DefenderProcessesToExclude                                                   = @("ContosoLedgerSync.exe");
-            DefenderScanDirection                                                        = "monitorAllFiles";
-            DefenderScanMaxCpuPercentage                                                 = 50;
-            DefenderScanType                                                             = "quick";
             DefenderScheduledQuickScanTime                                               = "12:00:00";
-            DefenderScheduledScanDay                                                     = "sunday";
             DefenderScheduledScanTime                                                    = "02:00:00";
             DefenderScriptDownloadedPayloadExecution                                     = "userDefined";
             DefenderScriptDownloadedPayloadExecutionType                                 = "userDefined";
@@ -190,7 +165,6 @@ Configuration Example
             DefenderSecurityCenterNotificationsFromApp                                   = "blockNoncriticalNotifications";
             DefenderSecurityCenterOrganizationDisplayName                                = "Contoso IT Security";
             DefenderSignatureUpdateIntervalInHours                                       = 4;
-            DefenderSubmitSamplesConsentType                                             = "sendSafeSamplesAutomatically";
             DefenderUntrustedExecutable                                                  = "userDefined";
             DefenderUntrustedExecutableType                                              = "userDefined";
             DefenderUntrustedUSBProcess                                                  = "userDefined";
@@ -352,7 +326,7 @@ Configuration Example
             LocalSecurityOptionsInformationShownOnLockScreen                             = "notConfigured";
             LocalSecurityOptionsLogOnMessageText                                         = "This device is provided for business use. Activity may be monitored in line with company policy.";
             LocalSecurityOptionsLogOnMessageTitle                                        = "Authorised use only";
-            LocalSecurityOptionsMachineInactivityLimit                                   = 900;
+            LocalSecurityOptionsMachineInactivityLimit                                   = 15;
             LocalSecurityOptionsMachineInactivityLimitInMinutes                          = 15;
             LocalSecurityOptionsMinimumSessionSecurityForNtlmSspBasedClients             = "none";
             LocalSecurityOptionsMinimumSessionSecurityForNtlmSspBasedServers             = "none";
@@ -377,7 +351,7 @@ Configuration Example
                 )
             };
             UserRightsActAsPartOfTheOperatingSystem                                      = MSFT_MicrosoftGraphdeviceManagementUserRightsSetting{
-                State = "blocked"
+                State = "allowed"
             };
             UserRightsAllowAccessFromNetwork                                             = MSFT_MicrosoftGraphdeviceManagementUserRightsSetting{
                 State              = "allowed"
@@ -406,7 +380,7 @@ Configuration Example
                 )
             };
             UserRightsBlockAccessFromNetwork                                             = MSFT_MicrosoftGraphdeviceManagementUserRightsSetting{
-                State              = "allowed"
+                State              = "blocked"
                 LocalUsersOrGroups = @(
                     MSFT_MicrosoftGraphDeviceManagementUserRightsLocalUserOrGroup{
                         Name               = "BUILTIN\Guests"
@@ -458,7 +432,7 @@ Configuration Example
                 )
             };
             UserRightsCreatePermanentSharedObjects                                       = MSFT_MicrosoftGraphdeviceManagementUserRightsSetting{
-                State = "blocked"
+                State = "allowed"
             };
             UserRightsCreateSymbolicLinks                                                = MSFT_MicrosoftGraphdeviceManagementUserRightsSetting{
                 State              = "allowed"
@@ -470,7 +444,7 @@ Configuration Example
                 )
             };
             UserRightsCreateToken                                                        = MSFT_MicrosoftGraphdeviceManagementUserRightsSetting{
-                State = "blocked"
+                State = "allowed"
             };
             UserRightsDebugPrograms                                                      = MSFT_MicrosoftGraphdeviceManagementUserRightsSetting{
                 State              = "allowed"
@@ -491,7 +465,7 @@ Configuration Example
                 )
             };
             UserRightsDenyLocalLogOn                                                     = MSFT_MicrosoftGraphdeviceManagementUserRightsSetting{
-                State              = "allowed"
+                State              = "blocked"
                 LocalUsersOrGroups = @(
                     MSFT_MicrosoftGraphDeviceManagementUserRightsLocalUserOrGroup{
                         Name               = "BUILTIN\Guests"
@@ -565,7 +539,7 @@ Configuration Example
                 )
             };
             UserRightsLockMemory                                                         = MSFT_MicrosoftGraphdeviceManagementUserRightsSetting{
-                State = "blocked"
+                State = "allowed"
             };
             UserRightsManageAuditingAndSecurityLogs                                      = MSFT_MicrosoftGraphdeviceManagementUserRightsSetting{
                 State              = "allowed"
@@ -595,7 +569,7 @@ Configuration Example
                 )
             };
             UserRightsModifyObjectLabels                                                 = MSFT_MicrosoftGraphdeviceManagementUserRightsSetting{
-                State = "blocked"
+                State = "allowed"
             };
             UserRightsProfileSingleProcess                                               = MSFT_MicrosoftGraphdeviceManagementUserRightsSetting{
                 State              = "allowed"
@@ -607,15 +581,11 @@ Configuration Example
                 )
             };
             UserRightsRemoteDesktopServicesLogOn                                         = MSFT_MicrosoftGraphdeviceManagementUserRightsSetting{
-                State              = "allowed"
+                State              = "blocked"
                 LocalUsersOrGroups = @(
                     MSFT_MicrosoftGraphDeviceManagementUserRightsLocalUserOrGroup{
-                        Name               = "BUILTIN\Administrators"
-                        SecurityIdentifier = "*S-1-5-32-544"
-                    }
-                    MSFT_MicrosoftGraphDeviceManagementUserRightsLocalUserOrGroup{
-                        Name               = "BUILTIN\Remote Desktop Users"
-                        SecurityIdentifier = "*S-1-5-32-555"
+                        Name               = "BUILTIN\Guests"
+                        SecurityIdentifier = "*S-1-5-32-546"
                     }
                 )
             };

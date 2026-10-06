@@ -28,7 +28,7 @@ Configuration Example
         {
             Description           = "Amsterdam office subnet";
             Ensure                = "Present";
-            Identity              = "192.168.0.0";
+            Identity              = "172.16.20.0";
             MaskBits              = 24;
             NetworkSiteID         = "Amsterdam";
             ApplicationId         = $ApplicationId

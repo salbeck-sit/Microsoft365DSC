@@ -11936,6 +11936,10 @@ function Remove-UnifiedAuditLogRetentionPolicy
         $Confirm,
 
         [Parameter()]
+        [System.Management.Automation.SwitchParameter]
+        $ForceDeletion,
+
+        [Parameter()]
         [System.String]
         $Identity
     )

@@ -28,9 +28,9 @@ Configuration Example
         {
             Action                = "Block";
             Ensure                = "Present";
-            ExpirationDate        = "10/11/2024 9:00:00 PM";
             ListSubType           = "Tenant";
             ListType              = "Sender";
+            NoExpiration          = $true;
             Notes                 = "Blocked sender reported by the service desk";
             Value                 = "example.com";
             ApplicationId         = $ApplicationId;

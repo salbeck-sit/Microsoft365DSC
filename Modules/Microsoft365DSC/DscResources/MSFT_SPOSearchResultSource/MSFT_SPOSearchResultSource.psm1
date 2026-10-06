@@ -13,11 +13,11 @@ class SPOSearchResultSource : M365DSCResourceBase
 
     [DscProperty(Mandatory)]
     [System.ComponentModel.Description('The protocol of the Result Source.')]
-    [ValidateSet('Local', 'Remote', 'OpenSearch', 'Exchange')]
+    [ValidateSet('Local', 'Exchange')]
     [System.String] $Protocol
 
     [DscProperty()]
-    [System.ComponentModel.Description('Address of the root site collection of the remote SharePoint farm or Exchange server.')]
+    [System.ComponentModel.Description('URL of the Exchange Web Services endpoint of an Exchange result source.')]
     [System.String] $SourceURL
 
     [DscProperty()]
@@ -28,10 +28,6 @@ class SPOSearchResultSource : M365DSCResourceBase
     [DscProperty()]
     [System.ComponentModel.Description('Change incoming queries to use this new query text instead. Include the incoming query in the new text by using the query variable ''{searchTerms}''.')]
     [System.String] $QueryTransform
-
-    [DscProperty()]
-    [System.ComponentModel.Description('Show partial search or not')]
-    [System.Nullable[System.Boolean]] $ShowPartialSearch
 
     [DscProperty()]
     [System.ComponentModel.Description('Specifies if AutoDiscover should be used for the Exchange Source URL')]
@@ -87,29 +83,14 @@ class SPOSearchResultSource : M365DSCResourceBase
                 ProviderID = 'fa947043-6046-4f97-9714-40d4c113963d'
             },
             @{
-                Protocol   = 'Remote'
-                Type       = 'SharePoint'
-                ProviderID = '1e0c8601-2e5d-4ccb-9561-53743b5dbde7'
-            },
-            @{
                 Protocol   = 'Exchange'
                 Type       = 'SharePoint'
                 ProviderID = '3a17e140-1574-4093-bad6-e19cdf1c0122'
             },
             @{
-                Protocol   = 'OpenSearch'
-                Type       = 'SharePoint'
-                ProviderID = '3a17e140-1574-4093-bad6-e19cdf1c0121'
-            },
-            @{
                 Protocol   = 'Local'
                 Type       = 'People'
                 ProviderID = 'e4bcc058-f133-4425-8ffc-1d70596ffd33'
-            },
-            @{
-                Protocol   = 'Remote'
-                Type       = 'People'
-                ProviderID = 'e377caaa-fcaf-4a1b-b7a1-e69a506a07aa'
             }
         )
     }
@@ -158,10 +139,8 @@ class SPOSearchResultSource : M365DSCResourceBase
             if ('http://auto?autodiscover=true' -eq $ExoSource)
             {
                 $SourceHasAutoDiscover = $true
+                $ExoSource = $null
             }
-
-            $allowPartial = $source.QueryTransform.OverridePropertiesForSeralization.KeyValueOfstringanyType `
-            | Where-Object -FilterScript { $_.Key -eq 'AllowPartialResults' }
 
             $mapping = $this.ResourceCache['InfoMapping'] | Where-Object -FilterScript { $_.ProviderID -eq $source.ProviderId }
 
@@ -171,7 +150,7 @@ class SPOSearchResultSource : M365DSCResourceBase
                 Protocol              = $mapping.Protocol
                 Type                  = $mapping.Type
                 QueryTransform        = [string] $source.QueryTransform._QueryTemplate
-                SourceURL             = [string] $source.ConnectionUrlTemplate
+                SourceURL             = $ExoSource
                 UseAutoDiscover       = $SourceHasAutoDiscover
                 Credential            = $this.Credential
                 ApplicationId         = $this.ApplicationId
@@ -183,11 +162,6 @@ class SPOSearchResultSource : M365DSCResourceBase
                 ManagedIdentity       = $this.ManagedIdentity
                 Ensure                = 'Present'
                 AccessTokens          = $this.AccessTokens
-            }
-
-            if ($null -ne $allowPartial)
-            {
-                $returnValue.Add('ShowPartialSearch', [System.Boolean]$allowPartial.Value.InnerText)
             }
 
             return $this.AsResult($returnValue)
@@ -211,6 +185,19 @@ class SPOSearchResultSource : M365DSCResourceBase
 
         Write-Verbose -Message "Setting configuration for Result Source instance $($this.Name)"
 
+        if ($this.UseAutoDiscover -eq $true)
+        {
+            if ($this.Protocol -ne 'Exchange')
+            {
+                throw 'UseAutoDiscover can only be used with the Exchange protocol.'
+            }
+
+            if (-not [System.String]::IsNullOrEmpty($this.SourceURL))
+            {
+                throw 'SourceURL cannot be combined with UseAutoDiscover.'
+            }
+        }
+
         Confirm-M365DSCDependencies
 
         $this.AddTelemetry('Set')
@@ -218,30 +205,33 @@ class SPOSearchResultSource : M365DSCResourceBase
         $null = $this.Connect('PnP')
         $null = $this.Connect('PnP', (Get-MSCloudLoginConnectionProfile -Workload PnP).AdminUrl)
 
-        if ($this.Ensure -eq 'Absent')
-        {
-            Write-Verbose -Message "Removing SPOSearchResultSource {$($this.Name)}"
-            Remove-PnPSearchConfiguration -Configuration $this.Name -Scope Subscription
-            return
-        }
-
         Write-Verbose -Message 'Reading SearchConfigurationSettings XML file'
         $SearchConfigTemplatePath = Join-Path -Path $this.GetModulePath() `
             -ChildPath './Dependencies/SearchConfigurationSettings.xml' `
             -Resolve
         $SearchConfigXML = [Xml] (Get-Content $SearchConfigTemplatePath -Raw)
 
-        # Get the result source back if it already exists.
-        if ($null -eq $this.ResourceCache['RecentExtract'])
-        {
-            $this.ResourceCache['RecentExtract'] = [XML] (Get-PnPSearchConfiguration -Scope Subscription)
-        }
+        $currentConfig = [Xml] (Get-PnPSearchConfiguration -Scope Subscription)
+        $source = $currentConfig.SearchConfigurationSettings.SearchQueryConfigurationSettings.SearchQueryConfigurationSettings.Sources.Source `
+            | Where-Object -Property Name -EQ $this.Name
+        $this.ResourceCache['RecentExtract'] = $null
 
-        $source = $this.ResourceCache['RecentExtract'].SearchConfigurationSettings.SearchQueryConfigurationSettings.SearchQueryConfigurationSettings.Sources.Source `
-        | Where-Object -FilterScript { $_.Name -eq $this.Name }
         if ($null -ne $source)
         {
-            $currentID = $source.Id
+            Write-Verbose -Message "Removing existing SPOSearchResultSource {$($this.Name)}"
+            $currentID = @($source)[0].Id
+            $removeXML = [Xml] (Get-Content $SearchConfigTemplatePath -Raw)
+            $removeSources = $removeXML.SearchConfigurationSettings.SearchQueryConfigurationSettings.SearchQueryConfigurationSettings.Sources
+            foreach ($entry in @($source))
+            {
+                $null = $removeSources.AppendChild($removeXML.ImportNode($entry, $true))
+            }
+            Remove-PnPSearchConfiguration -Configuration $removeXML.OuterXml -Scope Subscription
+        }
+
+        if ($this.Ensure -eq 'Absent')
+        {
+            return
         }
 
         Write-Verbose -Message 'Generating new SearchConfigurationSettings XML file'
@@ -251,7 +241,14 @@ class SPOSearchResultSource : M365DSCResourceBase
         Write-Verbose -Message 'Setting ConnectionUrlTemplate'
         $node = $SearchConfigXML.CreateElement('d4p1:ConnectionUrlTemplate', `
                 'http://schemas.datacontract.org/2004/07/Microsoft.Office.Server.Search.Administration.Query')
-        $node.InnerText = $this.SourceUrl
+        if ($this.UseAutoDiscover -eq $true)
+        {
+            $node.InnerText = 'http://auto?autodiscover=true'
+        }
+        else
+        {
+            $node.InnerText = $this.SourceURL
+        }
         $newSource.AppendChild($node) | Out-Null
 
         Write-Verbose -Message 'Setting CreatedDate'
@@ -305,7 +302,7 @@ class SPOSearchResultSource : M365DSCResourceBase
         $queryTransformNode.AppendChild($node)
 
         Write-Verbose -Message 'Setting QueryTransform:ParentType'
-        $queryTransformNode = $SearchConfigXML.CreateElement('d6p1:ParentType', `
+        $node = $SearchConfigXML.CreateElement('d6p1:ParentType', `
                 'http://www.microsoft.com/sharepoint/search/KnownTypes/2008/08')
         $node.InnerText = 'Source'
         $queryTransformNode.AppendChild($node)
@@ -342,7 +339,9 @@ class SPOSearchResultSource : M365DSCResourceBase
         Write-Verbose -Message 'Setting QueryTransform:_SourceId'
         $node = $SearchConfigXML.CreateElement('d6p1:_SourceId', `
                 'http://www.microsoft.com/sharepoint/search/KnownTypes/2008/08')
-        $node.SetAttribute('i:nil', 'true')
+        $nilAttribute = $SearchConfigXML.CreateAttribute('i', 'nil', 'http://www.w3.org/2001/XMLSchema-instance')
+        $nilAttribute.Value = 'true'
+        $null = $node.Attributes.Append($nilAttribute)
         $queryTransformNode.AppendChild($node)
 
         Write-Verbose -Message 'Inserting QueryTransform'
@@ -412,6 +411,14 @@ class SPOSearchResultSource : M365DSCResourceBase
 
                 $mapping = $this.ResourceCache['InfoMapping'] | Where-Object -FilterScript { $_.ProviderID -eq $source.ProviderId }
                 Write-M365DSCHost -Message "    |---[$i/$($sourcesLength)] $($source.Name)" -DeferWrite
+
+                if ($null -eq $mapping)
+                {
+                    Write-Verbose -Message "Skipping result source {$($source.Name)} with unsupported provider {$($source.ProviderId)}"
+                    Write-M365DSCHost -Message $Global:M365DSCEmojiRedX -CommitWrite
+                    $i++
+                    continue
+                }
 
                 $Params = @{
                     Name                  = $source.Name

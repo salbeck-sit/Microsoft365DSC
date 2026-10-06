@@ -26,8 +26,8 @@ Configuration Example
     {
         AADAppManagementPolicy "AADAppManagementPolicy-Example"
         {
-            Description           = "Cred policy";
-            DisplayName           = "AppManagementPolicy";
+            Description           = "Restricts client secrets and limits credential lifetimes to 90 days";
+            DisplayName           = "Application Credential Restrictions";
             Ensure                = "Absent";
             ApplicationId         = $ApplicationId;
             TenantId              = $TenantId;

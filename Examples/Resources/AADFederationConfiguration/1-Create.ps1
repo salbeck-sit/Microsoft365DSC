@@ -26,10 +26,10 @@ Configuration Example
     {
         AADFederationConfiguration "AADFederationConfiguration-Example"
         {
-            IssuerUri                       = 'https://contoso.com/issuerUri'
-            DisplayName                     = 'contoso display name'
-            MetadataExchangeUri             = 'https://contoso.com/metadataExchangeUri'
-            PassiveSignInUri                = 'https://contoso.com/signin'
+            IssuerUri                       = 'http://contoso.com/adfs/services/trust'
+            DisplayName                     = 'Contoso Partner Federation'
+            MetadataExchangeUri             = 'https://contoso.com/adfs/services/trust/mex'
+            PassiveSignInUri                = 'https://contoso.com/adfs/ls/'
             PreferredAuthenticationProtocol = 'wsFed'
             Domains                         = @('contoso.com')
             Ensure                          = 'Present'

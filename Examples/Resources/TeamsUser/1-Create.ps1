@@ -26,8 +26,8 @@ Configuration Example
     {
         TeamsUser 'TeamsUser-Example'
         {
-            TeamName              = "SuperSecretTeam"
-            User                  = "jdoe@contoso.com"
+            TeamName              = "Mark 8 Project Team"
+            User                  = "PattiF@$TenantId"
             Role                  = "Member"
             Ensure                = "Present"
             ApplicationId         = $ApplicationId

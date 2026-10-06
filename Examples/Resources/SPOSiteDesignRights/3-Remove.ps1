@@ -24,10 +24,11 @@ Configuration Example
 
     Node localhost
     {
-        AADActivityBasedTimeoutPolicy "AADActivityBasedTimeoutPolicy-Example"
+        SPOSiteDesignRights 'SPOSiteDesignRights-Example'
         {
-            DisplayName           = "displayName-value";
-            Ensure                = "Absent";
+            SiteDesignTitle       = "Contoso Team Site Design"
+            Rights                = "View"
+            Ensure                = "Absent"
             ApplicationId         = $ApplicationId
             TenantId              = $TenantId
             CertificateThumbprint = $CertificateThumbprint

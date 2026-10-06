@@ -26,8 +26,8 @@ Configuration Example
     {
         SPOOrgAssetsLibrary 'SPOOrgAssetsLibrary-Example'
         {
-            LibraryUrl            = "https://contoso.sharepoint.com/sites/org/Branding"
-            ThumbnailUrl          = "https://contoso.sharepoint.com/sites/org/Branding/Logo/Owagroup.png"
+            LibraryUrl            = "https://contoso.sharepoint.com/sites/BrandGuide/Shared Documents"
+            ThumbnailUrl          = "https://contoso.sharepoint.com/sites/BrandGuide/Shared Documents/Logo/Owagroup.png"
             CdnType               = "Public"
             Ensure                = "Present"
             ApplicationId         = $ApplicationId

@@ -33,7 +33,7 @@ Configuration Example
                 }
                 MSFT_DeviceManagementConfigurationPolicyAssignments{
                     dataType         = '#microsoft.graph.exclusionGroupAssignmentTarget'
-                    groupDisplayName = 'Policy Exclusions'
+                    groupDisplayName = 'Intune Excluded Users'
                 }
             );
             AssociatedApps                              = @(
@@ -49,7 +49,7 @@ Configuration Example
             AuthenticationMethod                        = "usernameAndPassword";
             ConnectionName                              = "Cisco VPN";
             ConnectionType                              = "ciscoAnyConnect";
-            CustomXml                                   = "<Config><Version>1</Version><DeviceSetup><ConnectionEntry><HostName>vpn.contoso.com</HostName></ConnectionEntry></DeviceSetup></Config>";
+            CustomXml                                   = "PENvbmZpZz48VmVyc2lvbj4xPC9WZXJzaW9uPjxEZXZpY2VTZXR1cD48Q29ubmVjdGlvbkVudHJ5PjxIb3N0TmFtZT52cG4uY29udG9zby5jb208L0hvc3ROYW1lPjwvQ29ubmVjdGlvbkVudHJ5PjwvRGV2aWNlU2V0dXA+PC9Db25maWc+";
             Description                                 = "Always-on connection to the corporate network for staff working remotely";
             DeviceManagementApplicabilityRuleDeviceMode = MSFT_DeviceManagementApplicabilityRuleDeviceMode{
                 Name       = "Standard configuration devices only"
@@ -80,7 +80,7 @@ Configuration Example
             EnableAlwaysOn                              = $True;
             EnableConditionalAccess                     = $True;
             EnableDnsRegistration                       = $True;
-            EnableSingleSignOnWithAlternateCertificate  = $False;
+            EnableSingleSignOnWithAlternateCertificate  = $True;
             EnableSplitTunneling                        = $False;
             Ensure                                      = "Present";
             OnlyAssociatedAppsCanUseConnection          = $False;

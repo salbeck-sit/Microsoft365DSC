@@ -27,13 +27,12 @@ Configuration Example
         EXOMigration "EXOMigration-Example"
         {
             AddUsers              = $True; # Updated Property
-            BadItemLimit          = "";
             CompleteAfter         = "12/31/9999 11:59:59 PM";
             Ensure                = "Present";
             Identity              = "Mailbox Batch 1";
-            LargeItemLimit        = "";
+            MigrationUsers        = @("AdeleV@$TenantId", "AlexW@$TenantId");
             MoveOptions           = @();
-            NotificationEmails    = @("eac_admin@bellred.org");
+            NotificationEmails    = @("MeganB@$TenantId");
             SkipMerging           = @();
             Status                = "Completed";
             Update                = $False;

@@ -28,9 +28,9 @@ Configuration Example
         {
             Ensure                = "Absent";
             Identity              = "Field Sales and Marketing";
-            ApplicationId         = $ConfigurationData.NonNodeData.ApplicationId;
+            ApplicationId         = $ApplicationId;
             TenantId              = $TenantId;
-            CertificateThumbprint = $ConfigurationData.NonNodeData.CertificateThumbprint;
+            CertificateThumbprint = $CertificateThumbprint;
         }
     }
 }

@@ -837,14 +837,15 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
         Context -Name 'Policy requires no terms of use' -Fixture {
             BeforeAll {
                 $testParams = @{
-                    DisplayName          = 'Allin'
-                    Ensure               = 'Present'
-                    Credential           = $Credscredential
-                    State                = 'disabled'
-                    IncludeApplications  = @('All')
-                    IncludeUsers         = 'All'
-                    GrantControlOperator = 'AND'
-                    BuiltInControls      = @('Mfa')
+                    DisplayName                        = 'Allin'
+                    Ensure                             = 'Present'
+                    Credential                         = $Credscredential
+                    State                              = 'disabled'
+                    IncludeApplications                = @('All')
+                    IncludeUsers                       = 'All'
+                    GrantControlOperator               = 'AND'
+                    BuiltInControls                    = @('Mfa')
+                    DisableResilienceDefaultsIsEnabled = $false
                 }
 
                 Mock -CommandName Get-MgBetaIdentityConditionalAccessPolicy -MockWith {
@@ -873,6 +874,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                 $result = (New-M365DSCResourceInstance -ResourceName 'AADConditionalAccessPolicy' -Property $testParams).Get().ToHashtable()
                 $result.TermsOfUse -is [System.String[]] | Should -BeTrue
                 $result.TermsOfUse | Should -BeNullOrEmpty
+                $result.DisableResilienceDefaultsIsEnabled | Should -Be $false
                 Should -Invoke -CommandName Get-MgBetaAgreement -Exactly 0
             }
 

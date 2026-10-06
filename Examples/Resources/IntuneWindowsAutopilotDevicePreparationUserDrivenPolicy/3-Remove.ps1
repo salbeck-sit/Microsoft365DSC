@@ -26,7 +26,7 @@ Configuration Example
     {
         IntuneWindowsAutopilotDevicePreparationUserDrivenPolicy 'IntuneWindowsAutopilotDevicePreparationUserDrivenPolicy-Example'
         {
-            DisplayName           = "IntuneWindowsAutopilotDevicePreparationPolicy_1";
+            DisplayName           = "Windows User-Driven Device Preparation";
             Ensure                = "Absent";
             ApplicationId         = $ApplicationId;
             TenantId              = $TenantId;

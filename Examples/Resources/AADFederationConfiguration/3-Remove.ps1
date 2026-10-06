@@ -26,7 +26,7 @@ Configuration Example
     {
         AADFederationConfiguration "AADFederationConfiguration-Example"
         {
-            DisplayName           = 'contoso display name'
+            DisplayName           = 'Contoso Partner Federation'
             Ensure                = 'Absent'
             ApplicationId         = $ApplicationId
             TenantId              = $TenantId

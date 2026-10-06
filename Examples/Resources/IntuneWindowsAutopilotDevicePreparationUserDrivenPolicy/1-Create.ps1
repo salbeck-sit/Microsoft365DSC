@@ -35,15 +35,15 @@ Configuration Example
                 MSFT_DeviceManagementConfigurationPolicyAssignments{
                     dataType                                   = "#microsoft.graph.groupAssignmentTarget"
                     deviceAndAppManagementAssignmentFilterType = "none"
-                    groupDisplayName                           = "Include"
+                    groupDisplayName                           = "Intune Pilot Users"
                 }
             );
-            AssignmentTarget      = "Include";
+            AssignmentTarget      = "Intune Pilot Devices";
             CustomErrorMessage    = "Contact your organization’s support person for help.";
             DeploymentMode        = "0";
             DeploymentType        = "0";
-            Description           = "";
-            DisplayName           = "IntuneWindowsAutopilotDevicePreparationPolicy_1";
+            Description           = "Installs core apps and scripts during user-driven Autopilot setup of corporate Windows devices";
+            DisplayName           = "Windows User-Driven Device Preparation";
             Ensure                = "Present";
             JoinType              = "0";
             RoleScopeTagIds       = @("0");

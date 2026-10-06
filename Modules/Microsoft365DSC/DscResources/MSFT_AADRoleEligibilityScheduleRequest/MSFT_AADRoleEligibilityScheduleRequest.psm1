@@ -397,8 +397,8 @@ class AADRoleEligibilityScheduleRequest : M365DSCResourceBase
             if ($this.ResourceCache['AllSchedules'].Count -gt 0)
             {
                 # Remove the instance from the cached list to avoid re-processing
-                $this.ResourceCache['AllSchedules'] = $this.ResourceCache['AllSchedules'] | Where-Object {
-                    $_.RoleDefinition -ne $this.RoleDefinition -and $_.Principal -ne $this.Principal -and $_.PrincipalType -ne $this.PrincipalType -and $_.DirectoryScopeId -ne $this.DirectoryScopeId
+                $this.ResourceCache['AllSchedules'] = $this.ResourceCache['AllSchedules'] | Where-Object -FilterScript {
+                    -not ($_.RoleDefinition -eq $this.RoleDefinition -and $_.Principal -eq $this.Principal -and $_.PrincipalType -eq $this.PrincipalType -and $_.DirectoryScopeId -eq $this.DirectoryScopeId)
                 }
             }
         }

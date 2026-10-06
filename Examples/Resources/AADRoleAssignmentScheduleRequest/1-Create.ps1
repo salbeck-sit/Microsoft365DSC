@@ -32,13 +32,11 @@ Configuration Example
             PrincipalType         = "User";
             RoleDefinition        = "Teams Communications Administrator";
             Justification         = "Assigning the Teams Communications Administrator role";
-            ScheduleInfo          = MSFT_AADRoleAssignmentScheduleRequestSchedule {
-                startDateTime = '2023-09-01T02:40:44Z'
-                expiration    = MSFT_AADRoleAssignmentScheduleRequestScheduleExpiration
-                    {
-                        endDateTime = '2025-10-31T02:40:09Z'
-                        type        = 'afterDateTime'
-                    }
+            ScheduleInfo          = MSFT_AADRoleAssignmentScheduleRequestSchedule{
+                expiration = MSFT_AADRoleAssignmentScheduleRequestScheduleExpiration{
+                    duration = "P180D"
+                    type     = "afterDuration"
+                }
             };
             ApplicationId         = $ApplicationId
             TenantId              = $TenantId

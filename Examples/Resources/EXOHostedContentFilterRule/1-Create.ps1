@@ -34,7 +34,7 @@ Configuration Example
             SentToMemberOf            = @("Executives@$TenantId")
             ExceptIfRecipientDomainIs = @("fabrikam.com")
             ExceptIfSentTo            = @("AlexW@$TenantId")
-            ExceptIfSentToMemberOf    = "LegalTeam@$TenantId"
+            ExceptIfSentToMemberOf    = "Retail@$TenantId"
             RecipientDomainIs         = @('contoso.com')
             HostedContentFilterPolicy = "Standard Spam Filter"
             Ensure                    = "Present"

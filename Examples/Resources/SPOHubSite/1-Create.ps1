@@ -26,13 +26,12 @@ Configuration Example
     {
         SPOHubSite 'SPOHubSite-Example'
         {
-            Url                   = "https://contoso.sharepoint.com/sites/marketing"
-            Title                 = "Marketing"
-            Description           = "Hub for the Marketing division"
-            LogoUrl               = "https://contoso.sharepoint.com/sites/marketing/SiteAssets/hublogo.png"
+            Url                   = "https://contoso.sharepoint.com/sites/SalesandMarketing"
+            Title                 = "Sales and Marketing"
+            Description           = "Hub for the Sales and Marketing division"
+            LogoUrl               = "https://contoso.sharepoint.com/sites/SalesandMarketing/SiteAssets/hublogo.png"
             RequiresJoinApproval  = $true
-            AllowedToJoin         = @("admin@$TenantId", "superuser@$TenantId")
-            SiteDesignId          = "f7eba920-9cca-4de8-b5aa-1da75a2a893c"
+            AllowedToJoin         = @("AdeleV@$TenantId", "MeganB@$TenantId")
             Ensure                = "Present"
             ApplicationId         = $ApplicationId
             TenantId              = $TenantId

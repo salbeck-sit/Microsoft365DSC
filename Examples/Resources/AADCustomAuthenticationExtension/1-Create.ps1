@@ -26,14 +26,14 @@ Configuration Example
     {
         AADCustomAuthenticationExtension "AADCustomAuthenticationExtension-Example"
         {
-            AuthenticationConfigurationResourceId    = "api://contoso.com/a5352e69-55c0-4160-b4b5-03d034d842fd"
+            AuthenticationConfigurationResourceId    = "<application-id-uri>"
             AuthenticationConfigurationType          = "#microsoft.graph.azureAdTokenAuthentication"
             ClaimsForTokenConfiguration              = @(
                 MSFT_AADCustomAuthenticationExtensionClaimForTokenConfiguration{
-                    ClaimIdInApiResponse = 'MyClaim'
+                    ClaimIdInApiResponse = 'CostCentre'
                 }
                 MSFT_AADCustomAuthenticationExtensionClaimForTokenConfiguration{
-                    ClaimIdInApiResponse = 'My2ndClaim'
+                    ClaimIdInApiResponse = 'Division'
                 }
             )
             ClientConfigurationMaximumRetries        = 1

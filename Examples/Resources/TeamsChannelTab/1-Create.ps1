@@ -33,7 +33,7 @@ Configuration Example
             }
             DisplayName           = "Project Plan"
             SortOrderIndex        = "10100"
-            TeamName              = "Contoso Team"
+            TeamName              = "Mark 8 Project Team"
             TeamsApp              = "com.microsoft.teamspace.tab.web"
             Ensure                = "Present"
             ApplicationId         = $ApplicationId

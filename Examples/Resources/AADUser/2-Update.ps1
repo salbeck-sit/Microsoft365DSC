@@ -40,12 +40,12 @@ Configuration Example
                     AttributeSetName = 'Engineering'
                     AttributeValues  = @(
                         MSFT_AADUserAttributeValue{
-                            AttributeName    = 'Project'
-                            StringArrayValue = @('Baker', 'Cascade', 'Denali') # Updated
+                            AttributeName    = 'Skills'
+                            StringArrayValue = @('PowerShell', 'Networking', 'Security') # Updated Property
                         }
                         MSFT_AADUserAttributeValue{
                             AttributeName = 'Datacenter'
-                            StringValue   = 'Portland' # Updated
+                            StringValue   = 'Portland' # Updated Property
                         }
                     )
                 }

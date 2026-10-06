@@ -24,10 +24,12 @@ Configuration Example
 
     Node localhost
     {
-        EXOATPProtectionPolicyRule "EXOATPProtectionPolicyRule-Example"
+        AADGroupEligibilitySchedule 'AADGroupEligibilitySchedule-Example'
         {
-            Identity              = "Strict Preset Security Policy";
-            Ensure                = "Absent"
+            AccessId              = "member";
+            Ensure                = "Absent";
+            GroupDisplayName      = "Retail";
+            Principal             = "AdeleV@$TenantId";
             ApplicationId         = $ApplicationId
             TenantId              = $TenantId
             CertificateThumbprint = $CertificateThumbprint

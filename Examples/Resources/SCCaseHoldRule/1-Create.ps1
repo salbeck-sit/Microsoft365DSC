@@ -26,11 +26,11 @@ Configuration Example
     {
         SCCaseHoldRule 'SCCaseHoldRule-Example'
         {
-            Name                  = "My Rule"
-            Policy                = "My Policy"
+            Name                  = "Supplier Budget Spreadsheets"
+            Policy                = "Litigation Hold 2026"
             Comment               = "Limits the hold to budget spreadsheets"
             Disabled              = $false
-            ContentMatchQuery     = "filename:2016 budget filetype:xlsx"
+            ContentMatchQuery     = "filename:budget filetype:xlsx"
             Ensure                = "Present"
             ApplicationId         = $ApplicationId
             TenantId              = $TenantId

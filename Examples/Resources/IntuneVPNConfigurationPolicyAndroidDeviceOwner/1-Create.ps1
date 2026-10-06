@@ -27,14 +27,14 @@ Configuration Example
         IntuneVPNConfigurationPolicyAndroidDeviceOwner "IntuneVPNConfigurationPolicyAndroidDeviceOwner-Example"
         {
             Assignments           = @();
-            alwaysOn              = $False;
+            alwaysOn              = $true;
+            alwaysOnLockdown      = $false;
             authenticationMethod  = "azureAD";
-            connectionName        = "IntuneVPNConfigurationPolicyAndroidDeviceOwner ConnectionName";
+            connectionName        = "Contoso Corporate VPN";
             connectionType        = "microsoftProtect";
-            Description           = "IntuneVPNConfigurationPolicyAndroidDeviceOwner Description";
-            DisplayName           = "IntuneVPNConfigurationPolicyAndroidDeviceOwner DisplayName";
+            Description           = "Always-on VPN for fully managed Android devices";
+            DisplayName           = "Android Fully Managed Corporate VPN";
             Ensure                = "Present";
-            Id                    = "12345678-1234-abcd-1234-12345678ABCD";
             customData            = @(
                 MSFT_CustomData{
                     key   = 'ContosoVpnSettings'
@@ -44,12 +44,10 @@ Configuration Example
             customKeyValueData    = @(
                 MSFT_customKeyValueData{
                     value = '[{"key":"splitTunnel","type":"int","value":"1"},{"type":"int","key":"compression","value":"0"}]'
-                    name  = 'ContosoVpnOptions'
+                    name  = 'ContosoVpnSettings'
                 }
             );
-            lockdownExclusionList = @("com.contoso.vpnbypass");
-            microsoftTunnelSiteId = "12345678-1234-abcd-1234-12345678ABCD";
-            proxyExclusionList    = @();
+            proxyExclusionList    = @("intranet.contoso.com", "*.contoso.local");
             proxyServer           = @(
                 MSFT_MicrosoftvpnProxyServer{
                     port                            = 8080
@@ -71,6 +69,7 @@ Configuration Example
                     appId     = 'com.microsoft.emmx'
                 }
             );
+            targetedPackageIds    = @("com.microsoft.emmx");
             ApplicationId         = $ApplicationId;
             TenantId              = $TenantId;
             CertificateThumbprint = $CertificateThumbprint;

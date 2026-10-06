@@ -174,6 +174,13 @@ class SCUnifiedAuditLogRetentionPolicy : M365DSCResourceBase
 
         if ($this.Ensure -eq 'Present' -and $currentInstance.Ensure -eq 'Absent')
         {
+            $pendingDeletion = Get-UnifiedAuditLogRetentionPolicy -ErrorAction Stop | Where-Object -FilterScript { $_.Name -eq $this.Name -and $_.Mode -eq 'PendingDeletion' }
+            if ($null -ne $pendingDeletion)
+            {
+                Write-Verbose -Message "Completing the pending deletion of the Unified Audit Log Retention Policy with Name {$($this.Name)}"
+                Remove-UnifiedAuditLogRetentionPolicy -Identity $this.Name -ForceDeletion -Confirm:$false
+            }
+
             $createParameters = ([Hashtable]$boundParameters).Clone()
             Write-Verbose -Message "Creating a Unified Audit Log Retention Policy with Name {$($this.Name)}"
             New-UnifiedAuditLogRetentionPolicy @createParameters | Out-Null
@@ -190,7 +197,7 @@ class SCUnifiedAuditLogRetentionPolicy : M365DSCResourceBase
         elseif ($this.Ensure -eq 'Absent' -and $currentInstance.Ensure -eq 'Present')
         {
             Write-Verbose -Message "Removing the Unified Audit Log Retention Policy with Name {$($this.Name)}"
-            Remove-UnifiedAuditLogRetentionPolicy -Identity $this.Name -Confirm:$false
+            Remove-UnifiedAuditLogRetentionPolicy -Identity $this.Name -ForceDeletion -Confirm:$false
         }
     }
 

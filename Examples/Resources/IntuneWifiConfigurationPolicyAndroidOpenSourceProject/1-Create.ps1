@@ -35,7 +35,7 @@ Configuration Example
                 }
                 MSFT_DeviceManagementConfigurationPolicyAssignments{
                     dataType         = '#microsoft.graph.exclusionGroupAssignmentTarget'
-                    groupDisplayName = 'Warehouse Kiosk Tablets'
+                    groupDisplayName = 'Intune Excluded Devices'
                 }
             )
             ConnectAutomatically           = $false

@@ -28,7 +28,7 @@ Configuration Example
         {
             Ensure                = 'Absent'
             Name                  = 'Credit Card Numbers in Exchange'
-            Policy                = 'Top Secret Auto-labeling'
+            Policy                = 'Highly Confidential Sales Auto-labeling'
             Workload              = 'Exchange'
             ApplicationId         = $ApplicationId
             TenantId              = $TenantId

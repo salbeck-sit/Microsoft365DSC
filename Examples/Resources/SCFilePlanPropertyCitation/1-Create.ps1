@@ -27,7 +27,7 @@ Configuration Example
         SCFilePlanPropertyCitation 'SCFilePlanPropertyCitation-Example'
         {
             Name                  = "Sarbanes-Oxley Act"
-            CitationURL           = "https://contoso.com"
+            CitationURL           = "https://www.congress.gov/bill/107th-congress/house-bill/3763"
             CitationJurisdiction  = "Federal"
             Ensure                = "Present"
             ApplicationId         = $ApplicationId

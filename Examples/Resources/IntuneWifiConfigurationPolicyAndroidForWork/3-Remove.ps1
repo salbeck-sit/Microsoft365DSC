@@ -26,7 +26,7 @@ Configuration Example
     {
         IntuneWifiConfigurationPolicyAndroidForWork 'IntuneWifiConfigurationPolicyAndroidForWork-Example'
         {
-            DisplayName           = 'AndroindForWork'
+            DisplayName           = 'Contoso Work Profile Wi-Fi'
             Ensure                = 'Absent'
             ApplicationId         = $ApplicationId;
             TenantId              = $TenantId;

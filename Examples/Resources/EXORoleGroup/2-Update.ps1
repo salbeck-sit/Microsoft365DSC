@@ -27,7 +27,7 @@ Configuration Example
         EXORoleGroup 'EXORoleGroup-Example'
         {
             Name                  = "Contoso Role Group"
-            Description           = "Address Lists Role for Exchange Administrators. Updated" # Updated Property
+            Description           = "Manages address lists for the messaging team" # Updated Property
             Members               = @("Exchange Administrator")
             Roles                 = @("Address Lists")
             Ensure                = "Present"

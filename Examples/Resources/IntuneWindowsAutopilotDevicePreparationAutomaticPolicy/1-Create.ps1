@@ -28,9 +28,9 @@ Configuration Example
         {
             AllowedApplications   = @("IntuneMobileAppsWindowsOfficeSuiteApp_1","IntuneMobileAppsMicrosoftEdge_Windows");
             AllowedScripts        = @("IntuneDeviceConfigurationPlatformScriptWindows_1");
-            AssignmentTarget      = "Include";
-            Description           = "";
-            DisplayName           = "IntuneWindowsAutopilotDevicePreparationPolicy_1";
+            AssignmentTarget      = "Intune Pilot Devices";
+            Description           = "Installs core apps and scripts while corporate Windows devices are provisioned automatically";
+            DisplayName           = "Windows Automatic Device Preparation";
             Ensure                = "Present";
             RoleScopeTagIds       = @("0");
             ApplicationId         = $ApplicationId;

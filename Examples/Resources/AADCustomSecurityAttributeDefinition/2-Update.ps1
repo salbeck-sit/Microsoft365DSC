@@ -29,18 +29,18 @@ Configuration Example
             AllowedValues           = @(
                 MSFT_CustomSecurityAttributeAllowedValue{
                     IsActive = $True
-                    ValueId  = "AllowedValue1"
+                    ValueId  = "Alpine"
                 }
             );
             AttributeSet            = "Engineering";
             Ensure                  = "Present";
             IsCollection            = $False;
             IsSearchable            = $True;
-            Name                    = "ShoeSize";
+            Name                    = "Project";
             Status                  = "Available";
             Type                    = "String";
-            UsePreDefinedValuesOnly = $False;
-            Description             = "What size of shoe is the person wearing? Drifted" # Updated Property
+            UsePreDefinedValuesOnly = $True;
+            Description             = "Active project the user is staffed on" # Updated Property
             ApplicationId           = $ApplicationId;
             TenantId                = $TenantId;
             CertificateThumbprint   = $CertificateThumbprint;

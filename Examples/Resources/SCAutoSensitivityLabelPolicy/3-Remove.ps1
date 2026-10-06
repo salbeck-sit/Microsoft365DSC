@@ -27,7 +27,7 @@ Configuration Example
         SCAutoSensitivityLabelPolicy 'SCAutoSensitivityLabelPolicy-Example'
         {
             Ensure                = "Absent";
-            Name                  = "Top Secret Auto-labeling";
+            Name                  = "Highly Confidential Sales Auto-labeling";
             ApplicationId         = $ApplicationId;
             TenantId              = $TenantId;
             CertificateThumbprint = $CertificateThumbprint;

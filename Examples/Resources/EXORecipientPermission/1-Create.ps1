@@ -28,7 +28,7 @@ Configuration Example
         EXORecipientPermission 'EXORecipientPermission-Example'
         {
             Identity              = "AlexW@$TenantId"
-            Trustee               = "admin@$TenantId"
+            Trustee               = "MeganB@$TenantId"
             AccessRights          = @('SendAs')
             Ensure                = 'Present'
             ApplicationId         = $ApplicationId

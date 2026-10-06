@@ -40,12 +40,12 @@ Configuration Example
             MinimumSupportedOperatingSystem = MSFT_MicrosoftGraphWindowsMinimumOperatingSystem{
                 V8_0     = $False
                 V8_1     = $False
-                V10_0    = $False
+                V10_0    = $True
                 V10_1607 = $False
                 V10_1703 = $False
                 V10_1709 = $False
                 V10_1803 = $False
-                V10_1809 = $True
+                V10_1809 = $False
                 V10_1903 = $False
                 V10_1909 = $False
                 V10_2004 = $False
@@ -65,7 +65,8 @@ Configuration Example
                 }
                 MSFT_DeviceManagementAppxMobileAppAssignment{
                     dataType         = '#microsoft.graph.exclusionGroupAssignmentTarget'
-                    groupDisplayName = 'Policy Exclusions'
+                    groupDisplayName = 'Intune Excluded Devices'
+                    intent           = 'required'
                 }
             );
             Categories                      = @(

@@ -47,11 +47,10 @@ Configuration Example
                     dataType                                   = "#microsoft.graph.allDevicesAssignmentTarget"
                     deviceAndAppManagementAssignmentFilterType = "none"
                 }
-            );
-            AssociatedDomains                        = @(
-                MSFT_MicrosoftGraphKeyValuePair2{
-                    Name  = "com.contoso.intranet"
-                    Value = "webcredentials:intranet.contoso.com"
+                MSFT_DeviceManagementConfigurationPolicyAssignments{
+                    dataType                                   = "#microsoft.graph.exclusionGroupAssignmentTarget"
+                    deviceAndAppManagementAssignmentFilterType = "none"
+                    groupDisplayName                           = "Intune Excluded Devices"
                 }
             );
             AuthorizedUsersListHidden                = $false;
@@ -70,9 +69,8 @@ Configuration Example
             ContentCachingBlockDeletion              = $false;
             ContentCachingClientListenRanges         = @(
                 MSFT_MicrosoftGraphIpRange2{
-                    CidrAddress  = "10.20.0.0/16"
                     LowerAddress = "10.20.0.1"
-                    ODataType    = "#microsoft.graph.iPv4CidrRange"
+                    ODataType    = "#microsoft.graph.iPv4Range"
                     UpperAddress = "10.20.255.254"
                 }
             );
@@ -88,17 +86,15 @@ Configuration Example
             ContentCachingParentSelectionPolicy      = "roundRobin";
             ContentCachingPeerFilterRanges           = @(
                 MSFT_MicrosoftGraphIpRange2{
-                    CidrAddress  = "10.20.0.0/16"
                     LowerAddress = "10.20.0.1"
-                    ODataType    = "#microsoft.graph.iPv4CidrRange"
+                    ODataType    = "#microsoft.graph.iPv4Range"
                     UpperAddress = "10.20.255.254"
                 }
             );
             ContentCachingPeerListenRanges           = @(
                 MSFT_MicrosoftGraphIpRange2{
-                    CidrAddress  = "10.20.0.0/16"
                     LowerAddress = "10.20.0.1"
-                    ODataType    = "#microsoft.graph.iPv4CidrRange"
+                    ODataType    = "#microsoft.graph.iPv4Range"
                     UpperAddress = "10.20.255.254"
                 }
             );
@@ -106,9 +102,8 @@ Configuration Example
             ContentCachingPort                       = 49152;
             ContentCachingPublicRanges               = @(
                 MSFT_MicrosoftGraphIpRange2{
-                    CidrAddress  = "10.20.0.0/16"
                     LowerAddress = "10.20.0.1"
-                    ODataType    = "#microsoft.graph.iPv4CidrRange"
+                    ODataType    = "#microsoft.graph.iPv4Range"
                     UpperAddress = "10.20.255.254"
                 }
             );
@@ -122,26 +117,16 @@ Configuration Example
                 ActiveDirectorySiteCode                  = "EMEA-ZRH"
                 BlockActiveDirectorySiteAutoDiscovery    = $false
                 BlockAutomaticLogin                      = $false
-                BundleIdAccessControlList                = @("com.microsoft.Outlook", "com.microsoft.teams2")
                 CacheName                                = "CONTOSO.COM"
-                Configurations                           = @(
-                        MSFT_MicrosoftGraphKeyTypedValuePair{
-                            Key       = "allowPasswordChange"
-                            ODataType = "#microsoft.graph.keyBooleanValuePair"
-                            Value     = $true
-                        }
-                    )
                 CredentialBundleIdAccessControlList      = @("com.apple.Safari", "com.microsoft.edgemac")
                 CredentialsCacheMonitored                = $true
                 DomainRealms                             = @("contoso.com", "corp.contoso.com")
                 Domains                                  = @("contoso.com", "corp.contoso.com")
-                EnableSharedDeviceMode                   = $false
-                ExtensionIdentifier                      = "com.microsoft.CompanyPortalMac.ssoextension"
                 IsDefaultRealm                           = $true
                 KerberosAppsInBundleIdACLIncluded        = $true
                 ManagedAppsInBundleIdACLIncluded         = $true
                 ModeCredentialUsed                       = "Password"
-                ODataType                                = "#microsoft.graph.macOSAzureAdSingleSignOnExtension"
+                ODataType                                = "#microsoft.graph.macOSKerberosSingleSignOnExtension"
                 PasswordBlockModification                = $false
                 PasswordChangeUrl                        = "https://passwordreset.contoso.com"
                 PasswordEnableLocalSync                  = $true
@@ -156,9 +141,7 @@ Configuration Example
                 Realm                                    = "CONTOSO.COM"
                 RequireUserPresence                      = $true
                 SignInHelpText                           = "Sign in with your Contoso account"
-                TeamIdentifier                           = "UBF8T346G9"
                 TlsForLDAPRequired                       = $true
-                UrlPrefixes                              = @("https://intranet.contoso.com", "https://portal.contoso.com")
                 UsernameLabelCustom                      = "Contoso account"
                 UserPrincipalName                        = "mac.admin@$TenantId"
                 UserSetupDelayed                         = $false
@@ -170,40 +153,6 @@ Configuration Example
             ScreenLockDisableImmediate               = $false;
             ShutDownDisabled                         = $false;
             ShutDownDisabledWhileLoggedIn            = $false;
-            SingleSignOnExtension                    = MSFT_MicrosoftGraphSingleSignOnExtension{
-                ActiveDirectorySiteCode                  = "EMEA-ZRH"
-                BlockActiveDirectorySiteAutoDiscovery    = $false
-                BlockAutomaticLogin                      = $false
-                CacheName                                = "CONTOSO.COM"
-                Configurations                           = @(
-                        MSFT_MicrosoftGraphKeyTypedValuePair{
-                            Key       = "allowPasswordChange"
-                            ODataType = "#microsoft.graph.keyBooleanValuePair"
-                            Value     = $true
-                        }
-                    )
-                CredentialBundleIdAccessControlList      = @("com.apple.Safari", "com.microsoft.edgemac")
-                DomainRealms                             = @("contoso.com", "corp.contoso.com")
-                Domains                                  = @("contoso.com", "corp.contoso.com")
-                ExtensionIdentifier                      = "com.microsoft.CompanyPortalMac.ssoextension"
-                IsDefaultRealm                           = $true
-                ODataType                                = "#microsoft.graph.credentialSingleSignOnExtension"
-                PasswordBlockModification                = $false
-                PasswordChangeUrl                        = "https://passwordreset.contoso.com"
-                PasswordEnableLocalSync                  = $true
-                PasswordExpirationDays                   = 90
-                PasswordExpirationNotificationDays       = 14
-                PasswordMinimumAgeDays                   = 1
-                PasswordMinimumLength                    = 12
-                PasswordPreviousPasswordBlockCount       = 5
-                PasswordRequireActiveDirectoryComplexity = $true
-                PasswordRequirementsDescription          = "At least 12 characters, with an upper case letter, a lower case letter and a number"
-                Realm                                    = "CONTOSO.COM"
-                RequireUserPresence                      = $true
-                TeamIdentifier                           = "UBF8T346G9"
-                UrlPrefixes                              = @("https://intranet.contoso.com", "https://portal.contoso.com")
-                UserPrincipalName                        = "mac.admin@$TenantId"
-            };
             SleepDisabled                            = $false;
             Ensure                                   = "Present";
             ApplicationId                            = $ApplicationId;

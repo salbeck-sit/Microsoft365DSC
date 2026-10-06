@@ -69,7 +69,7 @@ Configuration Example
                                     MSFT_AADClaimsMappingPolicyDefinitionMappingPolicyClaimsTransformationInputParameter{
                                         DataType = 'string'
                                         Id       = 'value'
-                                        Value    = 'sandbox'
+                                        Value    = 'production' # Updated Property
                                     }
                                 )
                                 TransformationMethod = 'CreateStringClaim'
@@ -81,10 +81,8 @@ Configuration Example
 
                 }
             );
-            Description           = "Maps user attributes onto SAML claims for the expense reporting and analytics applications."; # Updated Property
             DisplayName           = "Expense Reporting Claims";
             Ensure                = "Present";
-            Id                    = "fd0dc3f3-cfdf-4d56-bb03-e18161a5ac93";
             IsOrganizationDefault = $False;
             ApplicationId         = $ApplicationId
             TenantId              = $TenantId

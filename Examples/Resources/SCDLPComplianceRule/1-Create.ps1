@@ -27,11 +27,10 @@ Configuration Example
         SCDLPComplianceRule 'SCDLPComplianceRule-Example'
         {
             Name                                         = "Low volume EU Sensitive content found"
-            Policy                                       = "General Data Protection Regulation (GDPR)"
+            Policy                                       = "Customer Financial Data Protection"
             AccessScope                                  = "InOrganization"
             BlockAccess                                  = $true
             BlockAccessScope                             = "All"
-            AdvancedRule                                 = "`"{\r\n  \`"Version\`": \`"1.0\`",\r\n  \`"Condition\`": {\r\n    \`"Operator\`": \`"And\`",\r\n    \`"SubConditions\`": [\r\n      {\r\n        \`"ConditionName\`": \`"AccessScope\`",\r\n        \`"Value\`": \`"InOrganization\`"\r\n      },\r\n      {\r\n        \`"ConditionName\`": \`"ContentContainsSensitiveInformation\`",\r\n        \`"Value\`": {\r\n          \`"maxconfidence\`": \`"100\`",\r\n          \`"name\`": \`"EU Debit Card Number\`",\r\n          \`"maxcount\`": \`"9\`",\r\n          \`"minconfidence\`": \`"75\`",\r\n          \`"classifiertype\`": \`"Content\`",\r\n          \`"mincount\`": \`"1\`",\r\n          \`"confidencelevel\`": \`"Medium\`"\r\n        }\r\n      }\r\n    ]\r\n  }\r\n}`""
             AnyOfRecipientAddressContainsWords           = @("external")
             AnyOfRecipientAddressMatchesPatterns         = @("@fabrikam[.]com")
             Comment                                      = "Applies to payment card data shared outside the finance department"
@@ -58,21 +57,6 @@ Configuration Example
             DocumentIsUnsupported                        = $false
             DocumentNameMatchesPatterns                  = @("statement-[0-9]{4}")
             DocumentNameMatchesWords                     = @("cardholder")
-            EndpointDlpRestrictions                      = @(
-                MSFT_SCDLPEndpointDlpRestriction{
-                    Setting = "Print"
-                    Value   = "Audit"
-                }
-                MSFT_SCDLPEndpointDlpRestriction{
-                    Setting = "CopyPaste"
-                    Value   = "Audit"
-                }
-                MSFT_SCDLPEndpointDlpRestriction{
-                    Setting = "UnallowedApps"
-                    Value   = "notepad"
-                    Value2  = "Microsoft Notepad"
-                }
-            )
             ExceptIfAnyOfRecipientAddressContainsWords   = @("archive")
             ExceptIfAnyOfRecipientAddressMatchesPatterns = @("@contoso[.]com")
             ExceptIfContentCharacterSetContainsWords     = @("iso-8859-1")
@@ -103,7 +87,7 @@ Configuration Example
             ExceptIfRecipientDomainIs                    = @("partner.fabrikam.com")
             ExceptIfSenderDomainIs                       = @("supplier.fabrikam.com")
             ExceptIfSenderIPRanges                       = @("192.168.10.0/24")
-            ExceptIfSentTo                               = @("compliance.review@contoso.com")
+            ExceptIfSentTo                               = @("AlexW@$TenantId")
             ExceptIfSubjectContainsWords                 = @("approved exception")
             ExceptIfSubjectMatchesPatterns               = @("^RE:")
             ExceptIfSubjectOrBodyContainsWords           = @("public price list")
@@ -111,7 +95,7 @@ Configuration Example
             FromAddressContainsWords                     = @("finance")
             FromAddressMatchesPatterns                   = @("^payroll@")
             FromScope                                    = @("InOrganization")
-            GenerateAlert                                = @("compliance@contoso.com")
+            GenerateAlert                                = @("AdeleV@$TenantId")
             GenerateIncidentReport                       = @("SiteAdmin")
             HasSenderOverride                            = $false
             IncidentReportContent                        = @("DocumentLastModifier", "Detections", "Severity", "DetectionDetails", "OriginalContent")
@@ -126,8 +110,7 @@ Configuration Example
             RemoveRMSTemplate                            = $false
             ReportSeverityLevel                          = "Low"
             RuleErrorAction                              = "Ignore"
-            SentToMemberOf                               = @("finance@contoso.com")
-            SetHeader                                    = @("X-Contoso-DLP:PaymentCardData")
+            SentToMemberOf                               = @("SalesandMarketing@$TenantId")
             StopPolicyProcessing                         = $false
             SubjectContainsWords                         = @("cardholder data")
             SubjectMatchesPatterns                       = @("card number [0-9]{4}")

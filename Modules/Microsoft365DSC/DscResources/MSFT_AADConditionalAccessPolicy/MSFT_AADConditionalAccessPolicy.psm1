@@ -666,7 +666,7 @@ class AADConditionalAccessPolicy : M365DSCResourceBase
                 $ProtocolFlowsValue = $Policy.Conditions.AuthenticationFlows.protocolFlows.Split(',')
             }
 
-            $DisableResilienceDefaultsIsEnabledValue = $null
+            $DisableResilienceDefaultsIsEnabledValue = $false
             if (-not [System.String]::IsNullOrEmpty($Policy.SessionControls.disableResilienceDefaults))
             {
                 $DisableResilienceDefaultsIsEnabledValue = [Boolean]::Parse($Policy.SessionControls.disableResilienceDefaults)

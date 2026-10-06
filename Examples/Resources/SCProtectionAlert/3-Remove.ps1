@@ -1,5 +1,6 @@
 <#
-This example creates a new Device Enrollment Platform Restriction.
+This example is used to test new resources and showcase the usage of new resources being worked on.
+It is not meant to use as a production baseline.
 #>
 
 Configuration Example
@@ -23,11 +24,10 @@ Configuration Example
 
     Node localhost
     {
-        IntuneDeviceEnrollmentPlatformRestriction 'IntuneDeviceEnrollmentPlatformRestriction-Example'
+        SCProtectionAlert 'SCProtectionAlert-Example'
         {
-            DisplayName           = "All users and all devices";
+            Name                  = "Custom Suspicious email sending patterns detected";
             Ensure                = "Absent";
-            Id                    = "3868d43e-873e-4416-8fd1-fc3d67c7c15c_DefaultPlatformRestrictions";
             ApplicationId         = $ApplicationId;
             TenantId              = $TenantId;
             CertificateThumbprint = $CertificateThumbprint;

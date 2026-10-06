@@ -28,22 +28,20 @@ Configuration Example
         {
             Assignments              = @(
                 MSFT_DeviceManagementConfigurationPolicyAssignments{
-                    dataType = "#microsoft.graph.cloudPcManagementGroupAssignmentTarget"
-                    groupId  = "42a638ec-2bf2-47a8-8f5f-176ce2124b7b"
+                    dataType         = "#microsoft.graph.cloudPcManagementGroupAssignmentTarget"
+                    groupDisplayName = "Intune Pilot Users"
                 }
             );
-            Autopatch                = MSFT_MicrosoftGraphCloudPcProvisioningPolicyAutopatch{
-                AutopatchGroupId = "db2d8ac9-0697-4f04-a5cd-b3d230f31dc6"
-            };
             CloudPcNamingTemplate    = "CPC-%USERNAME:5%-%RAND:5%";
-            Description              = "";
-            DisplayName              = "IntuneCloudProvisioningPolicyWindows365_1";
+            Description              = "Enterprise Cloud PCs for the pilot user group";
+            DisplayName              = "Pilot Users Cloud PC";
             DomainJoinConfigurations = @(
                 MSFT_MicrosoftGraphCloudPcDomainJoinConfiguration{
-                    Type           = "azureADJoin"
-                    RegionName     = "automatic"
-                    DomainJoinType = "azureADJoin"
-                    RegionGroup    = "usCentral"
+                    Type                   = "azureADJoin"
+                    RegionName             = "automatic"
+                    DomainJoinType         = "azureADJoin"
+                    RegionGroup            = "automatic"
+                    GeographicLocationType = "europe"
                 }
             );
             EnableSingleSignOn       = $True;

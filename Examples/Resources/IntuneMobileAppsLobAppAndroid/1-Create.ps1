@@ -30,7 +30,7 @@ Configuration Example
                 MSFT_DeviceManagementMobileAppAssignment{
                     deviceAndAppManagementAssignmentFilterType = 'none'
                     dataType                                   = '#microsoft.graph.groupAssignmentTarget'
-                    groupId                                    = '57b5e81c-85bb-4644-a4fd-33b03e451c89'
+                    groupDisplayName                           = 'Intune Pilot Devices'
                     intent                                     = 'required'
                 }
             );

@@ -26,7 +26,7 @@ Configuration Example
     {
         IntuneVPNConfigurationPolicyAndroidDeviceOwner "IntuneVPNConfigurationPolicyAndroidDeviceOwner-Example"
         {
-            DisplayName           = "IntuneVPNConfigurationPolicyAndroidDeviceOwner DisplayName";
+            DisplayName           = "Android Fully Managed Corporate VPN";
             Ensure                = "Absent";
             ApplicationId         = $ApplicationId;
             TenantId              = $TenantId;

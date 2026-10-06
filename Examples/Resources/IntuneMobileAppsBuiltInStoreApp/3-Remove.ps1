@@ -26,7 +26,7 @@ Configuration Example
     {
         IntuneMobileAppsBuiltInStoreApp "IntuneMobileAppsBuiltInStoreApp-Example"
         {
-            DisplayName           = "Builtin Store App";
+            DisplayName           = "Microsoft Outlook";
             TargetPlatform        = "Android";
             Ensure                = "Absent";
             ApplicationId         = $ApplicationId;

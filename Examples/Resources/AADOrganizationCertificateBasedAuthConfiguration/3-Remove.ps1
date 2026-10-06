@@ -27,7 +27,7 @@ Configuration Example
         AADOrganizationCertificateBasedAuthConfiguration "AADOrganizationCertificateBasedAuthConfiguration-Example"
         {
             Ensure                = "Absent";
-            OrganizationId        = "e91d4e0e-d5a5-4e3a-be14-2192592a59af";
+            OrganizationId        = "$TenantId";
             ApplicationId         = $ApplicationId
             TenantId              = $TenantId
             CertificateThumbprint = $CertificateThumbprint

@@ -29,7 +29,7 @@ Configuration Example
         {
 
             Identity              = "AlexW@$TenantId"
-            Trustee               = "admin@$TenantId"
+            Trustee               = "MeganB@$TenantId"
             Ensure                = 'Absent'
             ApplicationId         = $ApplicationId
             TenantId              = $TenantId

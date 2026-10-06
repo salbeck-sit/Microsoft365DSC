@@ -26,8 +26,7 @@ Configuration Example
     {
         AADTokenLifetimePolicy 'AADTokenLifetimePolicy-Example'
         {
-            DisplayName           = "PolicyDisplayName"
-            Description           = "Limits the access token lifetime for the expense reporting application."
+            DisplayName           = "Expense Reporting Token Lifetime"
             Definition            = @("{`"TokenLifetimePolicy`":{`"Version`":1,`"AccessTokenLifetime`":`"02:00:00`"}}");
             IsOrganizationDefault = $false
             Ensure                = "Present"

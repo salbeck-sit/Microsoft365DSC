@@ -29,12 +29,13 @@ Configuration Example
             AccessId              = "member";
             Ensure                = "Present";
             MemberType            = "direct";
-            GroupDisplayName      = "sg-Retail";
-            Principal             = "sg-Retail";
-            PrincipalType         = "group";
+            GroupDisplayName      = "Retail";
+            Principal             = "AdeleV@$TenantId";
+            PrincipalType         = "user";
             ScheduleInfo          = MSFT_MicrosoftGraphrequestSchedule{
                 Expiration = MSFT_MicrosoftGraphExpirationPattern{
-                    Type = 'noExpiration'
+                    EndDateTime = "2027-09-30T00:00:00.0000000Z" # Updated Property
+                    Type        = "afterDateTime"
                 }
             };
             ApplicationId         = $ApplicationId

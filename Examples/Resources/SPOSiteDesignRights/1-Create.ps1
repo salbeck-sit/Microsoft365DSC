@@ -26,8 +26,8 @@ Configuration Example
     {
         SPOSiteDesignRights 'SPOSiteDesignRights-Example'
         {
-            SiteDesignTitle       = "Customer List"
-            UserPrincipals        = "jdoe@$TenantId"
+            SiteDesignTitle       = "Contoso Team Site Design"
+            UserPrincipals        = @("AdeleV@$TenantId")
             Rights                = "View"
             Ensure                = "Present"
             ApplicationId         = $ApplicationId

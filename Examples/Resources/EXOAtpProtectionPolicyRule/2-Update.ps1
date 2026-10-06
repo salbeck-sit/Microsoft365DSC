@@ -26,19 +26,17 @@ Configuration Example
     {
         EXOATPProtectionPolicyRule "EXOATPProtectionPolicyRule-Example"
         {
-            Comments                  = "Built-in Strict Preset Security Policy with comments"; # Updated Property
-            Enabled                   = $True; # Updated Property
-            Identity                  = "Strict Preset Security Policy";
-            Name                      = "Strict Preset Security Policy";
+            Comments                  = "Scopes the Standard preset Defender for Office 365 protections to the pilot recipients.";
+            Enabled                   = $False;
+            Identity                  = "Standard Preset Security Policy";
+            Name                      = "Standard Preset Security Policy";
             Priority                  = 0;
             RecipientDomainIs         = @("contoso.com");
             SentTo                    = @("AdeleV@$TenantId");
-            SentToMemberOf            = @("LegalTeam@$TenantId");
+            SentToMemberOf            = @("Retail@$TenantId");
             ExceptIfRecipientDomainIs = @("fabrikam.com");
             ExceptIfSentTo            = @("AlexW@$TenantId");
             ExceptIfSentToMemberOf    = @("Executives@$TenantId");
-            SafeAttachmentPolicy      = "Strict Preset Security Policy1725468967835";
-            SafeLinksPolicy           = "Strict Preset Security Policy1725468969412";
             Ensure                    = "Present"
             ApplicationId             = $ApplicationId
             TenantId                  = $TenantId

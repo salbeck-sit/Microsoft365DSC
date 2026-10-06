@@ -26,7 +26,6 @@ Configuration Example
     {
         AADTokenIssuancePolicy "AADTokenIssuancePolicy-Example"
         {
-            Description           = "SAML token issuance policy for the expense reporting application.";
             Definition            = @("{`"TokenResponseSigningPolicy`":`"TokenOnly`",`"SamlTokenVersion`":`"1.1`",`"SigningAlgorithm`":`"http://www.w3.org/2001/04/xmldsig-more#rsa-sha256`",`"Version`":`"1`",`"EmitSAMLNameFormat`":`"true`"}"); # Updated Property
             DisplayName           = "ExpenseReportingSamlPolicy";
             Ensure                = "Present";

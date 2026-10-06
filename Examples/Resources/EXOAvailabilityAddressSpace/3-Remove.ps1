@@ -26,7 +26,7 @@ Configuration Example
     {
         EXOAvailabilityAddressSpace 'EXOAvailabilityAddressSpace-Example'
         {
-            Identity              = 'Contoso.com'
+            Identity              = 'freebusy.contoso.com'
             Ensure                = 'Absent'
             ApplicationId         = $ApplicationId
             TenantId              = $TenantId

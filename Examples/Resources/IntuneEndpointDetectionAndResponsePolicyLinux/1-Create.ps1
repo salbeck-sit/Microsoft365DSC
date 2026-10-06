@@ -26,11 +26,18 @@ Configuration Example
     {
         IntuneEndpointDetectionAndResponsePolicyLinux 'IntuneEndpointDetectionAndResponsePolicyLinux-Example'
         {
-            DisplayName           = 'Edr Policy'
+            DisplayName           = 'Linux Server EDR Tagging'
             tags_item_key         = 'GROUP'
-            tags_item_value       = 'tag'
-            Assignments           = @()
-            Description           = 'My revised description'
+            tags_item_value       = 'LinuxServers'
+            Assignments           = @(
+                MSFT_DeviceManagementConfigurationPolicyAssignments{
+                    deviceAndAppManagementAssignmentFilterType = 'none'
+                    dataType                                   = '#microsoft.graph.groupAssignmentTarget'
+                    groupDisplayName                           = 'Intune Pilot Devices'
+                }
+            )
+            Description           = 'Tags Linux servers reporting to Microsoft Defender for Endpoint'
+            RoleScopeTagIds       = @('0')
             Ensure                = 'Present'
 
             ApplicationId         = $ApplicationId;

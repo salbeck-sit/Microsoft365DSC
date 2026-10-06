@@ -28,8 +28,24 @@ Configuration Example
         {
             Assignments                     = @(
                 MSFT_DeviceManagementWindowsAutoUpdateCatalogMobileAppAssignment{
-                    dataType = "#microsoft.graph.allLicensedUsersAssignmentTarget"
-                    intent   = "available"
+                    dataType           = "#microsoft.graph.groupAssignmentTarget"
+                    groupDisplayName   = "Intune Pilot Devices"
+                    intent             = "required"
+                    assignmentSettings = MSFT_DeviceManagementWindowsAutoUpdateCatalogMobileAppAssignmentSettings{
+                        odataType                    = "#microsoft.graph.windowsAutoUpdateCatalogAppAssignmentSettings"
+                        deliveryOptimizationPriority = "foreground"
+                        notificationType             = "showReboot"
+                        restartSettings              = MSFT_DeviceManagementWindowsAutoUpdateCatalogMobileAppAssignmentSettingsRestartSettings{
+                            countdownDisplayBeforeRestartInMinutes     = 15
+                            gracePeriodInMinutes                       = 1440
+                            restartNotificationSnoozeDurationInMinutes = 240
+                        }
+                    }
+                }
+                MSFT_DeviceManagementWindowsAutoUpdateCatalogMobileAppAssignment{
+                    dataType         = "#microsoft.graph.exclusionGroupAssignmentTarget"
+                    groupDisplayName = "Intune Excluded Devices"
+                    intent           = "required"
                 }
             );
             Categories                      = @(

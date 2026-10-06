@@ -27,16 +27,16 @@ Configuration Example
         EXOAntiPhishRule 'EXOAntiPhishRule-Example'
         {
             Identity                  = "Executive Impersonation Protection"
-            Comments                  = "This is an updated comment." # Updated Property
+            Comments                  = "Applies the anti-phishing policy to the executives group and their assistants." # Updated Property
             AntiPhishPolicy           = "Our Rule"
             Enabled                   = $True
             Priority                  = 0
             RecipientDomainIs         = @("contoso.com")
             SentTo                    = @("AdeleV@$TenantId")
-            SentToMemberOf            = @("executives@$TenantId")
+            SentToMemberOf            = @("Executives@$TenantId")
             ExceptIfRecipientDomainIs = @("fabrikam.com")
             ExceptIfSentTo            = @("AlexW@$TenantId")
-            ExceptIfSentToMemberOf    = @("LegalTeam@$TenantId")
+            ExceptIfSentToMemberOf    = @("Retail@$TenantId")
             Ensure                    = "Present"
             ApplicationId             = $ApplicationId
             TenantId                  = $TenantId

@@ -32,7 +32,7 @@ Configuration Example
             };
             AccessReviewSettings              = MSFT_MicrosoftGraphassignmentreviewsettings{
                 IsEnabled                       = $True
-                StartDateTime                   = '12/17/2032 23:59:59'
+                StartDateTime                   = '2030-01-01T00:00:00.0000000Z'
                 IsAccessRecommendationEnabled   = $True
                 AccessReviewTimeoutBehavior     = 'keepAccess'
                 IsApprovalJustificationRequired = $True
@@ -72,14 +72,6 @@ Configuration Example
                 IsRequestorJustificationRequired = $False
                 IsApprovalRequired               = $False
                 IsApprovalRequiredForExtension   = $False
-            };
-            VerifiableCredentialSettings      = MSFT_MicrosoftGraphverifiableCredentialSettings{
-                CredentialTypes = @(
-                    MSFT_MicrosoftGraphverifiableCredentialType{
-                        CredentialType = "VerifiedEmployee"
-                        Issuers        = @("did:web:contoso.com")
-                    }
-                )
             };
             Ensure                            = "Present"
             ApplicationId                     = $ApplicationId

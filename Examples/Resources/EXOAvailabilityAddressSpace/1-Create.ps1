@@ -26,7 +26,7 @@ Configuration Example
     {
         EXOAvailabilityAddressSpace 'EXOAvailabilityAddressSpace-Example'
         {
-            Identity              = 'Contoso.com'
+            Identity              = 'freebusy.contoso.com'
             AccessMethod          = 'OrgWideFBToken'
             ForestName            = 'freebusy.contoso.com'
             TargetServiceEpr      = 'https://contoso.com/autodiscover/autodiscover.xml'

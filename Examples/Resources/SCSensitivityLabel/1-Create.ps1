@@ -26,11 +26,11 @@ Configuration Example
     {
         SCSensitivityLabel 'SCSensitivityLabel-Example'
         {
-            Name                                           = "Confidential"
+            Name                                           = "Finance Confidential"
             Comment                                        = "Applied to internal business documents"
             ToolTip                                        = "Use for information that must stay inside the company"
-            DisplayName                                    = "Confidential"
-            Priority                                       = 3
+            DisplayName                                    = "Finance Confidential"
+            Priority                                       = 0
             ContentType                                    = @("File", "Email", "Site", "UnifiedGroup")
             ApplyContentMarkingFooterAlignment             = "Center"
             ApplyContentMarkingFooterEnabled               = $true
@@ -68,11 +68,11 @@ Configuration Example
                     LabelSettings = @(
                         MSFT_SCLabelSetting{
                             Key   = "en-us"
-                            Value = "Confidential"
+                            Value = "Finance Confidential"
                         }
                         MSFT_SCLabelSetting{
                             Key   = "fr-fr"
-                            Value = "Confidentiel"
+                            Value = "Finance confidentiel"
                         }
                     )
                 }
@@ -141,7 +141,6 @@ Configuration Example
                     }
                 )
             }
-            ParentId                                       = "Personal"
             Ensure                                         = "Present"
             ApplicationId                                  = $ApplicationId
             TenantId                                       = $TenantId

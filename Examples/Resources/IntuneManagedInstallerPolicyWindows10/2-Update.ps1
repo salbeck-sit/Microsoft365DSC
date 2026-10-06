@@ -29,16 +29,15 @@ Configuration Example
                 MSFT_DeviceManagementConfigurationPolicyAssignments{
                     dataType                                   = "#microsoft.graph.allDevicesAssignmentTarget"
                     deviceAndAppManagementAssignmentFilterType = "none"
-                    deviceAndAppManagementAssignmentFilterId   = "00000000-0000-0000-0000-000000000000"
                     groupDisplayName                           = "All devices"
                 }
                 MSFT_DeviceManagementConfigurationPolicyAssignments{
                     dataType         = "#microsoft.graph.exclusionGroupAssignmentTarget"
-                    groupDisplayName = "Policy Exclusions"
+                    groupDisplayName = "Intune Excluded Devices"
                 }
             );
-            Description              = "This script is used to set SideCar as ManagedInstaller";
-            DisplayName              = "SideCar ManagedInstaller Script";
+            Description              = "Trusts apps deployed by the Intune Management Extension in App Control for Business";
+            DisplayName              = "Intune Management Extension Managed Installer";
             Ensure                   = "Present";
             IsIntuneManagedInstaller = $False; # Updated Property
             RoleScopeTagIds          = @("0");

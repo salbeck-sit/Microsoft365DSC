@@ -33,7 +33,7 @@ Configuration Example
                 }
                 MSFT_DeviceManagementConfigurationPolicyAssignments{
                     dataType         = '#microsoft.graph.exclusionGroupAssignmentTarget'
-                    groupDisplayName = 'Device Lockdown Exclusions'
+                    groupDisplayName = 'Intune Excluded Devices'
                 }
             );
             Description           = "Baseline lockdown settings for shared Windows 11 devices in retail branches"; # Updated Property

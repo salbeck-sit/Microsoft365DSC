@@ -24,15 +24,15 @@ class AADAgreement : M365DSCResourceBase
     [System.String] $UserReacceptRequiredFrequency
 
     [DscProperty()]
-    [System.ComponentModel.Description('The content of the agreement file.')]
+    [System.ComponentModel.Description('The content of the agreement file, either a base64-encoded PDF or the text of a PDF starting with %PDF-. Other text is UTF-8 encoded and only accepted when the agreement is created.')]
     [System.String] $FileData
 
     [DscProperty()]
-    [System.ComponentModel.Description('The name of the agreement file.')]
+    [System.ComponentModel.Description('The name of the agreement file for the language set in Language. Changing it publishes FileData as the new file of that language.')]
     [System.String] $FileName
 
     [DscProperty()]
-    [System.ComponentModel.Description('The language of the agreement file.')]
+    [System.ComponentModel.Description('The language of the agreement file, such as en-US.')]
     [System.String] $Language
 
     [DscProperty()]
@@ -132,9 +132,22 @@ class AADAgreement : M365DSCResourceBase
                 $instance = $this.ExportedInstance
             }
 
-            $file = Invoke-M365DSCGraphRequest -Method GET `
-                -Uri "/beta/identityGovernance/termsOfUse/agreements/$($instance.Id)/file" `
-                -ErrorAction SilentlyContinue
+            $localizations = (Invoke-M365DSCGraphRequest -Method GET `
+                -Uri "/v1.0/identityGovernance/termsOfUse/agreements/$($instance.Id)/file/localizations" `
+                -ErrorAction SilentlyContinue).value
+
+            $file = $null
+            if (-not [System.String]::IsNullOrEmpty($this.Language))
+            {
+                $file = $localizations | Where-Object -Property language -EQ $this.Language | Select-Object -First 1
+            }
+
+            if ($null -eq $file)
+            {
+                $file = $localizations | Where-Object -Property isDefault -EQ $true | Select-Object -First 1
+            }
+
+            $this.ResourceCache.AgreementFile = $file
 
             $complexTermsExpiration = $null
             if ($null -ne $instance.TermsExpiration)
@@ -212,7 +225,7 @@ class AADAgreement : M365DSCResourceBase
             $fileContent = @()
             $fileContent += @{
                 fileData  = @{
-                    data = $this.EncodeTextPayload($this.FileData)
+                    data = [AADAgreement]::ConvertToFileData($this.FileData)
                 }
                 fileName  = $this.FileName
                 language  = $this.Language
@@ -235,38 +248,77 @@ class AADAgreement : M365DSCResourceBase
         }
         elseif ($this.Ensure -eq 'Present' -and $currentInstance.Ensure -eq 'Present')
         {
-            # Prepare the file content if provided
-            $fileContent = $null
-            if (-not [System.String]::IsNullOrEmpty($this.FileData))
+            $boundParameters = $this.GetBoundParameters()
+            foreach ($propertyName in @('IsPerDeviceAcceptanceRequired', 'UserReacceptRequiredFrequency'))
             {
-                $fileContent = @()
-                $fileContent += @{
-                    fileData = @{
-                        data = $this.EncodeTextPayload($this.FileData)
-                    }
-                    fileName = $this.FileName
-                    language = $this.Language
-                    isDefault = $true
+                if ($boundParameters.ContainsKey($propertyName) -and $boundParameters[$propertyName] -ne $currentInstance[$propertyName])
+                {
+                    Write-Warning -Message "Property {$propertyName} of the Azure AD Agreement {$($this.DisplayName)} can only be set at creation. Remove and re-create the agreement to change it."
                 }
+            }
+
+            if ($null -ne $termsExpirationValue -and $null -ne $currentInstance.TermsExpiration -and
+                ($termsExpirationValue.frequency -ne $currentInstance.TermsExpiration.Frequency -or
+                -not [M365DSCResourceBase]::IsSameDateTime($termsExpirationValue.startDateTime, $currentInstance.TermsExpiration.StartDateTime)))
+            {
+                Write-Warning -Message "Property {TermsExpiration} of the Azure AD Agreement {$($this.DisplayName)} can only be set at creation. Remove and re-create the agreement to change it."
+            }
+
+            $viewingRequired = $currentInstance.IsViewingBeforeAcceptanceRequired
+            if ($null -ne $this.IsViewingBeforeAcceptanceRequired)
+            {
+                $viewingRequired = $this.IsViewingBeforeAcceptanceRequired
             }
 
             $updateParameters = @{
                 displayName                       = $this.DisplayName
-                isViewingBeforeAcceptanceRequired = $this.IsViewingBeforeAcceptanceRequired
-                isPerDeviceAcceptanceRequired     = $this.IsPerDeviceAcceptanceRequired
-                userReacceptRequiredFrequency     = $this.UserReacceptRequiredFrequency
-                termsExpiration                   = $termsExpirationValue
-            }
-
-            if ($null -ne $fileContent)
-            {
-                $updateParameters.files = $fileContent
+                isViewingBeforeAcceptanceRequired = $viewingRequired
             }
 
             $updateParameters = Remove-NullEntriesFromHashtable -Hash $updateParameters
             Write-Verbose -Message "Updating Azure AD Agreement with ID {$($currentInstance.Id)} with:`r`n$(ConvertTo-Json $updateParameters -Depth 5)"
             Update-MgBetaAgreement -AgreementId $currentInstance.Id `
                 -BodyParameter $updateParameters | Out-Null
+
+            $targetFileName = $currentInstance.FileName
+            if (-not [System.String]::IsNullOrEmpty($this.FileName))
+            {
+                $targetFileName = $this.FileName
+            }
+
+            $targetLanguage = $currentInstance.Language
+            if (-not [System.String]::IsNullOrEmpty($this.Language))
+            {
+                $targetLanguage = $this.Language
+            }
+
+            if ($targetFileName -ne $currentInstance.FileName -or $targetLanguage -ne $currentInstance.Language)
+            {
+                $payload = [AADAgreement]::ConvertToFileData($this.FileData)
+                if ([System.String]::IsNullOrEmpty($payload) -or -not $payload.StartsWith('JVBERi', [System.StringComparison]::Ordinal))
+                {
+                    Write-Warning -Message "Property {FileData} of the Azure AD Agreement {$($this.DisplayName)} must be a PDF document to publish the file {$targetFileName} for language {$targetLanguage}."
+                }
+                else
+                {
+                    $currentFile = $this.ResourceCache.AgreementFile
+                    $fileParameters = @{
+                        fileName       = $targetFileName
+                        displayName    = $this.DisplayName
+                        language       = $targetLanguage
+                        isDefault      = ($null -ne $currentFile -and $currentFile.isDefault -eq $true -and $currentFile.language -eq $targetLanguage)
+                        isMajorVersion = $false
+                        fileData       = @{
+                            data = $payload
+                        }
+                    }
+
+                    Write-Verbose -Message "Publishing file {$targetFileName} for language {$targetLanguage} on Azure AD Agreement with ID {$($currentInstance.Id)}"
+                    Invoke-M365DSCGraphRequest -Method POST `
+                        -Uri "/v1.0/identityGovernance/termsOfUse/agreements/$($currentInstance.Id)/files" `
+                        -Body $fileParameters | Out-Null
+                }
+            }
         }
         elseif ($this.Ensure -eq 'Absent' -and $currentInstance.Ensure -eq 'Present')
         {
@@ -284,6 +336,15 @@ class AADAgreement : M365DSCResourceBase
     {
         return @{
             ExcludedProperties = @('FileData')
+            PostProcessing     = {
+                param($DesiredValues, $CurrentValues, $ValuesToCheck, $ignore)
+                if ($null -ne $DesiredValues.TermsExpiration -and $null -ne $CurrentValues.TermsExpiration -and
+                    [M365DSCResourceBase]::IsSameDateTime($DesiredValues.TermsExpiration.StartDateTime, $CurrentValues.TermsExpiration.StartDateTime))
+                {
+                    $DesiredValues.TermsExpiration.StartDateTime = $CurrentValues.TermsExpiration.StartDateTime
+                }
+                return [System.Tuple[Hashtable, Hashtable, Hashtable]]::new($DesiredValues, $CurrentValues, $ValuesToCheck)
+            }
         }
     }
 
@@ -372,6 +433,16 @@ class AADAgreement : M365DSCResourceBase
 
             throw
         }
+    }
+
+    hidden static [System.String] ConvertToFileData([System.String] $Value)
+    {
+        if ([System.String]::IsNullOrEmpty($Value) -or $Value.StartsWith('JVBERi', [System.StringComparison]::Ordinal))
+        {
+            return $Value
+        }
+
+        return [System.Convert]::ToBase64String([System.Text.Encoding]::UTF8.GetBytes($Value))
     }
 
     hidden [AADAgreement] AsResult([System.Object] $Values)

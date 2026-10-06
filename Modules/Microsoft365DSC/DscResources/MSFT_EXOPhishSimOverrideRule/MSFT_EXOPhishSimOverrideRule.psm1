@@ -36,24 +36,21 @@ class EXOPhishSimOverrideRule : M365DSCResourceBase
     [System.String[]] $AccessTokens
 
     [DscProperty(Key)]
-    [System.ComponentModel.Description('The unique identifier (GUID or name) of the override rule. This parameter is mandatory.')]
-    [System.String] $Identity
+    [System.ComponentModel.Description('Only valid value is ''Yes''.')]
+    [ValidateSet('Yes')]
+    [System.String] $IsSingleInstance
 
     [DscProperty()]
-    [System.ComponentModel.Description('The domains for the override rule.')]
+    [System.ComponentModel.Description('The email domains used by the non-Microsoft phishing simulation, either the 5321.MailFrom domain or the DKIM domain. Up to 20 values.')]
     [System.String[]] $Domains
 
     [DscProperty()]
-    [System.ComponentModel.Description('The IP ranges for the override rule.')]
+    [System.ComponentModel.Description('The source IP addresses used by the non-Microsoft phishing simulation, as single IP addresses, IP address ranges or CIDR ranges. Up to 10 values.')]
     [System.String[]] $SenderIpRanges
 
     [DscProperty()]
     [System.ComponentModel.Description('An optional comment for the override rule.')]
     [System.String] $Comment
-
-    [DscProperty()]
-    [System.ComponentModel.Description('The phishing simulation override policy that''s associated with the rule.')]
-    [System.String] $Policy
 
     [DscProperty()]
     [System.ComponentModel.Description('Ensures the presence or absence of the configuration.')]
@@ -72,11 +69,11 @@ class EXOPhishSimOverrideRule : M365DSCResourceBase
             return $remote
         }
 
-        Write-Verbose -Message "Getting configuration for Phishing Simulation Override Rule with Identity {$($this.Identity)}"
+        Write-Verbose -Message 'Getting configuration of the Phishing Simulation Override Rule'
 
         try
         {
-            if (-not $this.ExportedInstance -or $this.ExportedInstance.Identity -ne $this.Identity)
+            if (-not $this.ExportedInstance)
             {
                 $null = $this.Connect('ExchangeOnline')
 
@@ -87,10 +84,11 @@ class EXOPhishSimOverrideRule : M365DSCResourceBase
                 $nullResult = $this.GetBoundParameters()
                 $nullResult.Ensure = 'Absent'
 
-                $instance = Get-EXOPhishSimOverrideRule -Identity $this.Identity -ErrorAction SilentlyContinue
+                $instance = [EXOPhishSimOverrideRule]::GetActiveInstance('Get-ExoPhishSimOverrideRule')
+                $this.ResourceCache['Rule'] = $instance
                 if ($null -eq $instance)
                 {
-                    Write-Verbose -Message "Phishing Simulation Override Rule with Identity {$($this.Identity)} not found"
+                    Write-Verbose -Message 'Phishing Simulation Override Rule not found'
                     return $this.AsResult($nullResult)
                 }
             }
@@ -99,14 +97,13 @@ class EXOPhishSimOverrideRule : M365DSCResourceBase
                 $instance = $this.ExportedInstance
             }
 
-            Write-Verbose -Message "Found Phishing Simulation Override Rule with Identity {$($this.Identity)}"
+            Write-Verbose -Message "Found Phishing Simulation Override Rule {$($instance.Identity)}"
 
             $results = @{
-                Identity              = $instance.Identity
-                SenderIpRanges        = $instance.SenderIpRanges
-                Domains               = $instance.Domains
+                IsSingleInstance      = 'Yes'
+                SenderIpRanges        = [System.String[]] $instance.SenderIpRanges
+                Domains               = [System.String[]] $instance.Domains
                 Comment               = $instance.Comment
-                Policy                = $instance.Policy
                 Ensure                = 'Present'
                 Credential            = $this.Credential
                 ApplicationId         = $this.ApplicationId
@@ -136,38 +133,74 @@ class EXOPhishSimOverrideRule : M365DSCResourceBase
             return
         }
 
-        Write-Verbose -Message "Setting configuration for Phishing Simulation Override Rule with Identity {$($this.Identity)}"
+        Write-Verbose -Message 'Setting configuration of the Phishing Simulation Override Rule'
 
         Confirm-M365DSCDependencies
 
         $this.AddTelemetry('Set')
 
         $currentInstance = $this.Get().ToHashtable()
+        $rule = $this.ResourceCache['Rule']
+        $boundParameters = $this.GetBoundParameters()
 
-        $setParameters = Remove-M365DSCAuthenticationParameter -BoundParameters $this.GetBoundParameters()
-
-        # CREATE
         if ($this.Ensure -eq 'Present' -and $currentInstance.Ensure -eq 'Absent')
         {
-            $ruleIdentity = $setParameters['Identity']
-            $setParameters.Add('Name', $ruleIdentity)
-            $setParameters.Remove('Identity')
+            $policy = [EXOPhishSimOverrideRule]::GetActiveInstance('Get-PhishSimOverridePolicy')
+            if ($null -eq $policy)
+            {
+                Write-Verbose -Message 'Creating the Phishing Simulation Override Policy'
+                $policy = [EXOPhishSimOverrideRule]::InvokeExchangeCommand('New-PhishSimOverridePolicy', @{ Name = 'PhishSimOverridePolicy' }) | Select-Object -First 1
+            }
 
-            New-EXOPhishSimOverrideRule @SetParameters
+            $newParameters = @{
+                Policy         = $policy.Identity
+                SenderIpRanges = $this.SenderIpRanges
+            }
+
+            if ($boundParameters.ContainsKey('Domains'))
+            {
+                $newParameters.Domains = $this.Domains
+            }
+
+            if ($boundParameters.ContainsKey('Comment'))
+            {
+                $newParameters.Comment = $this.Comment
+            }
+
+            Write-Verbose -Message 'Creating the Phishing Simulation Override Rule'
+            $null = [EXOPhishSimOverrideRule]::InvokeExchangeCommand('New-ExoPhishSimOverrideRule', $newParameters)
         }
-        # UPDATE
         elseif ($this.Ensure -eq 'Present' -and $currentInstance.Ensure -eq 'Present')
         {
-            # Modify Domains and SenderIpRanges parameters as Set cmdlet for this resource has different parameter names
-            $this.ModifyPropertiesForSetCmdlet($setParameters, $currentInstance, 'Domains')
-            $this.ModifyPropertiesForSetCmdlet($setParameters, $currentInstance, 'SenderIpRanges')
+            $setParameters = @{
+                Identity = $rule.Identity
+            }
 
-            Set-EXOPhishSimOverrideRule @SetParameters
+            if ($boundParameters.ContainsKey('Comment') -and $this.Comment -ne $currentInstance.Comment)
+            {
+                $setParameters.Comment = $this.Comment
+            }
+
+            if ($boundParameters.ContainsKey('Domains'))
+            {
+                [EXOPhishSimOverrideRule]::AddDeltaParameters($setParameters, 'Domains', $this.Domains, $currentInstance.Domains)
+            }
+
+            if ($boundParameters.ContainsKey('SenderIpRanges'))
+            {
+                [EXOPhishSimOverrideRule]::AddDeltaParameters($setParameters, 'SenderIpRanges', $this.SenderIpRanges, $currentInstance.SenderIpRanges)
+            }
+
+            if ($setParameters.Count -gt 1)
+            {
+                Write-Verbose -Message "Updating Phishing Simulation Override Rule {$($rule.Identity)}"
+                $null = [EXOPhishSimOverrideRule]::InvokeExchangeCommand('Set-ExoPhishSimOverrideRule', $setParameters)
+            }
         }
-        # REMOVE
         elseif ($this.Ensure -eq 'Absent' -and $currentInstance.Ensure -eq 'Present')
         {
-            Remove-EXOPhishSimOverrideRule -Identity $setParameters['Identity']
+            Write-Verbose -Message "Removing Phishing Simulation Override Rule {$($rule.Identity)}"
+            $null = [EXOPhishSimOverrideRule]::InvokeExchangeCommand('Remove-ExoPhishSimOverrideRule', @{ Identity = $rule.Identity; Confirm = $false })
         }
     }
 
@@ -191,47 +224,40 @@ class EXOPhishSimOverrideRule : M365DSCResourceBase
 
         try
         {
-            [array]$rules = Get-EXOPhishSimOverrideRule
+            $rule = [EXOPhishSimOverrideRule]::GetActiveInstance('Get-ExoPhishSimOverrideRule')
+            if ($null -eq $rule)
+            {
+                Write-M365DSCHost -Message $Global:M365DSCEmojiGreenCheckMark -CommitWrite
+                return ''
+            }
 
-            $i = 1
-            $dscContent = [System.Text.StringBuilder]::new()
-            if ($rules.Length -eq 0)
+            if ($null -ne $Global:M365DSCExportResourceInstancesCount)
             {
-                Write-M365DSCHost -Message $Global:M365DSCEmojiGreenCheckMark -CommitWrite
+                $Global:M365DSCExportResourceInstancesCount++
             }
-            else
-            {
-                Write-M365DSCHost -Message "`r`n" -DeferWrite
+
+            $params = @{
+                IsSingleInstance      = 'Yes'
+                Credential            = $this.Credential
+                ApplicationId         = $this.ApplicationId
+                TenantId              = $this.TenantId
+                CertificateThumbprint = $this.CertificateThumbprint
+                CertificatePath       = $this.CertificatePath
+                CertificatePassword   = $this.CertificatePassword
+                ManagedIdentity       = $this.ManagedIdentity
+                AccessTokens          = $this.AccessTokens
             }
-            foreach ($config in $rules)
-            {
-                $displayedKey = $config.Identity
-                Write-M365DSCHost -Message "    |---[$i/$($rules.Count)] $displayedKey" -DeferWrite
-                $params = @{
-                    Identity              = $config.Identity
-                    Credential            = $this.Credential
-                    ApplicationId         = $this.ApplicationId
-                    TenantId              = $this.TenantId
-                    CertificateThumbprint = $this.CertificateThumbprint
-                    CertificatePath       = $this.CertificatePath
-                    CertificatePassword   = $this.CertificatePassword
-                    ManagedIdentity       = $this.ManagedIdentity
-                    AccessTokens          = $this.AccessTokens
-                }
-                $this.ExportedInstance = $config
-                $Results = $this.GetForExport($Params)
-                $currentDSCBlock = Get-M365DSCExportContentForResource -ResourceName $this.GetResourceName() `
-                    -ConnectionMode $ConnectionMode `
-                    -ModulePath $this.GetModulePath() `
-                    -Results $Results `
-                    -Credential $this.Credential
-                [void]$dscContent.Append($currentDSCBlock)
-                Save-M365DSCPartialExport -Content $currentDSCBlock `
-                    -FileName $Global:PartialExportFileName
-                $i++
-                Write-M365DSCHost -Message $Global:M365DSCEmojiGreenCheckMark -CommitWrite
-            }
-            return $dscContent.ToString()
+            $this.ExportedInstance = $rule
+            $Results = $this.GetForExport($params)
+            $currentDSCBlock = Get-M365DSCExportContentForResource -ResourceName $this.GetResourceName() `
+                -ConnectionMode $ConnectionMode `
+                -ModulePath $this.GetModulePath() `
+                -Results $Results `
+                -Credential $this.Credential
+            Save-M365DSCPartialExport -Content $currentDSCBlock `
+                -FileName $Global:PartialExportFileName
+            Write-M365DSCHost -Message $Global:M365DSCEmojiGreenCheckMark -CommitWrite
+            return $currentDSCBlock
         }
         catch
         {
@@ -241,28 +267,36 @@ class EXOPhishSimOverrideRule : M365DSCResourceBase
         }
     }
 
-    hidden [void] ModifyPropertiesForSetCmdlet([System.Collections.Hashtable] $setParameters, [System.Collections.Hashtable] $currentInstance, [System.String] $propertyName)
+    hidden static [System.Object[]] InvokeExchangeCommand([System.String] $CommandName, [System.Collections.Hashtable] $Parameters)
     {
-        # Get the arrays
-        $setArray = $setParameters[$propertyName]
-        $currentArray = $currentInstance[$propertyName]
-
-        # Compare arrays
-        $addArray = $setArray | Where-Object { $_ -notin $currentArray }
-        $removeArray = $currentArray | Where-Object { $_ -notin $setArray }
-
-        # Modify $setParameters
-        if ($addArray.Count -gt 0)
+        $commandErrors = $null
+        $output = @(& $CommandName @Parameters -ErrorVariable commandErrors)
+        if ($output.Count -eq 0 -and @($commandErrors).Count -gt 0)
         {
-            $setParameters.Add("Add$propertyName", $addArray)
-        }
-        if ($removeArray.Count -gt 0)
-        {
-            $setParameters.Add("Remove$propertyName", $removeArray)
+            throw $commandErrors[-1]
         }
 
-        # Remove the original property
-        $setParameters.Remove($propertyName)
+        return $output
+    }
+
+    hidden static [System.Object] GetActiveInstance([System.String] $CommandName)
+    {
+        $instances = [EXOPhishSimOverrideRule]::InvokeExchangeCommand($CommandName, @{})
+        return $instances | Where-Object -Property Mode -NE 'PendingDeletion' | Select-Object -First 1
+    }
+
+    hidden static [void] AddDeltaParameters([System.Collections.Hashtable] $Parameters, [System.String] $Name, [System.String[]] $Desired, [System.String[]] $Current)
+    {
+        $toAdd = @($Desired | Where-Object -FilterScript { $_ -notin $Current })
+        $toRemove = @($Current | Where-Object -FilterScript { $_ -notin $Desired })
+        if ($toAdd.Count -gt 0)
+        {
+            $Parameters["Add$Name"] = $toAdd
+        }
+        if ($toRemove.Count -gt 0)
+        {
+            $Parameters["Remove$Name"] = $toRemove
+        }
     }
 
     hidden [EXOPhishSimOverrideRule] AsResult([System.Object] $Values)

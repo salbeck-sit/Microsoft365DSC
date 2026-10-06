@@ -26,10 +26,10 @@ Configuration Example
     {
         EXOSecOpsOverrideRule "EXOSecOpsOverrideRule-Example"
         {
-            Comment               = "Delivers unfiltered mail to the security operations and incident response mailboxes"; # Updated Property
+            Comment               = "Delivers unfiltered mail to the security operations mailbox for analysis"; # Updated Property
             Ensure                = "Present";
-            Identity              = "_Exe:SecOpsOverrid:ca3c51ac-925c-49f4-af42-43e26b874245";
-            Policy                = "40528418-717d-4368-a1ae-7912918f8a1f";
+            IsSingleInstance      = "Yes";
+            SentTo                = @("AlexW@$TenantId");
             ApplicationId         = $ApplicationId
             TenantId              = $TenantId
             CertificateThumbprint = $CertificateThumbprint

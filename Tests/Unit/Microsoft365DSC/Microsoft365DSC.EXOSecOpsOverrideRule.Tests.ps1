@@ -35,23 +35,49 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                 return "Credentials"
             }
 
-            Mock -CommandName Set-EXOSecOpsOverrideRule -MockWith {
+            Mock -CommandName Set-ExoSecOpsOverrideRule -MockWith {
             }
 
-            Mock -CommandName Remove-EXOSecOpsOverrideRule -MockWith {
+            Mock -CommandName Remove-ExoSecOpsOverrideRule -MockWith {
             }
 
-            Mock -CommandName New-EXOSecOpsOverrideRule -MockWith {
+            Mock -CommandName New-ExoSecOpsOverrideRule -MockWith {
             }
 
-            Mock -CommandName Get-EXOSecOpsOverrideRule -MockWith {
+            Mock -CommandName Set-SecOpsOverridePolicy -MockWith {
+            }
+
+            Mock -CommandName New-SecOpsOverridePolicy -MockWith {
                 return @{
-                    Identity            = "_Exe:SecOpsOverrid:ca3c51ac-925c-49f4-af42-43e26b874245";
-                    Comment             = "TestComment";
-                    Policy              = "40528418-717d-4368-a1ae-7912918f8a1f";
-                    Ensure              = 'Present';
-                    Credential          = $Credential;
+                    Identity = 'SecOpsOverridePolicy'
+                    Mode     = 'Enable'
+                    SentTo   = @('secops@contoso.com')
                 }
+            }
+
+            Mock -CommandName Get-SecOpsOverridePolicy -MockWith {
+                return @{
+                    Identity = 'SecOpsOverridePolicy'
+                    Mode     = 'Enable'
+                    SentTo   = @('secops@contoso.com', 'incidentresponse@contoso.com')
+                }
+            }
+
+            Mock -CommandName Get-ExoSecOpsOverrideRule -MockWith {
+                return @(
+                    @{
+                        Identity = '_Exe:SecOpsOverrid:312c23cf-0377-4162-b93d-6548a9977efb'
+                        Mode     = 'PendingDeletion'
+                        Comment  = 'Previous rule'
+                        SentTo   = @('legacy@contoso.com')
+                    },
+                    @{
+                        Identity = '_Exe:SecOpsOverrid:ca3c51ac-925c-49f4-af42-43e26b874245'
+                        Mode     = 'Enforce'
+                        Comment  = 'TestComment'
+                        SentTo   = @('secops@contoso.com', 'incidentresponse@contoso.com')
+                    }
+                )
             }
 
             # Mock Write-M365DSCHost to hide output during the tests
@@ -64,14 +90,14 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
         Context -Name "The instance should exist but it DOES NOT" -Fixture {
             BeforeAll {
                 $testParams = @{
-                    Identity            = "_Exe:SecOpsOverrid:ca3c51ac-925c-49f4-af42-43e26b874245";
+                    IsSingleInstance    = 'Yes'
+                    SentTo              = @('secops@contoso.com', 'incidentresponse@contoso.com')
                     Comment             = "TestComment";
-                    Policy              = "40528418-717d-4368-a1ae-7912918f8a1f";
                     Ensure              = 'Present'
                     Credential          = $Credential;
                 }
 
-                Mock -CommandName Get-EXOSecOpsOverrideRule -MockWith {
+                Mock -CommandName Get-ExoSecOpsOverrideRule -MockWith {
                     return $null
                 }
             }
@@ -82,18 +108,58 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                 (New-M365DSCResourceInstance -ResourceName 'EXOSecOpsOverrideRule' -Property $testParams).Test() | Should -Be $false
             }
 
-            It 'Should create a new instance from the Set method' {
+            It 'Should create a new instance against the existing policy from the Set method' {
                 (New-M365DSCResourceInstance -ResourceName 'EXOSecOpsOverrideRule' -Property $testParams).Set()
-                Should -Invoke -CommandName New-EXOSecOpsOverrideRule -Exactly 1
+                Should -Invoke -CommandName New-SecOpsOverridePolicy -Exactly 0
+                Should -Invoke -CommandName Set-SecOpsOverridePolicy -Exactly 0
+                Should -Invoke -CommandName New-ExoSecOpsOverrideRule -Exactly 1 -ParameterFilter {
+                    $Policy -eq 'SecOpsOverridePolicy' -and $Comment -eq 'TestComment'
+                }
+            }
+
+            It 'Should create the policy with the SecOps mailboxes and the rule from the Set method when no policy exists' {
+                Mock -CommandName Get-SecOpsOverridePolicy -MockWith {
+                    return $null
+                }
+
+                (New-M365DSCResourceInstance -ResourceName 'EXOSecOpsOverrideRule' -Property $testParams).Set()
+                Should -Invoke -CommandName New-SecOpsOverridePolicy -Exactly 1 -ParameterFilter {
+                    $Name -eq 'SecOpsOverridePolicy' -and $SentTo.Count -eq 2
+                }
+                Should -Invoke -CommandName New-ExoSecOpsOverrideRule -Exactly 1
+            }
+
+            It 'Should throw from the Set method when SentTo is empty' {
+                $noMailboxParams = @{
+                    IsSingleInstance = 'Yes'
+                    Ensure           = 'Present'
+                    SentTo           = @()
+                    Credential       = $Credential
+                }
+                { (New-M365DSCResourceInstance -ResourceName 'EXOSecOpsOverrideRule' -Property $noMailboxParams).Set() } | Should -Throw '*at least one mailbox*'
+
+                Mock -CommandName Get-SecOpsOverridePolicy -MockWith {
+                    return $null
+                }
+                $noMailboxParams.Remove('SentTo')
+                { (New-M365DSCResourceInstance -ResourceName 'EXOSecOpsOverrideRule' -Property $noMailboxParams).Set() } | Should -Throw '*at least one mailbox*'
+                Should -Invoke -CommandName New-ExoSecOpsOverrideRule -Exactly 0
+                Should -Invoke -CommandName Set-SecOpsOverridePolicy -Exactly 0
+            }
+
+            It 'Should throw from the Get method when the service returns an error' {
+                Mock -CommandName Get-ExoSecOpsOverrideRule -MockWith {
+                    Write-Error -Message 'A server side error has occurred because of which the operation could not be completed.'
+                }
+
+                { (New-M365DSCResourceInstance -ResourceName 'EXOSecOpsOverrideRule' -Property $testParams).Get() } | Should -Throw '*server side error*'
             }
         }
 
         Context -Name "The instance exists but it SHOULD NOT" -Fixture {
             BeforeAll {
                 $testParams = @{
-                    Identity            = "_Exe:SecOpsOverrid:ca3c51ac-925c-49f4-af42-43e26b874245";
-                    Comment             = "TestComment";
-                    Policy              = "40528418-717d-4368-a1ae-7912918f8a1f";
+                    IsSingleInstance    = 'Yes'
                     Ensure              = 'Absent';
                     Credential          = $Credential;
                 }
@@ -105,18 +171,23 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                 (New-M365DSCResourceInstance -ResourceName 'EXOSecOpsOverrideRule' -Property $testParams).Test() | Should -Be $false
             }
 
-            It 'Should remove the instance from the Set method' {
+            It 'Should remove the active rule and the SecOps mailboxes from the Set method' {
                 (New-M365DSCResourceInstance -ResourceName 'EXOSecOpsOverrideRule' -Property $testParams).Set()
-                Should -Invoke -CommandName Remove-EXOSecOpsOverrideRule -Exactly 1
+                Should -Invoke -CommandName Remove-ExoSecOpsOverrideRule -Exactly 1 -ParameterFilter {
+                    $Identity -eq '_Exe:SecOpsOverrid:ca3c51ac-925c-49f4-af42-43e26b874245'
+                }
+                Should -Invoke -CommandName Set-SecOpsOverridePolicy -Exactly 1 -ParameterFilter {
+                    $Identity -eq 'SecOpsOverridePolicy' -and $RemoveSentTo.Count -eq 2 -and $RemoveSentTo -contains 'incidentresponse@contoso.com'
+                }
             }
         }
 
         Context -Name "The instance exists and values are already in the desired state" -Fixture {
             BeforeAll {
                 $testParams = @{
-                    Identity            = "_Exe:SecOpsOverrid:ca3c51ac-925c-49f4-af42-43e26b874245";
+                    IsSingleInstance    = 'Yes'
+                    SentTo              = @('incidentresponse@contoso.com', 'secops@contoso.com')
                     Comment             = "TestComment";
-                    Policy              = "40528418-717d-4368-a1ae-7912918f8a1f";
                     Ensure              = 'Present'
                     Credential          = $Credential;
                 }
@@ -130,9 +201,9 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
         Context -Name "The instance exists and values are NOT in the desired state" -Fixture {
             BeforeAll {
                 $testParams = @{
-                    Identity            = "_Exe:SecOpsOverrid:ca3c51ac-925c-49f4-af42-43e26b874245";
+                    IsSingleInstance    = 'Yes'
+                    SentTo              = @('secops@contoso.com', 'threatintel@contoso.com')
                     Comment             = "TestComment";
-                    Policy              = "40528418-717d-4368-a1ae-7912918f8a1g"; # Drift
                     Ensure              = 'Present'
                     Credential          = $Credential;
                 }
@@ -146,9 +217,29 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                 (New-M365DSCResourceInstance -ResourceName 'EXOSecOpsOverrideRule' -Property $testParams).Test() | Should -Be $false
             }
 
-            It 'Should call the Set method' {
+            It 'Should update the SecOps mailboxes on the policy from the Set method' {
                 (New-M365DSCResourceInstance -ResourceName 'EXOSecOpsOverrideRule' -Property $testParams).Set()
-                Should -Invoke -CommandName Set-EXOSecOpsOverrideRule -Exactly 1
+                Should -Invoke -CommandName Set-SecOpsOverridePolicy -Exactly 1 -ParameterFilter {
+                    $Identity -eq 'SecOpsOverridePolicy' -and
+                    $AddSentTo -contains 'threatintel@contoso.com' -and
+                    $RemoveSentTo -contains 'incidentresponse@contoso.com'
+                }
+                Should -Invoke -CommandName Set-ExoSecOpsOverrideRule -Exactly 0
+            }
+
+            It 'Should update the comment on the rule from the Set method' {
+                $commentParams = @{
+                    IsSingleInstance = 'Yes'
+                    Comment          = 'Reviewed by the security operations team'
+                    Ensure           = 'Present'
+                    Credential       = $Credential
+                }
+
+                (New-M365DSCResourceInstance -ResourceName 'EXOSecOpsOverrideRule' -Property $commentParams).Set()
+                Should -Invoke -CommandName Set-ExoSecOpsOverrideRule -Exactly 1 -ParameterFilter {
+                    $Identity -eq '_Exe:SecOpsOverrid:ca3c51ac-925c-49f4-af42-43e26b874245' -and $Comment -eq 'Reviewed by the security operations team'
+                }
+                Should -Invoke -CommandName Set-SecOpsOverridePolicy -Exactly 0
             }
         }
 
@@ -163,6 +254,8 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             It 'Should Reverse Engineer resource from the Export method' {
                 $result = Invoke-M365DSCResourceMethod -ResourceName 'EXOSecOpsOverrideRule' -MethodName 'Export' -Parameters $testParams
                 $result | Should -Not -BeNullOrEmpty
+                $result | Should -Match 'IsSingleInstance\s+=\s+"Yes"'
+                $result | Should -Not -Match 'legacy@contoso\.com'
             }
         }
     }

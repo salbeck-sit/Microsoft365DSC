@@ -35,10 +35,11 @@ The October 2026 release is the largest one so far. Every resource is now a clas
 16. [SCRetentionCompliancePolicy - Adaptive Scopes](#scretentioncompliancepolicy-adaptive-scopes-7484)
 17. [TeamsChannelTab - New Configuration Property](#teamschanneltab-new-configuration-property-7445)
 18. [SCInsiderRiskPolicy - Tenant Settings Policy](#scinsiderriskpolicy-tenant-settings-policy)
-19. [Renamed Properties](#renamed-properties)
-20. [Removed Properties](#removed-properties)
-21. [Changed Types and Accepted Values](#changed-types-and-accepted-values)
-22. [Renamed Embedded Classes](#renamed-embedded-classes-7487)
+19. [EXOPhishSimOverrideRule and EXOSecOpsOverrideRule - Single Instance Resources](#exophishsimoverriderule-and-exosecopsoverriderule-single-instance-resources)
+20. [Renamed Properties](#renamed-properties)
+21. [Removed Properties](#removed-properties)
+22. [Changed Types and Accepted Values](#changed-types-and-accepted-values)
+23. [Renamed Embedded Classes](#renamed-embedded-classes-7487)
 
 ## PowerShell 7.6 and Class-Based Resources ([#7445](https://github.com/Microsoft365DSC/Microsoft365DSC/pull/7445))
 
@@ -288,6 +289,34 @@ Configuration = MSFT_MicrosoftGraphTeamsTabConfiguration {
 An instance with `InsiderRiskScenario = 'TenantSetting'` manages the tenant settings policy of Insider Risk Management. The service creates that policy when you turn on Insider Risk Management and allows only one per tenant. The resource used to create and remove it like any other policy. Now it only updates the existing tenant settings policy, whatever its name, and throws an error for `Ensure = 'Absent'` or when Insider Risk Management isn't turned on.
 
 If one of your instances removes the tenant settings policy, set it to `Ensure = 'Present'` or remove the instance. `InsiderRiskScenario` also accepts only the scenario names the service defines now, see [Changed Types and Accepted Values](#changed-types-and-accepted-values).
+
+## EXOPhishSimOverrideRule and EXOSecOpsOverrideRule - Single Instance Resources
+
+A tenant has one phishing simulation override and one SecOps mailbox override. Each consists of a policy and a rule, where the backend service generates their names. The two resources used `Identity` and `Policy` as their key and always reported the rule as absent. Both are now single instance resources with the key `IsSingleInstance = 'Yes'`. The `Identity` and `Policy` properties were removed.
+
+EXOSecOpsOverrideRule manages the SecOps mailboxes through the new `SentTo` property, which needs at least one mailbox. `Ensure = 'Absent'` removes the rule and the SecOps mailboxes, the same as removing all entries in the Microsoft Defender portal. For EXOPhishSimOverrideRule, `Ensure = 'Absent'` removes the rule and keeps the policy.
+
+```powershell
+# Before
+EXOSecOpsOverrideRule 'SecOpsOverride'
+{
+    Identity = '_Exe:SecOpsOverrid:ca3c51ac-925c-49f4-af42-43e26b874245'
+    Policy   = '40528418-717d-4368-a1ae-7912918f8a1f'
+    Comment  = 'Delivers unfiltered mail to the security operations mailbox'
+    Ensure   = 'Present'
+}
+
+# After
+EXOSecOpsOverrideRule 'SecOpsOverride'
+{
+    IsSingleInstance = 'Yes'
+    SentTo           = @('secops@contoso.com')
+    Comment          = 'Delivers unfiltered mail to the security operations mailbox'
+    Ensure           = 'Present'
+}
+```
+
+To fix your configuration, replace `Identity` and `Policy` with `IsSingleInstance = 'Yes'`. For EXOSecOpsOverrideRule, add the SecOps mailboxes in `SentTo`.
 
 ## Renamed Properties
 

@@ -1,4 +1,4 @@
-# Change log for Microsoft365DSC
+﻿# Change log for Microsoft365DSC
 
 # UNRELEASED
 
@@ -8,6 +8,18 @@
 * AADAdministrativeUnit
   * Fixed an issue where resolving a scoped role member could throw an error.
     FIXES [#7457](https://github.com/Microsoft365DSC/Microsoft365DSC/issues/7457)
+* AADAgreement
+  * [BREAKING CHANGE] Removed property `AcceptanceStatement`. It was not part of the
+    Graph Schema definition for the resource.
+  * Added support for the `TermsExpiration` property.
+  * Fixed an issue where an update reset `IsViewingBeforeAcceptanceRequired` and
+    silently ignored properties that can only be set at creation.
+  * Fixed an issue where `TermsExpiration.StartDateTime` was reported as drifted when
+    written with fractional seconds.
+  * Added support for publishing localized agreement files through `FileName`, `Language`
+    and `FileData`. `FileData` accepts a base64-encoded PDF or the text of a PDF.
+  * Fixed an issue where `FileName` and `Language` were reported from the default file
+    instead of the file of the configured language.
 * AADApplication
   * [BREAKING CHANGE] Renamed property `Permissions` to `RequiredResourceAccess`
     to match the name Microsoft Graph uses.
@@ -355,6 +367,11 @@
 * EXOPerimeterConfiguration
   * [BREAKING CHANGE] Removed the `Ensure` property. The settings always exist and cannot
     be removed.
+* EXOPhishSimOverrideRule
+  * [BREAKING CHANGE] Changed the resource to a singleton with the key
+    `IsSingleInstance`.
+  * [BREAKING CHANGE] Removed the `Identity` and `Policy` properties.
+  * Fixed an issue where the resource always reported the rule as absent.
 * EXOPlace
   * [BREAKING CHANGE] Removed deprecated property `Desks`.
 * EXOQuarantinePolicy
@@ -383,6 +400,12 @@
   * Fixed an issue where changing `Enabled` on an existing rule had no effect.
 * EXOSafeLinksRule
   * Fixed an issue where changing `Enabled` on an existing rule had no effect.
+* EXOSecOpsOverrideRule
+  * [BREAKING CHANGE] Changed the resource to a singleton with the key
+    `IsSingleInstance`.
+  * [BREAKING CHANGE] Removed the `Identity` and `Policy` properties.
+  * Added the `SentTo` property to manage the SecOps mailboxes.
+  * Fixed an issue where the resource always reported the rule as absent.
 * EXOSmtpDaneInbound
   * Fixed an issue where failures to enable or disable SMTP DANE were not reported.
 * EXOSweepRule
@@ -1329,7 +1352,7 @@
   * Added `M365DSC.Mgx` with version 2.1.8.
   * Added `M365DSC.PSDesiredStateConfiguration` with version 3.1.9.
   * Updated `DSCParser` to version 3.1.0.5.
-  * Updated `Microsoft.Graph.*` to version 2.41.0.
+  * Updated `Microsoft.Graph.*` to version 2.41.1.
   * Updated `MicrosoftTeams` to version 8.0.0.
   * Updated `MSCloudLoginAssistant` to version 1.2.9.
   * Updated `PnP.PowerShell` to version 3.4.1.
@@ -1484,11 +1507,10 @@
     Windows images and the Linux dev image.
   * Updated Docker files to work with latest code changes in preparation for
     this breaking change.
-
-  * Fixed an issue where a configuration that omitted `Ensure` reported drift but `Set`
+  * Fixed an issue where a configuration that omitted `Ensure` reported drift but `Set` made no change.
   * Fixed an issue where creating an Intune app with assignments failed with "app's
     PublishingState is not 'Published'".
-    made no change.
+
 # 1.26.909.1
 
 * MISC

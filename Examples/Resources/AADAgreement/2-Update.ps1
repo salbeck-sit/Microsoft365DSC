@@ -26,15 +26,15 @@ Configuration Example
         AADAgreement 'AADAgreement-Example'
         {
             DisplayName                       = "Company Terms of Use"
-            IsViewingBeforeAcceptanceRequired = $true
-            IsPerDeviceAcceptanceRequired     = $true
-            UserReacceptRequiredFrequency     = "P30D"
-            FileData                          = "TERMS OF USE FOR DEVICE ACCESS\n\nBy accepting these terms, you agree to comply with all company policies..."
-            FileName                          = "device_terms.txt"
+            IsViewingBeforeAcceptanceRequired = $false # Updated Property
+            IsPerDeviceAcceptanceRequired     = $false
+            UserReacceptRequiredFrequency     = "P90D"
+            FileData                          = "JVBERi0xLjQKMSAwIG9iago8PC9UeXBlL0NhdGFsb2cvUGFnZXMgMiAwIFI+PgplbmRvYmoKMiAwIG9iago8PC9UeXBlL1BhZ2VzL0tpZHNbMyAwIFJdL0NvdW50IDE+PgplbmRvYmoKMyAwIG9iago8PC9UeXBlL1BhZ2UvUGFyZW50IDIgMCBSL01lZGlhQm94WzAgMCA2MTIgNzkyXS9SZXNvdXJjZXM8PC9Gb250PDwvRjEgNCAwIFI+Pj4+L0NvbnRlbnRzIDUgMCBSPj4KZW5kb2JqCjQgMCBvYmoKPDwvVHlwZS9Gb250L1N1YnR5cGUvVHlwZTEvQmFzZUZvbnQvSGVsdmV0aWNhPj4KZW5kb2JqCjUgMCBvYmoKPDwvTGVuZ3RoIDUxPj4Kc3RyZWFtCkJUIC9GMSAxOCBUZiA3MiA3MjAgVGQgKENvbXBhbnkgVGVybXMgb2YgVXNlKSBUaiBFVAplbmRzdHJlYW0KZW5kb2JqCnhyZWYKMCA2CjAwMDAwMDAwMDAgNjU1MzUgZiAKMDAwMDAwMDAwOSAwMDAwMCBuIAowMDAwMDAwMDU0IDAwMDAwIG4gCjAwMDAwMDAxMDUgMDAwMDAgbiAKMDAwMDAwMDIxNyAwMDAwMCBuIAowMDAwMDAwMjgwIDAwMDAwIG4gCnRyYWlsZXI8PC9TaXplIDYvUm9vdCAxIDAgUj4+CnN0YXJ0eHJlZgozNzkKJSVFT0YK"
+            FileName                          = "CompanyTermsOfUse-v2.pdf" # Updated Property
             Language                          = "en-US"
             TermsExpiration                   = MSFT_TermsExpiration{
                 Frequency     = "P365D"
-                StartDateTime = "2026-01-01T00:00:00.0000000Z"
+                StartDateTime = "2030-01-01T00:00:00.0000000Z"
             }
             Ensure                            = "Present"
             ApplicationId                     = $ApplicationId

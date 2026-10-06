@@ -27,10 +27,10 @@ Configuration Example
         EXOSecOpsOverrideRule "EXOSecOpsOverrideRule-Example"
         {
             Ensure                = "Absent";
-            Identity              = "_Exe:SecOpsOverrid:ca3c51ac-925c-49f4-af42-43e26b874245";
-            ApplicationId         = $ApplicationId;
-            TenantId              = $TenantId;
-            CertificateThumbprint = $CertificateThumbprint;
+            IsSingleInstance      = "Yes";
+            ApplicationId         = $ApplicationId
+            TenantId              = $TenantId
+            CertificateThumbprint = $CertificateThumbprint
         }
     }
 }

@@ -28,6 +28,7 @@ Configuration Example
         {
             DisplayName                   = 'Amsterdam Office'
             Description                   = 'Users and devices based in the Amsterdam office'
+            Visibility                    = 'Public'
             MembershipRule                = "(user.country -eq `"Canada`")"
             MembershipRuleProcessingState = 'On'
             MembershipType                = 'Dynamic'
@@ -38,11 +39,12 @@ Configuration Example
                     RoleName       = 'User Administrator'
                     RoleMemberInfo = MSFT_MicrosoftGraphMember
                     {
-                        Identity = "admin@$TenantId"
+                        Identity = "MeganB@$TenantId"
                         Type     = "User"
                     }
                 }
             )
+            Ensure                        = 'Present'
             ApplicationId                 = $ApplicationId
             TenantId                      = $TenantId
             CertificateThumbprint         = $CertificateThumbprint

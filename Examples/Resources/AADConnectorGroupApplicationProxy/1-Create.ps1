@@ -27,7 +27,6 @@ Configuration Example
         AADConnectorGroupApplicationProxy "AADConnectorGroupApplicationProxy-Example"
         {
             Ensure                = "Present";
-            Id                    = "4984dcf7-d9e9-4663-90b4-5db09f92a669";
             Name                  = "Amsterdam Connector Group";
             Region                = "nam";
             ApplicationId         = $ApplicationId

@@ -26,8 +26,8 @@ Configuration Example
     {
         IntuneDeviceComplianceScriptLinux 'IntuneDeviceComplianceScriptLinux-Example'
         {
-            DisplayName           = "Linux Patch Level Check";
-            Ensure                = "Present";
+            DisplayName           = "Linux SSH Root Login Check";
+            Ensure                = "Absent";
             ApplicationId         = $ApplicationId;
             TenantId              = $TenantId;
             CertificateThumbprint = $CertificateThumbprint;

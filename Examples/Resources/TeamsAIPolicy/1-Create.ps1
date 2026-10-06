@@ -32,9 +32,9 @@ Configuration Example
             Ensure                    = "Present";
             Identity                  = "AIEnabled";
             SpeakerAttributionForBYOD = "Enabled";
-            ApplicationId             = $ConfigurationData.NonNodeData.ApplicationId;
+            ApplicationId             = $ApplicationId;
             TenantId                  = $TenantId;
-            CertificateThumbprint     = $ConfigurationData.NonNodeData.CertificateThumbprint;
+            CertificateThumbprint     = $CertificateThumbprint;
         }
     }
 }

@@ -33,7 +33,7 @@ Configuration Example
                 }
                 MSFT_DeviceManagementConfigurationPolicyAssignments{
                     dataType         = "#microsoft.graph.exclusionGroupAssignmentTarget"
-                    groupDisplayName = "Autopilot Provisioning Exclusions"
+                    groupDisplayName = "Intune Excluded Devices"
                 }
             );
             Description                    = "User-driven provisioning for Entra joined laptops";

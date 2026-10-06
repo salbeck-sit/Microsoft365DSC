@@ -27,7 +27,7 @@ Configuration Example
         IntuneDeviceConfigurationWiredNetworkPolicyWindows10 'IntuneDeviceConfigurationWiredNetworkPolicyWindows10-Example'
         {
             DisplayName           = 'Wired Network'
-            Ensure                = 'Present'
+            Ensure                = 'Absent'
             ApplicationId         = $ApplicationId;
             TenantId              = $TenantId;
             CertificateThumbprint = $CertificateThumbprint;

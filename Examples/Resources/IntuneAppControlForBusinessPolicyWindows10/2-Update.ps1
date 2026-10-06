@@ -30,19 +30,19 @@ Configuration Example
                 MSFT_DeviceManagementConfigurationPolicyAssignments{
                     dataType                                   = "#microsoft.graph.exclusionGroupAssignmentTarget"
                     deviceAndAppManagementAssignmentFilterType = "none"
-                    groupDisplayName                           = "Exclude"
+                    groupDisplayName                           = "Intune Excluded Devices"
                 }
                 MSFT_DeviceManagementConfigurationPolicyAssignments{
                     dataType                                   = "#microsoft.graph.groupAssignmentTarget"
                     deviceAndAppManagementAssignmentFilterType = "none"
-                    groupDisplayName                           = "Include"
+                    groupDisplayName                           = "Intune Pilot Devices"
                 }
             );
-            ConfigureApplicationControlOptions                        = "0"; # Updated Property
+            ConfigureApplicationControlOptions                        = "1";
             ConfigureApplicationControlsAuditMode                     = "1";
             ConfigureApplicationControlsTrustAppsFromManagedInstaller = "1";
             ConfigureApplicationControlsTrustAppsWithGoodReputation   = "1";
-            Description                                               = "";
+            Description                                               = "Audits application execution on pilot devices before enforcement"; # Updated Property
             DisplayName                                               = "App Control for Business - Audit Mode";
             Ensure                                                    = "Present";
             RoleScopeTagIds                                           = @("0");

@@ -26,10 +26,11 @@ Configuration Example
     {
         TeamsUnassignedNumberTreatment 'TeamsUnassignedNumberTreatment-Example'
         {
+            Description           = "Routes calls to the retired reception number to the front desk";
             Ensure                = "Present";
-            Identity              = "TR2";
+            Identity              = "Former Reception Number";
             Pattern               = "^\+15552224444$";
-            Target                = "ae274f0a-9c9c-496a-8dd3-8a57640d93aa";
+            Target                = "<user-object-id>";
             TargetType            = "User";
             TreatmentPriority     = 3;
             ApplicationId         = $ApplicationId;

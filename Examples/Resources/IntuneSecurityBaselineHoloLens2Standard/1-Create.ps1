@@ -39,7 +39,7 @@ Configuration Example
             DevicePasswordEnabled                       = 0
             DevicePasswordExpiration                    = 90
             MinDevicePasswordLength                     = 6
-            AlphanumericDevicePasswordRequired          = 2
+            AlphanumericDevicePasswordRequired          = 0
             MaxDevicePasswordFailedAttempts             = 10
             MinDevicePasswordComplexCharacters          = 3
             MaxInactivityTimeDeviceLock                 = 5
@@ -78,7 +78,7 @@ Configuration Example
             Assignments                                 = @(
                 MSFT_DeviceManagementConfigurationPolicyAssignments{
                     dataType                                   = "#microsoft.graph.groupAssignmentTarget"
-                    groupDisplayName                           = "HoloLens 2 Training Room Headsets"
+                    groupDisplayName                           = "Intune Pilot Devices"
                     deviceAndAppManagementAssignmentFilterType = "none"
                 }
             )

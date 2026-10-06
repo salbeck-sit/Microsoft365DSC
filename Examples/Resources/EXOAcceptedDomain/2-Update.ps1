@@ -28,7 +28,8 @@ Configuration Example
         {
             Identity              = $TenantId
             DomainType            = "Authoritative"
-            OutboundOnly          = $true # Updated Property
+            MatchSubDomains       = $false
+            OutboundOnly          = $false
             Ensure                = "Present"
             ApplicationId         = $ApplicationId
             TenantId              = $TenantId

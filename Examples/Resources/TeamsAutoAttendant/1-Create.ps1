@@ -54,8 +54,8 @@ Configuration Example
                             VoiceResponses = @("Reception")
                             Description    = "Reception"
                             CallTarget     = MSFT_TeamsAutoAttendantCallableEntity{
-                                Identity = "AdeleV@$TenantId"
-                                Type     = "User"
+                                Identity = "tel:+14255550100"
+                                Type     = "ExternalPstn"
                             }
                         }
                         MSFT_TeamsAutoAttendantMenuOption{
@@ -124,15 +124,14 @@ Configuration Example
                 }
             )
             Operator                      = MSFT_TeamsAutoAttendantCallableEntity{
-                Identity = "AdeleV@$TenantId"
-                Type     = "User"
+                Identity = "tel:+14255550100"
+                Type     = "ExternalPstn"
             }
             AuthorizedUsers               = @("AlexW@$TenantId", "MeganB@$TenantId")
             HideAuthorizedUsers           = @("MeganB@$TenantId")
             UserNameExtension             = "Department"
             EnableMainlineAttendant       = $false
-            MainlineAttendantAgentVoiceId = "Alloy"
-            ApplicationInstances          = @("mainline@$TenantId")
+            ApplicationInstances          = @("mainreception@$TenantId")
             Ensure                        = "Present"
             ApplicationId                 = $ApplicationId
             TenantId                      = $TenantId

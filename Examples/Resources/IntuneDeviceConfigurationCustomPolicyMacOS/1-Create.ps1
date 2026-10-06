@@ -31,12 +31,16 @@ Configuration Example
                     dataType                                   = "#microsoft.graph.allDevicesAssignmentTarget"
                     deviceAndAppManagementAssignmentFilterType = "none"
                 }
+                MSFT_DeviceManagementConfigurationPolicyAssignments{
+                    dataType                                   = "#microsoft.graph.exclusionGroupAssignmentTarget"
+                    deviceAndAppManagementAssignmentFilterType = "none"
+                    groupDisplayName                           = "Intune Excluded Devices"
+                }
             );
             DeploymentChannel     = "deviceChannel";
             Description           = "Pins the Safari homepage on managed Macs";
             DisplayName           = "macOS Safari Homepage";
-            Payload               = @'
-<?xml version="1.0" encoding="UTF-8"?>
+            Payload               = '<?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
@@ -68,8 +72,7 @@ Configuration Example
     <key>PayloadVersion</key>
     <integer>1</integer>
 </dict>
-</plist>
-'@;
+</plist>';
             PayloadFileName       = "contoso-safari-homepage.mobileconfig";
             PayloadName           = "Contoso Safari Homepage";
             RoleScopeTagIds       = @("0");

@@ -63,7 +63,7 @@ Configuration Example
                 }
                 MSFT_DeviceManagementConfigurationPolicyAssignments{
                     dataType         = "#microsoft.graph.exclusionGroupAssignmentTarget"
-                    groupDisplayName = "Shared Kiosk Devices"
+                    groupDisplayName = "Intune Excluded Devices"
                 }
             );
             Ensure                = "Present";

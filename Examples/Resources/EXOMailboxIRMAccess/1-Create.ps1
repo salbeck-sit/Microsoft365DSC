@@ -28,8 +28,8 @@ Configuration Example
         {
             AccessLevel           = "Block";
             Ensure                = "Present";
-            Identity              = "qwe@$TenantId";
-            User                  = "admin@$TenantId";
+            Identity              = "AdeleV@$TenantId";
+            User                  = "MeganB@$TenantId";
             ApplicationId         = $ApplicationId
             TenantId              = $TenantId
             CertificateThumbprint = $CertificateThumbprint

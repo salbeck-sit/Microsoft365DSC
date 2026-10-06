@@ -27,7 +27,7 @@ Configuration Example
         SCComplianceCase 'SCComplianceCase-Example'
         {
             Name                  = "Contoso Litigation 2026"
-            Description           = "MyPolicy"
+            Description           = "Supplier contract dispute filed in March 2026"
             Status                = "Active"
             Ensure                = "Present"
             ApplicationId         = $ApplicationId

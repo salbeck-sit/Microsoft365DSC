@@ -38,7 +38,7 @@ Configuration Example
                 }
                 MSFT_DeviceManagementConfigurationPolicyAssignments{
                     dataType         = "#microsoft.graph.exclusionGroupAssignmentTarget"
-                    groupDisplayName = "Android Warehouse Scanners"
+                    groupDisplayName = "Intune Excluded Devices"
                 }
             );
             ApplicationId          = $ApplicationId;

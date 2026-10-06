@@ -22,7 +22,7 @@ Configuration Example
             ComplianceUrl    = "";
             Credential       = $Credential;
             DiscoveryUrl     = "https://wip.mam.manage.microsoft.com/Enroll";
-            IncludedGroups   = @("AADGroup_1","AADGroup_3"); # Updated Property
+            IncludedGroups   = @("Intune Pilot Users"); # Updated Property
             IsSingleInstance = "Yes";
             TermsOfUseUrl    = "";
         }

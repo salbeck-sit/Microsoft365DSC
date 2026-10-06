@@ -31,7 +31,7 @@ Configuration Example
                 MSFT_DeviceManagementConfigurationPolicyAssignments{
                     dataType                                   = '#microsoft.graph.groupAssignmentTarget'
                     deviceAndAppManagementAssignmentFilterType = 'none'
-                    groupDisplayName                           = 'Corporate Mailbox Users'
+                    groupDisplayName                           = 'Intune Pilot Users'
                 }
             );
             Description                                = "Configures the built-in Windows mail app for Exchange Online mailboxes"; # Updated Property

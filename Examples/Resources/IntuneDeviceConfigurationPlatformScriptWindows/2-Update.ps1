@@ -33,17 +33,18 @@ Configuration Example
                 }
                 MSFT_DeviceManagementConfigurationPolicyAssignments{
                     dataType         = '#microsoft.graph.exclusionGroupAssignmentTarget'
-                    groupDisplayName = 'Policy Exclusions'
+                    groupDisplayName = 'Intune Excluded Devices'
                 }
             );
-            DisplayName           = "custom";
+            Description           = "Activates the high performance power plan on lab workstations";
+            DisplayName           = "Set High Performance Power Plan";
             Ensure                = "Present";
             EnforceSignatureCheck = $False;
-            FileName              = "script.ps1";
-            Id                    = "00000000-0000-0000-0000-000000000000";
+            FileName              = "set-power-plan.ps1";
             RunAs32Bit            = $False; # Updated Property
+            RoleScopeTagIds       = @("0");
             RunAsAccount          = "system";
-            ScriptContent         = "Base64 encoded script content";
+            ScriptContent         = "cG93ZXJjZmcgL3NldGFjdGl2ZSBTQ0hFTUVfTUlODQo=";
             ApplicationId         = $ApplicationId;
             TenantId              = $TenantId;
             CertificateThumbprint = $CertificateThumbprint;

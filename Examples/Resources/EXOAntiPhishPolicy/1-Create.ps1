@@ -34,7 +34,7 @@ Configuration Example
             TargetedDomainsToProtect                      = @("northwindtraders.com")
             EnableSimilarUsersSafetyTips                  = $true
             ExcludedDomains                               = @("fabrikam.com")
-            TargetedDomainActionRecipients                = @("admin@$TenantId")
+            TargetedDomainActionRecipients                = @("MeganB@$TenantId")
             EnableMailboxIntelligence                     = $true
             EnableSimilarDomainsSafetyTips                = $true
             AdminDisplayName                              = "Impersonation and spoof protection for the finance team"
@@ -45,7 +45,7 @@ Configuration Example
             ExcludedSenders                               = @("newsletter@fabrikam.com")
             EnableOrganizationDomainsProtection           = $true
             EnableUnusualCharactersSafetyTips             = $true
-            TargetedUserActionRecipients                  = @("admin@$TenantId")
+            TargetedUserActionRecipients                  = @("MeganB@$TenantId")
             EnableFirstContactSafetyTips                  = $true
             EnableMailboxIntelligenceProtection           = $true
             EnableSpoofIntelligence                       = $true
@@ -54,7 +54,7 @@ Configuration Example
             HonorDmarcPolicy                              = $true
             ImpersonationProtectionState                  = "Manual"
             MailboxIntelligenceProtectionAction           = "BccMessage"
-            MailboxIntelligenceProtectionActionRecipients = @("admin@$TenantId")
+            MailboxIntelligenceProtectionActionRecipients = @("MeganB@$TenantId")
             TargetedDomainProtectionAction                = "BccMessage"
             Ensure                                        = "Present"
             DmarcQuarantineAction                         = "Quarantine"

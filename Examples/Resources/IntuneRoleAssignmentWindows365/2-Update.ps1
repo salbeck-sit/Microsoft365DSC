@@ -27,10 +27,10 @@ Configuration Example
         {
             AppScopeIds           = @("0");
             Description           = "";
-            DirectoryScopes       = @("AADGroup_1");
+            DirectoryScopes       = @("Intune Pilot Users");
             DisplayName           = "IntuneRoleAssignmentWindows365_1";
             Ensure                = "Present";
-            Principals            = @("AADGroup_2"); # Updated Property
+            Principals            = @("Intune Excluded Users"); # Updated Property
             RoleDefinition        = "IntuneRoleDefinitionWindows365_1";
             ApplicationId         = $ApplicationId;
             TenantId              = $TenantId;

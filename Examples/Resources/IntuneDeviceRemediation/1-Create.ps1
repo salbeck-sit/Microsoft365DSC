@@ -28,28 +28,27 @@ Configuration Example
             Assignments              = @(
                 MSFT_IntuneDeviceRemediationPolicyAssignments{
                     RunSchedule          = MSFT_IntuneDeviceRemediationRunSchedule{
-                        Date     = '2024-01-01'
                         Time     = '01:00:00'
                         Interval = 1
-                        DataType = '#microsoft.graph.deviceHealthScriptRunOnceSchedule'
+                        DataType = '#microsoft.graph.deviceHealthScriptDailySchedule'
                         UseUtc   = $False
                     }
                     RunRemediationScript = $False
                     Assignment           = MSFT_DeviceManagementConfigurationPolicyAssignments{
                         deviceAndAppManagementAssignmentFilterType = 'none'
                         dataType                                   = '#microsoft.graph.groupAssignmentTarget'
-                        groupId                                    = '11111111-1111-1111-1111-111111111111'
+                        groupDisplayName                           = 'Intune Pilot Devices'
                     }
                 }
             );
-            Description              = 'Description'
-            DetectionScriptContent   = "Base64 encoded script content";
+            Description              = 'Restarts the Print Spooler service when it is not running'
+            DetectionScriptContent   = "JHNlcnZpY2UgPSBHZXQtU2VydmljZSAtTmFtZSAnU3Bvb2xlcicgLUVycm9yQWN0aW9uIFNpbGVudGx5Q29udGludWUNCmlmICgkc2VydmljZS5TdGF0dXMgLWVxICdSdW5uaW5nJykgeyBleGl0IDAgfQ0KZXhpdCAxDQo=";
             DeviceHealthScriptType   = "deviceHealthScript";
-            DisplayName              = "Device remediation";
+            DisplayName              = "Restart Print Spooler";
             EnforceSignatureCheck    = $False;
             Ensure                   = "Present";
-            Publisher                = "Some Publisher";
-            RemediationScriptContent = "Base64 encoded script content";
+            Publisher                = "Contoso IT Operations";
+            RemediationScriptContent = "U3RhcnQtU2VydmljZSAtTmFtZSAnU3Bvb2xlcicNCg==";
             RoleScopeTagIds          = @("0");
             RunAs32Bit               = $True;
             RunAsAccount             = "system";

@@ -28,9 +28,9 @@ Configuration Example
         {
             Ensure                = "Absent";
             Identity              = "AIEnabled";
-            ApplicationId         = $ConfigurationData.NonNodeData.ApplicationId;
+            ApplicationId         = $ApplicationId;
             TenantId              = $TenantId;
-            CertificateThumbprint = $ConfigurationData.NonNodeData.CertificateThumbprint;
+            CertificateThumbprint = $CertificateThumbprint;
         }
     }
 }

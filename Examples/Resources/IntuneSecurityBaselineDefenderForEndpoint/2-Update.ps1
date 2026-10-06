@@ -163,7 +163,7 @@ Configuration Example
             Assignments           = @(
                 MSFT_DeviceManagementConfigurationPolicyAssignments{
                     dataType                                   = "#microsoft.graph.groupAssignmentTarget"
-                    groupDisplayName                           = "Windows Endpoint Protection Devices"
+                    groupDisplayName                           = "Intune Pilot Devices"
                     deviceAndAppManagementAssignmentFilterType = "none"
                 }
             )

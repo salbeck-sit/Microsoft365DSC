@@ -26,17 +26,17 @@ Configuration Example
     {
         EXOEOPProtectionPolicyRule "EXOEOPProtectionPolicyRule-Example"
         {
-            Comments                  = "Scopes the Strict preset EOP policy to the pilot recipients.";
+            Comments                  = "Scopes the Standard preset EOP policy to the pilot recipients.";
             Ensure                    = "Present";
             ExceptIfRecipientDomainIs = @("fabrikam.com");
             ExceptIfSentTo            = @("AlexW@$TenantId");
             ExceptIfSentToMemberOf    = @("Executives@$TenantId");
-            Identity                  = "Strict Preset Security Policy";
-            Name                      = "Strict Preset Security Policy";
+            Identity                  = "Standard Preset Security Policy";
+            Name                      = "Standard Preset Security Policy";
             Priority                  = 0;
             RecipientDomainIs         = @("contoso.com");
             SentTo                    = @("AdeleV@$TenantId");
-            SentToMemberOf            = @("LegalTeam@$TenantId");
+            SentToMemberOf            = @("Retail@$TenantId");
             State                     = "Disabled";
             ApplicationId             = $ApplicationId
             TenantId                  = $TenantId

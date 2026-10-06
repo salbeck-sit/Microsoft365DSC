@@ -26,11 +26,11 @@ Configuration Example
     {
         SCSecurityFilter 'SCSecurityFilter-Example'
         {
-            FilterName            = "My Filter Name"
+            FilterName            = "Australia Mailbox Scope"
             Action                = "All"
-            Users                 = @("jonh.doe@1234.onmicrosoft.com")
+            Users                 = @("PattiF@$TenantId")
             Description           = "Limits eDiscovery searches to Australian mailboxes"
-            Filters               = @("Mailbox_CountryCode -eq '124'")
+            Filters               = @("Mailbox_CountryCode -eq '036'")
             Region                = "AUS"
             Ensure                = "Present"
             ApplicationId         = $ApplicationId

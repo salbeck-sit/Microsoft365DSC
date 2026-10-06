@@ -35,7 +35,7 @@ Configuration Example
                 }
                 MSFT_DeviceManagementConfigurationPolicyAssignments{
                     dataType         = "#microsoft.graph.exclusionGroupAssignmentTarget"
-                    groupDisplayName = "Browser Policy Exclusions"
+                    groupDisplayName = "Intune Excluded Devices"
                 }
             );
             AuthSchemes_AuthSchemes                                 = "ntlm,negotiate";

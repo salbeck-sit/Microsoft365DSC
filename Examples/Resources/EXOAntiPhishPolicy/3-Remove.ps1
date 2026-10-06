@@ -27,7 +27,7 @@ Configuration Example
         EXOAntiPhishPolicy 'EXOAntiPhishPolicy-Example'
         {
             Identity              = "Our Rule"
-            Ensure                = "Present"
+            Ensure                = "Absent"
             ApplicationId         = $ApplicationId
             TenantId              = $TenantId
             CertificateThumbprint = $CertificateThumbprint

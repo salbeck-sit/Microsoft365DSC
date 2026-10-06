@@ -35,12 +35,12 @@ Configuration Example
                 MSFT_DeviceManagementConfigurationPolicyAssignments {
                     deviceAndAppManagementAssignmentFilterType = 'none'
                     dataType                                   = '#microsoft.graph.groupAssignmentTarget'
-                    groupId                                    = 'e8cbd84d-be6a-4b72-87f0-0e677541fda0'
+                    groupDisplayName                           = 'Intune Pilot Devices'
                 }
                 MSFT_DeviceManagementConfigurationPolicyAssignments {
                     deviceAndAppManagementAssignmentFilterType = 'none'
-                    dataType                                   = '#microsoft.graph.groupAssignmentTarget'
-                    groupId                                    = 'ea9199b8-3e6e-407b-afdc-e0943e0d3c20'
+                    dataType                                   = '#microsoft.graph.exclusionGroupAssignmentTarget'
+                    groupDisplayName                           = 'Intune Excluded Devices'
                 })
             CameraBlocked                                   = $False
             ClassroomAppBlockRemoteScreenObservation        = $False

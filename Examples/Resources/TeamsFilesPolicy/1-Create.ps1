@@ -26,7 +26,7 @@ Configuration Example
     {
         TeamsFilesPolicy 'TeamsFilesPolicy-Example'
         {
-            DefaultFileUploadAppId              = "<teams-app-id>";
+            DefaultFileUploadAppId              = "8d04bcf6-86d8-4ab1-9602-bc3b56e06c37";
             Ensure                              = "Present";
             FileSharingInChatswithExternalUsers = "Enabled";
             Identity                            = "Retail Store Files";

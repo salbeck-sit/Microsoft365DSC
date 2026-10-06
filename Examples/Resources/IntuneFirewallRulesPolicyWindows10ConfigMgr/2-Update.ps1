@@ -28,8 +28,8 @@ Configuration Example
             Assignments           = @(
                 MSFT_DeviceManagementConfigurationPolicyAssignments{
                     deviceAndAppManagementAssignmentFilterType = 'none'
-                    dataType                                   = '#microsoft.graph.groupAssignmentTarget'
-                    groupId                                    = '11111111-1111-1111-1111-111111111111'
+                    dataType                                   = '#microsoft.graph.configurationManagerCollectionAssignmentTarget'
+                    collectionId                               = 'CM100014'
                 }
             );
             FirewallRuleName      = @(

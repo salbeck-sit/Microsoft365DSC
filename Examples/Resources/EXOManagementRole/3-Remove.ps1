@@ -26,7 +26,7 @@ Configuration Example
     {
         EXOManagementRole 'EXOManagementRole-Example'
         {
-            Name                  = "MyDisplayName"
+            Name                  = "Profile Editors"
             Parent                = "$TenantId\MyProfileInformation"
             Ensure                = "Absent"
             ApplicationId         = $ApplicationId

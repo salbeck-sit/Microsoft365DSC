@@ -30,7 +30,7 @@ Configuration Example
             AllowLogCollection        = $False;
             AllowScreenshotCollection = $False;
             Ensure                    = "Present";
-            Identity                  = "Global";
+            Identity                  = "Frontline Feedback";
             ReceiveSurveysMode        = "EnabledUserOverride";
             UserInitiatedMode         = "Enabled";
             ApplicationId             = $ApplicationId;

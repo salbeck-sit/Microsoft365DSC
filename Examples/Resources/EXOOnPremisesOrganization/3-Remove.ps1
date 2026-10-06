@@ -27,6 +27,7 @@ Configuration Example
         EXOOnPremisesOrganization 'EXOOnPremisesOrganization-Example'
         {
             Identity              = 'Contoso HQ'
+            Ensure                = 'Absent'
             ApplicationId         = $ApplicationId
             TenantId              = $TenantId
             CertificateThumbprint = $CertificateThumbprint

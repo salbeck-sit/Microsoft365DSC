@@ -29,12 +29,12 @@ Configuration Example
             DidMethod             = "web";
             Ensure                = "Present";
             KeyVaultMetadata      = MSFT_AADVerifiedIdAuthorityKeyVaultMetadata{
-                SubscriptionId = '<subscription-id>'
-                ResourceName   = 'xtakeyvault'
-                ResourceUrl    = '<key-vault-uri>'
-                ResourceGroup  = 'TBD'
+                SubscriptionId = "<subscription-id>"
+                ResourceName   = "<key-vault-name>"
+                ResourceUrl    = "<key-vault-uri>"
+                ResourceGroup  = "<resource-group-name>"
             };
-            LinkedDomainUrl       = "https://nik-charlebois.com/";
+            LinkedDomainUrl       = "https://$TenantId/";
             Name                  = "Contoso";
             ApplicationId         = $ApplicationId
             TenantId              = $TenantId

@@ -28,7 +28,7 @@ Configuration Example
         {
             Ensure                = "Present";
             FocusedInboxOn        = $False; # Updated Property
-            Identity              = "admin@$TenantId";
+            Identity              = "MeganB@$TenantId";
             ApplicationId         = $ApplicationId;
             TenantId              = $TenantId;
             CertificateThumbprint = $CertificateThumbprint;

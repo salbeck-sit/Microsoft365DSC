@@ -27,7 +27,7 @@ Configuration Example
         EXODnssecForVerifiedDomain "EXODnssecForVerifiedDomain-Example"
         {
             DnssecFeatureStatus   = "Disabled"; # Updated Property
-            DomainName            = "nik-charlebois.com";
+            DomainName            = "contoso.com";
             ApplicationId         = $ApplicationId
             TenantId              = $TenantId
             CertificateThumbprint = $CertificateThumbprint

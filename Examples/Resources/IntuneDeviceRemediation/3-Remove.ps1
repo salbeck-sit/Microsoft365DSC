@@ -25,7 +25,7 @@ Configuration Example
     {
         IntuneDeviceRemediation 'IntuneDeviceRemediation-Example'
         {
-            DisplayName           = 'Device remediation'
+            DisplayName           = 'Restart Print Spooler'
             Ensure                = 'Absent'
             ApplicationId         = $ApplicationId;
             TenantId              = $TenantId;

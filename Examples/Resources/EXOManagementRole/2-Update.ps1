@@ -26,8 +26,8 @@ Configuration Example
     {
         EXOManagementRole 'EXOManagementRole-Example'
         {
-            Name                  = "MyDisplayName"
-            Description           = "Updated Description" # Updated Property
+            Name                  = "Profile Editors"
+            Description           = "Lets users update their own contact details and photo" # Updated Property
             Parent                = "$TenantId\MyProfileInformation"
             Ensure                = "Present"
             ApplicationId         = $ApplicationId

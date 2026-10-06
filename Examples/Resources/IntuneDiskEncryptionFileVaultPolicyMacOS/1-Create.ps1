@@ -29,12 +29,12 @@ Configuration Example
             Assignments                            = @(
                 MSFT_DeviceManagementConfigurationPolicyAssignments{
                     deviceAndAppManagementAssignmentFilterType = "none"
-                    groupDisplayName                           = "Exclude"
+                    groupDisplayName                           = "Intune Excluded Devices"
                     dataType                                   = "#microsoft.graph.exclusionGroupAssignmentTarget"
                 }
                 MSFT_DeviceManagementConfigurationPolicyAssignments{
                     deviceAndAppManagementAssignmentFilterType = "none"
-                    groupDisplayName                           = "Include"
+                    groupDisplayName                           = "Intune Pilot Devices"
                     dataType                                   = "#microsoft.graph.groupAssignmentTarget"
                 }
             );

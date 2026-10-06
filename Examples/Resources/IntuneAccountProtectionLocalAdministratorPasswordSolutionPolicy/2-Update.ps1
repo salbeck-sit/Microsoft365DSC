@@ -37,7 +37,7 @@ Configuration Example
                 }
                 MSFT_IntuneAccountProtectionLocalAdministratorPasswordSolutionPolicyAssignments{
                     dataType         = "#microsoft.graph.exclusionGroupAssignmentTarget"
-                    groupDisplayName = "Local Administrator Password Exclusions"
+                    groupDisplayName = "Intune Excluded Devices"
                 }
             );
             BackupDirectory                         = "2";

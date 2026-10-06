@@ -25,7 +25,7 @@ Configuration Example
     {
         IntuneAndroidManagedStoreAppConfiguration "IntuneAndroidManagedStoreAppConfiguration-Example"
         {
-            DisplayName           = "IntuneAndroidManagedStoreAppConfiguration DisplayName";
+            DisplayName           = "Microsoft Authenticator Permissions";
             Ensure                = "Absent";
             ApplicationId         = $ApplicationId;
             TenantId              = $TenantId;

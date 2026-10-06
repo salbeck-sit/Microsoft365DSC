@@ -480,7 +480,7 @@ Configuration Example
             Assignments           = @(
                 MSFT_DeviceManagementConfigurationPolicyAssignments{
                     dataType                                   = "#microsoft.graph.groupAssignmentTarget"
-                    groupDisplayName                           = "Microsoft 365 Apps Managed Devices"
+                    groupDisplayName                           = "Intune Pilot Devices"
                     deviceAndAppManagementAssignmentFilterType = "none"
                 }
             )

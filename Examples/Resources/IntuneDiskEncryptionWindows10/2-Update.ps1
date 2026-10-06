@@ -65,6 +65,7 @@ Configuration Example
             PrebootRecoveryInfo_Name                        = '1'
             PrebootRecoveryInfoDropDown_Name                = '2'
             RecoveryMessage_Input                           = 'Your device is protected by BitLocker. Call the Contoso service desk on +1 425 555 0100 for a recovery key.'
+            RecoveryUrl_Input                               = 'https://servicedesk.contoso.com/bitlocker'
             FDVEncryptionType_Name                          = '1'
             FDVEncryptionTypeDropDown_Name                  = '1'
             FDVRecoveryUsage_Name                           = '1'
@@ -90,7 +91,7 @@ Configuration Example
                 }
                 MSFT_DeviceManagementConfigurationPolicyAssignments{
                     dataType         = '#microsoft.graph.exclusionGroupAssignmentTarget'
-                    groupDisplayName = 'Loaner Laptop Pool'
+                    groupDisplayName = 'Intune Excluded Devices'
                 }
             )
             Ensure                                          = 'Present'

@@ -49,7 +49,7 @@ Configuration Example
             EnforceSchedulingHorizon             = $True;
             Ensure                               = "Present";
             ForwardRequestsToDelegates           = $True;
-            Identity                             = "admin@$TenantId";
+            Identity                             = "MeganB@$TenantId";
             MaximumConflictInstances             = 0;
             MaximumDurationInMinutes             = 1440;
             MinimumDurationInMinutes             = 0;

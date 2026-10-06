@@ -31,7 +31,7 @@ Configuration Example
             Assignments           = @(
                 MSFT_DeviceManagementConfigurationPolicyAssignments{
                     dataType                                   = "#microsoft.graph.groupAssignmentTarget"
-                    groupDisplayName                           = "Amsterdam Desktop Support"
+                    groupDisplayName                           = "Intune Pilot Devices"
                     deviceAndAppManagementAssignmentFilterType = "none"
                 }
             )

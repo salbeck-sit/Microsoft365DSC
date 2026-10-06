@@ -33,13 +33,13 @@ Configuration Example
             Enabled                    = $True
             FreeBusyAccessEnabled      = $True
             FreeBusyAccessLevel        = "AvailabilityOnly"
-            FreeBusyAccessScope        = "Executives@$TenantId"
+            FreeBusyAccessScope        = "Executives"
             MailboxMoveEnabled         = $True
             MailboxMoveCapability      = "RemoteOutbound"
-            MailboxMovePublishedScopes = @("Executives@$TenantId")
+            MailboxMovePublishedScopes = @("Executives")
             MailTipsAccessEnabled      = $True
             MailTipsAccessLevel        = "Limited"
-            MailTipsAccessScope        = "Executives@$TenantId"
+            MailTipsAccessScope        = "Executives"
             OrganizationContact        = "administrator@contoso.com"
             PhotosEnabled              = $True
             TargetApplicationUri       = "mail.contoso.com"

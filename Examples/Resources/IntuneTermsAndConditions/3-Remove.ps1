@@ -28,9 +28,9 @@ Configuration Example
         {
             DisplayName           = "IntuneTermsAndConditions_1";
             Ensure                = "Absent";
-            ApplicationId         = $ConfigurationData.NonNodeData.ApplicationId;
+            ApplicationId         = $ApplicationId;
             TenantId              = $TenantId;
-            CertificateThumbprint = $ConfigurationData.NonNodeData.CertificateThumbprint;
+            CertificateThumbprint = $CertificateThumbprint;
         }
     }
 }

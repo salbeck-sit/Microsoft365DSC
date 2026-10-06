@@ -29,9 +29,8 @@ Configuration Example
             Assignments                    = @(
                 MSFT_DeviceManagementConfigurationPolicyAssignments{
                     dataType                                   = "#microsoft.graph.groupAssignmentTarget"
-                    groupId                                    = "6b2c9d84-3f15-4a70-9e28-5c1b7d0a4f36"
                     deviceAndAppManagementAssignmentFilterType = "none"
-                    groupDisplayName                           = "All Enrolled Employees"
+                    groupDisplayName                           = "Intune Pilot Users"
                 }
             );
             CompanyPortalBlockedActions    = @(

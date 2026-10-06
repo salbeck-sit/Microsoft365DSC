@@ -26,10 +26,11 @@ Configuration Example
     {
         TeamsTranslationRule 'TeamsTranslationRule-Example'
         {
+            Description           = "Adds the +1 country code to ten-digit numbers";
             Ensure                = "Present";
             Identity              = "AddPlus1";
             Pattern               = "^(\d{10})$";
-            Translation           = "+1$1";
+            Translation           = "+1`$1";
             ApplicationId         = $ApplicationId;
             TenantId              = $TenantId;
             CertificateThumbprint = $CertificateThumbprint;

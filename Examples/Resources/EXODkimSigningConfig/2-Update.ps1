@@ -26,12 +26,12 @@ Configuration Example
     {
         EXODkimSigningConfig 'EXODkimSigningConfig-Example'
         {
-            KeySize                = 1024
+            KeySize                = 2048
             Identity               = $TenantId
             HeaderCanonicalization = "Relaxed"
-            Enabled                = $False # Updated Property
+            Enabled                = $false
             BodyCanonicalization   = "Relaxed"
-            AdminDisplayName       = ""
+            AdminDisplayName       = "Signing keys for the initial domain"
             Ensure                 = "Present"
             ApplicationId          = $ApplicationId
             TenantId               = $TenantId

@@ -36,7 +36,7 @@ Configuration Example
                 MSFT_DeviceManagementConfigurationPolicyAssignments{
                     dataType                                   = '#microsoft.graph.exclusionGroupAssignmentTarget'
                     deviceAndAppManagementAssignmentFilterType = 'none'
-                    groupDisplayName                           = 'iOS Compliance Exclusions'
+                    groupDisplayName                           = 'Intune Excluded Devices'
                 }
             )
             PasscodeBlockSimple                            = $True

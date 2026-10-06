@@ -44,6 +44,7 @@ Configuration Example
                     }
                 }
             )
+            Ensure                        = 'Present'
             ApplicationId                 = $ApplicationId
             TenantId                      = $TenantId
             CertificateThumbprint         = $CertificateThumbprint

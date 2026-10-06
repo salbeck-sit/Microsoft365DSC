@@ -27,6 +27,19 @@ Configuration Example
         {
             DisplayName                                 = 'macOS Device Compliance'
             Description                                 = 'Baseline compliance requirements for corporate Macs'
+            RoleScopeTagIds                             = @('0')
+            Assignments                                 = @(
+                MSFT_DeviceManagementConfigurationPolicyAssignments{
+                    dataType                                   = '#microsoft.graph.groupAssignmentTarget'
+                    deviceAndAppManagementAssignmentFilterType = 'none'
+                    groupDisplayName                           = 'Intune Pilot Devices'
+                }
+                MSFT_DeviceManagementConfigurationPolicyAssignments{
+                    dataType                                   = '#microsoft.graph.exclusionGroupAssignmentTarget'
+                    deviceAndAppManagementAssignmentFilterType = 'none'
+                    groupDisplayName                           = 'Intune Excluded Devices'
+                }
+            )
             PasswordRequired                            = $False
             PasswordBlockSimple                         = $False
             PasswordExpirationDays                      = 365
@@ -35,19 +48,25 @@ Configuration Example
             PasswordPreviousPasswordBlockCount          = 13
             PasswordMinimumCharacterSetCount            = 1
             PasswordRequiredType                        = 'DeviceDefault'
-            OsMinimumVersion                            = 10
-            OsMaximumVersion                            = 13
+            OsMinimumVersion                            = '14.0'
+            OsMaximumVersion                            = '26.0'
+            OsMinimumBuildVersion                       = '23A344'
+            OsMaximumBuildVersion                       = '25A354'
             SystemIntegrityProtectionEnabled            = $False
             DeviceThreatProtectionEnabled               = $False
             DeviceThreatProtectionRequiredSecurityLevel = 'Unavailable'
+            AdvancedThreatProtectionRequiredSecurityLevel = 'Unavailable'
             StorageRequireEncryption                    = $False
             FirewallEnabled                             = $False
             FirewallBlockAllIncoming                    = $False
             FirewallEnableStealthMode                   = $False
-            DeviceCompliancePolicyScript                = MSFT_MicrosoftGraphDeviceCompliancePolicyScript{
-                DisplayName  = 'macOS Intune Agent Version Check'
-                RulesContent = '{"Rules":[{"SettingName":"IntuneAgentVersion","Operator":"IsEquals","DataType":"String","Operand":"2.24","MoreInfoUrl":"https://contoso.com/compliance","RemediationStrings":[{"Language":"en_US","Title":"Intune Agent must be up to date","Description":"Update the Microsoft Intune Agent app."}]}]}'
-            };
+            GatekeeperAllowedAppSource                  = 'macAppStoreAndIdentifiedDevelopers'
+            ScheduledActionsForRule                     = @(
+                MSFT_ScheduledActionConfigurations{
+                    actionType       = 'block'
+                    gracePeriodHours = 24
+                }
+            )
             Ensure                                      = 'Present'
             ApplicationId                               = $ApplicationId;
             TenantId                                    = $TenantId;

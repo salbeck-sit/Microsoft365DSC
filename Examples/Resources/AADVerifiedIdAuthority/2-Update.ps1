@@ -29,13 +29,13 @@ Configuration Example
             DidMethod             = "web";
             Ensure                = "Present";
             KeyVaultMetadata      = MSFT_AADVerifiedIdAuthorityKeyVaultMetadata{
-                SubscriptionId = '<subscription-id>'
-                ResourceName   = 'xtakeyvault'
-                ResourceUrl    = '<key-vault-uri>'
-                ResourceGroup  = 'TBD'
+                SubscriptionId = "<subscription-id>"
+                ResourceName   = "<key-vault-name>"
+                ResourceUrl    = "<key-vault-uri>"
+                ResourceGroup  = "<resource-group-name>"
             };
-            LinkedDomainUrl       = "https://nik-charlebois.com/";
-            Name                  = "Contoso 2"; # Updated Property
+            LinkedDomainUrl       = "https://$TenantId/";
+            Name                  = "Contoso Identity Verification"; # Updated Property
             ApplicationId         = $ApplicationId
             TenantId              = $TenantId
             CertificateThumbprint = $CertificateThumbprint

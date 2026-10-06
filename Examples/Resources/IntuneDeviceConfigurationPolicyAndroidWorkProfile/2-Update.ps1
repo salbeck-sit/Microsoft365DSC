@@ -47,7 +47,7 @@ Configuration Example
             WorkProfileAccountUse                                     = "allowAllExceptGoogleAccounts"
             WorkProfileAllowAppInstallsFromUnknownSources             = $false
             WorkProfileAllowWidgets                                   = $true
-            WorkProfileBlockAddingAccounts                            = $true
+            WorkProfileBlockAddingAccounts                            = $false
             WorkProfileBlockCamera                                    = $false
             WorkProfileBlockCrossProfileCallerId                      = $false
             WorkProfileBlockCrossProfileContactsSearch                = $false
@@ -84,7 +84,7 @@ Configuration Example
                 MSFT_DeviceManagementConfigurationPolicyAssignments{
                     dataType                                   = "#microsoft.graph.exclusionGroupAssignmentTarget"
                     deviceAndAppManagementAssignmentFilterType = "none"
-                    groupDisplayName                           = "Exclude"
+                    groupDisplayName                           = "Intune Excluded Users"
                 }
             )
             Ensure                                                    = "Present"

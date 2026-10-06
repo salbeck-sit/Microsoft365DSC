@@ -27,11 +27,11 @@ Configuration Example
         IntuneMobileThreatDefenseConnector "IntuneMobileThreatDefenseConnector-Example"
         {
             AllowPartnerToCollectIOSApplicationMetadata         = $False;
-            AllowPartnerToCollectIosCertificateMetadata         = $True;
+            AllowPartnerToCollectIosCertificateMetadata         = $False;
             AllowPartnerToCollectIosPersonalApplicationMetadata = $False;
             AllowPartnerToCollectIosPersonalCertificateMetadata = $False;
             AndroidDeviceBlockedOnMissingPartnerData            = $False;
-            AndroidEnabled                                      = $True; # Updated Property
+            AndroidEnabled                                      = $False;
             AndroidMobileApplicationManagementEnabled           = $False;
             DisplayName                                         = "Microsoft Defender for Endpoint";
             GrantMobileThreatDefensePartnerRole                 = $false;
@@ -43,13 +43,13 @@ Configuration Example
             LaunchMobileThreatDefensePartnerOnSetupEnabled      = $false;
             MacDeviceBlockedOnMissingPartnerData                = $False;
             MacEnabled                                          = $False;
-            MicrosoftDefenderForEndpointAttachEnabled           = $False;
+            MicrosoftDefenderForEndpointAttachEnabled           = $True;
             PartnerState                                        = "notSetUp";
             PartnerUnresponsivenessThresholdInDays              = 7;
             PartnerUnsupportedOsVersionBlocked                  = $False;
             WindowsDeviceBlockedOnMissingPartnerData            = $False;
             WindowsEnabled                                      = $False;
-            WindowsMobileApplicationManagementEnabled           = $True;
+            WindowsMobileApplicationManagementEnabled           = $False;
             Ensure                                              = "Present";
             ApplicationId                                       = $ApplicationId;
             TenantId                                            = $TenantId;

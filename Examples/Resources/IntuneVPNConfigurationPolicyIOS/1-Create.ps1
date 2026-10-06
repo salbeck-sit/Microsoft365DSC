@@ -30,17 +30,18 @@ Configuration Example
                 MSFT_DeviceManagementConfigurationPolicyAssignments{
                     dataType                                   = "#microsoft.graph.groupAssignmentTarget"
                     deviceAndAppManagementAssignmentFilterType = "none"
-                    groupDisplayName                           = "Corporate iOS Devices"
+                    groupDisplayName                           = "Intune Pilot Devices"
                 }
                 MSFT_DeviceManagementConfigurationPolicyAssignments{
                     dataType         = "#microsoft.graph.exclusionGroupAssignmentTarget"
-                    groupDisplayName = "iOS Retail Loaner Devices"
+                    groupDisplayName = "Intune Excluded Devices"
                 }
             );
             associatedDomains              = @("contoso.com", "portal.contoso.com");
             authenticationMethod           = "usernameAndPassword";
             connectionName                 = "Contoso Corporate VPN";
-            connectionType                 = "ciscoAnyConnectV2";
+            cloudName                      = "zscalertwo";
+            connectionType                 = "zscalerPrivateAccess";
             customData                     = @(
                 MSFT_customData{
                     key   = "TunnelGroup"
@@ -49,8 +50,8 @@ Configuration Example
             );
             customKeyValueData             = @(
                 MSFT_customKeyValueData{
-                    name  = "BlockUntrustedServers"
-                    value = "true"
+                    name  = "TunnelGroup"
+                    value = "Corporate"
                 }
             );
             Description                    = "Corporate VPN profile for iOS devices";
@@ -72,7 +73,6 @@ Configuration Example
                     probeUrl              = "https://intranet.contoso.com/health"
                     interfaceTypeMatch    = "wiFi"
                     ssids                 = @("Contoso-Corp")
-                    dnsSearchDomains      = @("contoso.com")
                     dnsServerAddressMatch = @("10.10.0.10", "10.10.0.11")
                 }
             );
@@ -94,14 +94,8 @@ Configuration Example
                     address         = "vpn.contoso.com"
                 }
             );
-            targetedMobileApps             = @(
-                MSFT_targetedMobileApps{
-                    name        = "Outlook"
-                    publisher   = "Microsoft Corporation"
-                    appStoreUrl = "https://apps.apple.com/app/microsoft-outlook/id951937596"
-                    appId       = "com.microsoft.Office.Outlook"
-                }
-            );
+            strictEnforcement              = $true;
+            userDomain                     = "contoso.com";
             ApplicationId                  = $ApplicationId;
             TenantId                       = $TenantId;
             CertificateThumbprint          = $CertificateThumbprint;

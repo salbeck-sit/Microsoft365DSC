@@ -44,7 +44,7 @@ Configuration Example
                 }
                 MSFT_DeviceManagementConfigurationPolicyAssignments{
                     dataType         = "#microsoft.graph.exclusionGroupAssignmentTarget"
-                    groupDisplayName = "Hotpatch Exclusions"
+                    groupDisplayName = "Intune Excluded Devices"
                 }
             );
             Ensure                = 'Present';

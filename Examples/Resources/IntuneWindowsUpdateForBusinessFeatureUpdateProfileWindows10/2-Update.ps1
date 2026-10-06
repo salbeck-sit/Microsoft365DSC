@@ -34,7 +34,7 @@ Configuration Example
                 }
                 MSFT_DeviceManagementConfigurationPolicyAssignments{
                     dataType         = "#microsoft.graph.exclusionGroupAssignmentTarget"
-                    groupDisplayName = "Feature Update Ring Exclusions"
+                    groupDisplayName = "Intune Excluded Devices"
                 }
             );
             Description                                       = "Holds managed devices on Windows 10 version 22H2";

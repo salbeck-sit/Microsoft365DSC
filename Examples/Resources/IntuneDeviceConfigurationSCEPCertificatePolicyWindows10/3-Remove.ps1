@@ -26,7 +26,7 @@ Configuration Example
     {
         IntuneDeviceConfigurationSCEPCertificatePolicyWindows10 'IntuneDeviceConfigurationSCEPCertificatePolicyWindows10-Example'
         {
-            DisplayName           = "SCEP";
+            DisplayName           = "User Authentication Certificate";
             Ensure                = "Absent";
             ApplicationId         = $ApplicationId;
             TenantId              = $TenantId;

@@ -89,7 +89,7 @@ Configuration Example
             EwsBlockList                                              = @("LegacyMailApp/*")
             EwsEnabled                                                = $true
             ExchangeNotificationEnabled                               = $true
-            ExchangeNotificationRecipients                            = @("admin@$TenantId")
+            ExchangeNotificationRecipients                            = @("MeganB@$TenantId")
             FindTimeAttendeeAuthenticationEnabled                     = $true
             FindTimeAutoScheduleDisabled                              = $false
             FindTimeLockPollForAttendeesEnabled                       = $false

@@ -35,7 +35,7 @@ Configuration Example
                 }
                 MSFT_DeviceManagementConfigurationPolicyAssignments{
                     dataType         = "#microsoft.graph.exclusionGroupAssignmentTarget"
-                    groupDisplayName = "Driver Update Pilot Devices"
+                    groupDisplayName = "Intune Excluded Devices"
                 }
             );
             Description           = "Manually approved driver updates for corporate laptops";

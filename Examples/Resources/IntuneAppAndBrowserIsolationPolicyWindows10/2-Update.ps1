@@ -30,7 +30,7 @@ Configuration Example
                 MSFT_DeviceManagementConfigurationPolicyAssignments{
                     deviceAndAppManagementAssignmentFilterType = 'none'
                     dataType                                   = '#microsoft.graph.groupAssignmentTarget'
-                    groupDisplayName                           = 'Finance Workstations'
+                    groupDisplayName                           = 'Intune Pilot Devices'
                 }
             );
             AllowCameraMicrophoneRedirection       = 0; # Updated Property

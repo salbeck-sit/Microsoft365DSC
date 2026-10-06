@@ -26,7 +26,7 @@ Configuration Example
     {
         IntuneDeviceConfigurationPlatformScriptWindows 'IntuneDeviceConfigurationPlatformScriptWindows-Example'
         {
-            DisplayName           = "custom";
+            DisplayName           = "Set High Performance Power Plan";
             Ensure                = "Absent";
             ApplicationId         = $ApplicationId;
             TenantId              = $TenantId;

@@ -24,7 +24,7 @@ Configuration Example
 
     Node localhost
     {
-        AADFilteringPolicyRule "AADFilteringPolicyRule-Example1"
+        AADFilteringPolicyRule "AADFilteringPolicyRule-Example"
         {
             Destinations          = @(
                 MSFT_AADFilteringPolicyRuleDestination{
@@ -35,21 +35,6 @@ Configuration Example
             Name                  = "MyFQDN";
             Policy                = "MyPolicy";
             RuleType              = "fqdn";
-            ApplicationId         = $ApplicationId;
-            TenantId              = $TenantId;
-            CertificateThumbprint = $CertificateThumbprint;
-        }
-        AADFilteringPolicyRule "AADFilteringPolicyRule-Example2"
-        {
-            Destinations          = @(
-                MSFT_AADFilteringPolicyRuleDestination{
-                    name = 'ChildAbuseImages'
-                }
-            );
-            Ensure                = "Present";
-            Name                  = "MyWebContentRule";
-            Policy                = "MyPolicy";
-            RuleType              = "webCategory";
             ApplicationId         = $ApplicationId;
             TenantId              = $TenantId;
             CertificateThumbprint = $CertificateThumbprint;

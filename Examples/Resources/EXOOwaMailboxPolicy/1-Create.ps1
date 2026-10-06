@@ -56,7 +56,7 @@ Configuration Example
             InstantMessagingType                                 = "Ocs"
             InterestingCalendarsEnabled                          = $True
             IRMEnabled                                           = $True
-            IsDefault                                            = $True
+            IsDefault                                            = $False
             JournalEnabled                                       = $True
             LocalEventsEnabled                                   = $False
             LogonAndErrorLanguage                                = 0

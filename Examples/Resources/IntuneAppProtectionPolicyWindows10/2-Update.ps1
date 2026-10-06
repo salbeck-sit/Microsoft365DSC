@@ -35,14 +35,7 @@ Configuration Example
                 MSFT_DeviceManagementConfigurationPolicyAssignments{
                     dataType                                   = "#microsoft.graph.groupAssignmentTarget"
                     deviceAndAppManagementAssignmentFilterType = "none"
-                    groupDisplayName                           = "Corporate Windows Users"
-                    groupId                                    = "56ae142c-f960-4436-a445-6b371fc8338b"
-                }
-                MSFT_DeviceManagementConfigurationPolicyAssignments{
-                    dataType                                   = "#microsoft.graph.exclusionGroupAssignmentTarget"
-                    deviceAndAppManagementAssignmentFilterType = "none"
-                    groupDisplayName                           = "Shared Meeting Room Devices"
-                    groupId                                    = "258a1749-8408-4dd0-8028-fab6208a28d7"
+                    groupDisplayName                           = "Intune Pilot Users"
                 }
             );
             Description                             = "Protects company data in the Windows apps used on personally owned laptops";

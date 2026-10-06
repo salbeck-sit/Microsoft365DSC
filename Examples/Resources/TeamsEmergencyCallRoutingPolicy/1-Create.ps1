@@ -27,7 +27,7 @@ Configuration Example
         {
             Identity                       = "Amsterdam Office"
             AllowEnhancedEmergencyServices = $False
-            Description                    = "Description"
+            Description                    = "Routes emergency calls placed from the Amsterdam office"
             EmergencyNumbers               = @(
                 MSFT_TeamsEmergencyNumber
                 {

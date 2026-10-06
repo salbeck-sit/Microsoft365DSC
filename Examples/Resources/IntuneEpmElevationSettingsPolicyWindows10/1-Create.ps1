@@ -29,7 +29,7 @@ Configuration Example
                 MSFT_DeviceManagementConfigurationPolicyAssignments{
                     deviceAndAppManagementAssignmentFilterType = 'none'
                     dataType                                   = '#microsoft.graph.groupAssignmentTarget'
-                    groupDisplayName                           = 'Engineering Workstations'
+                    groupDisplayName                           = 'Intune Pilot Devices'
                 }
             );
             Description                 = 'Elevation rules for engineering workstations'

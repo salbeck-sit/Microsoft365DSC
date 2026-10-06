@@ -34,7 +34,7 @@ Configuration Example
                 }
                 MSFT_DeviceManagementConfigurationPolicyAssignments{
                     dataType         = '#microsoft.graph.exclusionGroupAssignmentTarget'
-                    groupDisplayName = 'Attack Surface Reduction Exclusions'
+                    groupDisplayName = 'Intune Excluded Users'
                 }
             )
             AttackSurfaceReductionOnlyExclusions                                                                = @('C:\Program Files\Contoso\Ledger', 'C:\ProgramData\Contoso\Cache', 'D:\LineOfBusiness')

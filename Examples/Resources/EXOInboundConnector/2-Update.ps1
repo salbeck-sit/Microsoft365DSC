@@ -32,7 +32,7 @@ Configuration Example
             Comment                      = "Accepts mail relayed by the partner gateway"
             ConnectorSource              = "Default"
             ConnectorType                = "Partner"
-            EFSkipIPs                    = @("203.0.113.10")
+            EFSkipIPs                    = @("20.81.42.17")
             EFSkipLastIP                 = $False
             EFUsers                      = @("AdeleV@$TenantId")
             Enabled                      = $False # Updated Property
@@ -40,7 +40,7 @@ Configuration Example
             RestrictDomainsToCertificate = $True
             RestrictDomainsToIPAddresses = $False
             SenderDomains                = "*.contoso.com"
-            SenderIPAddresses            = @("203.0.113.10")
+            SenderIPAddresses            = @("20.81.42.17")
             TlsSenderCertificateName     = "contoso.com"
             TreatMessagesAsInternal      = $False
             Ensure                       = "Present"

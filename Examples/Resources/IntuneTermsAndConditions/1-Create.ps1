@@ -31,8 +31,7 @@ Configuration Example
                 MSFT_DeviceManagementConfigurationPolicyAssignments{
                     dataType                                   = "#microsoft.graph.groupAssignmentTarget"
                     deviceAndAppManagementAssignmentFilterType = "none"
-                    groupDisplayName                           = "Include"
-                    groupId                                    = "56ae142c-f960-4436-a445-6b371fc8338b"
+                    groupDisplayName                           = "Intune Pilot Users"
                 }
             );
             BodyText              = "Some Terms and Conditions";
@@ -41,9 +40,9 @@ Configuration Example
             Ensure                = "Present";
             RoleScopeTagIds       = @("0");
             Title                 = "IntuneTermsAndConditions_1";
-            ApplicationId         = $ConfigurationData.NonNodeData.ApplicationId;
+            ApplicationId         = $ApplicationId;
             TenantId              = $TenantId;
-            CertificateThumbprint = $ConfigurationData.NonNodeData.CertificateThumbprint;
+            CertificateThumbprint = $CertificateThumbprint;
         }
     }
 }

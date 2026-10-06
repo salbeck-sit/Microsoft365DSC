@@ -31,7 +31,7 @@ Configuration Example
                 MSFT_DeviceManagementConfigurationPolicyAssignments{
                     dataType                                   = '#microsoft.graph.groupAssignmentTarget'
                     deviceAndAppManagementAssignmentFilterType = 'none'
-                    groupDisplayName                           = 'Autopilot Hybrid Join Devices'
+                    groupDisplayName                           = 'Intune Pilot Devices'
                 }
             );
             ComputerNameStaticPrefix                    = "WKS";

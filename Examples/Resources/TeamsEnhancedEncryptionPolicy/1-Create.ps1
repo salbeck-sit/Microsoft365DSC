@@ -27,8 +27,9 @@ Configuration Example
         TeamsEnhancedEncryptionPolicy 'TeamsEnhancedEncryptionPolicy-Example'
         {
             CallingEndtoEndEncryptionEnabledType = 'Disabled'
+            Description                          = 'End-to-end encryption options for the executive team'
             Ensure                               = 'Present'
-            Identity                             = 'Global'
+            Identity                             = 'Executive Encryption'
             MeetingEndToEndEncryption            = 'DisabledUserOverride'
             ApplicationId                        = $ApplicationId
             TenantId                             = $TenantId

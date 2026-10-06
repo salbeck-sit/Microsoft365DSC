@@ -30,12 +30,12 @@ Configuration Example
                 MSFT_DeviceManagementConfigurationPolicyAssignments{
                     deviceAndAppManagementAssignmentFilterType = 'none'
                     dataType                                   = '#microsoft.graph.groupAssignmentTarget'
-                    groupId                                    = '12345678-1234-1234-1234-1234567890ab'
+                    groupDisplayName                           = 'Intune Pilot Users'
                 }
                 MSFT_DeviceManagementConfigurationPolicyAssignments{
                     deviceAndAppManagementAssignmentFilterType = 'none'
                     dataType                                   = '#microsoft.graph.exclusionGroupAssignmentTarget'
-                    groupId                                    = '12345678-4321-4321-4321-1234567890ab'
+                    groupDisplayName                           = 'Intune Excluded Users'
                 }
             );
             Description           = "Baseline policies applied to newly enrolled corporate devices";

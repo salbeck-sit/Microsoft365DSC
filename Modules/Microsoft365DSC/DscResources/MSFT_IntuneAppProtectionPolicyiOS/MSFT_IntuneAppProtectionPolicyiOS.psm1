@@ -501,7 +501,7 @@ class IntuneAppProtectionPolicyiOS : M365DSCResourceBase
             $gracePeriodToBlockAppsDuringOffClockHoursString = $null
             if (-not [System.String]::IsNullOrEmpty($policy.GracePeriodToBlockAppsDuringOffClockHours))
             {
-                $gracePeriodToBlockAppsDuringOffClockHoursString = [System.Xml.XmlConvert]::ToString($policy.GracePeriodToBlockAppsDuringOffClockHours)
+                $gracePeriodToBlockAppsDuringOffClockHoursString = [M365DSCResourceBase]::FormatDuration($policy.GracePeriodToBlockAppsDuringOffClockHours)
             }
 
             return $this.AsResult(@{

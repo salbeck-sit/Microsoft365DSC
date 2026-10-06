@@ -29,7 +29,7 @@ Configuration Example
             Identity              = "Reporting App Mailbox Access"
             AccessRight           = "DenyAccess"
             AppID                 = '3dbc2ae1-7198-45ed-9f9f-d86ba3ec35b5'
-            PolicyScopeGroupId    = "ReportingApps@$TenantId"
+            PolicyScopeGroupId    = "Executives@$TenantId"
             Description           = "Engineering Group Policy Updated" # Updated Property
             Ensure                = "Present"
             ApplicationId         = $ApplicationId

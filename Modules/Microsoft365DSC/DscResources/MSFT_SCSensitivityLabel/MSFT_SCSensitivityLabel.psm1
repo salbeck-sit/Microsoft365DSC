@@ -1218,9 +1218,9 @@ class SCSensitivityLabel : M365DSCResourceBase
                     $TestAdvancedSettings = [SCSensitivityLabel]::TestAdvancedSettings($DesiredValues.AdvancedSettings, $CurrentValues.AdvancedSettings, $logDrift)
                     if ($false -eq $TestAdvancedSettings)
                     {
-                        $DesiredValues['AdvancedSettings'] = 'AdvancedSettings drift detected'
-                        $CurrentValues['AdvancedSettings'] = 'AdvancedSettings drift current'
-                        $ValuesToCheck['AdvancedSettings'] = 'AdvancedSettings drift detected'
+                        $DesiredValues['AdvancedSettings'] = @{ Drift = 'desired' }
+                        $CurrentValues['AdvancedSettings'] = @{ Drift = 'current' }
+                        $ValuesToCheck['AdvancedSettings'] = $DesiredValues['AdvancedSettings']
                     }
                 }
 
@@ -1230,9 +1230,9 @@ class SCSensitivityLabel : M365DSCResourceBase
                     $localeSettingsSame = [SCSensitivityLabel]::TestLocaleSettings($DesiredValues.LocaleSettings, $CurrentValues.LocaleSettings, $logDrift)
                     if ($false -eq $localeSettingsSame)
                     {
-                        $DesiredValues['LocaleSettings'] = 'LocaleSettings drift detected'
-                        $CurrentValues['LocaleSettings'] = 'LocaleSettings drift current'
-                        $ValuesToCheck['LocaleSettings'] = 'LocaleSettings drift detected'
+                        $DesiredValues['LocaleSettings'] = @{ Drift = 'desired' }
+                        $CurrentValues['LocaleSettings'] = @{ Drift = 'current' }
+                        $ValuesToCheck['LocaleSettings'] = $DesiredValues['LocaleSettings']
                     }
                 }
 
@@ -1243,9 +1243,9 @@ class SCSensitivityLabel : M365DSCResourceBase
                     $autoLabelSettingsSame = [SCSensitivityLabel]::TestAutoLabelingSettings($autoLabelingSettingsHT, $CurrentValues.AutoLabelingSettings, $logDrift)
                     if ($false -eq $autoLabelSettingsSame)
                     {
-                        $DesiredValues['AutoLabelingSettings'] = 'AutoLabelingSettings drift detected'
-                        $CurrentValues['AutoLabelingSettings'] = 'AutoLabelingSettings drift current'
-                        $ValuesToCheck['AutoLabelingSettings'] = 'AutoLabelingSettings drift detected'
+                        $DesiredValues['AutoLabelingSettings'] = @{ Drift = 'desired' }
+                        $CurrentValues['AutoLabelingSettings'] = @{ Drift = 'current' }
+                        $ValuesToCheck['AutoLabelingSettings'] = $DesiredValues['AutoLabelingSettings']
                     }
                 }
 
@@ -1328,7 +1328,7 @@ class SCSensitivityLabel : M365DSCResourceBase
 
     hidden [System.Object] ConvertCIMToAdvancedSettings([System.Object] $AdvancedSettings)
     {
-        $entry = [PSCustomObject]@{}
+        $entry = @{}
         foreach ($obj in $AdvancedSettings)
         {
             $settingsValues = ''
@@ -1337,7 +1337,7 @@ class SCSensitivityLabel : M365DSCResourceBase
                 $settingsValues += $objVal
                 $settingsValues += ','
             }
-            $entry | Add-Member -MemberType NoteProperty -Name $obj.Key -Value $settingsValues.Substring(0, ($settingsValues.Length - 1)) -Force
+            $entry[$obj.Key] = $settingsValues.Substring(0, ($settingsValues.Length - 1))
         }
 
         return $entry

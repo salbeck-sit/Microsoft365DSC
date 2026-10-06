@@ -268,6 +268,7 @@ class IntuneSettingCatalogCustomPolicyWindows10 : M365DSCResourceBase
 
             $updateParameters = ([Hashtable]$boundParameters).Clone()
             $updateParameters.Remove('Id') | Out-Null
+            $updateParameters.Remove('TemplateReference') | Out-Null
 
             #region resource generator code
             Update-IntuneDeviceConfigurationPolicy `
@@ -293,6 +294,13 @@ class IntuneSettingCatalogCustomPolicyWindows10 : M365DSCResourceBase
     [bool] Test()
     {
         return ([M365DSCResourceBase] $this).Test()
+    }
+
+    [System.Collections.Hashtable] GetCompareParameters()
+    {
+        return @{
+            ExcludedProperties = @('TemplateReference')
+        }
     }
 
     [string] Export()

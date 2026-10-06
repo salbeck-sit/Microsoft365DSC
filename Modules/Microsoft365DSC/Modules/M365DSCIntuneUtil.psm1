@@ -871,6 +871,7 @@ function Get-M365DSCIntuneGroup
 .DESCRIPTION
     Builds and submits assignment payloads for a device configuration policy.
     It resolves groups when needed and posts the final assignment set to the selected Graph endpoint.
+    Throws when Graph rejects the assignments.
 
 .PARAMETER DeviceConfigurationPolicyId
     Specifies the identifier of the device configuration policy to update.
@@ -1002,13 +1003,14 @@ function Update-DeviceConfigurationPolicyAssignment
     }
     catch
     {
-        New-M365DSCLogEntry -Message 'Error updating data:' `
+        $message = "Failed to update the assignments of policy {$DeviceConfigurationPolicyId}: $($_.ToString())"
+        New-M365DSCLogEntry -Message $message `
             -Exception $_ `
             -Source $($MyInvocation.MyCommand.Source) `
             -TenantId $TenantId `
             -Credential $Credential
 
-        return $null
+        throw $message
     }
 }
 
@@ -1019,6 +1021,7 @@ function Update-DeviceConfigurationPolicyAssignment
 .DESCRIPTION
     Creates and submits mobile app assignment payloads for the target app policy.
     The function resolves assignment groups and filter settings before posting the payload to Graph.
+    Throws when Graph rejects the assignments.
 
 .PARAMETER AppManagementPolicyId
     Specifies the identifier of the app management policy to update.
@@ -1147,14 +1150,58 @@ function Update-DeviceAppManagementPolicyAssignment
     }
     catch
     {
-        New-M365DSCLogEntry -Message 'Error updating data:' `
+        $message = "Failed to update the assignments of policy {$AppManagementPolicyId}: $($_.ToString())"
+        New-M365DSCLogEntry -Message $message `
             -Exception $_ `
             -Source $($MyInvocation.MyCommand.Source) `
             -TenantId $TenantId `
             -Credential $Credential
 
-        return $null
+        throw $message
     }
+}
+
+<#
+.SYNOPSIS
+    Waits until an Intune mobile app is published.
+
+.DESCRIPTION
+    Reads the publishing state of the app until it is published or the attempts are used up.
+    Graph accepts assignments only for a published app. Returns after one read when the app is already published.
+
+.PARAMETER AppId
+    Specifies the identifier of the mobile app.
+
+.PARAMETER MaxAttempts
+    Specifies the maximum number of reads. Default is 6.
+
+.PARAMETER RetryDelayInSeconds
+    Specifies the delay between reads. Default is 3 seconds.
+#>
+function Wait-M365DSCIntuneMobileAppPublished
+{
+    [CmdletBinding()]
+    param (
+        [Parameter(Mandatory = $true)]
+        [System.String]
+        $AppId,
+
+        [Parameter()]
+        [System.Int32]
+        $MaxAttempts = 6,
+
+        [Parameter()]
+        [System.Int32]
+        $RetryDelayInSeconds = 3
+    )
+
+    $uri = "/beta/deviceAppManagement/mobileApps/$($AppId)?`$select=publishingState"
+    $null = Wait-M365DSCCondition -Description "the publishing of mobile app {$AppId}" `
+        -MaxAttempts $MaxAttempts `
+        -RetryDelayInSeconds $RetryDelayInSeconds `
+        -ScriptBlock {
+            (Invoke-MgGraphRequest -Method GET -Uri $uri -ErrorAction Stop).publishingState -eq 'published'
+        }
 }
 
 <#
@@ -2207,5 +2254,6 @@ Export-ModuleMember -Function @(
     'Update-DeviceAppManagementPolicyAssignment',
     'Update-DeviceConfigurationPolicyAssignment',
     'Update-IntuneDeviceConfigurationPolicy',
-    'Wait-ForFileProcessing'
+    'Wait-ForFileProcessing',
+    'Wait-M365DSCIntuneMobileAppPublished'
 )

@@ -44,7 +44,7 @@ Configuration Example
             Id                                = "3868d43e-873e-4416-8fd1-fc3d67c7c15c_DefaultPlatformRestrictions";
             Ensure                            = "Present";
             IosRestriction                    = MSFT_DeviceEnrollmentPlatformRestriction{
-                platformBlocked                 = $True # Updated Property
+                platformBlocked                 = $False
                 personalDeviceEnrollmentBlocked = $False
             };
             MacOSRestriction                  = MSFT_DeviceEnrollmentPlatformRestriction{
@@ -79,9 +79,5 @@ Configuration Example
             TenantId                          = $TenantId;
             CertificateThumbprint             = $CertificateThumbprint;
         }
-                MSFT_DeviceManagementConfigurationPolicyAssignments{
-                    dataType         = '#microsoft.graph.exclusionGroupAssignmentTarget'
-                    groupDisplayName = 'Policy Exclusions'
-                }
     }
 }

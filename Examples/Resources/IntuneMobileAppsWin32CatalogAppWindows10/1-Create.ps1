@@ -48,7 +48,6 @@ Configuration Example
             InstallCommandLine             = "msiexec.exe /i `"7z2603-x64.msi`" /qn";
             InstallExperience              = MSFT_MicrosoftGraphWin32LobAppInstallExperience1{
                 DeviceRestartBehavior = "basedOnReturnCode"
-                InUseBehavior         = "notEnabled"
                 MaxRunTimeInMinutes   = 60
                 RunAsAccount          = "system"
             };

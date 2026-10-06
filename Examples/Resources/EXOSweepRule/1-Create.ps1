@@ -26,15 +26,13 @@ Configuration Example
     {
         EXOSweepRule 'EXOSweepRule-Example'
         {
-            DestinationFolder     = "AdeleV:\Deleted Items";
-            Enabled               = $True;
+            Enabled               = $true;
             Ensure                = "Present";
             KeepLatest            = 11;
-            Mailbox               = "AdeleV";
+            Mailbox               = "AdeleV@$TenantId";
             Name                  = "From Michelle";
             Provider              = "Exchange16";
             SenderName            = "michelle@fabrikam.com";
-            SourceFolder          = "AdeleV:\Inbox";
             ApplicationId         = $ApplicationId;
             TenantId              = $TenantId;
             CertificateThumbprint = $CertificateThumbprint;

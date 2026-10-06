@@ -26,7 +26,7 @@ Configuration Example
     {
         IntuneVPNConfigurationPolicyAndroidWork "IntuneVPNConfigurationPolicyAndroidWork-Example"
         {
-            DisplayName           = "IntuneVPNConfigurationPolicyAndroidWork DisplayName";
+            DisplayName           = "Android Work Profile Corporate VPN";
             Ensure                = "Absent";
             ApplicationId         = $ApplicationId;
             TenantId              = $TenantId;

@@ -26,8 +26,8 @@ Configuration Example
     {
         EXOJournalRule 'EXOJournalRule-Example'
         {
-            JournalEmailAddress   = "AdeleV@$TenantId"
-            Name                  = "Send to Adele"
+            JournalEmailAddress   = "journal@archive.fabrikam.com"
+            Name                  = "Adele Vance Journal Archive"
             Ensure                = "Absent"
             ApplicationId         = $ApplicationId
             TenantId              = $TenantId

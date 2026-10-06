@@ -442,6 +442,13 @@ class IntuneWifiConfigurationPolicyAndroidEnterpriseDeviceOwner : M365DSCResourc
         return ''
     }
 
+    [System.Collections.Hashtable] GetCompareParameters()
+    {
+        return @{
+            ExcludedProperties = @('PreSharedKey')
+        }
+    }
+
     hidden [IntuneWifiConfigurationPolicyAndroidEnterpriseDeviceOwner] AsResult([System.Object] $Values)
     {
         if ($Values -is [IntuneWifiConfigurationPolicyAndroidEnterpriseDeviceOwner])

@@ -435,7 +435,7 @@ class IntuneWifiConfigurationPolicyIOS : M365DSCResourceBase
     [System.Collections.Hashtable] GetCompareParameters()
     {
         return @{
-            ExcludedProperties = @('PreSharedKey')
+            ExcludedProperties = @('PreSharedKey', 'ForcePreSharedKeyUpdate')
         }
     }
 

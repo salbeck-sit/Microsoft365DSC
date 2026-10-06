@@ -168,6 +168,20 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     Ensure                         = 'Present'
                     Credential                     = $Credential
                 }
+
+                Mock -CommandName Get-MgBetaDeviceManagementDeviceConfiguration -MockWith {
+                    return @{
+                        '@odata.type'                  = '#microsoft.graph.androidWorkProfileWiFiConfiguration'
+                        NetworkName                    = 'FakeStringValue'
+                        WiFiSecurityType               = 'open'
+                        ConnectAutomatically           = $True
+                        ConnectWhenNetworkNameIsHidden = $True
+                        Ssid                           = 'FakeStringValue'
+                        Description                    = 'FakeStringValue'
+                        DisplayName                    = 'FakeStringValue'
+                        Id                             = 'FakeStringValue'
+                    }
+                }
             }
 
             It 'Should return Values from the Get method' {
@@ -180,7 +194,9 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
 
             It 'Should call the Set method' {
                 (New-M365DSCResourceInstance -ResourceName 'IntuneWifiConfigurationPolicyAndroidForWork' -Property $testParams).Set()
-                Should -Invoke -CommandName Update-MgBetaDeviceManagementDeviceConfiguration -Exactly 1
+                Should -Invoke -CommandName Update-MgBetaDeviceManagementDeviceConfiguration -Exactly 1 -ParameterFilter {
+                    $BodyParameter.'@odata.type' -eq '#microsoft.graph.androidWorkProfileWiFiConfiguration'
+                }
             }
         }
 

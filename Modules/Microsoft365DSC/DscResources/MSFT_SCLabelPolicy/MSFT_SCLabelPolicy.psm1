@@ -162,7 +162,7 @@ class SCLabelPolicy : M365DSCResourceBase
                     throw $_
                 }
 
-                if ($null -eq $policy)
+                if ($null -eq $policy -or "$($policy.Mode)" -eq 'PendingDeletion')
                 {
                     Write-Verbose -Message "Sensitivity label policy $($this.Name) does not exist."
                     return $this.AsResult($nullReturn)
@@ -244,7 +244,7 @@ class SCLabelPolicy : M365DSCResourceBase
 
         foreach ($locationProperty in @('ModernGroupLocation', 'ModernGroupLocationException', 'ExchangeLocation', 'ExchangeLocationException'))
         {
-            if (-not $this.GetBoundParameters().ContainsKey($locationProperty))
+            if ($CurrentPolicy.Ensure -ne 'Present' -or -not $this.GetBoundParameters().ContainsKey($locationProperty))
             {
                 continue
             }
@@ -320,7 +320,8 @@ class SCLabelPolicy : M365DSCResourceBase
             }
             catch
             {
-                Write-Warning "New-LabelPolicy is not available in tenant $($this.Credential.UserName.Split('@')[1]): $_"
+                $this.LogError($_, "Error calling New-LabelPolicy for {$($this.Name)}:")
+                throw
             }
             try
             {
@@ -350,7 +351,8 @@ class SCLabelPolicy : M365DSCResourceBase
             }
             catch
             {
-                Write-Warning "Set-LabelPolicy is not available in tenant $($this.Credential.UserName.Split('@')[1]): $_"
+                $this.LogError($_, "Error calling Set-LabelPolicy for {$($this.Name)}:")
+                throw
             }
         }
         elseif ($this.Ensure -eq 'Present' -and $CurrentPolicy.Ensure -eq 'Present')
@@ -411,7 +413,8 @@ class SCLabelPolicy : M365DSCResourceBase
             }
             catch
             {
-                Write-Warning "Set-LabelPolicy is not available in tenant $($this.Credential.UserName.Split('@')[1]): $_"
+                $this.LogError($_, "Error calling Set-LabelPolicy for {$($this.Name)}:")
+                throw
             }
         }
         elseif ($this.Ensure -eq 'Absent' -and $CurrentPolicy.Ensure -eq 'Present')
@@ -425,7 +428,8 @@ class SCLabelPolicy : M365DSCResourceBase
             }
             catch
             {
-                Write-Warning "Remove-LabelPolicy is not available in tenant $($this.Credential.UserName.Split('@')[1]): $_"
+                $this.LogError($_, "Error calling Remove-LabelPolicy for {$($this.Name)}:")
+                throw
             }
         }
     }
@@ -550,9 +554,9 @@ class SCLabelPolicy : M365DSCResourceBase
                     }
                     else
                     {
-                        $DesiredValues['AdvancedSettings'] = 'AdvancedSettings drift detected'
-                        $CurrentValues['AdvancedSettings'] = 'AdvancedSettings drift current'
-                        $ValuesToCheck['AdvancedSettings'] = 'AdvancedSettings drift detected'
+                        $DesiredValues['AdvancedSettings'] = @{ Drift = 'desired' }
+                        $CurrentValues['AdvancedSettings'] = @{ Drift = 'current' }
+                        $ValuesToCheck['AdvancedSettings'] = $DesiredValues['AdvancedSettings']
                     }
                 }
 
@@ -590,7 +594,7 @@ class SCLabelPolicy : M365DSCResourceBase
 
     hidden [System.Object] ConvertCIMToAdvancedSettings([System.Object] $AdvancedSettings)
     {
-        $entry = [PSCustomObject]@{}
+        $entry = @{}
         foreach ($obj in $AdvancedSettings)
         {
             $settingsValues = ''
@@ -621,7 +625,7 @@ class SCLabelPolicy : M365DSCResourceBase
                     $settingsValues += ','
                 }
             }
-            $entry | Add-Member -MemberType NoteProperty -Name $obj.Key -Value $settingsValues.TrimEnd(',') -Force
+            $entry[$obj.Key] = $settingsValues.TrimEnd(',')
         }
 
         return $entry

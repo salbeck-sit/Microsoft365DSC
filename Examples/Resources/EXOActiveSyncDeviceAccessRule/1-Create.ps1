@@ -26,7 +26,7 @@ Configuration Example
     {
         EXOActiveSyncDeviceAccessRule 'EXOActiveSyncDeviceAccessRule-Example'
         {
-            Identity              = "ContosoPhone(DeviceOS)"
+            Identity              = "iOS 6.1 10B146 (DeviceOS)"
             Characteristic        = "DeviceOS"
             QueryString           = "iOS 6.1 10B146"
             AccessLevel           = "Allow"

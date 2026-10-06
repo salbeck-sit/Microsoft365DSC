@@ -107,15 +107,20 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             }
             It 'Should return Values from the Get method' {
                 ((New-M365DSCResourceInstance -ResourceName 'AADCustomSecurityAttributeDefinition' -Property $testParams).Get().ToHashtable()).Ensure | Should -Be 'Absent'
+                Should -Invoke -CommandName Get-MgBetaDirectoryCustomSecurityAttributeDefinition -ParameterFilter {
+                    $Filter -eq "attributeSet eq 'ContosoSet' and name eq 'ShoeSize'"
+                } -Exactly 1
             }
             It 'Should return false from the Test method' {
                 (New-M365DSCResourceInstance -ResourceName 'AADCustomSecurityAttributeDefinition' -Property $testParams).Test() | Should -Be $false
             }
 
             It 'Should create a new instance from the Set method' {
-                ##TODO - Replace the New-Cmdlet by the appropriate one
                 (New-M365DSCResourceInstance -ResourceName 'AADCustomSecurityAttributeDefinition' -Property $testParams).Set()
-                Should -Invoke -CommandName New-MgBetaDirectoryCustomSecurityAttributeDefinition -Exactly 1
+                Should -Invoke -CommandName New-MgBetaDirectoryCustomSecurityAttributeDefinition -ParameterFilter {
+                    $BodyParameter.AllowedValues[0].id -eq 'Test' -and $BodyParameter.AllowedValues[0].isActive -eq $true
+                } -Exactly 1
+                Should -Invoke -CommandName New-MgBetaDirectoryCustomSecurityAttributeDefinitionAllowedValue -Exactly 0
             }
         }
 
@@ -153,6 +158,21 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             It 'Should remove the instance from the Set method' {
                 (New-M365DSCResourceInstance -ResourceName 'AADCustomSecurityAttributeDefinition' -Property $testParams).Set()
                 Should -Invoke -CommandName Update-MgBetaDirectoryCustomSecurityAttributeDefinition -Exactly 1
+            }
+
+            It 'Should return true from the Test method when the instance is deprecated' {
+                Mock -CommandName Get-MgBetaDirectoryCustomSecurityAttributeDefinition -MockWith {
+                    return @{
+                        AllowedValues = @()
+                        AttributeSet  = 'ContosoSet'
+                        Name          = 'ShoeSize'
+                        Status        = 'Deprecated'
+                        Type          = 'String'
+                        Id            = 'ContosoSet_ShoeSize'
+                    }
+                }
+
+                (New-M365DSCResourceInstance -ResourceName 'AADCustomSecurityAttributeDefinition' -Property $testParams).Test() | Should -Be $true
             }
         }
 
@@ -192,6 +212,10 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     ApplicationId           = $ApplicationId;
                     AllowedValues           = @(
                         [MSFT_CustomSecurityAttributeAllowedValue] @{
+                            ValueId  = "Test"
+                            IsActive = $True
+                        }
+                        [MSFT_CustomSecurityAttributeAllowedValue] @{
                             ValueId  = "Missing"
                             IsActive = $True
                         }
@@ -212,7 +236,12 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
 
                 Mock -CommandName Get-MgBetaDirectoryCustomSecurityAttributeDefinition -MockWith {
                     return @{
-                        AllowedValues           = @()
+                        AllowedValues           = @(
+                            @{
+                                Id       = "Test"
+                                IsActive = $True
+                            }
+                        )
                         AttributeSet            = 'ContosoSet'
                         IsCollection            = $false
                         IsSearchable            = $true
@@ -238,6 +267,8 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     $Id -eq 'Missing' -and
                     $IsActive -eq $true
                 } -Exactly 1
+                Should -Invoke -CommandName New-MgBetaDirectoryCustomSecurityAttributeDefinitionAllowedValue -Exactly 1
+                Should -Invoke -CommandName Update-MgBetaDirectoryCustomSecurityAttributeDefinitionAllowedValue -Exactly 0
             }
         }
 

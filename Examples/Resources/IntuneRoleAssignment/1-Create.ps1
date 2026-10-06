@@ -27,12 +27,10 @@ Configuration Example
         {
             DisplayName                = 'Amsterdam Helpdesk Operators'
             Description                = 'Grants the Amsterdam helpdesk access to the Amsterdam device scope'
-            Members                    = @('')
-            MembersDisplayNames        = @('Amsterdam Helpdesk')
-            ResourceScopes             = @('6eb76881-f56f-470f-be0d-672145d3dcb1')
-            ResourceScopesDisplayNames = @('')
+            MembersDisplayNames        = @('Intune Pilot Users')
+            ResourceScopesDisplayNames = @('Intune Pilot Devices')
             ScopeType                  = 'resourceScope'
-            RoleDefinition             = '2d00d0fd-45e9-4166-904f-b76ac5eed2c7'
+            RoleDefinition             = '9e0cc482-82df-4ab2-a24c-0c23a3f52e1e'
             RoleDefinitionDisplayName  = 'Help Desk Operator'
             RoleScopeTagIds            = @('0')
             Ensure                     = 'Present'

@@ -195,7 +195,7 @@ class AADAuthenticationContextClassReference : M365DSCResourceBase
             [array]$getValue = Get-MgBetaIdentityConditionalAccessAuthenticationContextClassReference `
                 -All `
                 -Filter $this.Filter `
-                -Top 0 `
+                -NoPageSize `
                 -ErrorAction Stop
             #endregion
 

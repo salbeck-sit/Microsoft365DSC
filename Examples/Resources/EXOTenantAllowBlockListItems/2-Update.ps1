@@ -28,10 +28,10 @@ Configuration Example
         {
             Action                = "Block";
             Ensure                = "Present";
-            ExpirationDate        = "10/11/2024 9:00:00 PM";
             ListSubType           = "Tenant";
             ListType              = "Sender";
-            Notes                 = "Blocked sender confirmed by the security team";
+            NoExpiration          = $true;
+            Notes                 = "Blocked sender confirmed by the security team"; # Updated Property
             Value                 = "example.com";
             ApplicationId         = $ApplicationId;
             TenantId              = $TenantId;

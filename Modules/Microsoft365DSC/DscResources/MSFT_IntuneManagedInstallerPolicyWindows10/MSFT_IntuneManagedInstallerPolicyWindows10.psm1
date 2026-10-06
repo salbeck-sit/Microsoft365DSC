@@ -222,21 +222,6 @@ class IntuneManagedInstallerPolicyWindows10 : M365DSCResourceBase
 
             $createParameters = ([Hashtable]$boundParameters).Clone()
             $createParameters.Remove('Id') | Out-Null
-            if ($createParameters.ContainsKey('Description'))
-            {
-                $createParameters.description = $createParameters.Description
-                $createParameters.Remove('Description') | Out-Null
-            }
-            if ($createParameters.ContainsKey('DisplayName'))
-            {
-                $createParameters.displayName = $createParameters.DisplayName
-                $createParameters.Remove('DisplayName') | Out-Null
-            }
-            if ($createParameters.ContainsKey('RoleScopeTagIds'))
-            {
-                $createParameters.roleScopeTagIds = $createParameters.RoleScopeTagIds
-                $createParameters.Remove('RoleScopeTagIds') | Out-Null
-            }
             $createParameters.deviceHealthScriptType = 'managedInstallerScript'
             $createParameters.detectionScriptContent = 'ZGV0ZWN0aW9uU2NyaXB0Q29udGVudA=='
             $createParameters.remediationScriptContent = 'cmVtZWRpYXRpb25TY3JpcHRDb250ZW50'
@@ -264,7 +249,7 @@ class IntuneManagedInstallerPolicyWindows10 : M365DSCResourceBase
                 $assignmentsHash = @()
                 foreach ($assignment in $this.Assignments)
                 {
-                    $assignmentTarget = ConvertTo-IntunePolicyAssignment -Assignments $this.Assignments
+                    $assignmentTarget = ConvertTo-IntunePolicyAssignment -Assignments $assignment
                     $assignmentsHash += @{
                         runRemediationScript = $true
                         target               = $assignmentTarget.target
@@ -293,7 +278,7 @@ class IntuneManagedInstallerPolicyWindows10 : M365DSCResourceBase
             $assignmentsHash = @()
             foreach ($assignment in $this.Assignments)
             {
-                $assignmentTarget = ConvertTo-IntunePolicyAssignment -Assignments $this.Assignments
+                $assignmentTarget = ConvertTo-IntunePolicyAssignment -Assignments $assignment
                 $assignmentsHash += @{
                     runRemediationScript = $assignment.RunRemediationScript
                     target               = $assignmentTarget.target

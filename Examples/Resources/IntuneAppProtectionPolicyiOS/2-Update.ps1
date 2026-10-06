@@ -46,14 +46,12 @@ Configuration Example
                 MSFT_DeviceManagementConfigurationPolicyAssignments{
                     dataType                                   = '#microsoft.graph.groupAssignmentTarget'
                     deviceAndAppManagementAssignmentFilterType = 'none'
-                    groupDisplayName                           = 'Sales Team'
-                    groupId                                    = '5d2f8a41-6c73-4b90-8e15-2af6b9c0d374'
+                    groupDisplayName                           = 'Intune Pilot Users'
                 }
                 MSFT_DeviceManagementConfigurationPolicyAssignments{
                     dataType                                   = '#microsoft.graph.exclusionGroupAssignmentTarget'
                     deviceAndAppManagementAssignmentFilterType = 'none'
-                    groupDisplayName                           = 'Shared iPad Kiosks'
-                    groupId                                    = '8b3c5e19-04af-4d62-b7a8-1e5d9f2c6b80'
+                    groupDisplayName                           = 'Intune Excluded Users'
                 }
             )
             BlockDataIngestionIntoOrganizationDocuments    = $true

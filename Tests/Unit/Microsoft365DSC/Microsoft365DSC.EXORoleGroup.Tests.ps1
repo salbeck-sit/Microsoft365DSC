@@ -67,6 +67,9 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             Mock -CommandName Update-RoleGroupMember -MockWith {
             }
 
+            Mock -CommandName Set-RoleGroup -MockWith {
+            }
+
             Mock -CommandName Remove-RoleGroup -MockWith {
             }
 
@@ -146,7 +149,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     Name        = 'Contoso Role Group'
                     Members     = 'DriftAdministrator@contoso.com' # Drift
                     Roles       = 'Address Lists'
-                    Description = 'This is the Contoso Role Group'
+                    Description = 'Manages address lists for the messaging team' # Drift
                     Ensure      = 'Present'
                     Credential  = $Credential
                 }
@@ -163,6 +166,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             It 'Should call the Update Members method' {
                 (New-M365DSCResourceInstance -ResourceName 'EXORoleGroup' -Property $testParams).Set()
                 Should -Invoke -CommandName Update-RoleGroupMember -Exactly 1
+                Should -Invoke -CommandName Set-RoleGroup -Exactly 1 -ParameterFilter { $Description -eq 'Manages address lists for the messaging team' }
             }
         }
         Context -Name 'Role Group exists and it SHOULD NOT.' -Fixture {

@@ -207,13 +207,10 @@ class IntuneMobileAppsWebLink : M365DSCResourceBase
 
                     if (-not [System.String]::IsNullOrEmpty($this.DisplayName))
                     {
-                        $baseFilter = "isof('microsoft.graph.iosiPadOSWebClip') or isof('microsoft.graph.macOSWebClip') or isof('microsoft.graph.windowsWebApp') or isof('microsoft.graph.webApp')"
-                        $displayNameFilter = "DisplayName eq '$($this.DisplayName -replace "'", "''")' and ($baseFilter)"
                         $getValue = Get-MgBetaDeviceAppManagementMobileApp `
                             -All `
-                            -Filter $displayNameFilter `
-                            -ExpandProperty 'categories' `
-                            -ErrorAction SilentlyContinue
+                            -Filter "DisplayName eq '$($this.DisplayName -replace "'", "''")'" `
+                            -ErrorAction SilentlyContinue | Where-Object -Property '@odata.type' -In @('#microsoft.graph.iosiPadOSWebClip', '#microsoft.graph.macOSWebClip', '#microsoft.graph.windowsWebApp', '#microsoft.graph.webApp')
                     }
                 }
                 #endregion
@@ -290,7 +287,7 @@ class IntuneMobileAppsWebLink : M365DSCResourceBase
             $assignmentResult = @()
             if ($assignmentsValues.Count -gt 0)
             {
-                [array]$assignmentsValues = $assignmentsValues | Where-Object -FilterScript { $_.source -eq 'direct' }
+                [array]$assignmentsValues = $assignmentsValues | Where-Object -Property source -EQ 'direct'
                 $assignmentResult += ConvertFrom-IntuneMobileAppAssignment -Assignments $assignmentsValues -IncludeDeviceFilter $true
             }
             $results.Add('Assignments', $assignmentResult)
@@ -327,16 +324,6 @@ class IntuneMobileAppsWebLink : M365DSCResourceBase
             $boundParameters.RoleScopeTagIds = Resolve-M365DSCIntuneRoleScopeTagIds -RoleScopeTagIds $this.RoleScopeTagIds
         }
 
-        if ($boundParameters.ContainsKey('LargeIcon'))
-        {
-            $complexLargeIcon = @{
-                type  = $boundParameters.LargeIcon.type
-                value = [System.Convert]::FromBase64String($boundParameters.LargeIcon.value)
-            }
-            $boundParameters.Remove('LargeIcon') | Out-Null
-            $boundParameters.Add('LargeIcon', $complexLargeIcon)
-        }
-
         foreach ($property in $this.ResourceCache['customProperties'])
         {
             if ($boundParameters.ContainsKey($property) -and $this.ResourceCache['odataToPropertiesMap'].($this.TargetType) -notcontains $property)
@@ -369,6 +356,7 @@ class IntuneMobileAppsWebLink : M365DSCResourceBase
             if ($policy.Id)
             {
                 $assignmentsHash = ConvertTo-IntuneMobileAppAssignment -IncludeDeviceFilter:$true -Assignments $this.Assignments
+                Wait-M365DSCIntuneMobileAppPublished -AppId $policy.Id
                 Update-DeviceAppManagementPolicyAssignment `
                     -AppManagementPolicyId $policy.Id `
                     -Assignments $assignmentsHash

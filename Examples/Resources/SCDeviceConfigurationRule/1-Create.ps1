@@ -51,13 +51,13 @@ Configuration Example
             EnableRemovableStorage        = $true;
             Ensure                        = "Present";
             ExchangeActiveSyncHost        = "outlook.office365.com";
-            FirewallStatus                = $true;
+            FirewallStatus                = "Required";
             ForceAppStorePassword         = $false;
             ForceEncryptedBackup          = $false;
             MaxPasswordAttemptsBeforeWipe = 8;
-            MaxPasswordGracePeriod        = 15;
+            MaxPasswordGracePeriod        = "15.00:00:00";
             MoviesRating                  = "USRatingPG";
-            Name                          = "Human Resources{2b18}";
+            Name                          = "Human Resources Device Settings{2b18}";
             PasswordComplexity            = 1;
             PasswordExpirationDays        = 60;
             PasswordHistoryCount          = 3;
@@ -67,7 +67,7 @@ Configuration Example
             PasswordRequired              = $true;
             PasswordTimeout               = "00:05:00";
             PhoneMemoryEncrypted          = $false;
-            Policy                        = "Human Resources";
+            Policy                        = "Human Resources Device Settings";
             RegionRatings                 = "us";
             RequireEmailProfile           = $false;
             SmartScreenEnabled            = $false;

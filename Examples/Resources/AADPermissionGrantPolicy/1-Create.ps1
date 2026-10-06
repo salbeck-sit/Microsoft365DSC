@@ -25,16 +25,16 @@ Configuration Example
     {
         AADPermissionGrantPolicy 'AADPermissionGrantPolicy-Example'
         {
-            Id                                = "my-custom-consent-policy"
-            DisplayName                       = "My Custom Consent Policy"
-            Description                       = "Custom policy for app consent with specific conditions"
+            Id                                = "low-risk-delegated-consent"
+            DisplayName                       = "Low Risk Delegated Consent"
+            Description                       = "Allows users to consent to low risk delegated permissions"
             Includes                          = @(
                 MSFT_AADPermissionGrantConditionSet {
                     Id                                          = "include-low-risk-delegated"
                     PermissionType                              = "delegated"
                     PermissionClassification                    = "low"
                     ClientApplicationIds                        = @("all")
-                    ClientApplicationTenantIds                  = @($TenantId)
+                    ClientApplicationTenantIds                  = @("all")
                     ClientApplicationPublisherIds               = @("all")
                     ClientApplicationsFromVerifiedPublisherOnly = $false
                     ResourceApplication                         = "00000003-0000-0000-c000-000000000000"

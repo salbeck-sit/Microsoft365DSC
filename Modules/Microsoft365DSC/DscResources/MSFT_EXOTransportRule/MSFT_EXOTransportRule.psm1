@@ -466,6 +466,7 @@ class EXOTransportRule : M365DSCResourceBase
 
     [DscProperty()]
     [System.ComponentModel.Description('The IncidentReportContent parameter specifies the message properties that are included in the incident report that''s generated when a message violates a DLP policy. ')]
+    [ValidateSet('Sender', 'Recipients', 'Subject', 'Cc', 'Bcc', 'Severity', 'Override', 'RuleDetections', 'FalsePositive', 'DataClassifications', 'IdMatch', 'AttachOriginalMail')]
     [System.String[]] $IncidentReportContent
 
     [DscProperty()]
@@ -930,11 +931,16 @@ class EXOTransportRule : M365DSCResourceBase
             # Formats DateTime as String
             if ($null -ne $TransportRule.ActivationDate)
             {
-                $result.ActivationDate = $TransportRule.ActivationDate.ToUniversalTime().ToString()
+                $result.ActivationDate = [M365DSCResourceBase]::FormatDateTime($TransportRule.ActivationDate)
             }
             if ($null -ne $TransportRule.ExpiryDate)
             {
-                $result.ExpiryDate = $TransportRule.ExpiryDate.ToUniversalTime().ToString()
+                $result.ExpiryDate = [M365DSCResourceBase]::FormatDateTime($TransportRule.ExpiryDate)
+            }
+
+            foreach ($sizeProperty in [EXOTransportRule]::GetSizePropertyNames())
+            {
+                $result.$sizeProperty = [EXOTransportRule]::ConvertToSizeString($result.$sizeProperty)
             }
 
             Write-Verbose -Message "Found Transport Rule $($this.Name)"
@@ -1093,12 +1099,12 @@ class EXOTransportRule : M365DSCResourceBase
                 if ($this.Enabled)
                 {
                     Write-Verbose -Message "Enabling TransportRule {$($this.Name)}"
-                    Enable-TransportRule -Identity $this.Name
+                    Enable-TransportRule -Identity $this.Name -Confirm:$false
                 }
                 else
                 {
                     Write-Verbose -Message "Disabling TransportRule {$($this.Name)}"
-                    Disable-TransportRule -Identity $this.Name
+                    Disable-TransportRule -Identity $this.Name -Confirm:$false
                 }
             }
             $SetTransportRuleParams.Remove('Enabled') | Out-Null
@@ -1179,6 +1185,47 @@ class EXOTransportRule : M365DSCResourceBase
 
             throw
         }
+    }
+
+    [System.Collections.Hashtable] GetCompareParameters()
+    {
+        return @{
+            PostProcessing = {
+                param($DesiredValues, $CurrentValues, $ValuesToCheck, $ignore)
+                foreach ($sizeProperty in [EXOTransportRule]::GetSizePropertyNames())
+                {
+                    foreach ($values in @($DesiredValues, $CurrentValues, $ValuesToCheck))
+                    {
+                        if ($values.ContainsKey($sizeProperty))
+                        {
+                            $values[$sizeProperty] = [EXOTransportRule]::ConvertToSizeString($values[$sizeProperty])
+                        }
+                    }
+                }
+                return [System.Tuple[Hashtable, Hashtable, Hashtable]]::new($DesiredValues, $CurrentValues, $ValuesToCheck)
+            }
+        }
+    }
+
+    hidden static [System.String[]] GetSizePropertyNames()
+    {
+        return @('AttachmentSizeOver', 'ExceptIfAttachmentSizeOver', 'MessageSizeOver', 'ExceptIfMessageSizeOver')
+    }
+
+    hidden static [System.String] ConvertToSizeString([System.Object] $Value)
+    {
+        if ($null -eq $Value)
+        {
+            return $null
+        }
+
+        $text = [System.String]$Value
+        if ($text -match '^\s*(?<value>\d+(?:\.\d+)?)\s*(?<unit>[KMGT]?B)\b')
+        {
+            return $Matches.value + $Matches.unit.ToUpperInvariant()
+        }
+
+        return $text
     }
 
     hidden [EXOTransportRule] AsResult([System.Object] $Values)

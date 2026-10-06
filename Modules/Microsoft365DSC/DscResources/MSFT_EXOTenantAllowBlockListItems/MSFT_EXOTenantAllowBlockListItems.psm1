@@ -17,6 +17,10 @@ class EXOTenantAllowBlockListItems : M365DSCResourceBase
     [System.Nullable[System.DateTime]] $ExpirationDate
 
     [DscProperty()]
+    [System.ComponentModel.Description('Specifies that the entry never expires. Cannot be combined with ExpirationDate.')]
+    [System.Nullable[System.Boolean]] $NoExpiration
+
+    [DscProperty()]
     [System.ComponentModel.Description('The subtype for this entry')]
     [ValidateSet('AdvancedDelivery', 'Submission', 'Tenant')]
     [System.String] $ListSubType
@@ -118,6 +122,7 @@ class EXOTenantAllowBlockListItems : M365DSCResourceBase
                 Action                = $instance.Action
                 Value                 = $instance.Value
                 ExpirationDate        = $instance.ExpirationDate
+                NoExpiration          = $null -eq $instance.ExpirationDate
                 ListSubType           = $instance.ListSubType
                 ListType              = $this.ListType
                 Notes                 = $instance.Notes
@@ -158,6 +163,10 @@ class EXOTenantAllowBlockListItems : M365DSCResourceBase
 
         $currentInstance = $this.Get().ToHashtable()
         $boundParameters = Remove-M365DSCAuthenticationParameter -BoundParameters $this.GetBoundParameters()
+        if ($boundParameters.ContainsKey('NoExpiration') -and -not $this.NoExpiration)
+        {
+            $boundParameters.Remove('NoExpiration') | Out-Null
+        }
 
         if ($this.Ensure -eq 'Present' -and $currentInstance.Ensure -eq 'Absent')
         {

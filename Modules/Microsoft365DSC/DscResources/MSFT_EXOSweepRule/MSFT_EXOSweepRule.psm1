@@ -27,7 +27,7 @@ class EXOSweepRule : M365DSCResourceBase
     [System.ComponentModel.Description('The KeepLatest parameter specifies an action for the Sweep rule that specifies the number of messages to keep that match the conditions of the rule. After the number of messages is exceeded, the oldest messages are moved to the location that''s specified by the DestinationFolder parameter (by default, the Deleted Items folder). You can''t use this parameter with the KeepForDays parameter and the Sweep rule must contain a KeepForDays or KeepLatest parameter value.')]
     [System.Nullable[System.UInt32]] $KeepLatest
 
-    [DscProperty()]
+    [DscProperty(Key)]
     [System.ComponentModel.Description('The Mailbox parameter specifies the mailbox where you want to create the Sweep rule. You can use any value that uniquely identifies the mailbox.')]
     [System.String] $Mailbox
 
@@ -107,7 +107,9 @@ class EXOSweepRule : M365DSCResourceBase
                 $nullResult = $this.GetBoundParameters()
                 $nullResult.Ensure = 'Absent'
 
-                $instance = Get-SweepRule -Mailbox $this.Mailbox -ErrorAction SilentlyContinue
+                $instance = Get-SweepRule -Mailbox $this.Mailbox -ErrorAction SilentlyContinue |
+                    Where-Object -Property Name -EQ $this.Name |
+                    Select-Object -First 1
                 if ($null -eq $instance)
                 {
                     Write-Verbose -Message "No Sweep Rule found with Name {$($this.Name)}"
@@ -123,6 +125,12 @@ class EXOSweepRule : M365DSCResourceBase
 
             $userInfo = Get-User -Identity $instance.MailboxOwnerId
 
+            $senderNameValue = $null
+            if (-not [System.String]::IsNullOrEmpty($instance.Sender))
+            {
+                $senderNameValue = $instance.Sender.Split('"')[1]
+            }
+
             $results = @{
                 Name                  = $instance.Name
                 Provider              = $instance.Provider
@@ -131,7 +139,7 @@ class EXOSweepRule : M365DSCResourceBase
                 KeepForDays           = $instance.KeepForDays
                 KeepLatest            = $instance.KeepLatest
                 Mailbox               = $userInfo.UserPrincipalName
-                SenderName            = $instance.Sender.Split('"')[1]
+                SenderName            = $senderNameValue
                 SourceFolder          = $userInfo.UserPrincipalName + ':\' + $instance.SourceFolder
                 SystemCategory        = $instance.SystemCategory
                 Ensure                = 'Present'
@@ -171,8 +179,13 @@ class EXOSweepRule : M365DSCResourceBase
         $currentInstance = $this.Get().ToHashtable()
 
         $setParameters = Remove-M365DSCAuthenticationParameter -BoundParameters $this.GetBoundParameters()
-        $setParameters.Add('Sender', $setParameters.SenderName)
-        $setParameters.Remove('SenderName') | Out-Null
+
+        if ($setParameters.ContainsKey('SenderName'))
+        {
+            $setParameters.Sender = $setParameters.SenderName
+            $setParameters.Remove('SenderName') | Out-Null
+        }
+
         # CREATE
         if ($this.Ensure -eq 'Present' -and $currentInstance.Ensure -eq 'Absent')
         {
@@ -193,7 +206,7 @@ class EXOSweepRule : M365DSCResourceBase
         {
             Write-Verbose -Message 'Removing existing Sweep Rule.'
             $instance = Get-SweepRule -Mailbox $this.Mailbox | Where-Object -FilterScript { $_.Name -eq $this.Name }
-            Remove-SweepRule -Identity $instance.RuleId -Mailbox $this.Mailbox
+            Remove-SweepRule -Identity $instance.RuleId -Mailbox $this.Mailbox -Confirm:$false
         }
     }
 
@@ -252,6 +265,7 @@ class EXOSweepRule : M365DSCResourceBase
                     Write-M365DSCHost -Message "        |---[$i/$($currentInstances.Count)] $displayedKey" -DeferWrite
                     $params = @{
                         Name                  = $config.Name
+                        Mailbox               = $mailbox.UserPrincipalName
                         Credential            = $this.Credential
                         ApplicationId         = $this.ApplicationId
                         TenantId              = $this.TenantId

@@ -20,14 +20,6 @@ class EXOMigration : M365DSCResourceBase
     [System.Nullable[System.Boolean]] $AddUsers
 
     [DscProperty()]
-    [System.ComponentModel.Description('The BadItemLimit parameter specifies the maximum number of bad items that are allowed before the migration request fails.')]
-    [System.String] $BadItemLimit
-
-    [DscProperty()]
-    [System.ComponentModel.Description('The LargeItemLimit parameter specifies the maximum number of large items that are allowed before the migration request fails.')]
-    [System.String] $LargeItemLimit
-
-    [DscProperty()]
     [System.ComponentModel.Description('The MoveOptions parameter specifies the stages of the migration that you want to skip for debugging purposes.')]
     [System.String[]] $MoveOptions
 
@@ -148,8 +140,6 @@ class EXOMigration : M365DSCResourceBase
                 Identity              = $this.Identity
                 NotificationEmails    = [System.String[]]$instance.NotificationEmails
                 AddUsers              = [System.Boolean]$instance.AddUsers
-                BadItemLimit          = [System.String]$instance.BadItemLimit
-                LargeItemLimit        = [System.String]$instance.LargeItemLimit
                 MoveOptions           = [System.String[]]$instance.MoveOptions
                 SkipMerging           = [System.String[]]$instance.SkipMerging
                 Update                = [System.Boolean]$instance.Update
@@ -223,8 +213,6 @@ class EXOMigration : M365DSCResourceBase
                 NotificationEmails   = $this.NotificationEmails  # Use the same notification emails if provided
                 CompleteAfter        = $this.CompleteAfter
                 StartAfter           = $this.StartAfter
-                BadItemLimit         = [System.String]$this.BadItemLimit
-                LargeItemLimit       = $this.LargeItemLimit
                 SkipMerging          = $this.SkipMerging
                 SourceEndpoint       = $this.SourceEndpoint
                 TargetDeliveryDomain = $this.TargetDeliveryDomain
@@ -279,8 +267,6 @@ class EXOMigration : M365DSCResourceBase
                 NotificationEmails = $this.NotificationEmails  # Use the same notification emails if provided
                 CompleteAfter      = $this.CompleteAfter
                 StartAfter         = $this.StartAfter
-                BadItemLimit       = [System.String]$this.BadItemLimit
-                LargeItemLimit     = $this.LargeItemLimit
                 SkipMerging        = $this.SkipMerging
                 Update             = $this.Update
                 AddUsers           = $this.AddUsers

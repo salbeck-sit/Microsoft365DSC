@@ -36,7 +36,7 @@ Configuration Example
             Name                            = "Custom Suspicious email sending patterns detected";
             NotificationCulture             = "en-US";
             NotificationEnabled             = $true;
-            NotifyUser                      = @("securityoperations@contoso.com");
+            NotifyUser                      = @("AdeleV@$TenantId");
             NotifyUserOnFilterMatch         = $false;
             NotifyUserSuppressionExpiryDate = "2026-12-31T00:00:00.0000000Z";
             NotifyUserThrottleThreshold     = 10;

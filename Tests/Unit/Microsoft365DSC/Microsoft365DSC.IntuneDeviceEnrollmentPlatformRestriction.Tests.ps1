@@ -117,7 +117,9 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
 
             It 'Should create the restriction from the Set method' {
                 (New-M365DSCResourceInstance -ResourceName 'IntuneDeviceEnrollmentPlatformRestriction' -Property $testParams).Set()
-                Should -Invoke -CommandName 'New-MgBetaDeviceManagementDeviceEnrollmentConfiguration' -Exactly 1
+                Should -Invoke -CommandName 'New-MgBetaDeviceManagementDeviceEnrollmentConfiguration' -Exactly 1 -ParameterFilter {
+                    $BodyParameter.platformType -eq 'ios' -and $null -ne $BodyParameter.platformRestriction
+                }
             }
         }
 
@@ -136,10 +138,15 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                             personalDeviceEnrollmentBlocked = $False
                         })
                 }
+
+                Mock -CommandName Get-MgBetaDeviceManagementDeviceEnrollmentConfiguration -ParameterFilter { -not [System.String]::IsNullOrEmpty($DeviceEnrollmentConfigurationId) } -MockWith {
+                    return $null
+                }
             }
 
             It 'Should return true from the Test method' {
                 (New-M365DSCResourceInstance -ResourceName 'IntuneDeviceEnrollmentPlatformRestriction' -Property $testParams).Test() | Should -Be $true
+                Should -Invoke -CommandName Get-MgBetaDeviceManagementDeviceEnrollmentConfiguration -ParameterFilter { $Filter -eq "DisplayName eq 'My DSC Restriction'" }
             }
         }
 

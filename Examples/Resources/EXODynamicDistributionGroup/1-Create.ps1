@@ -72,11 +72,11 @@ Configuration Example
             GrantSendOnBehalfTo                  = @("AdeleV@$TenantId")
             HiddenFromAddressListsEnabled        = $false
             Identity                             = "Field Sales and Marketing"
-            IncludedRecipients                   = @("MailboxUsers", "MailboxContacts")
+            IncludedRecipients                   = @("MailboxUsers", "MailContacts")
             MailTip                              = "Messages sent here reach every mailbox in the field sales and marketing organisation."
-            MailTipTranslations                  = @("FR: Les messages envoyes ici atteignent toute l'organisation commerciale.")
-            ManagedBy                            = "admin@$TenantId"
-            ModeratedBy                          = @("admin@$TenantId")
+            MailTipTranslations                  = @("FR:Les messages envoyes ici atteignent toute l'organisation commerciale.")
+            ManagedBy                            = "MeganB@$TenantId"
+            ModeratedBy                          = @("MeganB@$TenantId")
             ModerationEnabled                    = $true
             Name                                 = "Field Sales and Marketing"
             Notes                                = "Automatically includes every mailbox in the Sales and Marketing departments in Washington and Oregon."
@@ -84,7 +84,7 @@ Configuration Example
             PrimarySmtpAddress                   = "fieldsalesmarketing@$TenantId"
             RecipientContainer                   = "$TenantId"
             RejectMessagesFrom                   = @("AlexW@$TenantId")
-            RejectMessagesFromDLMembers          = @("SalesTeam@$TenantId")
+            RejectMessagesFromDLMembers          = @("SalesandMarketing@$TenantId")
             ReportToManagerEnabled               = $false
             ReportToOriginatorEnabled            = $true
             RequireSenderAuthenticationEnabled   = $true
@@ -93,9 +93,9 @@ Configuration Example
             SimpleDisplayName                    = "Field Sales and Marketing"
             WindowsEmailAddress                  = "fieldsalesmarketing@$TenantId"
             Ensure                               = "Present"
-            ApplicationId                        = $ConfigurationData.NonNodeData.ApplicationId;
+            ApplicationId                        = $ApplicationId;
             TenantId                             = $TenantId;
-            CertificateThumbprint                = $ConfigurationData.NonNodeData.CertificateThumbprint;
+            CertificateThumbprint                = $CertificateThumbprint;
         }
     }
 }

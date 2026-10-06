@@ -143,9 +143,9 @@ class IntuneMobileAppsSystemAppAndroid : M365DSCResourceBase
                     if (-not [System.String]::IsNullOrEmpty($this.DisplayName))
                     {
                         $getValue = Get-MgBetaDeviceAppManagementMobileApp -All `
-                            -Filter "DisplayName eq '$($this.DisplayName -replace "'", "''")' and isof('microsoft.graph.androidManagedStoreApp')" `
+                            -Filter "DisplayName eq '$($this.DisplayName -replace "'", "''")'" `
                             -ErrorAction SilentlyContinue | Where-Object -FilterScript {
-                                $_.isSystemApp -eq $true
+                                $_.'@odata.type' -eq '#microsoft.graph.androidManagedStoreApp' -and $_.isSystemApp -eq $true
                             }
                     }
                 }
@@ -205,7 +205,7 @@ class IntuneMobileAppsSystemAppAndroid : M365DSCResourceBase
             $assignmentResult = @()
             if ($assignmentsValues.Count -gt 0)
             {
-                [array]$assignmentsValues = $assignmentsValues | Where-Object -FilterScript { $_.source -eq 'direct' }
+                [array]$assignmentsValues = $assignmentsValues | Where-Object -Property source -EQ 'direct'
                 $assignmentResult += ConvertFrom-IntuneMobileAppAssignment -Assignments $assignmentsValues -IncludeDeviceFilter $true
             }
             $results.Add('Assignments', $assignmentResult)
@@ -260,6 +260,7 @@ class IntuneMobileAppsSystemAppAndroid : M365DSCResourceBase
             if ($policy.Id)
             {
                 $assignmentsHash = ConvertTo-IntuneMobileAppAssignment -IncludeDeviceFilter:$true -Assignments $this.Assignments
+                Wait-M365DSCIntuneMobileAppPublished -AppId $policy.Id
                 Update-DeviceAppManagementPolicyAssignment `
                     -AppManagementPolicyId $policy.Id `
                     -Assignments $assignmentsHash
@@ -326,10 +327,7 @@ class IntuneMobileAppsSystemAppAndroid : M365DSCResourceBase
             [array]$getValue = Get-MgBetaDeviceAppManagementMobileApp `
                 -Filter $mergedFilter `
                 -All `
-                -ErrorAction Stop | Where-Object `
-                -FilterScript {
-                    $_.isSystemApp -eq $true
-                }
+                -ErrorAction Stop | Where-Object -Property isSystemApp -EQ $true
             #endregion
 
             $i = 1

@@ -155,7 +155,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     DisplayName                    = 'FakeStringValue'
                     Id                             = 'FakeStringValue'
                     NetworkName                    = 'FakeStringValue'
-                    PreSharedKey                   = 'FakeStringValue'
+                    PreSharedKey                   = 'UpdatedFakeStringValue'
                     PreSharedKeyIsSet              = $True
                     ProxyAutomaticConfigurationUrl = 'FakeStringValue'
                     ProxySettings                  = 'automatic'

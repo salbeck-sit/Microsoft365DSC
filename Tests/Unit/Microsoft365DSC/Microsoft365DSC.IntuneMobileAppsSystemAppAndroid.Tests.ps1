@@ -129,6 +129,9 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                 return "Credentials"
             }
 
+            Mock -CommandName Wait-M365DSCIntuneMobileAppPublished -MockWith {
+            }
+
             # Mock Write-M365DSCHost to hide output during the tests
             Mock -CommandName Write-M365DSCHost -MockWith {
             }
@@ -166,9 +169,19 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                 Mock -CommandName Get-MgBetaDeviceAppManagementMobileApp -MockWith {
                     return $null
                 }
+
+                Mock -CommandName Get-MgBetaDeviceAppManagementMobileApp -ParameterFilter { -not [System.String]::IsNullOrEmpty($Filter) } -MockWith {
+                    return @{
+                        '@odata.type' = '#microsoft.graph.androidManagedStoreWebApp'
+                        id            = 'FakeStringValue'
+                        displayName   = 'FakeStringValue'
+                        isSystemApp   = $true
+                    }
+                }
             }
             It 'Should return Values from the Get method' {
                 ((New-M365DSCResourceInstance -ResourceName 'IntuneMobileAppsSystemAppAndroid' -Property $testParams).Get().ToHashtable()).Ensure | Should -Be 'Absent'
+                Should -Invoke -CommandName Get-MgBetaDeviceAppManagementMobileApp -ParameterFilter { $Filter -eq "DisplayName eq 'FakeStringValue'" }
             }
             It 'Should return false from the Test method' {
                 (New-M365DSCResourceInstance -ResourceName 'IntuneMobileAppsSystemAppAndroid' -Property $testParams).Test() | Should -Be $false
@@ -176,6 +189,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             It 'Should Create the group from the Set method' {
                 (New-M365DSCResourceInstance -ResourceName 'IntuneMobileAppsSystemAppAndroid' -Property $testParams).Set()
                 Should -Invoke -CommandName New-MgBetaDeviceAppManagementMobileApp -Exactly 1
+                Should -Invoke -CommandName Wait-M365DSCIntuneMobileAppPublished -Exactly 1
             }
         }
 

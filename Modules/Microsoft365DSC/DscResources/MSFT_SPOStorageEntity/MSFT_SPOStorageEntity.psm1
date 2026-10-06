@@ -169,53 +169,69 @@ class SPOStorageEntity : M365DSCResourceBase
             $CurrentParameters.Add('Scope', $this.EntityScope)
         }
 
-        if (($this.Ensure -eq 'Absent' -and $curStorageEntry.Ensure -eq 'Present'))
+        $isRemoval = $this.Ensure -eq 'Absent'
+        if ($isRemoval -and $curStorageEntry.Ensure -ne 'Present')
         {
-            Write-Verbose -Message "Removing storage entity $($this.Key)"
-            Remove-PnPStorageEntity -Key $this.Key
+            return
         }
-        elseif ($this.Ensure -eq 'Present')
+
+        $storageSiteUrl = $this.SiteUrl
+        if ($this.EntityScope -ne 'Site')
         {
-            $storageSiteUrl = $this.SiteUrl
-            if ($this.EntityScope -ne 'Site')
+            $storageSiteUrl = Get-PnPTenantAppCatalogUrl
+            if ([System.String]::IsNullOrEmpty($storageSiteUrl))
             {
-                $storageSiteUrl = Get-PnPTenantAppCatalogUrl
-                if ([System.String]::IsNullOrEmpty($storageSiteUrl))
-                {
-                    throw "Storage entity {$($this.Key)} cannot be created: tenant-scoped storage entities are stored in the tenant app catalog, and the tenant has none."
-                }
+                throw "Storage entity {$($this.Key)} cannot be written: tenant-scoped storage entities are stored in the tenant app catalog, and the tenant has none."
+            }
+        }
+
+        $storageSite = Get-PnPTenantSite -Identity $storageSiteUrl
+        $resetSecurity = $false
+        try
+        {
+            if ($storageSite.DenyAddAndCustomizePages -eq 'Enabled')
+            {
+                Set-PnPTenantSite -Identity $storageSiteUrl -NoScriptSite:$false -ErrorAction Stop
+                $resetSecurity = $true
             }
 
-            $storageSite = Get-PnPTenantSite -Identity $storageSiteUrl
-            $resetSecurity = $false
-            try
+            if ($isRemoval)
+            {
+                Write-Verbose -Message "Removing storage entity $($this.Key)"
+                $removeParameters = @{
+                    Key = $this.Key
+                }
+
+                if (-not [System.String]::IsNullOrEmpty($this.EntityScope))
+                {
+                    $removeParameters.Add('Scope', $this.EntityScope)
+                }
+
+                Remove-PnPStorageEntity @removeParameters -ErrorAction Stop
+            }
+            else
             {
                 Write-Verbose -Message "Adding new storage entity $($this.Key)"
-                if ($storageSite.DenyAddAndCustomizePages -eq 'Enabled')
-                {
-                    Set-PnPTenantSite -Identity $storageSiteUrl -NoScriptSite:$false -ErrorAction Stop
-                    $resetSecurity = $true
-                }
                 Set-PnPStorageEntity @CurrentParameters -ErrorAction Stop
             }
-            catch
+        }
+        catch
+        {
+            if ($_.Exception.Message -like '*Access denied*' -or $_.Exception.Message -like '*Access is denied*')
             {
-                if ($_.Exception.Message -like '*Access denied*' -or $_.Exception.Message -like '*Access is denied*')
-                {
-                    throw "Access denied while writing storage entity {$($this.Key)} to {$storageSiteUrl}. " + `
-                        "Storage entities can only be written while custom script is allowed on that site; DenyAddAndCustomizePages was {$($storageSite.DenyAddAndCustomizePages)}. " + `
-                        'Allow it with Set-PnPTenantSite -Url <site> -DenyAddAndCustomizePages:$false, and make sure the account is a site collection administrator there or the application has Sites.FullControl.All.'
-                }
-
-                throw
+                throw "Access denied while writing storage entity {$($this.Key)} to {$storageSiteUrl}. " + `
+                    "Storage entities can only be written while custom script is allowed on that site; DenyAddAndCustomizePages was {$($storageSite.DenyAddAndCustomizePages)}. " + `
+                    'Allow it with Set-PnPTenantSite -Url <site> -DenyAddAndCustomizePages:$false, and make sure the account is a site collection administrator there or the application has Sites.FullControl.All.'
             }
-            finally
+
+            throw
+        }
+        finally
+        {
+            if ($resetSecurity)
             {
-                if ($resetSecurity)
-                {
-                    Write-Verbose -Message "Resetting security for $storageSiteUrl"
-                    Set-PnPTenantSite -Identity $storageSiteUrl -NoScriptSite:$true
-                }
+                Write-Verbose -Message "Resetting security for $storageSiteUrl"
+                Set-PnPTenantSite -Identity $storageSiteUrl -NoScriptSite:$true
             }
         }
     }

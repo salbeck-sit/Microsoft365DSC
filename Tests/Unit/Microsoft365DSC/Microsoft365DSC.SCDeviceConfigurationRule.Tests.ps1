@@ -85,7 +85,9 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     CameraEnabled             = $True;
                     EnableRemovableStorage    = $True;
                     ForceAppStorePassword     = $False;
+                    FirewallStatus            = 'Required';
                     ForceEncryptedBackup      = $False;
+                    MaxPasswordGracePeriod    = '15.00:00:00';
                     Name                      = "MyPolicy{394b}";
                     PasswordRequired          = $False;
                     PhoneMemoryEncrypted      = $False;
@@ -119,35 +121,9 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
         Context -Name "The instance exists but it SHOULD NOT" -Fixture {
             BeforeAll {
                 $testParams = @{
-                    AllowAppStore             = $True;
-                    AllowAssistantWhileLocked = $True;
-                    AllowConvenienceLogon     = $True;
-                    AllowDiagnosticSubmission = $True;
-                    AllowiCloudBackup         = $True;
-                    AllowiCloudDocSync        = $True;
-                    AllowiCloudPhotoSync      = $True;
-                    AllowPassbookWhileLocked  = $True;
-                    AllowScreenshot           = $True;
-                    AllowSimplePassword       = $True;
-                    AllowVideoConferencing    = $True;
-                    AllowVoiceAssistant       = $True;
-                    AllowVoiceDialing         = $True;
-                    BluetoothEnabled          = $True;
-                    CameraEnabled             = $True;
-                    EnableRemovableStorage    = $True;
-                    ForceAppStorePassword     = $False;
-                    ForceEncryptedBackup      = $False;
-                    Name                      = "MyPolicy{394b}";
-                    PasswordRequired          = $False;
-                    PhoneMemoryEncrypted      = $False;
-                    Policy                    = "MyPolicy";
-                    RequireEmailProfile       = $False;
-                    SmartScreenEnabled        = $False;
-                    SystemSecurityTLS         = $False;
-                    TargetGroups              = @("Communications");
-                    WLANEnabled               = $True;
-                    Ensure                    = 'Absent'
-                    Credential                = $Credential;
+                    Name       = "MyPolicy{394b}";
+                    Ensure     = 'Absent'
+                    Credential = $Credential;
                 }
 
                 Mock -CommandName Get-DeviceConfigurationRule -MockWith {
@@ -215,7 +191,9 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     CameraEnabled             = $True;
                     EnableRemovableStorage    = $True;
                     ForceAppStorePassword     = $False;
+                    FirewallStatus            = 'Required';
                     ForceEncryptedBackup      = $False;
+                    MaxPasswordGracePeriod    = '15.00:00:00';
                     Name                      = "MyPolicy{394b}";
                     PasswordRequired          = $False;
                     PhoneMemoryEncrypted      = $False;
@@ -251,7 +229,9 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                         CameraEnabled             = $True;
                         EnableRemovableStorage    = $True;
                         ForceAppStorePassword     = $False;
+                        FirewallStatus            = 'Required';
                         ForceEncryptedBackup      = $False;
+                        MaxPasswordGracePeriod    = [System.TimeSpan]::FromDays(15);
                         PasswordRequired          = $False;
                         PhoneMemoryEncrypted      = $False;
                         RequireEmailProfile       = $False;

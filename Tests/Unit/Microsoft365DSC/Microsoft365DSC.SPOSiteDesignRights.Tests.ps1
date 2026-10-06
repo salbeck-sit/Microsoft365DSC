@@ -212,6 +212,8 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
 
             It 'Updates the user design rights in the Set method' {
                 (New-M365DSCResourceInstance -ResourceName 'SPOSiteDesignRights' -Property $testParams).Set()
+                Should -Invoke -CommandName Grant-PnPSiteDesignRights -Exactly 1 -ParameterFilter { $Principals -contains 'dsmay@dsazure.com' }
+                Should -Invoke -CommandName Revoke-PnPSiteDesignRights -Exactly 1 -ParameterFilter { $Principals -contains 'jdoe@dsazure.com' }
             }
         }
 

@@ -57,6 +57,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                 return @{
                     Identity                    = 'TestQuarantinePolicy'
                     Name                        = 'TestQuarantinePolicy'
+                    QuarantinePolicyType        = 'PolicyQuarantineTag'
                     OrganizationBrandingEnabled = $True
                     ESNEnabled                  = $False
                 }
@@ -75,7 +76,8 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                 $testParams = @{
                     Ensure                      = 'Present'
                     Credential                  = $Credential
-                    Identity                    = 'TestQuarantinePolicy'
+                    Identity                    = 'contoso.onmicrosoft.com\TestQuarantinePolicy'
+                    QuarantinePolicyType        = 'PolicyQuarantineTag'
                     OrganizationBrandingEnabled = $False
                     ESNEnabled                  = $False
                 }
@@ -95,7 +97,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
 
             It 'Should call the Set method' {
                 (New-M365DSCResourceInstance -ResourceName 'EXOQuarantinePolicy' -Property $testParams).Set()
-                Should -Invoke -CommandName New-QuarantinePolicy -Exactly 1
+                Should -Invoke -CommandName New-QuarantinePolicy -Exactly 1 -ParameterFilter { $Name -eq 'TestQuarantinePolicy' }
             }
         }
 
@@ -105,6 +107,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     Ensure                      = 'Present'
                     Credential                  = $Credential
                     Identity                    = 'TestQuarantinePolicy'
+                    QuarantinePolicyType        = 'PolicyQuarantineTag'
                     OrganizationBrandingEnabled = $True
                     ESNEnabled                  = $False
                 }
@@ -133,6 +136,37 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             It 'Should Successfully call the Set method' {
                 (New-M365DSCResourceInstance -ResourceName 'EXOQuarantinePolicy' -Property $testParams).Set()
                 Should -Invoke -CommandName Set-QuarantinePolicy -Exactly 1
+            }
+        }
+
+        Context -Name 'Global QuarantinePolicy update needed.' -Fixture {
+            BeforeAll {
+                $testParams = @{
+                    Ensure                      = 'Present'
+                    Credential                  = $Credential
+                    Identity                    = 'DefaultGlobalPolicy'
+                    QuarantinePolicyType        = 'GlobalQuarantineTag'
+                    OrganizationBrandingEnabled = $True
+                }
+
+                Mock -CommandName Get-QuarantinePolicy -ParameterFilter { $QuarantinePolicyType -eq 'GlobalQuarantinePolicy' } -MockWith {
+                    return @{
+                        Identity                    = 'contoso.onmicrosoft.com\DefaultGlobalPolicy'
+                        Name                        = 'DefaultGlobalPolicy'
+                        Guid                        = '00000000-0000-0000-0000-000000000000'
+                        QuarantinePolicyType        = 'GlobalQuarantineTag'
+                        OrganizationBrandingEnabled = $False
+                    }
+                }
+            }
+
+            It 'Should return false from the Test method' {
+                (New-M365DSCResourceInstance -ResourceName 'EXOQuarantinePolicy' -Property $testParams).Test() | Should -Be $false
+            }
+
+            It 'Should create the global settings when they were never saved' {
+                (New-M365DSCResourceInstance -ResourceName 'EXOQuarantinePolicy' -Property $testParams).Set()
+                Should -Invoke -CommandName New-QuarantinePolicy -Exactly 1 -ParameterFilter { $QuarantinePolicyType -eq 'GlobalQuarantinePolicy' }
             }
         }
 

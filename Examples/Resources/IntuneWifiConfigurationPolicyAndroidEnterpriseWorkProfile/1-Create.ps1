@@ -36,13 +36,13 @@ Configuration Example
                 MSFT_DeviceManagementConfigurationPolicyAssignments
                 {
                     dataType         = '#microsoft.graph.exclusionGroupAssignmentTarget'
-                    groupDisplayName = 'Policy Exclusions'
+                    groupDisplayName = 'Intune Excluded Users'
                 }
             )
             ConnectAutomatically           = $False
             ConnectWhenNetworkNameIsHidden = $False
             NetworkName                    = 'f8b79489-84fc-4434-b964-2a18dfe08f88'
-            PreSharedKey                   = 'MyPreSharedKey123'
+            PreSharedKey                   = '<wifi-pre-shared-key>'
             PreSharedKeyIsSet              = $True
             ProxyAutomaticConfigurationUrl = 'http://proxy.contoso.com/proxy.pac'
             ProxySettings                  = 'automatic'

@@ -49,6 +49,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     MailNickName = 'TestGroup'
                     Description  = 'This is a test'
                     ManagedBy    = 'JohnSmith@contoso.onmicrosoft.com'
+                    Members      = @('JaneDoe@contoso.onmicrosoft.com')
                     Theme        = 'Teal'
                     Ensure       = 'Present'
                     Credential   = $Credential
@@ -56,6 +57,30 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
 
                 Mock -CommandName Get-MgGroup -MockWith {
                     return $null
+                }
+
+                Mock -CommandName Get-MSCloudLoginConnectionProfile -MockWith {
+                    return @{
+                        ResourceUrl = 'https://graph.microsoft.com/'
+                    }
+                }
+
+                Mock -CommandName Get-MgUser -MockWith {
+                    return @{
+                        Id = $UserId.Split('@')[0]
+                    }
+                }
+
+                Mock -CommandName New-MgGroup -MockWith {
+                    return @{
+                        Id = '12345-12345-12345-12345-12345'
+                    }
+                }
+
+                Mock -CommandName New-MgGroupMemberByRef -MockWith {
+                }
+
+                Mock -CommandName New-MgGroupOwnerByRef -MockWith {
                 }
             }
 
@@ -65,6 +90,12 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
 
             It 'Should create the Group from the Set method' {
                 (New-M365DSCResourceInstance -ResourceName 'O365Group' -Property $testParams).Set()
+                Should -Invoke -CommandName New-MgGroup -Exactly 1 -ParameterFilter {
+                    $BodyParameter.'owners@odata.bind' -contains 'https://graph.microsoft.com/v1.0/directoryObjects/JohnSmith' -and
+                    $BodyParameter.'members@odata.bind' -contains 'https://graph.microsoft.com/v1.0/directoryObjects/JaneDoe'
+                }
+                Should -Invoke -CommandName New-MgGroupMemberByRef -Exactly 0
+                Should -Invoke -CommandName New-MgGroupOwnerByRef -Exactly 0
             }
         }
 

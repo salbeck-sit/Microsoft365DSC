@@ -81,10 +81,8 @@ Configuration Example
 
                 }
             );
-            Description           = "Maps user attributes onto SAML claims for the expense reporting application.";
             DisplayName           = "Expense Reporting Claims";
             Ensure                = "Present";
-            Id                    = "fd0dc3f3-cfdf-4d56-bb03-e18161a5ac93";
             IsOrganizationDefault = $False;
             ApplicationId         = $ApplicationId
             TenantId              = $TenantId

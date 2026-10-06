@@ -56,7 +56,8 @@ Configuration Example
                 }
                 MSFT_DeviceManagementSystemMobileAppAssignment{
                     dataType         = '#microsoft.graph.exclusionGroupAssignmentTarget'
-                    groupDisplayName = 'Policy Exclusions'
+                    groupDisplayName = 'Intune Excluded Devices'
+                    intent           = 'required'
                 }
             );
             ApplicationId         = $ApplicationId;

@@ -26,7 +26,7 @@ Configuration Example
     {
         IntuneEndpointDetectionAndResponsePolicyLinux 'IntuneEndpointDetectionAndResponsePolicyLinux-Example'
         {
-            DisplayName           = 'Edr Policy'
+            DisplayName           = 'Linux Server EDR Tagging'
             Ensure                = 'Absent'
             ApplicationId         = $ApplicationId;
             TenantId              = $TenantId;

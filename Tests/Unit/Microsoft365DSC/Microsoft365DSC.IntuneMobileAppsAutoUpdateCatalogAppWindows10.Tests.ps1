@@ -103,6 +103,9 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             Mock -CommandName Update-DeviceAppManagementPolicyAssignment -MockWith {
             }
 
+            Mock -CommandName Wait-M365DSCIntuneMobileAppPublished -MockWith {
+            }
+
             Mock -CommandName Write-M365DSCHost -MockWith {
             }
 
@@ -158,11 +161,19 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                 Mock -CommandName Get-MgBetaDeviceAppManagementMobileApp -MockWith {
                     return $null
                 }
+
+                Mock -CommandName Get-MgBetaDeviceAppManagementMobileApp -ParameterFilter { -not [System.String]::IsNullOrEmpty($Filter) } -MockWith {
+                    return @{
+                        '@odata.type' = '#microsoft.graph.win32CatalogApp'
+                        id            = 'FakeStringValue'
+                        displayName   = 'FakeStringValue'
+                    }
+                }
             }
 
             It 'Should return Absent from the Get method' {
                 ((New-M365DSCResourceInstance -ResourceName 'IntuneMobileAppsAutoUpdateCatalogAppWindows10' -Property $testParams).Get().ToHashtable()).Ensure | Should -Be 'Absent'
-                Should -Invoke -CommandName 'Get-MgBetaDeviceAppManagementMobileApp'
+                Should -Invoke -CommandName Get-MgBetaDeviceAppManagementMobileApp -ParameterFilter { $Filter -eq "DisplayName eq 'FakeStringValue'" }
             }
 
             It 'Should return false from the Test method' {
@@ -172,6 +183,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             It 'Should create the instance from the Set method' {
                 (New-M365DSCResourceInstance -ResourceName 'IntuneMobileAppsAutoUpdateCatalogAppWindows10' -Property $testParams).Set()
                 Should -Invoke -CommandName 'New-MgBetaDeviceAppManagementMobileApp' -Exactly 1
+                Should -Invoke -CommandName Wait-M365DSCIntuneMobileAppPublished -Exactly 1
                 Should -Invoke -CommandName 'Update-DeviceAppManagementAppCategory' -Exactly 1
             }
         }

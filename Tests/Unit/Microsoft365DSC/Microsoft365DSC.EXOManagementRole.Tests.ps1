@@ -51,6 +51,9 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             Mock -CommandName Start-Sleep -MockWith {
             }
 
+            Mock -CommandName Start-Sleep -ModuleName M365DSCErrorHandler -MockWith {
+            }
+
             Mock -CommandName New-M365DSCLogEntry -MockWith {
             }
 
@@ -129,6 +132,26 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     Ensure      = 'Present'
                     Credential  = $Credential
                 }
+
+                Mock -CommandName Remove-ManagementRole -MockWith {
+                    $Script:roleRemoved = $true
+                }
+
+                Mock -CommandName Get-ManagementRole -MockWith {
+                    if ($Script:roleRemoved)
+                    {
+                        return $null
+                    }
+                    return @{
+                        Name        = 'Contoso Management Role'
+                        Parent      = 'Journaling'
+                        Description = 'This is the Contoso Management Role'
+                    }
+                }
+            }
+
+            BeforeEach {
+                $Script:roleRemoved = $false
             }
 
             It 'Should return false from the Test method' {
@@ -139,6 +162,8 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                 (New-M365DSCResourceInstance -ResourceName 'EXOManagementRole' -Property $testParams).Set()
                 Should -Invoke -CommandName Remove-ManagementRole -Exactly 1
                 Should -Invoke -CommandName New-ManagementRole -Exactly 1
+                Should -Invoke -CommandName Get-ManagementRole -Exactly 3 -ParameterFilter { $Identity -eq 'Contoso Management Role' }
+                Should -Invoke -CommandName Start-Sleep -ModuleName M365DSCErrorHandler -Exactly 0
             }
         }
 

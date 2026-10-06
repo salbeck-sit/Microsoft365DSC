@@ -748,6 +748,13 @@ class TeamsCallQueue : M365DSCResourceBase
         return ([M365DSCResourceBase] $this).Test()
     }
 
+    [System.Collections.Hashtable] GetCompareParameters()
+    {
+        return @{
+            ExcludedProperties = @('ChannelUserObjectId', 'ShouldOverwriteCallableChannelProperty')
+        }
+    }
+
     [string] Export()
     {
         $currentBatch = $null

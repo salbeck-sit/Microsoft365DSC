@@ -29,8 +29,8 @@ Configuration Example
             DisplayName           = "Ottawa Employees"
             MailNickName          = "OttawaEmployees"
             Description           = "This is only for employees of the Ottawa Office"
-            ManagedBy             = @("megan.bowen@$TenantId")
-            Members               = @("alex.wilber@$TenantId") # Updated Property
+            ManagedBy             = @("MeganB@$TenantId")
+            Members               = @("AlexW@$TenantId") # Updated Property
             Theme                 = "Teal"
             Ensure                = "Present"
             ApplicationId         = $ApplicationId

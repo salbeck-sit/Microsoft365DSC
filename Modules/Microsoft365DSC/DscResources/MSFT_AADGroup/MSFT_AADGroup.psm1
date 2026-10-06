@@ -421,6 +421,7 @@ class AADGroup : M365DSCResourceBase
         $currentParameters.Remove('GroupAsMembers') | Out-Null
         $currentParameters.Remove('MemberOf') | Out-Null
         $currentParameters.Remove('AssignedToRole') | Out-Null
+        $currentParameters.Remove('GroupLifecyclePolicySelectedEnabled') | Out-Null
 
         if ($null -ne $this.WritebackConfiguration)
         {
@@ -546,13 +547,11 @@ class AADGroup : M365DSCResourceBase
                 Write-Verbose -Message "Found an instance of a deleted group {$($this.DisplayName)}. Restoring it."
                 Restore-MgBetaDirectoryDeletedItem -DirectoryObjectId $groups[0].Id
                 $restoringExisting = $true
-                do
-                {
-                    $currentGroup = Get-MgBetaGroup -Filter "DisplayName eq '$($this.DisplayName -replace "'", "''")'" -ErrorAction Stop
-                } while ($null -eq $currentGroup)
-                $null = Invoke-M365DSCCommand -ScriptBlock { Get-MgBetaGroup -GroupId $currentGroup.Id -ErrorAction Stop } -RetryOnNotFoundError
-                $null = Invoke-M365DSCCommand -ScriptBlock { Get-MgBetaGroupMember -GroupId $currentGroup.Id -ErrorAction Stop } -RetryOnNotFoundError
+                $restoredGroupId = $groups[0].Id
+                $null = Invoke-M365DSCCommand -ScriptBlock { Get-MgBetaGroup -GroupId $restoredGroupId -ErrorAction Stop } -RetryOnNotFoundError -MaxRetries 5
+                $null = Invoke-M365DSCCommand -ScriptBlock { Get-MgBetaGroupMember -GroupId $restoredGroupId -ErrorAction Stop } -RetryOnNotFoundError -MaxRetries 5
                 $commandParameters = ([Hashtable]$this.GetBoundParameters()).Clone()
+                $commandParameters.Id = $restoredGroupId
                 $currentGroup = Invoke-M365DSCCommand -ScriptBlock { $this.GetForExport($commandParameters) } -RetryOnNotFoundError
                 $backCurrentOwners = $currentGroup.Owners
                 $backCurrentMembers = $currentGroup.Members
@@ -562,6 +561,28 @@ class AADGroup : M365DSCResourceBase
             {
                 Write-Verbose -Message "Creating new group {$($this.DisplayName)}"
                 $currentParameters.Remove('Id') | Out-Null
+
+                $ownerReferences = [AADGroup]::GetDirectoryObjectReferences($this.Owners, $false)
+                $memberReferences = @()
+                if ($this.MembershipRuleProcessingState -ne 'On')
+                {
+                    $memberReferences = [AADGroup]::GetDirectoryObjectReferences($this.Members, $true)
+                }
+
+                if ($null -ne $ownerReferences -and $null -ne $memberReferences -and ($ownerReferences.Count + $memberReferences.Count) -le 20)
+                {
+                    if ($ownerReferences.Count -gt 0)
+                    {
+                        $currentParameters.Add('owners@odata.bind', $ownerReferences)
+                        $backCurrentOwners = $this.Owners
+                    }
+
+                    if ($memberReferences.Count -gt 0)
+                    {
+                        $currentParameters.Add('members@odata.bind', $memberReferences)
+                        $backCurrentMembers = $this.Members
+                    }
+                }
 
                 try
                 {
@@ -601,16 +622,20 @@ class AADGroup : M365DSCResourceBase
                     }
 
                     Write-Verbose -Message "Updating existing Group with Values: $(Convert-M365DscHashtableToString -Hashtable $currentParameters)"
-                    Update-MgBetaGroup -GroupId $currentGroup.Id -BodyParameter $currentParameters -ErrorAction Stop
+                    Invoke-M365DSCCommand -ScriptBlock {
+                        Update-MgBetaGroup -GroupId $currentGroup.Id -BodyParameter $currentParameters -ErrorAction Stop
+                    } -RetryOnNotFoundError -MaxRetries 5 | Out-Null
                 }
 
                 if (($licensesToAdd.Length -gt 0 -or $licensesToRemove.Length -gt 0) -and $this.GetBoundParameters().ContainsKey('AssignedLicenses'))
                 {
                     Write-Verbose -Message "Setting Group Licenses with:`r`nLicensesToAdd: $(ConvertTo-Json $licensesToAdd)`r`nLicensesToRemove: $(ConvertTo-Json $licensesToRemove)"
-                    Set-MgGroupLicense -GroupId $currentGroup.Id `
-                        -AddLicenses $licensesToAdd `
-                        -RemoveLicenses $licensesToRemove `
-                        -ErrorAction Stop | Out-Null
+                    Invoke-M365DSCCommand -ScriptBlock {
+                        Set-MgGroupLicense -GroupId $currentGroup.Id `
+                            -AddLicenses $licensesToAdd `
+                            -RemoveLicenses $licensesToRemove `
+                            -ErrorAction Stop
+                    } -RetryOnNotFoundError -MaxRetries 5 | Out-Null
                 }
             }
             catch
@@ -652,28 +677,7 @@ class AADGroup : M365DSCResourceBase
                 $ownersDiff = Compare-Object -ReferenceObject $backCurrentOwners -DifferenceObject $desiredOwnersValue
                 foreach ($diff in $ownersDiff)
                 {
-                    $directoryObject = Get-MgUser -UserId $diff.InputObject -ErrorAction SilentlyContinue
-                    if ($null -eq $directoryObject)
-                    {
-                        Write-Verbose -Message "Trying to retrieve Service Principal {$($diff.InputObject)}"
-                        [array]$app = Get-MgApplication -Filter "DisplayName eq '$($diff.InputObject -replace "'", "''")'"
-                        if ($app.Count -gt 0)
-                        {
-                            $directoryObject = Get-MgServicePrincipal -Filter "AppId eq '$($app.AppId)'"
-                        }
-                        else
-                        {
-                            [array]$spInstances = Get-MgServicePrincipal -Filter "DisplayName eq '$($diff.InputObject -replace "'", "''")'"
-                            if ($spInstances.Count -gt 1)
-                            {
-                                throw "Duplicate Service Principals named '$($diff.InputObject)' exist in tenant"
-                            }
-                            elseif ($spInstances.Count -eq 1)
-                            {
-                                $directoryObject = $spInstances
-                            }
-                        }
-                    }
+                    $directoryObject = [AADGroup]::GetDirectoryObject($diff.InputObject, $false)
                     if ($diff.SideIndicator -eq '=>')
                     {
                         Write-Verbose -Message "Adding new owner {$($diff.InputObject)} to AAD Group {$($currentGroup.DisplayName)}"
@@ -682,7 +686,9 @@ class AADGroup : M365DSCResourceBase
                         }
                         try
                         {
-                            New-MgGroupOwnerByRef -GroupId ($currentGroup.Id) -BodyParameter $ownerObject -ErrorAction Stop | Out-Null
+                            Invoke-M365DSCCommand -ScriptBlock {
+                                New-MgGroupOwnerByRef -GroupId ($currentGroup.Id) -BodyParameter $ownerObject -ErrorAction Stop | Out-Null
+                            } -RetryOnNotFoundError -MaxRetries 5
                         }
                         catch
                         {
@@ -719,41 +725,26 @@ class AADGroup : M365DSCResourceBase
                 foreach ($diff in $membersDiff)
                 {
                     Write-Verbose -Message "Found difference for member {$($diff.InputObject)}"
-                    $directoryObject = Get-MgUser -UserId $diff.InputObject -ErrorAction SilentlyContinue
-
-                    if ($null -eq $directoryObject)
-                    {
-                        Write-Verbose -Message "Trying to retrieve Service Principal {$($diff.InputObject)}"
-                        [array]$app = Get-MgApplication -Filter "DisplayName eq '$($diff.InputObject -replace "'", "''")'"
-                        if ($app.Count -gt 0)
-                        {
-                            $directoryObject = Get-MgServicePrincipal -Filter "AppId eq '$($app.AppId)'"
-                        }
-                        else
-                        {
-                            [array]$spInstances = Get-MgServicePrincipal -Filter "DisplayName eq '$($diff.InputObject -replace "'", "''")'"
-                            if ($spInstances.Count -gt 1)
-                            {
-                                throw "Duplicate Service Principals named '$($diff.InputObject)' exist in tenant"
-                            }
-                            elseif ($spInstances.Count -eq 1)
-                            {
-                                $directoryObject = $spInstances
-                            }
-                        }
-                    }
-
-                    if ($null -eq $directoryObject)
-                    {
-                        Write-Verbose -Message "Trying to retrieve Device {$($diff.InputObject)}"
-                        $directoryObject = Get-MgDevice -Filter "DisplayName eq '$($diff.InputObject -replace "'", "''")'"
-                    }
+                    $directoryObject = [AADGroup]::GetDirectoryObject($diff.InputObject, $true)
 
                     if ($diff.SideIndicator -eq '=>')
                     {
                         Write-Verbose -Message "Adding new member {$($diff.InputObject)} to AAD Group {$($currentGroup.DisplayName)}"
-                        New-MgBetaGroupMemberByRef -GroupId ($currentGroup.Id) -BodyParameter @{
-                            '@odata.id' = (Get-MSCloudLoginConnectionProfile -Workload MicrosoftGraph).ResourceUrl + "v1.0/directoryObjects/{$($directoryObject.Id)}"
+                        try
+                        {
+                            $memberObject = @{
+                                '@odata.id' = (Get-MSCloudLoginConnectionProfile -Workload MicrosoftGraph).ResourceUrl + "v1.0/directoryObjects/{$($directoryObject.Id)}"
+                            }
+                            Invoke-M365DSCCommand -ScriptBlock {
+                                New-MgBetaGroupMemberByRef -GroupId ($currentGroup.Id) -BodyParameter $memberObject -ErrorAction Stop
+                            } -RetryOnNotFoundError -MaxRetries 5
+                        }
+                        catch
+                        {
+                            if ($_.Exception.Message -notlike '*One or more added object references already exist for the following modified properties*')
+                            {
+                                throw $_
+                            }
                         }
                     }
                     elseif ($diff.SideIndicator -eq '<=')
@@ -804,7 +795,9 @@ class AADGroup : M365DSCResourceBase
                             $groupAsMemberObject = @{
                                 '@odata.id' = (Get-MSCloudLoginConnectionProfile -Workload MicrosoftGraph).ResourceUrl + "v1.0/directoryObjects/$($groupAsMember.Id)"
                             }
-                            New-MgBetaGroupMemberByRef -GroupId ($currentGroup.Id) -Body $groupAsMemberObject | Out-Null
+                            Invoke-M365DSCCommand -ScriptBlock {
+                                New-MgBetaGroupMemberByRef -GroupId ($currentGroup.Id) -Body $groupAsMemberObject -ErrorAction Stop
+                            } -RetryOnNotFoundError -MaxRetries 5 | Out-Null
                         }
                         if ($diff.SideIndicator -eq '<=')
                         {
@@ -851,9 +844,12 @@ class AADGroup : M365DSCResourceBase
                             if ($memberOfGroup.SecurityEnabled)
                             {
                                 Write-Verbose -Message "Adding AAD group {$($currentGroup.DisplayName)} as member of AAD group {$($memberOfGroup.DisplayName)}"
-                                New-MgBetaGroupMemberByRef -GroupId ($memberOfGroup.Id) -BodyParameter @{
+                                $memberOfObject = @{
                                     '@odata.id' = (Get-MSCloudLoginConnectionProfile -Workload MicrosoftGraph).ResourceUrl + "v1.0/directoryObjects/$($currentGroup.Id)"
-                                } | Out-Null
+                                }
+                                Invoke-M365DSCCommand -ScriptBlock {
+                                    New-MgBetaGroupMemberByRef -GroupId ($memberOfGroup.Id) -BodyParameter $memberOfObject -ErrorAction Stop
+                                } -RetryOnNotFoundError -MaxRetries 5 | Out-Null
                             }
                             else
                             {
@@ -1201,6 +1197,58 @@ class AADGroup : M365DSCResourceBase
                 return [System.Tuple[Hashtable, Hashtable, Hashtable]]::new($DesiredValues, $CurrentValues, $ValuesToCheck)
             }
         }
+    }
+
+    hidden static [System.Object] GetDirectoryObject([System.String] $Identity, [System.Boolean] $IncludeDevices)
+    {
+        $directoryObject = Get-MgUser -UserId $Identity -ErrorAction SilentlyContinue
+        if ($null -eq $directoryObject)
+        {
+            Write-Verbose -Message "Trying to retrieve Service Principal {$Identity}"
+            [array]$app = Get-MgApplication -Filter "DisplayName eq '$($Identity -replace "'", "''")'"
+            if ($app.Count -gt 0)
+            {
+                $directoryObject = Get-MgServicePrincipal -Filter "AppId eq '$($app.AppId)'"
+            }
+            else
+            {
+                [array]$spInstances = Get-MgServicePrincipal -Filter "DisplayName eq '$($Identity -replace "'", "''")'"
+                if ($spInstances.Count -gt 1)
+                {
+                    throw "Duplicate Service Principals named '$Identity' exist in tenant"
+                }
+                elseif ($spInstances.Count -eq 1)
+                {
+                    $directoryObject = $spInstances
+                }
+            }
+        }
+
+        if ($null -eq $directoryObject -and $IncludeDevices)
+        {
+            Write-Verbose -Message "Trying to retrieve Device {$Identity}"
+            $directoryObject = Get-MgDevice -Filter "DisplayName eq '$($Identity -replace "'", "''")'"
+        }
+
+        return $directoryObject
+    }
+
+    hidden static [System.String[]] GetDirectoryObjectReferences([System.String[]] $Identities, [System.Boolean] $IncludeDevices)
+    {
+        $directoryObjectsUrl = (Get-MSCloudLoginConnectionProfile -Workload MicrosoftGraph).ResourceUrl + 'v1.0/directoryObjects/'
+        $references = @()
+        foreach ($identity in $Identities)
+        {
+            $directoryObject = [AADGroup]::GetDirectoryObject($identity, $IncludeDevices)
+            if (@($directoryObject.Id).Count -ne 1 -or [System.String]::IsNullOrEmpty($directoryObject.Id))
+            {
+                return $null
+            }
+
+            $references += $directoryObjectsUrl + $directoryObject.Id
+        }
+
+        return $references
     }
 
     hidden [System.Collections.Hashtable[]] GetGroupLicenses([System.Object] $AssignedLicenses)

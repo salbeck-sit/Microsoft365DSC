@@ -26,13 +26,11 @@ Configuration Example
     {
         SCLabelPolicy 'SCLabelPolicy-Example'
         {
-            Name                         = "Contoso Label Policy"
-            Comment                      = "Publishes the Personal and General labels to all users"
-            Labels                       = @("Personal", "General")
-            ExchangeLocation             = @("All")
-            ExchangeLocationException    = @("shared.reception@contoso.com")
-            ModernGroupLocation          = @("All")
-            ModernGroupLocationException = @("boardroom@contoso.com")
+            Name                         = "Finance Label Policy"
+            Comment                      = "Publishes the Finance Confidential label to the finance team"
+            Labels                       = @("Finance Confidential")
+            ExchangeLocation             = @("AdeleV@$TenantId", "MeganB@$TenantId")
+            ModernGroupLocation          = @("Mark8ProjectTeam@$TenantId")
             AdvancedSettings             = @(
                 MSFT_SCLabelSetting{
                     Key   = "RequireDowngradeJustification"

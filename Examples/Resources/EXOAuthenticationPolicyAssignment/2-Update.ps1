@@ -24,30 +24,10 @@ Configuration Example
 
     Node localhost
     {
-        EXOAuthenticationPolicy 'EXOAuthenticationPolicy-Assignment'
-        {
-            Identity                           = "My Assigned Policy"
-            AllowBasicAuthActiveSync           = $False
-            AllowBasicAuthAutodiscover         = $False
-            AllowBasicAuthImap                 = $False
-            AllowBasicAuthMapi                 = $False
-            AllowBasicAuthOfflineAddressBook   = $False
-            AllowBasicAuthOutlookService       = $False
-            AllowBasicAuthPop                  = $False
-            AllowBasicAuthPowerShell           = $False
-            AllowBasicAuthReportingWebServices = $False
-            AllowBasicAuthRpc                  = $False
-            AllowBasicAuthSmtp                 = $False
-            AllowBasicAuthWebServices          = $False
-            Ensure                             = "Present"
-            ApplicationId                      = $ApplicationId
-            TenantId                           = $TenantId
-            CertificateThumbprint              = $CertificateThumbprint
-        }
         EXOAuthenticationPolicyAssignment 'EXOAuthenticationPolicyAssignment-Example'
         {
             UserName                 = "AdeleV@$TenantId"
-            AuthenticationPolicyName = "My Assigned Policy"
+            AuthenticationPolicyName = "Modern Authentication Only" # Updated Property
             Ensure                   = "Present"
             ApplicationId            = $ApplicationId
             TenantId                 = $TenantId

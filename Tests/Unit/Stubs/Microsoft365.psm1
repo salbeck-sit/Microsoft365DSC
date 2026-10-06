@@ -214,6 +214,10 @@ function Disable-ATPProtectionPolicyRule
     [CmdletBinding()]
     param(
         [Parameter()]
+        [System.Management.Automation.SwitchParameter]
+        $Confirm,
+
+        [Parameter()]
         [System.String]
         $Identity
     )
@@ -223,6 +227,10 @@ function Enable-ATPProtectionPolicyRule
 {
     [CmdletBinding()]
     param(
+        [Parameter()]
+        [System.Management.Automation.SwitchParameter]
+        $Confirm,
+
         [Parameter()]
         [System.String]
         $Identity
@@ -294,6 +302,26 @@ function Get-AppRetentionComplianceRule
         [Parameter()]
         [System.Object]
         $Policy
+    )
+}
+
+function Get-PhishSimOverridePolicy
+{
+    [CmdletBinding()]
+    param(
+        [Parameter()]
+        [System.Object]
+        $Identity
+    )
+}
+
+function Get-SecOpsOverridePolicy
+{
+    [CmdletBinding()]
+    param(
+        [Parameter()]
+        [System.Object]
+        $Identity
     )
 }
 
@@ -555,6 +583,54 @@ function New-DlpSensitiveInformationType
         $FileData
     )
 }
+function New-PhishSimOverridePolicy
+{
+    [CmdletBinding()]
+    param(
+        [Parameter()]
+        [System.String]
+        $Name,
+
+        [Parameter()]
+        [System.String]
+        $Comment,
+
+        [Parameter()]
+        [System.Boolean]
+        $Enabled,
+
+        [Parameter()]
+        [System.Management.Automation.SwitchParameter]
+        $Force
+    )
+}
+
+function New-SecOpsOverridePolicy
+{
+    [CmdletBinding()]
+    param(
+        [Parameter()]
+        [System.String]
+        $Name,
+
+        [Parameter()]
+        [System.Object]
+        $SentTo,
+
+        [Parameter()]
+        [System.String]
+        $Comment,
+
+        [Parameter()]
+        [System.Boolean]
+        $Enabled,
+
+        [Parameter()]
+        [System.Management.Automation.SwitchParameter]
+        $Force
+    )
+}
+
 function New-TenantAllowBlockListItems
 {
     [CmdletBinding()]
@@ -586,6 +662,10 @@ function New-TenantAllowBlockListItems
         [Parameter()]
         [switch]
         $LogExtraDetails,
+
+        [Parameter()]
+        [switch]
+        $NoExpiration,
 
         [Parameter()]
         [System.String]
@@ -1097,6 +1177,36 @@ function Remove-DlpSensitiveInformationTypeRulePackage
     )
 }
 
+function Set-SecOpsOverridePolicy
+{
+    [CmdletBinding()]
+    param(
+        [Parameter()]
+        [System.Object]
+        $Identity,
+
+        [Parameter()]
+        [System.Object]
+        $AddSentTo,
+
+        [Parameter()]
+        [System.Object]
+        $RemoveSentTo,
+
+        [Parameter()]
+        [System.String]
+        $Comment,
+
+        [Parameter()]
+        [System.Boolean]
+        $Enabled,
+
+        [Parameter()]
+        [System.Management.Automation.SwitchParameter]
+        $Force
+    )
+}
+
 function Set-TenantAllowBlockListItems
 {
     [CmdletBinding()]
@@ -1264,20 +1374,12 @@ function Set-MigrationBatch
         $Confirm,
 
         [Parameter()]
-        [System.Object]
-        $BadItemLimit,
-
-        [Parameter()]
         [System.Boolean]
         $AllowUnknownColumnsInCSV,
 
         [Parameter()]
         [System.Object]
-        $StartAfter,
-
-        [Parameter()]
-        [System.Object]
-        $LargeItemLimit
+        $StartAfter
     )
 }
 function New-MigrationBatch
@@ -1478,10 +1580,6 @@ function New-MigrationBatch
 
         [Parameter()]
         [System.Object]
-        $BadItemLimit,
-
-        [Parameter()]
-        [System.Object]
         $TargetArchiveDatabases,
 
         [Parameter()]
@@ -1491,10 +1589,6 @@ function New-MigrationBatch
         [Parameter()]
         [System.Management.Automation.SwitchParameter]
         $AutoComplete,
-
-        [Parameter()]
-        [System.Object]
-        $LargeItemLimit,
 
         [Parameter()]
         [System.String]
@@ -3031,6 +3125,9 @@ function Remove-ExoSecOpsOverrideRule
 {
     [CmdletBinding()]
     param(
+        [Parameter()]
+        [System.Management.Automation.SwitchParameter]
+        $Confirm,
 
         [Parameter()]
         [System.Object]
@@ -3050,7 +3147,124 @@ function Set-ExoSecOpsOverrideRule
         $Identity
     )
 }
+function Disable-AntiPhishRule
+{
+    [CmdletBinding()]
+    param(
+        [Parameter()]
+        [System.Management.Automation.SwitchParameter]
+        $Confirm,
+
+        [Parameter()]
+        [System.Object]
+        $Identity
+    )
+}
+function Disable-HostedContentFilterRule
+{
+    [CmdletBinding()]
+    param(
+        [Parameter()]
+        [System.Management.Automation.SwitchParameter]
+        $Confirm,
+
+        [Parameter()]
+        [System.Object]
+        $Identity
+    )
+}
+function Disable-HostedOutboundSpamFilterRule
+{
+    [CmdletBinding()]
+    param(
+        [Parameter()]
+        [System.Management.Automation.SwitchParameter]
+        $Confirm,
+
+        [Parameter()]
+        [System.Object]
+        $Identity
+    )
+}
 function Disable-JournalRule
+{
+    [CmdletBinding()]
+    param(
+        [Parameter()]
+        [System.Management.Automation.SwitchParameter]
+        $Confirm,
+
+        [Parameter()]
+        [System.Object]
+        $Identity
+    )
+}
+function Disable-MalwareFilterRule
+{
+    [CmdletBinding()]
+    param(
+        [Parameter()]
+        [System.Management.Automation.SwitchParameter]
+        $Confirm,
+
+        [Parameter()]
+        [System.Object]
+        $Identity
+    )
+}
+function Disable-SafeAttachmentRule
+{
+    [CmdletBinding()]
+    param(
+        [Parameter()]
+        [System.Management.Automation.SwitchParameter]
+        $Confirm,
+
+        [Parameter()]
+        [System.Object]
+        $Identity
+    )
+}
+function Disable-SafeLinksRule
+{
+    [CmdletBinding()]
+    param(
+        [Parameter()]
+        [System.Management.Automation.SwitchParameter]
+        $Confirm,
+
+        [Parameter()]
+        [System.Object]
+        $Identity
+    )
+}
+function Enable-AntiPhishRule
+{
+    [CmdletBinding()]
+    param(
+        [Parameter()]
+        [System.Management.Automation.SwitchParameter]
+        $Confirm,
+
+        [Parameter()]
+        [System.Object]
+        $Identity
+    )
+}
+function Enable-HostedContentFilterRule
+{
+    [CmdletBinding()]
+    param(
+        [Parameter()]
+        [System.Management.Automation.SwitchParameter]
+        $Confirm,
+
+        [Parameter()]
+        [System.Object]
+        $Identity
+    )
+}
+function Enable-HostedOutboundSpamFilterRule
 {
     [CmdletBinding()]
     param(
@@ -3076,6 +3290,19 @@ function Enable-JournalRule
         $Identity
     )
 }
+function Enable-MalwareFilterRule
+{
+    [CmdletBinding()]
+    param(
+        [Parameter()]
+        [System.Management.Automation.SwitchParameter]
+        $Confirm,
+
+        [Parameter()]
+        [System.Object]
+        $Identity
+    )
+}
 function Enable-OrganizationCustomization
 {
     [CmdletBinding()]
@@ -3083,6 +3310,32 @@ function Enable-OrganizationCustomization
         [Parameter()]
         [System.Management.Automation.SwitchParameter]
         $Confirm
+    )
+}
+function Enable-SafeAttachmentRule
+{
+    [CmdletBinding()]
+    param(
+        [Parameter()]
+        [System.Management.Automation.SwitchParameter]
+        $Confirm,
+
+        [Parameter()]
+        [System.Object]
+        $Identity
+    )
+}
+function Enable-SafeLinksRule
+{
+    [CmdletBinding()]
+    param(
+        [Parameter()]
+        [System.Management.Automation.SwitchParameter]
+        $Confirm,
+
+        [Parameter()]
+        [System.Object]
+        $Identity
     )
 }
 function Get-AcceptedDomain
@@ -3442,6 +3695,23 @@ function Get-ComplianceTag
         [Parameter()]
         [System.Object]
         $Identity
+    )
+}
+function Get-Contact
+{
+    [CmdletBinding()]
+    param(
+        [Parameter()]
+        [System.Object]
+        $Identity,
+
+        [Parameter()]
+        [System.Object[]]
+        $RecipientTypeDetails,
+
+        [Parameter()]
+        [System.Object]
+        $ResultSize
     )
 }
 function Get-DataClassification
@@ -10889,6 +11159,10 @@ function Remove-ATPProtectionPolicyRule
     [CmdletBinding()]
     param(
         [Parameter()]
+        [System.Management.Automation.SwitchParameter]
+        $Confirm,
+
+        [Parameter()]
         [System.String]
         $Identity
     )
@@ -11657,6 +11931,14 @@ function Remove-UnifiedAuditLogRetentionPolicy
 {
     [CmdletBinding()]
     param(
+        [Parameter()]
+        [System.Management.Automation.SwitchParameter]
+        $Confirm,
+
+        [Parameter()]
+        [System.Management.Automation.SwitchParameter]
+        $ForceDeletion,
+
         [Parameter()]
         [System.String]
         $Identity
@@ -12931,6 +13213,27 @@ function Set-ClientAccessRule
         [Parameter()]
         [System.Object]
         $Scope
+    )
+}
+function Set-Contact
+{
+    [CmdletBinding()]
+    param(
+        [Parameter()]
+        [System.Object]
+        $Identity,
+
+        [Parameter()]
+        [System.String]
+        $FirstName,
+
+        [Parameter()]
+        [System.String]
+        $Initials,
+
+        [Parameter()]
+        [System.String]
+        $LastName
     )
 }
 function Set-DataClassification
@@ -35308,6 +35611,10 @@ function Get-MgBetaDeviceManagementVirtualEndpointUserSetting
 
         [Parameter()]
         [System.Management.Automation.SwitchParameter]
+        $NoPageSize,
+
+        [Parameter()]
+        [System.Management.Automation.SwitchParameter]
         $All,
 
         [Parameter()]
@@ -36020,6 +36327,10 @@ function Get-MgBetaDeviceManagementVirtualEndpointProvisioningPolicy
         [Parameter()]
         [System.Int32]
         $PageSize,
+
+        [Parameter()]
+        [System.Management.Automation.SwitchParameter]
+        $NoPageSize,
 
         [Parameter()]
         [System.Management.Automation.SwitchParameter]
@@ -56048,6 +56359,10 @@ function Get-MgBetaIdentityConditionalAccessAuthenticationContextClassReference
         $PageSize,
 
         [Parameter()]
+        [System.Management.Automation.SwitchParameter]
+        $NoPageSize,
+
+        [Parameter()]
         [PSObject]
         $HttpPipelinePrepend,
 
@@ -56303,6 +56618,10 @@ function Get-MgBetaIdentityCustomAuthenticationExtension
         $PageSize,
 
         [Parameter()]
+        [System.Management.Automation.SwitchParameter]
+        $NoPageSize,
+
+        [Parameter()]
         [PSObject]
         $HttpPipelinePrepend,
 
@@ -56390,6 +56709,10 @@ function Get-MgBetaIdentityProvider
         [Parameter()]
         [System.Int32]
         $PageSize,
+
+        [Parameter()]
+        [System.Management.Automation.SwitchParameter]
+        $NoPageSize,
 
         [Parameter()]
         [PSObject]
@@ -57250,6 +57573,10 @@ function Get-MgBetaPolicyAuthenticationStrengthPolicy
         [Parameter()]
         [System.Int32]
         $PageSize,
+
+        [Parameter()]
+        [System.Management.Automation.SwitchParameter]
+        $NoPageSize,
 
         [Parameter()]
         [PSObject]
@@ -64528,6 +64855,10 @@ function New-MgBetaPolicyPermissionGrantPolicyInclude
     [CmdletBinding()]
     param(
         [Parameter()]
+        [System.Collections.Hashtable]
+        $BodyParameter,
+
+        [Parameter()]
         [System.String]
         $PermissionGrantPolicyId,
 
@@ -64655,6 +64986,10 @@ function New-MgBetaPolicyPermissionGrantPolicyExclude
 {
     [CmdletBinding()]
     param(
+        [Parameter()]
+        [System.Collections.Hashtable]
+        $BodyParameter,
+
         [Parameter()]
         [System.String]
         $PermissionGrantPolicyId,
@@ -67916,6 +68251,10 @@ function Get-MgBetaTeamChannel
         $PageSize,
 
         [Parameter()]
+        [System.Management.Automation.SwitchParameter]
+        $NoPageSize,
+
+        [Parameter()]
         [System.String]
         $ChannelId,
 
@@ -67995,6 +68334,10 @@ function Get-MgBetaTeamChannelTab
         [Parameter()]
         [System.Int32]
         $PageSize,
+
+        [Parameter()]
+        [System.Management.Automation.SwitchParameter]
+        $NoPageSize,
 
         [Parameter()]
         [System.String]
@@ -79395,6 +79738,64 @@ function New-CsTeamsChannelsPolicy
         $DefaultChannelTypeOnCreation
     )
 }
+function New-CsTeamsComplianceRecordingApplication
+{
+    [CmdletBinding()]
+    param(
+        [Parameter()]
+        [PSObject]
+        $ComplianceRecordingPairedApplications,
+
+        [Parameter()]
+        [System.UInt32]
+        $ConcurrentInvitationCount,
+
+        [Parameter()]
+        [System.Management.Automation.SwitchParameter]
+        $Force,
+
+        [Parameter()]
+        [System.String]
+        $Id,
+
+        [Parameter()]
+        [System.String]
+        $Identity,
+
+        [Parameter()]
+        [System.String]
+        $Parent,
+
+        [Parameter()]
+        [System.Int32]
+        $Priority,
+
+        [Parameter()]
+        [System.Boolean]
+        $RequiredBeforeCallEstablishment,
+
+        [Parameter()]
+        [System.Boolean]
+        $RequiredBeforeMeetingJoin,
+
+        [Parameter()]
+        [System.Boolean]
+        $RequiredDuringCall,
+
+        [Parameter()]
+        [System.Boolean]
+        $RequiredDuringMeeting
+    )
+}
+function New-CsTeamsComplianceRecordingPairedApplication
+{
+    [CmdletBinding()]
+    param(
+        [Parameter()]
+        [System.String]
+        $Id
+    )
+}
 function New-CsTeamsComplianceRecordingPolicy
 {
     [CmdletBinding()]
@@ -79446,6 +79847,27 @@ function New-CsTeamsComplianceRecordingPolicy
         [Parameter()]
         [System.Boolean]
         $Enabled
+    )
+}
+function New-CsTeamsEmergencyCallingExtendedNotification
+{
+    [CmdletBinding()]
+    param(
+        [Parameter()]
+        [System.String]
+        $EmergencyDialString,
+
+        [Parameter()]
+        [System.String]
+        $NotificationDialOutNumber,
+
+        [Parameter()]
+        [System.String]
+        $NotificationGroup,
+
+        [Parameter()]
+        [System.Object]
+        $NotificationMode
     )
 }
 function New-CsTeamsEmergencyCallingPolicy
@@ -80762,6 +81184,27 @@ function Remove-CsTeamsChannelsPolicy
         $Identity
     )
 }
+function Remove-CsTeamsComplianceRecordingApplication
+{
+    [CmdletBinding()]
+    param(
+        [Parameter()]
+        [System.Management.Automation.SwitchParameter]
+        $Force,
+
+        [Parameter()]
+        [System.String]
+        $Id,
+
+        [Parameter()]
+        [System.String]
+        $Identity,
+
+        [Parameter()]
+        [System.String]
+        $Parent
+    )
+}
 function Remove-CsTeamsComplianceRecordingPolicy
 {
     [CmdletBinding()]
@@ -81515,6 +81958,55 @@ function Set-CsTeamsChannelsPolicy
         [Parameter()]
         [System.String]
         $DefaultChannelTypeOnCreation
+    )
+}
+function Set-CsTeamsComplianceRecordingApplication
+{
+    [CmdletBinding()]
+    param(
+        [Parameter()]
+        [PSObject]
+        $ComplianceRecordingPairedApplications,
+
+        [Parameter()]
+        [System.UInt32]
+        $ConcurrentInvitationCount,
+
+        [Parameter()]
+        [System.Management.Automation.SwitchParameter]
+        $Force,
+
+        [Parameter()]
+        [System.String]
+        $Id,
+
+        [Parameter()]
+        [System.String]
+        $Identity,
+
+        [Parameter()]
+        [System.String]
+        $Parent,
+
+        [Parameter()]
+        [System.Int32]
+        $Priority,
+
+        [Parameter()]
+        [System.Boolean]
+        $RequiredBeforeCallEstablishment,
+
+        [Parameter()]
+        [System.Boolean]
+        $RequiredBeforeMeetingJoin,
+
+        [Parameter()]
+        [System.Boolean]
+        $RequiredDuringCall,
+
+        [Parameter()]
+        [System.Boolean]
+        $RequiredDuringMeeting
     )
 }
 function Set-CsTeamsComplianceRecordingPolicy
@@ -88781,6 +89273,19 @@ function Get-PnPTenantCdnEnabled
         $Connection
     )
 }
+function Get-PnPTenantCdnOrigin
+{
+    [CmdletBinding()]
+    param(
+        [Parameter()]
+        [PSObject]
+        $CdnType,
+
+        [Parameter()]
+        [PSObject]
+        $Connection
+    )
+}
 function Get-PnPTenantCdnPolicies
 {
     [CmdletBinding()]
@@ -89279,6 +89784,23 @@ function Remove-PnPStorageEntity
         $Connection
     )
 }
+function Remove-PnPTenantCdnOrigin
+{
+    [CmdletBinding()]
+    param(
+        [Parameter()]
+        [System.String]
+        $OriginUrl,
+
+        [Parameter()]
+        [PSObject]
+        $CdnType,
+
+        [Parameter()]
+        [PSObject]
+        $Connection
+    )
+}
 function Remove-PnPTenantSite
 {
     [CmdletBinding()]
@@ -89308,6 +89830,23 @@ function Remove-PnPTenantTheme
 {
     [CmdletBinding()]
     param(
+        [Parameter()]
+        [PSObject]
+        $Identity,
+
+        [Parameter()]
+        [PSObject]
+        $Connection
+    )
+}
+function Revoke-PnPHubSiteRights
+{
+    [CmdletBinding()]
+    param(
+        [Parameter()]
+        [System.String[]]
+        $Principals,
+
         [Parameter()]
         [PSObject]
         $Identity,
@@ -90451,7 +90990,27 @@ function Set-PnPTenantSite
 
         [Parameter()]
         [PSObject]
-        $DisableCompanyWideSharingLinks
+        $DisableCompanyWideSharingLinks,
+
+        [Parameter()]
+        [System.Boolean]
+        $RestrictedAccessControl,
+
+        [Parameter()]
+        [System.Management.Automation.SwitchParameter]
+        $ClearRestrictedAccessControl,
+
+        [Parameter()]
+        [System.Guid[]]
+        $AddRestrictedAccessControlGroups,
+
+        [Parameter()]
+        [System.Guid[]]
+        $RemoveRestrictedAccessControlGroups,
+
+        [Parameter()]
+        [System.Guid[]]
+        $RestrictedAccessControlGroups
     )
 }
 function Set-PnPTenantSyncClientRestriction

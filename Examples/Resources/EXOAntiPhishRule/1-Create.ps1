@@ -33,10 +33,10 @@ Configuration Example
             Priority                  = 0
             RecipientDomainIs         = @("contoso.com")
             SentTo                    = @("AdeleV@$TenantId")
-            SentToMemberOf            = @("executives@$TenantId")
+            SentToMemberOf            = @("Executives@$TenantId")
             ExceptIfRecipientDomainIs = @("fabrikam.com")
             ExceptIfSentTo            = @("AlexW@$TenantId")
-            ExceptIfSentToMemberOf    = @("LegalTeam@$TenantId")
+            ExceptIfSentToMemberOf    = @("Retail@$TenantId")
             Ensure                    = "Present"
             ApplicationId             = $ApplicationId
             TenantId                  = $TenantId

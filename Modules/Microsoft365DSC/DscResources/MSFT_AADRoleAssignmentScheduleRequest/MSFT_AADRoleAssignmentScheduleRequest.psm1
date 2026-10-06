@@ -137,23 +137,10 @@ class AADRoleAssignmentScheduleRequest : M365DSCResourceBase
             }
 
             Write-Verbose -Message 'Getting Role Assignment by PrincipalId and RoleDefinitionId'
-            $PrincipalValue = $null
-            if ($this.PrincipalType -eq 'User' -or $this.PrincipalType -eq 'agentUser')
+            $PrincipalInstance = $this.FindPrincipal() | Select-Object -First 1
+            $PrincipalValue = $PrincipalInstance.UserPrincipalName
+            if ([System.String]::IsNullOrEmpty($PrincipalValue))
             {
-                Write-Verbose -Message "Retrieving Principal by UserPrincipalName {$($this.Principal)}"
-                $PrincipalInstance = Get-MgUser -Filter "UserPrincipalName eq '$($this.Principal -replace "'", "''")'" -ErrorAction SilentlyContinue
-                $PrincipalValue = $PrincipalInstance.UserPrincipalName
-            }
-            elseif ($this.PrincipalType -eq 'Group')
-            {
-                Write-Verbose -Message "Retrieving Principal by DisplayName {$($this.Principal)}"
-                $PrincipalInstance = Get-MgGroup -Filter "DisplayName eq '$($this.Principal -replace "'", "''")'" -ErrorAction SilentlyContinue
-                $PrincipalValue = $PrincipalInstance.DisplayName
-            }
-            else
-            {
-                Write-Verbose -Message "Retrieving Principal by DisplayName {$($this.Principal)}"
-                $PrincipalInstance = Get-MgServicePrincipal -Filter "DisplayName eq '$($this.Principal -replace "'", "''")'" -ErrorAction SilentlyContinue
                 $PrincipalValue = $PrincipalInstance.DisplayName
             }
 
@@ -212,10 +199,12 @@ class AADRoleAssignmentScheduleRequest : M365DSCResourceBase
                         $this.ResourceCache['AllSchedules'] += $requests[0]
                     }
                 }
-                else
+
+                if ($requests.Count -eq 0)
                 {
-                    $schedule = $requests[0]
+                    return $this.AsResult($nullResult)
                 }
+                $schedule = $requests[0]
             }
 
             $ScheduleInfoValue = @{}
@@ -317,21 +306,7 @@ class AADRoleAssignmentScheduleRequest : M365DSCResourceBase
         $currentInstance = $this.Get().ToHashtable()
         $ParametersOps = Remove-M365DSCAuthenticationParameter -BoundParameters $this.GetBoundParameters()
 
-        if ($this.PrincipalType -eq 'User' -or $this.PrincipalType -eq 'agentUser')
-        {
-            Write-Verbose -Message "Retrieving Principal by UserPrincipalName {$($this.Principal)}"
-            [Array]$PrincipalIdValue = (Get-MgUser -Filter "UserPrincipalName eq '$($this.Principal -replace "'", "''")'").Id
-        }
-        elseif ($this.PrincipalType -eq 'Group')
-        {
-            Write-Verbose -Message "Retrieving Principal by DisplayName {$($this.Principal)}"
-            [Array]$PrincipalIdValue = (Get-MgGroup -Filter "DisplayName eq '$($this.Principal -replace "'", "''")'").Id
-        }
-        elseif ($this.PrincipalType -eq 'ServicePrincipal')
-        {
-            Write-Verbose -Message "Retrieving Principal by DisplayName {$($this.Principal)}"
-            [Array]$PrincipalIdValue = (Get-MgServicePrincipal -Filter "DisplayName eq '$($this.Principal -replace "'", "''")'").Id
-        }
+        [Array]$PrincipalIdValue = ($this.FindPrincipal()).Id
 
         if ($null -eq $PrincipalIdValue)
         {
@@ -433,8 +408,8 @@ class AADRoleAssignmentScheduleRequest : M365DSCResourceBase
             if ($this.ResourceCache['AllSchedules'].Count -gt 0)
             {
                 # Remove the instance from the cached list to avoid re-processing
-                $this.ResourceCache['AllSchedules'] = $this.ResourceCache['AllSchedules'] | Where-Object {
-                    $_.RoleDefinition -ne $this.RoleDefinition -and $_.Principal -ne $this.Principal -and $_.PrincipalType -ne $this.PrincipalType -and $_.DirectoryScopeId -ne $this.DirectoryScopeId
+                $this.ResourceCache['AllSchedules'] = $this.ResourceCache['AllSchedules'] | Where-Object -FilterScript {
+                    -not ($_.RoleDefinition -eq $this.RoleDefinition -and $_.Principal -eq $this.Principal -and $_.PrincipalType -eq $this.PrincipalType -and $_.DirectoryScopeId -eq $this.DirectoryScopeId)
                 }
             }
         }
@@ -649,9 +624,56 @@ class AADRoleAssignmentScheduleRequest : M365DSCResourceBase
                         }
                     }
                 }
+
+                $desiredExpiration = $DesiredValues.ScheduleInfo.expiration
+                $currentExpiration = $CurrentValues.ScheduleInfo.expiration
+                if ($desiredExpiration.type -eq 'afterDuration' -and $currentExpiration.type -eq 'afterDateTime' -and
+                    [M365DSCResourceBase]::IsSameDuration($desiredExpiration.duration, $CurrentValues.ScheduleInfo.startDateTime, $currentExpiration.endDateTime))
+                {
+                    Write-Verbose -Message "The schedule ends {$($desiredExpiration.duration)} after its start. Aligning the expiration for comparison."
+                    $currentExpiration.type = $desiredExpiration.type
+                    $currentExpiration.duration = $desiredExpiration.duration
+                    $currentExpiration.endDateTime = $desiredExpiration.endDateTime
+                }
                 return [System.Tuple[Hashtable, Hashtable, Hashtable]]::new($DesiredValues, $CurrentValues, $ValuesToCheck)
             }
         }
+    }
+
+    hidden [System.Object] FindPrincipal()
+    {
+        $principalTypes = @('User', 'Group', 'ServicePrincipal')
+        if (-not [System.String]::IsNullOrEmpty($this.PrincipalType))
+        {
+            $principalTypes = @($this.PrincipalType)
+        }
+
+        $escapedPrincipal = $this.Principal -replace "'", "''"
+        foreach ($principalType in $principalTypes)
+        {
+            if ($principalType -eq 'User' -or $principalType -eq 'agentUser')
+            {
+                Write-Verbose -Message "Retrieving Principal by UserPrincipalName {$($this.Principal)}"
+                [Array] $principalMatches = Get-MgUser -Filter "UserPrincipalName eq '$escapedPrincipal'" -ErrorAction SilentlyContinue
+            }
+            elseif ($principalType -eq 'Group')
+            {
+                Write-Verbose -Message "Retrieving Principal by DisplayName {$($this.Principal)}"
+                [Array] $principalMatches = Get-MgGroup -Filter "DisplayName eq '$escapedPrincipal'" -ErrorAction SilentlyContinue
+            }
+            else
+            {
+                Write-Verbose -Message "Retrieving Principal by DisplayName {$($this.Principal)}"
+                [Array] $principalMatches = Get-MgServicePrincipal -Filter "DisplayName eq '$escapedPrincipal'" -ErrorAction SilentlyContinue
+            }
+
+            if ($principalMatches.Count -gt 0)
+            {
+                return $principalMatches
+            }
+        }
+
+        return $null
     }
 
     hidden [System.Boolean] TestRecurrenceIsConfigured([System.Object] $RecurrenceSettings)

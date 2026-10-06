@@ -240,7 +240,7 @@ Configuration Example
             PasscodeExpirationDays                         = 365
             PasscodeMinimumCharacterSetCount               = 2
             PasscodeMinimumLength                          = 6
-            PasscodeMinutesOfInactivityBeforeLock          = 2
+            PasscodeMinutesOfInactivityBeforeLock          = 1
             PasscodeMinutesOfInactivityBeforeScreenTimeout = 5
             PasscodePreviousPasscodeBlockCount             = 5
             PasscodeRequired                               = $true
@@ -286,7 +286,7 @@ Configuration Example
                 MSFT_DeviceManagementConfigurationPolicyAssignments{
                     dataType                                   = "#microsoft.graph.exclusionGroupAssignmentTarget"
                     deviceAndAppManagementAssignmentFilterType = "none"
-                    groupDisplayName                           = "Exclude"
+                    groupDisplayName                           = "Intune Excluded Devices"
                 }
             )
             Ensure                                         = "Present"

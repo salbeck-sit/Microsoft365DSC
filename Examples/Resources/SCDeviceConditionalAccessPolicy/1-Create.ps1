@@ -28,7 +28,7 @@ Configuration Example
         {
             Name                  = "Human Resources"
             Comment               = "Device Conditional Access Policy for Human Resources department"
-            Enabled               = $True
+            Enabled               = $true
             Ensure                = "Present"
             ApplicationId         = $ApplicationId
             TenantId              = $TenantId

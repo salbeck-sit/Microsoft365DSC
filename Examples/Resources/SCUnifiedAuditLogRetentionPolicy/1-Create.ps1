@@ -31,7 +31,7 @@ Configuration Example
             Description           = "Retains mailbox permission changes made for the finance leadership team"
             Operations            = @("Add-MailboxPermission", "Remove-MailboxPermission")
             RecordTypes           = @("ExchangeAdmin")
-            UserIds               = @("finance.director@contoso.com", "payroll.admin@contoso.com")
+            UserIds               = @("AdeleV@$TenantId", "MeganB@$TenantId")
             Priority              = 1
             RetentionDuration     = "SevenDays"
             ApplicationId         = $ApplicationId

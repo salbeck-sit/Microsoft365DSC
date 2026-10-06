@@ -163,9 +163,13 @@ class IntuneMobileAppsWindowsOfficeSuiteApp : M365DSCResourceBase
                 $nullResult = $this.GetBoundParameters()
                 $nullResult.Ensure = 'Absent'
 
-                $instance = Get-MgBetaDeviceAppManagementMobileApp -MobileAppId $this.Id `
-                    -ExpandProperty 'categories' `
-                    -ErrorAction SilentlyContinue
+                $instance = $null
+                if (-not [System.String]::IsNullOrEmpty($this.Id))
+                {
+                    $instance = Get-MgBetaDeviceAppManagementMobileApp -MobileAppId $this.Id `
+                        -ExpandProperty 'categories' `
+                        -ErrorAction SilentlyContinue
+                }
 
                 if ($null -eq $instance)
                 {
@@ -175,8 +179,8 @@ class IntuneMobileAppsWindowsOfficeSuiteApp : M365DSCResourceBase
                     {
                         $instance = Get-MgBetaDeviceAppManagementMobileApp `
                             -All `
-                            -Filter "(isof('microsoft.graph.officeSuiteApp') and DisplayName eq '$($this.DisplayName -replace "'", "''")')" `
-                            -ErrorAction SilentlyContinue
+                            -Filter "DisplayName eq '$($this.DisplayName -replace "'", "''")'" `
+                            -ErrorAction SilentlyContinue | Where-Object -Property '@odata.type' -EQ '#microsoft.graph.officeSuiteApp'
                     }
 
                     if ($null -ne $instance)
@@ -265,7 +269,7 @@ class IntuneMobileAppsWindowsOfficeSuiteApp : M365DSCResourceBase
             $appAssignments = Get-MgBetaDeviceAppManagementMobileAppAssignment -MobileAppId $instance.Id
             if ($null -ne $appAssignments -and $appAssignments.Count -gt 0)
             {
-                [array]$appAssignments = $appAssignments | Where-Object -FilterScript { $_.source -eq 'direct' }
+                [array]$appAssignments = $appAssignments | Where-Object -Property source -EQ 'direct'
                 $convertedAssignments = ConvertFrom-IntuneMobileAppAssignment `
                     -IncludeDeviceFilter:$true `
                     -Assignments ($appAssignments)
@@ -355,6 +359,7 @@ class IntuneMobileAppsWindowsOfficeSuiteApp : M365DSCResourceBase
             if ($app.Id)
             {
                 $assignmentsHash = ConvertTo-IntuneMobileAppAssignment -IncludeDeviceFilter:$true -Assignments $this.Assignments
+                Wait-M365DSCIntuneMobileAppPublished -AppId $app.Id
                 Update-DeviceAppManagementPolicyAssignment -AppManagementPolicyId $app.Id `
                     -Assignments $assignmentsHash
             }
@@ -402,7 +407,7 @@ class IntuneMobileAppsWindowsOfficeSuiteApp : M365DSCResourceBase
             {
                 if ($diff.SideIndicator -eq '=>')
                 {
-                    $category = $this.Categories | Where-Object { $_.DisplayName -eq $diff }
+                    $category = $this.Categories | Where-Object -Property DisplayName -EQ $diff
                     if ($category.Id)
                     {
                         $currentCategory = Get-MgBetaDeviceAppManagementMobileAppCategory -MobileAppCategoryId $category.Id
@@ -423,7 +428,7 @@ class IntuneMobileAppsWindowsOfficeSuiteApp : M365DSCResourceBase
                 }
                 else
                 {
-                    $category = $currentInstance.Categories | Where-Object { $_.DisplayName -eq $diff }
+                    $category = $currentInstance.Categories | Where-Object -Property DisplayName -EQ $diff
                     Invoke-M365DSCGraphRequest -Uri "/beta/deviceAppManagement/mobileApps/$($currentInstance.Id)/categories/$($category.Id)/`$ref" -Method 'DELETE'
                 }
             }

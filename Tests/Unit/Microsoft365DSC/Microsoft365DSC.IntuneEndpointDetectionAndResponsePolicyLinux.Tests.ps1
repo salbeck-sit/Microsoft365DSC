@@ -198,7 +198,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     DisplayName = 'My Test'
                     tags_item_key = 'GROUP'
                     tags_item_value = 'tag'
-                    RoleScopeTagIds = @("FakeStringValue")
                     Ensure = "Present"
                     Credential = $Credential;
                 }
@@ -209,13 +208,16 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             }
             It 'Should return Values from the Get method' {
                 ((New-M365DSCResourceInstance -ResourceName 'IntuneEndpointDetectionAndResponsePolicyLinux' -Property $testParams).Get().ToHashtable()).Ensure | Should -Be 'Absent'
+                Should -Invoke -CommandName Get-MgBetaDeviceManagementConfigurationPolicy -ParameterFilter { $Filter -like "* and templateReference/TemplateId eq '3514388a-d4d1-4aa8-bd64-c317776008f5_1'" }
             }
             It 'Should return false from the Test method' {
                 (New-M365DSCResourceInstance -ResourceName 'IntuneEndpointDetectionAndResponsePolicyLinux' -Property $testParams).Test() | Should -Be $false
             }
             It 'Should Create the group from the Set method' {
                 (New-M365DSCResourceInstance -ResourceName 'IntuneEndpointDetectionAndResponsePolicyLinux' -Property $testParams).Set()
-                Should -Invoke -CommandName New-MgBetaDeviceManagementConfigurationPolicy -Exactly 1
+                Should -Invoke -CommandName New-MgBetaDeviceManagementConfigurationPolicy -Exactly 1 -ParameterFilter {
+                    $null -ne $BodyParameter.roleScopeTagIds
+                }
             }
         }
 

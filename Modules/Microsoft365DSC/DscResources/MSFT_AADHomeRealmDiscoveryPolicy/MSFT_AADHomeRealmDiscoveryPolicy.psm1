@@ -16,10 +16,6 @@ class AADHomeRealmDiscoveryPolicy : M365DSCResourceBase
     [System.Nullable[System.Boolean]] $IsOrganizationDefault
 
     [DscProperty()]
-    [System.ComponentModel.Description('Description for this policy. Required.')]
-    [System.String] $Description
-
-    [DscProperty()]
     [System.ComponentModel.Description('Present ensures the policy exists, absent ensures it is removed.')]
     [ValidateSet('Present', 'Absent')]
     [System.String] $Ensure
@@ -132,7 +128,6 @@ class AADHomeRealmDiscoveryPolicy : M365DSCResourceBase
                 #region resource generator code
                 Definition            = [Array]$DefinitionArray
                 IsOrganizationDefault = $getValue.isOrganizationDefault
-                Description           = $getValue.description
                 DisplayName           = $getValue.displayName
                 Ensure                = 'Present'
                 Credential            = $this.Credential

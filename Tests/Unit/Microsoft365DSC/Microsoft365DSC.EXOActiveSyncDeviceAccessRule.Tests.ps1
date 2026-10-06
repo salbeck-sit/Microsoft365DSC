@@ -135,6 +135,25 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             }
         }
 
+        Context -Name 'Active Sync Device Access Rule exists and it SHOULD NOT.' -Fixture {
+            BeforeAll {
+                $testParams = @{
+                    Identity   = 'iOS 6.1 10B145 (DeviceOS)'
+                    Ensure     = 'Absent'
+                    Credential = $Credential
+                }
+            }
+
+            It 'Should return false from the Test method' {
+                (New-M365DSCResourceInstance -ResourceName 'EXOActiveSyncDeviceAccessRule' -Property $testParams).Test() | Should -Be $false
+            }
+
+            It 'Should remove the rule from the Set method' {
+                (New-M365DSCResourceInstance -ResourceName 'EXOActiveSyncDeviceAccessRule' -Property $testParams).Set()
+                Should -Invoke -CommandName Remove-ActiveSyncDeviceAccessRule -Exactly 1 -ParameterFilter { $Identity -eq 'iOS 6.1 10B145 (DeviceOS)' }
+            }
+        }
+
         Context -Name 'ReverseDSC Tests' -Fixture {
             BeforeAll {
                 $Global:CurrentModeIsExport = $true

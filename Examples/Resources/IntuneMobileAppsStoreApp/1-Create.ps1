@@ -27,13 +27,12 @@ Configuration Example
         IntuneMobileAppsStoreApp "IntuneMobileAppsStoreApp-Example"
         {
             TargetPlatform                     = "iOS"
-            AppleDeviceAppDeliveryProtocolType = "mobileDeviceManagement"
             ApplicableDeviceType               = MSFT_MicrosoftGraphiosDeviceType{
                 iPad          = $True
                 iPhoneAndIPod = $True
             }
-            AppStoreUrl                        = "https://itunes.apple.com/us/app/store-app/id1087422156?mt=8"
-            BundleId                           = "com.contoso.storeapp"
+            AppStoreUrl                        = "https://apps.apple.com/us/app/microsoft-outlook/id951937596"
+            BundleId                           = "com.microsoft.Office.Outlook"
             Description                        = "Store App Description";
             Developer                          = "Contoso";
             DisplayName                        = "Store App";
@@ -41,19 +40,7 @@ Configuration Example
             InformationUrl                     = "";
             IsFeatured                         = $False;
             MinimumSupportedOperatingSystem    = MSFT_MicrosoftGraphMinimumOperatingSystem{
-                V4_0   = $False
-                V4_0_3 = $False
-                V4_1   = $False
-                V4_2   = $False
-                V4_3   = $False
-                V4_4   = $False
-                V5_0   = $False
-                V5_1   = $False
-                V6_0   = $False
-                V7_0   = $False
-                V7_1   = $False
                 V8_0   = $True
-                V8_1   = $False
                 V9_0   = $False
                 V10_0  = $False
                 V11_0  = $False
@@ -81,7 +68,8 @@ Configuration Example
                 }
                 MSFT_DeviceManagementStoreMobileAppAssignment{
                     dataType         = '#microsoft.graph.exclusionGroupAssignmentTarget'
-                    groupDisplayName = 'Policy Exclusions'
+                    groupDisplayName = 'Intune Excluded Devices'
+                    intent           = 'required'
                 }
             );
             Categories                         = @(

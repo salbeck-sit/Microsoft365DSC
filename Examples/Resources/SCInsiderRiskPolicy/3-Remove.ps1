@@ -26,9 +26,9 @@ Configuration Example
     {
         SCInsiderRiskPolicy "SCInsiderRiskPolicy-Example"
         {
+            Name                  = "Customer Data Leak Detection";
+            InsiderRiskScenario   = "LeakOfInformation";
             Ensure                = "Absent";
-            InsiderRiskScenario   = "TenantSetting";
-            Name                  = "IRM_Tenant_Setting";
             ApplicationId         = $ApplicationId;
             TenantId              = $TenantId;
             CertificateThumbprint = $CertificateThumbprint;

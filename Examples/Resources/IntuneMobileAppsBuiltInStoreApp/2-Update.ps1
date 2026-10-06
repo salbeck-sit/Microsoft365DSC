@@ -26,19 +26,19 @@ Configuration Example
     {
         IntuneMobileAppsBuiltInStoreApp "IntuneMobileAppsBuiltInStoreApp-Example"
         {
-            AppStoreUrl                     = "https://play.google.com/store/apps/details?id=com.contoso.app";
-            BundleId                        = "com.contoso.app";
+            AppStoreUrl                     = "https://play.google.com/store/apps/details?id=com.microsoft.office.outlook";
+            PackageId                       = "com.microsoft.office.outlook";
             TargetPlatform                  = "Android";
-            Description                     = "Store App Description";
-            Developer                       = "Contoso";
-            DisplayName                     = "Builtin Store App";
+            Description                     = "Corporate mail and calendar for Android devices";
+            Developer                       = "Microsoft Corporation";
+            DisplayName                     = "Microsoft Outlook";
             Ensure                          = "Present";
-            InformationUrl                  = "";
+            InformationUrl                  = "https://www.microsoft.com/microsoft-365/outlook/outlook-for-business";
             IsFeatured                      = $True; # Updated Property
-            Notes                           = "";
-            Owner                           = "";
-            PrivacyInformationUrl           = "";
-            Publisher                       = "Contoso";
+            Notes                           = "Required on all corporate Android devices";
+            Owner                           = "Messaging Team";
+            PrivacyInformationUrl           = "https://privacy.microsoft.com/privacystatement";
+            Publisher                       = "Microsoft Corporation";
             MinimumSupportedOperatingSystem = MSFT_MicrosoftGraphMinimumOperatingSystem{
                 V4_0   = $False
                 V4_0_3 = $False
@@ -70,7 +70,8 @@ Configuration Example
                 }
                 MSFT_DeviceManagementBuiltInStoreAppAssignment{
                     dataType         = '#microsoft.graph.exclusionGroupAssignmentTarget'
-                    groupDisplayName = 'Policy Exclusions'
+                    groupDisplayName = 'Intune Excluded Devices'
+                    intent           = 'required'
                 }
             );
             Categories                      = @(

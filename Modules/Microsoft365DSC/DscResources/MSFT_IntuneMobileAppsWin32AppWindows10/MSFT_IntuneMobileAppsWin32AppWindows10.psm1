@@ -214,10 +214,9 @@ class IntuneMobileAppsWin32AppWindows10 : M365DSCResourceBase
                     if (-not [System.String]::IsNullOrEmpty($this.DisplayName))
                     {
                         $getValue = Get-MgBetaDeviceAppManagementMobileApp `
-                            -Filter "DisplayName eq '$($this.DisplayName -replace "'", "''")' and isof('microsoft.graph.win32LobApp')" `
-                            -ExpandProperty 'Categories' `
+                            -Filter "DisplayName eq '$($this.DisplayName -replace "'", "''")'" `
                             -All `
-                            -ErrorAction SilentlyContinue
+                            -ErrorAction SilentlyContinue | Where-Object -Property '@odata.type' -EQ '#microsoft.graph.win32LobApp'
                     }
                 }
                 #endregion
@@ -331,7 +330,7 @@ class IntuneMobileAppsWin32AppWindows10 : M365DSCResourceBase
             #endregion
 
             [System.String[]]$allowedArchitecturesValue = @()
-            foreach ($arch in ($getValue.allowedArchitectures -split ',' | Where-Object { -not [System.String]::IsNullOrEmpty($_) }))
+            foreach ($arch in ($getValue.allowedArchitectures -split ',' | Where-Object -FilterScript { -not [System.String]::IsNullOrEmpty($_) }))
             {
                 $allowedArchitecturesValue += $arch
             }
@@ -382,7 +381,7 @@ class IntuneMobileAppsWin32AppWindows10 : M365DSCResourceBase
             $assignmentResult = @()
             if ($assignmentsValues.Count -gt 0)
             {
-                [array]$assignmentsValues = $assignmentsValues | Where-Object -FilterScript { $_.source -eq 'direct' }
+                [array]$assignmentsValues = $assignmentsValues | Where-Object -Property source -EQ 'direct'
                 $assignmentResult += ConvertFrom-IntuneMobileAppAssignment -Assignments $assignmentsValues -IncludeDeviceFilter $true
             }
             foreach ($assignment in $assignmentResult)
@@ -539,6 +538,7 @@ class IntuneMobileAppsWin32AppWindows10 : M365DSCResourceBase
             if ($policy.Id)
             {
                 $assignmentsHash = ConvertTo-IntuneMobileAppAssignment -IncludeDeviceFilter:$true -Assignments $this.Assignments
+                Wait-M365DSCIntuneMobileAppPublished -AppId $policy.Id
                 Update-DeviceAppManagementPolicyAssignment `
                     -AppManagementPolicyId $policy.Id `
                     -Assignments $assignmentsHash

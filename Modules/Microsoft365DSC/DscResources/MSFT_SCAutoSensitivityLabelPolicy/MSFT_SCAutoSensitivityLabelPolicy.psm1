@@ -165,7 +165,7 @@ class SCAutoSensitivityLabelPolicy : M365DSCResourceBase
                 # Threfore we get it by name.
                 $policy = Invoke-M365DSCCommand -ScriptBlock { Get-AutoSensitivityLabelPolicy -ErrorAction Stop | Where-Object { $_.Name -eq $this.Name } } -SuppressNotFoundError
 
-                if ($null -eq $policy)
+                if ($null -eq $policy -or $policy.Mode -eq 'PendingDeletion')
                 {
                     Write-Verbose -Message "Auto Sensitivity label policy $($this.Name) does not exist."
                     return $this.AsResult($nullReturn)
@@ -183,8 +183,10 @@ class SCAutoSensitivityLabelPolicy : M365DSCResourceBase
                 ApplySensitivityLabel             = $policy.ApplySensitivityLabel
                 Credential                        = $this.Credential
                 Ensure                            = 'Present'
-                ExchangeSender                    = $policy.ExchangeSender
-                ExchangeSenderMemberOf            = $policy.ExchangeSenderMemberOf
+                ExchangeSender                    = [SCAutoSensitivityLabelPolicy]::GetRecipientAddresses($policy.ExchangeSender)
+                ExchangeSenderException           = [SCAutoSensitivityLabelPolicy]::GetRecipientAddresses($policy.ExchangeSenderException)
+                ExchangeSenderMemberOf            = [SCAutoSensitivityLabelPolicy]::GetRecipientAddresses($policy.ExchangeSenderMemberOf)
+                ExchangeSenderMemberOfException   = [SCAutoSensitivityLabelPolicy]::GetRecipientAddresses($policy.ExchangeSenderMemberOfException)
                 ExchangeLocation                  = $policy.ExchangeLocation.Name
                 AddExchangeLocation               = $policy.AddExchangeLocation
                 RemoveExchangeLocation            = $policy.RemoveExchangeLocation
@@ -210,20 +212,6 @@ class SCAutoSensitivityLabelPolicy : M365DSCResourceBase
                 ManagedIdentity                   = $this.ManagedIdentity
                 AccessTokens                      = $this.AccessTokens
             }
-
-            $ExchangeSenderMemberOfExceptionValue = @()
-            if (-not [System.String]::IsNullOrEmpty($policy.ExchangeSenderMemberOfException))
-            {
-                $ExchangeSenderMemberOfExceptionValue = $policy.ExchangeSenderMemberOfException.Name
-            }
-            $result.Add('ExchangeSenderMemberOfException', $ExchangeSenderMemberOfExceptionValue)
-
-            $ExchangeSenderExceptionValue = @()
-            if (-not [System.String]::IsNullOrEmpty($policy.ExchangeSenderException))
-            {
-                $ExchangeSenderExceptionValue = $policy.ExchangeSenderException.Name
-            }
-            $result.Add('ExchangeSenderException', $ExchangeSenderExceptionValue)
 
             return $this.AsResult($result)
         }
@@ -425,6 +413,38 @@ class SCAutoSensitivityLabelPolicy : M365DSCResourceBase
             }
         }
         return $dscContent.ToString()
+    }
+
+    hidden static [System.String[]] GetRecipientAddresses([System.Object] $Values)
+    {
+        $addresses = @()
+        foreach ($value in @($Values))
+        {
+            if ($null -eq $value)
+            {
+                continue
+            }
+
+            if ($value -is [System.String] -and $value.TrimStart().StartsWith('{'))
+            {
+                $value = ConvertFrom-Json -InputObject $value
+            }
+
+            if ($value -is [System.String])
+            {
+                $addresses += $value
+            }
+            elseif (-not [System.String]::IsNullOrEmpty($value.PrimarySmtpAddress))
+            {
+                $addresses += [System.String] $value.PrimarySmtpAddress
+            }
+            elseif (-not [System.String]::IsNullOrEmpty($value.Name))
+            {
+                $addresses += [System.String] $value.Name
+            }
+        }
+
+        return $addresses
     }
 
     hidden [SCAutoSensitivityLabelPolicy] AsResult([System.Object] $Values)

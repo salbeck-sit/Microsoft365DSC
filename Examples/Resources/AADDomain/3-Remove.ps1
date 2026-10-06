@@ -27,7 +27,7 @@ Configuration Example
         AADDomain "AADDomain-Example"
         {
             Ensure                = "Absent";
-            Id                    = "M365x73318397.mail.onmicrosoft.com";
+            Id                    = "fabrikam.com";
             ApplicationId         = $ApplicationId;
             TenantId              = $TenantId;
             CertificateThumbprint = $CertificateThumbprint;

@@ -160,7 +160,7 @@ class AADEntitlementManagementAccessPackageAssignmentPolicy : M365DSCResourceBas
             {
                 if (-not [System.String]::IsNullOrEmpty($formattedAccessReviewSettings.StartDateTime))
                 {
-                    $formattedAccessReviewSettings.StartDateTime = $getValue.AccessReviewSettings.StartDateTime.ToString("o")
+                    $formattedAccessReviewSettings.StartDateTime = [M365DSCResourceBase]::FormatDateTime($getValue.AccessReviewSettings.StartDateTime)
                 }
             }
             else
@@ -522,11 +522,16 @@ class AADEntitlementManagementAccessPackageAssignmentPolicy : M365DSCResourceBas
 
         if ($null -ne $commonParameters.AccessReviewSettings -and $null -ne $commonParameters.AccessReviewSettings.StartDateTime)
         {
-            $parsedTime = [System.DateTimeOffset]::Parse($commonParameters.AccessReviewSettings.StartDateTime)
+            $parsedTime = [M365DSCResourceBase]::ConvertToDateTimeOffset($commonParameters.AccessReviewSettings.StartDateTime)
+            if ($null -eq $parsedTime)
+            {
+                throw "AccessReviewSettings.StartDateTime {$($commonParameters.AccessReviewSettings.StartDateTime)} is not a valid date and time. Use the ISO 8601 format, for example 2030-01-01T00:00:00Z."
+            }
+            $commonParameters.AccessReviewSettings.StartDateTime = [M365DSCResourceBase]::FormatDateTime($parsedTime)
             if ($parsedTime -lt [System.DateTimeOffset]::UtcNow)
             {
                 Write-Verbose -Message "The provided AccessReviewSettings.StartDateTime {$($commonParameters.AccessReviewSettings.StartDateTime)} is in the past. Setting it to 1 minute in the future from now."
-                $commonParameters.AccessReviewSettings.StartDateTime = ([System.DateTimeOffset]::UtcNow).AddMinutes(1).ToString("o")
+                $commonParameters.AccessReviewSettings.StartDateTime = [M365DSCResourceBase]::FormatDateTime([System.DateTimeOffset]::UtcNow.AddMinutes(1))
             }
         }
 
@@ -834,16 +839,17 @@ class AADEntitlementManagementAccessPackageAssignmentPolicy : M365DSCResourceBas
                 param($DesiredValues, $CurrentValues, $ValuesToCheck, $ignore)
                 if (-not [System.String]::IsNullOrEmpty($DesiredValues.AccessReviewSettings.StartDateTime))
                 {
-                    $parsedDesiredDate = [System.DateTime]::MinValue
-                    $parseResultDesired = [System.DateTime]::TryParse($DesiredValues.AccessReviewSettings.StartDateTime, [ref]$parsedDesiredDate)
+                    $parsedDesiredDate = [M365DSCResourceBase]::ConvertToDateTimeOffset($DesiredValues.AccessReviewSettings.StartDateTime)
+                    $parsedCurrentDate = [M365DSCResourceBase]::ConvertToDateTimeOffset($CurrentValues.AccessReviewSettings.StartDateTime)
 
-                    $parsedCurrentDate = [System.DateTime]::MinValue
-                    $parseResultCurrent = [System.DateTime]::TryParse($CurrentValues.AccessReviewSettings.StartDateTime, [ref]$parsedCurrentDate)
-
-                    if ($parseResultDesired -and $parseResultCurrent)
+                    if ($null -ne $parsedDesiredDate -and $null -ne $parsedCurrentDate)
                     {
                         Write-Verbose -Message "Parsed Desired StartDateTime: $parsedDesiredDate, Parsed Current StartDateTime: $parsedCurrentDate"
-                        if ($parsedDesiredDate -ne $parsedCurrentDate -and $parsedDesiredDate -lt [System.DateTime]::Now)
+                        if ($parsedDesiredDate -eq $parsedCurrentDate)
+                        {
+                            $DesiredValues.AccessReviewSettings.StartDateTime = $CurrentValues.AccessReviewSettings.StartDateTime
+                        }
+                        elseif ($parsedDesiredDate -lt [System.DateTimeOffset]::UtcNow)
                         {
                             Write-Verbose -Message 'Ignoring StartDateTime in ScheduleInfo as it is in the past. StartDateTime cannot be set to a past date.'
                             Write-Verbose -Message 'Aligning the Desired and Current StartDateTime values for comparison.'

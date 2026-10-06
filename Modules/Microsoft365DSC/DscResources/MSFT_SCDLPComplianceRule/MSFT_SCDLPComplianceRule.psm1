@@ -354,7 +354,7 @@ class SCDLPComplianceRule : M365DSCResourceBase
 
                 $PolicyRule = Invoke-M365DSCCommand -ScriptBlock { Get-DlpComplianceRule -Identity $this.Name -ErrorAction Stop } -SuppressNotFoundError
 
-                if ($null -eq $PolicyRule)
+                if ($null -eq $PolicyRule -or $PolicyRule.Mode -eq 'PendingDeletion')
                 {
                     Write-Verbose -Message "DLPComplianceRule $($this.Name) does not exist."
                     return $this.AsResult($nullReturn)
@@ -394,7 +394,7 @@ class SCDLPComplianceRule : M365DSCResourceBase
             }
 
             $anyOfRecipientAddressMatchesPatternsValue = $null
-            if ($null -ne $PolicyRule.AnyOfRecipientAddressMatchesPatterns -and $PolicyRule.AnyOfRecipientAddressMatchesPatterns -gt 0)
+            if ($null -ne $PolicyRule.AnyOfRecipientAddressMatchesPatterns -and $PolicyRule.AnyOfRecipientAddressMatchesPatterns.Count -gt 0)
             {
                 $anyOfRecipientAddressMatchesPatternsValue = $PolicyRule.AnyOfRecipientAddressMatchesPatterns.Replace(' ', '').Split(',')
             }
@@ -490,12 +490,16 @@ class SCDLPComplianceRule : M365DSCResourceBase
                 ExceptIfSubjectOrBodyContainsWords           = $PolicyRule.ExceptIfSubjectOrBodyContainsWords
                 ExceptIfSubjectOrBodyMatchesPatterns         = $PolicyRule.ExceptIfSubjectOrBodyMatchesPatterns
                 FromAddressMatchesPatterns                   = $PolicyRule.FromAddressMatchesPatterns
-                SentToMemberOf                               = $PolicyRule.FromAddressMatchesPatterns
+                FromAddressContainsWords                     = $PolicyRule.FromAddressContainsWords
+                ExceptIfFromAddressContainsWords             = $PolicyRule.ExceptIfFromAddressContainsWords
+                ExceptIfFromAddressMatchesPatterns           = $PolicyRule.ExceptIfFromAddressMatchesPatterns
+                SentToMemberOf                               = $PolicyRule.SentToMemberOf
                 DocumentContainsWords                        = $PolicyRule.DocumentContainsWords
                 ContentIsNotLabeled                          = $PolicyRule.ContentIsNotLabeled
                 SetHeader                                    = $setHeaders
                 AnyOfRecipientAddressContainsWords           = $anyOfRecipientAddressContainsWordsValue
                 AnyOfRecipientAddressMatchesPatterns         = $anyOfRecipientAddressMatchesPatternsValue
+                ExceptIfAnyOfRecipientAddressContainsWords   = $exceptIfAnyOfRecipientAddressContainsWordsValue
                 ContentExtensionMatchesWords                 = $contentExtensionMatchesWordsValue
                 ExceptIfContentExtensionMatchesWords         = $exceptIfContentExtensionMatchesWordsValue
                 Credential                                   = $this.Credential

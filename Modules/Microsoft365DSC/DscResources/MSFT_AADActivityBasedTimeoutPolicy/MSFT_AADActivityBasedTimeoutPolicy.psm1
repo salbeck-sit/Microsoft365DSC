@@ -12,10 +12,6 @@ class AADActivityBasedTimeoutPolicy : M365DSCResourceBase
     [System.String] $Id
 
     [DscProperty()]
-    [System.ComponentModel.Description('Description for this policy. Required.')]
-    [System.String] $Description
-
-    [DscProperty()]
     [System.ComponentModel.Description('Timeout value in hh:mm:ss for c44b4083-3bb0-49c1-b47d-974e53cbdf3c: applies the policy to the Azure portal.')]
     [System.String] $AzurePortalTimeOut
 
@@ -125,7 +121,6 @@ class AADActivityBasedTimeoutPolicy : M365DSCResourceBase
                 #region resource generator code
                 DisplayName           = $getValue.displayName
                 Id                    = $getValue.Id
-                Description           = $getValue.description
                 AzurePortalTimeOut    = $azurePortalTimeOutValue
                 DefaultTimeOut        = $defaultTimeOutValue
                 Ensure                = 'Present'
@@ -220,7 +215,6 @@ class AADActivityBasedTimeoutPolicy : M365DSCResourceBase
                     definition            = @(
                         "$json"
                     )
-                    description           = $this.Description
                     displayName           = $this.DisplayName
                     isOrganizationDefault = $true
                 }
@@ -265,7 +259,6 @@ class AADActivityBasedTimeoutPolicy : M365DSCResourceBase
                     definition            = @(
                         "$json"
                     )
-                    description           = $this.Description
                     displayName           = $this.DisplayName
                     isOrganizationDefault = $true
                 }

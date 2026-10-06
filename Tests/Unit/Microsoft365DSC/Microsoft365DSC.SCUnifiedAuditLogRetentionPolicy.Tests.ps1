@@ -109,7 +109,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
 
             It 'Should Remove the group from the Set method' {
                 (New-M365DSCResourceInstance -ResourceName 'SCUnifiedAuditLogRetentionPolicy' -Property $testParams).Set()
-                Should -Invoke -CommandName Remove-UnifiedAuditLogRetentionPolicy -Exactly 1
+                Should -Invoke -CommandName Remove-UnifiedAuditLogRetentionPolicy -Exactly 1 -ParameterFilter { $Identity -eq 'Test Policy' -and $ForceDeletion }
             }
         }
         Context -Name "The SCUnifiedAuditLogRetentionPolicy Exists and Values are already in the desired state" -Fixture {
@@ -169,7 +169,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
 
             It 'Should call the Set method' {
                 (New-M365DSCResourceInstance -ResourceName 'SCUnifiedAuditLogRetentionPolicy' -Property $testParams).Set()
-                Should -Invoke -CommandName Set-UnifiedAuditLogRetentionPolicy -Exactly 1
+                Should -Invoke -CommandName Set-UnifiedAuditLogRetentionPolicy -Exactly 1 -ParameterFilter { $Identity -eq 'Test Policy' }
             }
         }
 
@@ -219,6 +219,9 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
 
             It 'Should return false from the Test method' {
                 (New-M365DSCResourceInstance -ResourceName 'SCUnifiedAuditLogRetentionPolicy' -Property $testParams).Test() | Should -Be $false
+                (New-M365DSCResourceInstance -ResourceName 'SCUnifiedAuditLogRetentionPolicy' -Property $testParams).Set()
+                Should -Invoke -CommandName Remove-UnifiedAuditLogRetentionPolicy -Exactly 1 -ParameterFilter { $Identity -eq 'Test Policy' -and $ForceDeletion }
+                Should -Invoke -CommandName New-UnifiedAuditLogRetentionPolicy -Exactly 1
             }
         }
     }

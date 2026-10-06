@@ -171,12 +171,13 @@ class EXOActiveSyncDeviceAccessRule : M365DSCResourceBase
         elseif ($this.Ensure -eq 'Absent' -and $currentActiveSyncDeviceAccessRuleConfig.Ensure -eq 'Present')
         {
             Write-Verbose -Message "Active Sync Device Access Rule '$($this.Identity)' exists but it shouldn't. Remove it."
-            Remove-ActiveSyncDeviceAccessRule -Identity "$($this.QueryString) ($($this.Characteristic))" -Confirm:$false
+            Remove-ActiveSyncDeviceAccessRule -Identity $currentActiveSyncDeviceAccessRuleConfig.Identity -Confirm:$false
         }
         # CASE: Active Sync Device Access Rule exists and it should, but has different values than the desired ones
         elseif ($this.Ensure -eq 'Present' -and $currentActiveSyncDeviceAccessRuleConfig.Ensure -eq 'Present')
         {
             Write-Verbose -Message "Active Sync Device Access Rule '$($this.Identity)' already exists, but needs updating."
+            $SetActiveSyncDeviceAccessRuleParams.Identity = $currentActiveSyncDeviceAccessRuleConfig.Identity
             Write-Verbose -Message "Setting Active Sync Device Access Rule $($this.Identity) with values: $(Convert-M365DscHashtableToString -Hashtable $SetActiveSyncDeviceAccessRuleParams)"
             Set-ActiveSyncDeviceAccessRule @SetActiveSyncDeviceAccessRuleParams
         }

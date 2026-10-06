@@ -121,7 +121,7 @@ class AADCustomAuthenticationExtension : M365DSCResourceBase
                 {
                     $instance = Get-MgBetaIdentityCustomAuthenticationExtension -All `
                         -Filter "DisplayName eq '$($this.DisplayName -replace "'", "''")'" `
-                        -Top 0 `
+                        -NoPageSize `
                         -ErrorAction SilentlyContinue
                 }
                 if ($null -eq $instance)
@@ -283,14 +283,13 @@ class AADCustomAuthenticationExtension : M365DSCResourceBase
         # UPDATE
         elseif ($this.Ensure -eq 'Present' -and $currentInstance.Ensure -eq 'Present')
         {
-            $params.Add('customAuthenticationExtensionId', $currentInstance.Id)
             $params.Remove('Id') | Out-Null
 
             $params.Add('claimsForTokenConfiguration', @())
             foreach ($claim in $setParameters['ClaimsForTokenConfiguration'])
             {
                 $c = @{
-                    'claimIdInApiResponse' = $claim['ClaimIdInApiResponse']
+                    'claimIdInApiResponse' = $claim.ClaimIdInApiResponse
                 }
                 $params['claimsForTokenConfiguration'] += $c
             }
@@ -329,7 +328,7 @@ class AADCustomAuthenticationExtension : M365DSCResourceBase
             [array] $exportedInstances = Get-MgBetaIdentityCustomAuthenticationExtension `
             -All `
             -Filter $this.Filter `
-            -Top 0 `
+            -NoPageSize `
             -ErrorAction Stop
 
             $i = 1

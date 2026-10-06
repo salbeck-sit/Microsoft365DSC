@@ -50,6 +50,13 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                 }
             }
 
+            Mock -CommandName Get-ComplianceCase -MockWith {
+                return @{
+                    Name     = 'Test Case'
+                    Identity = '11111111-2222-3333-4444-555555555555'
+                }
+            }
+
             Mock -CommandName Set-CaseHoldPolicy -MockWith {
                 return @{
 
@@ -78,6 +85,10 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                 Mock -CommandName Get-CaseHoldPolicy -MockWith {
                     return $null
                 }
+
+                Mock -CommandName Get-ComplianceCase -MockWith {
+                    return $null
+                }
             }
 
             It 'Should return false from the Test method' {
@@ -86,10 +97,12 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
 
             It 'Should return Absent from the Get method' {
                 ((New-M365DSCResourceInstance -ResourceName 'SCCaseHoldPolicy' -Property $testParams).Get().ToHashtable()).Ensure | Should -Be 'Absent'
+                Should -Invoke -CommandName Get-CaseHoldPolicy -Exactly 0
             }
 
             It 'Should call the Set method' {
                 (New-M365DSCResourceInstance -ResourceName 'SCCaseHoldPolicy' -Property $testParams).Set()
+                Should -Invoke -CommandName New-CaseHoldPolicy -Exactly 1
             }
         }
 
@@ -170,6 +183,20 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                         Description = 'This is a test Case'
                     }
                 }
+
+                Mock -CommandName Get-CaseHoldRule -MockWith {
+                    return @{
+                        Name = 'Test Rule'
+                        Mode = 'PendingDeletion'
+                    }
+                }
+
+                Mock -CommandName Remove-CaseHoldRule -MockWith {
+                }
+
+                Mock -CommandName Remove-CaseHoldPolicy -ParameterFilter { -not $ForceDeletion } -MockWith {
+                    throw "Policy '11111111-2222-3333-4444-555555555555' failed to be deployed. To fix this issue, please retry the policy operation after some time."
+                }
             }
 
             It 'Should return false from the Test method' {
@@ -177,7 +204,9 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             }
 
             It 'Should remove it from the Set method' {
-                (New-M365DSCResourceInstance -ResourceName 'SCCaseHoldPolicy' -Property $testParams).Set()
+                { (New-M365DSCResourceInstance -ResourceName 'SCCaseHoldPolicy' -Property $testParams).Set() } | Should -Not -Throw
+                Should -Invoke -CommandName Remove-CaseHoldRule -Exactly 1 -ParameterFilter { $ForceDeletion }
+                Should -Invoke -CommandName Remove-CaseHoldPolicy -Exactly 1 -ParameterFilter { $ForceDeletion }
             }
 
             It 'Should return Present from the Get method' {

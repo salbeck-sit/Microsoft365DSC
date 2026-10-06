@@ -42,6 +42,21 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             Mock -CommandName Remove-CsTeamsComplianceRecordingPolicy -MockWith {
             }
 
+            Mock -CommandName New-CsTeamsComplianceRecordingApplication -MockWith {
+            }
+
+            Mock -CommandName Set-CsTeamsComplianceRecordingApplication -MockWith {
+            }
+
+            Mock -CommandName Remove-CsTeamsComplianceRecordingApplication -MockWith {
+            }
+
+            Mock -CommandName New-CsTeamsComplianceRecordingPairedApplication -MockWith {
+                return @{
+                    Id = $Id
+                }
+            }
+
             Mock -CommandName Get-CsTeamsComplianceRecordingPolicy -MockWith {
                 return @{
                     WarnUserOnRemoval                                   = $True
@@ -63,18 +78,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                 }
             }
 
-            Mock -CommandName Get-CsTeamsComplianceRecordingApplication  -MockWith {
-                return @{
-                    Id = '00000000-0000-0000-0000-000000000000'
-                    ComplianceRecordingPairedApplications = @()
-                    ConcurrentInvitationCount             = 1
-                    RequiredDuringCall                    = $True
-                    RequiredBeforeMeetingJoin             = $True
-                    RequiredBeforeCallEstablishment       = $True
-                    RequiredDuringMeeting                 = $True
-                }
-            }
-
             Mock -CommandName New-M365DSCConnection -ModuleName '_Shared' -MockWith {
                 return 'Credentials'
             }
@@ -90,6 +93,17 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
         Context -Name 'The TeamsComplianceRecordingPolicy should exist but it DOES NOT' -Fixture {
             BeforeAll {
                 $testParams = @{
+                    ComplianceRecordingApplications                     = @(
+                        [MSFT_TeamsComplianceRecordingApplication] @{
+                            Id                                    = '11111111-1111-1111-1111-111111111111'
+                            ComplianceRecordingPairedApplications = @('22222222-2222-2222-2222-222222222222')
+                            ConcurrentInvitationCount             = '1'
+                            RequiredDuringCall                    = $True
+                            RequiredBeforeMeetingJoin             = $True
+                            RequiredBeforeCallEstablishment       = $True
+                            RequiredDuringMeeting                 = $True
+                        }
+                    )
                     WarnUserOnRemoval                                   = $True
                     Description                                         = 'FakeStringValue'
                     Enabled                                             = $True
@@ -99,7 +113,17 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     Credential                                          = $Credential
                 }
 
+                $Script:policyCreated = $false
+                Mock -CommandName New-CsTeamsComplianceRecordingPolicy -MockWith {
+                    $Script:policyCreated = $true
+                }
                 Mock -CommandName Get-CsTeamsComplianceRecordingPolicy -MockWith {
+                    if ($Script:policyCreated)
+                    {
+                        return @{
+                            Identity = 'Tag:FakeStringValue'
+                        }
+                    }
                     return $null
                 }
             }
@@ -114,7 +138,18 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
 
             It 'Should Create the group from the Set method' {
                 (New-M365DSCResourceInstance -ResourceName 'TeamsComplianceRecordingPolicy' -Property $testParams).Set()
-                Should -Invoke -CommandName New-CsTeamsComplianceRecordingPolicy -Exactly 1
+                Should -Invoke -CommandName New-CsTeamsComplianceRecordingPolicy -Exactly 1 -ParameterFilter {
+                    $null -eq $ComplianceRecordingApplications
+                }
+                Should -Invoke -CommandName New-CsTeamsComplianceRecordingApplication -Exactly 1 -ParameterFilter {
+                    $Identity -eq 'Tag:FakeStringValue/11111111-1111-1111-1111-111111111111' -and
+                    $ConcurrentInvitationCount -eq 1 -and
+                    $ComplianceRecordingPairedApplications.Count -eq 1
+                }
+                Should -Invoke -CommandName New-CsTeamsComplianceRecordingPairedApplication -Exactly 1 -ParameterFilter {
+                    $Id -eq '22222222-2222-2222-2222-222222222222'
+                }
+                Should -Invoke -CommandName Set-CsTeamsComplianceRecordingApplication -Exactly 0
             }
         }
 
@@ -152,6 +187,17 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
         Context -Name 'The TeamsComplianceRecordingPolicy Exists and Values are already in the desired state' -Fixture {
             BeforeAll {
                 $testParams = @{
+                    ComplianceRecordingApplications                     = @(
+                        [MSFT_TeamsComplianceRecordingApplication] @{
+                            Id                                    = '00000000-0000-0000-0000-000000000000'
+                            ComplianceRecordingPairedApplications = @()
+                            ConcurrentInvitationCount             = '1'
+                            RequiredDuringCall                    = $True
+                            RequiredBeforeMeetingJoin             = $True
+                            RequiredBeforeCallEstablishment       = $True
+                            RequiredDuringMeeting                 = $True
+                        }
+                    )
                     WarnUserOnRemoval                                   = $True
                     Description                                         = 'FakeStringValue'
                     Enabled                                             = $True
@@ -170,6 +216,13 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
         Context -Name 'The TeamsComplianceRecordingPolicy exists and values are NOT in the desired state' -Fixture {
             BeforeAll {
                 $testParams = @{
+                    ComplianceRecordingApplications                     = @(
+                        [MSFT_TeamsComplianceRecordingApplication] @{
+                            Id                        = '33333333-3333-3333-3333-333333333333'
+                            RequiredDuringCall        = $False
+                            RequiredBeforeMeetingJoin = $False
+                        }
+                    )
                     WarnUserOnRemoval                                   = $False # Drift
                     Description                                         = 'FakeStringValue'
                     Enabled                                             = $True
@@ -190,7 +243,18 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
 
             It 'Should call the Set method' {
                 (New-M365DSCResourceInstance -ResourceName 'TeamsComplianceRecordingPolicy' -Property $testParams).Set()
-                Should -Invoke -CommandName Set-CsTeamsComplianceRecordingPolicy -Exactly 1
+                Should -Invoke -CommandName Set-CsTeamsComplianceRecordingPolicy -Exactly 1 -ParameterFilter {
+                    $null -eq $ComplianceRecordingApplications -and $WarnUserOnRemoval -eq $False
+                }
+                Should -Invoke -CommandName Remove-CsTeamsComplianceRecordingApplication -Exactly 1 -ParameterFilter {
+                    $Identity -eq 'FakeStringValue/00000000-0000-0000-0000-000000000000'
+                }
+                Should -Invoke -CommandName New-CsTeamsComplianceRecordingApplication -Exactly 1 -ParameterFilter {
+                    $Identity -eq 'FakeStringValue/33333333-3333-3333-3333-333333333333' -and
+                    $RequiredDuringCall -eq $False -and
+                    -not $PSBoundParameters.ContainsKey('ComplianceRecordingPairedApplications')
+                }
+                Should -Invoke -CommandName Set-CsTeamsComplianceRecordingApplication -Exactly 0
             }
         }
 

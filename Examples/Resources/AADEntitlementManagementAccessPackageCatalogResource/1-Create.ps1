@@ -24,31 +24,16 @@ Configuration Example
 
     Node localhost
     {
-        AADGroup 'AADGroup-CatalogResource'
-        {
-            DisplayName           = "Project Management Office"
-            Description           = "Collaboration group for the project management office"
-            SecurityEnabled       = $True
-            MailEnabled           = $True
-            GroupTypes            = @("Unified")
-            MailNickname          = "projectmanagementoffice"
-            Visibility            = "Private"
-            Ensure                = "Present"
-            ApplicationId         = $ApplicationId
-            TenantId              = $TenantId
-            CertificateThumbprint = $CertificateThumbprint
-        }
         AADEntitlementManagementAccessPackageCatalogResource 'AADEntitlementManagementAccessPackageCatalogResource-Example'
         {
-            CatalogId             = "My Catalog";
-            DisplayName           = "Project Management Office";
-            OriginSystem          = "AADGroup";
-            OriginId              = 'Project Management Office'
-            AddedBy               = "admin@$TenantId";
+            CatalogId             = "General";
+            DisplayName           = "Mark 8 Project Team";
+            OriginSystem          = "AadGroup";
+            OriginId              = "Mark 8 Project Team";
+            AddedBy               = "MeganB@$TenantId";
             AddedOn               = "2026-01-01T00:00:00.0000000Z";
-            Description           = "Collaboration group for the project management office";
-            ResourceType          = "O365 Group";
-            Url                   = "https://portal.azure.com/Microsoft_AAD_IAM/GroupDetailsMenuBlade/Overview/groupId/849b3661-61a8-44a8-92e7-fcc91d296235";
+            Description           = "Welcome to the team that we've assembled to create the Mark 8.";
+            ResourceType          = "Microsoft 365 Teams Group";
             Ensure                = "Present";
             IsPendingOnboarding   = $False;
             ApplicationId         = $ApplicationId;

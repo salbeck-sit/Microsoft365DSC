@@ -68,7 +68,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                         v14_0 = $True
                     }
                     bundleId = "FakeStringValue"
-                    appleDeviceAppDeliveryProtocolType = "mobileDeviceManagement"
                     '@odata.type' = "#microsoft.graph.iosStoreApp"
                     applicableDeviceType = @{
                         iPad = $True
@@ -113,7 +112,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                         v14_0 = $True
                     }
                     bundleId = "FakeStringValue"
-                    appleDeviceAppDeliveryProtocolType = "mobileDeviceManagement"
                     '@odata.type' = "#microsoft.graph.iosStoreApp"
                     applicableDeviceType = @{
                         iPad = $True
@@ -148,6 +146,9 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                 return "Credentials"
             }
 
+            Mock -CommandName Wait-M365DSCIntuneMobileAppPublished -MockWith {
+            }
+
             # Mock Write-M365DSCHost to hide output during the tests
             Mock -CommandName Write-M365DSCHost -MockWith {
             }
@@ -169,7 +170,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     })
                     appStoreUrl = "FakeStringValue"
                     bundleId = "FakeStringValue"
-                    appleDeviceAppDeliveryProtocolType = "mobileDeviceManagement"
                     Categories = @(([MSFT_DeviceManagementMobileAppCategory] @{
                         Id = "FakeStringValue"
                         DisplayName = "FakeStringValue"
@@ -210,9 +210,18 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                 Mock -CommandName Get-MgBetaDeviceAppManagementMobileApp -MockWith {
                     return $null
                 }
+
+                Mock -CommandName Get-MgBetaDeviceAppManagementMobileApp -ParameterFilter { -not [System.String]::IsNullOrEmpty($Filter) } -MockWith {
+                    return @{
+                        '@odata.type' = '#microsoft.graph.androidManagedStoreApp'
+                        id            = 'FakeStringValue'
+                        displayName   = 'FakeStringValue'
+                    }
+                }
             }
             It 'Should return Values from the Get method' {
                 ((New-M365DSCResourceInstance -ResourceName 'IntuneMobileAppsStoreApp' -Property $testParams).Get().ToHashtable()).Ensure | Should -Be 'Absent'
+                Should -Invoke -CommandName Get-MgBetaDeviceAppManagementMobileApp -ParameterFilter { $Filter -eq "DisplayName eq 'FakeStringValue'" }
             }
             It 'Should return false from the Test method' {
                 (New-M365DSCResourceInstance -ResourceName 'IntuneMobileAppsStoreApp' -Property $testParams).Test() | Should -Be $false
@@ -220,6 +229,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             It 'Should Create the group from the Set method' {
                 (New-M365DSCResourceInstance -ResourceName 'IntuneMobileAppsStoreApp' -Property $testParams).Set()
                 Should -Invoke -CommandName New-MgBetaDeviceAppManagementMobileApp -Exactly 1
+                Should -Invoke -CommandName Wait-M365DSCIntuneMobileAppPublished -Exactly 1
             }
 
             It 'Should send the canonical OData type to the Graph cmdlet' {
@@ -239,7 +249,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     })
                     appStoreUrl = "FakeStringValue"
                     bundleId = "FakeStringValue"
-                    appleDeviceAppDeliveryProtocolType = "mobileDeviceManagement"
                     Categories = @(([MSFT_DeviceManagementMobileAppCategory] @{
                         Id = "FakeStringValue"
                         DisplayName = "FakeStringValue"
@@ -301,7 +310,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     })
                     appStoreUrl = "FakeStringValue"
                     bundleId = "FakeStringValue"
-                    appleDeviceAppDeliveryProtocolType = "mobileDeviceManagement"
                     Categories = @(([MSFT_DeviceManagementMobileAppCategory] @{
                         Id = "FakeStringValue"
                         DisplayName = "FakeStringValue"
@@ -353,8 +361,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                         iPhoneAndIPod = $True
                     })
                     appStoreUrl = "FakeStringValue"
-                    bundleId = "FakeStringValue"
-                    appleDeviceAppDeliveryProtocolType = "default" # Drift
+                    bundleId = "FakeStringValueDrift" # Drift
                     Categories = @(([MSFT_DeviceManagementMobileAppCategory] @{
                         Id = "FakeStringValue"
                         DisplayName = "FakeStringValue"

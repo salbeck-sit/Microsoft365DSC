@@ -27,7 +27,7 @@ Configuration Example
         AADFilteringProfile "AADFilteringProfile-Example"
         {
             Ensure                = "Absent";
-            Name                  = "My PRofile";
+            Name                  = "Corporate Web Filtering";
             ApplicationId         = $ApplicationId;
             TenantId              = $TenantId;
             CertificateThumbprint = $CertificateThumbprint;

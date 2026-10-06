@@ -291,8 +291,7 @@ class IntuneDeviceConfigurationIdentityProtectionPolicyWindows10 : M365DSCResour
             return
         }
 
-        Write-Warning -Message "The resource 'IntuneDeviceConfigurationIdentityProtectionPolicyWindows10' is deprecated. It will be removed in a future release. Please use 'IntuneAccountProtectionPolicyWindows10' instead."
-        Write-Warning -Message 'For more information, please visit https://learn.microsoft.com/en-us/mem/intune/fundamentals/whats-new#consolidation-of-intune-profiles-for-identity-protection-and-account-protection-'
+        $this.WarnResourceDeprecated("'IntuneAccountProtectionPolicyWindows10'", 'https://learn.microsoft.com/en-us/mem/intune/fundamentals/whats-new#consolidation-of-intune-profiles-for-identity-protection-and-account-protection-')
 
         Confirm-M365DSCDependencies
 

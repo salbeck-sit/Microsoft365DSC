@@ -35,7 +35,7 @@ Configuration Example
                 }
                 MSFT_DeviceManagementConfigurationPolicyAssignments{
                     dataType         = '#microsoft.graph.exclusionGroupAssignmentTarget'
-                    groupDisplayName = 'Shared iPad Kiosks'
+                    groupDisplayName = 'Intune Excluded Devices'
                 }
             )
             ConnectAutomatically           = $true

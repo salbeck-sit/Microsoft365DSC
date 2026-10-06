@@ -27,8 +27,9 @@ Configuration Example
         EXOJournalRule 'EXOJournalRule-Example'
         {
             Enabled               = $True
-            JournalEmailAddress   = "AdeleV@$TenantId"
-            Name                  = "Send to Adele"
+            JournalEmailAddress   = "journal@archive.fabrikam.com"
+            Name                  = "Adele Vance Journal Archive"
+            Recipient             = "AdeleV@$TenantId"
             RuleScope             = "Global"
             Ensure                = "Present"
             ApplicationId         = $ApplicationId

@@ -29,12 +29,27 @@
       "application": {
         "read": [
           {
+            "name": "Group.Read.All"
+          },
+          {
             "name": "Organization.Read.All"
+          },
+          {
+            "name": "User.Read.All"
           }
         ],
         "update": [
           {
+            "name": "Group.ReadWrite.All"
+          },
+          {
             "name": "Organization.Read.All"
+          },
+          {
+            "name": "Team.Create"
+          },
+          {
+            "name": "User.Read.All"
           }
         ]
       }

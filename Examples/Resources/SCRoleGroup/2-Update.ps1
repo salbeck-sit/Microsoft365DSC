@@ -27,8 +27,8 @@ Configuration Example
         SCRoleGroup 'SCRoleGroup-Example'
         {
             Name                  = "Contoso Role Group"
-            Description           = "Address Lists Role for Purview Administrators - Modified"
-            Roles                 = @("Address Lists")
+            Description           = "View-only audit log access for Purview administrators - Modified"
+            Roles                 = @("View-Only Audit Logs")
             Ensure                = "Present"
             ApplicationId         = $ApplicationId
             TenantId              = $TenantId

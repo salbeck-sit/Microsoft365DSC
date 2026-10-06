@@ -58,10 +58,21 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             Mock -CommandName Get-PNPOrgAssetsLibrary -MockWith {
                 return @{
                     LibraryUrl = @{
-                        decodedurl = 'sites/m365dsc/Missing'
+                        decodedurl = 'sites/m365dsc/Branding'
                     }
                     CdnType    = 'Public'
                 }
+            }
+
+            Mock -CommandName Get-PnPTenantCdnOrigin -ParameterFilter { $CdnType -eq 'Public' } -MockWith {
+                return @('SITES/M365DSC/BRANDING (configuration pending)', '*/MASTERPAGE')
+            }
+
+            Mock -CommandName Get-PnPTenantCdnOrigin -ParameterFilter { $CdnType -eq 'Private' } -MockWith {
+                return @()
+            }
+
+            Mock -CommandName Remove-PnPTenantCdnOrigin -MockWith {
             }
 
             Mock -CommandName Start-Sleep -MockWith {
@@ -85,7 +96,12 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                 }
 
                 Mock -CommandName Get-PNPOrgAssetsLibrary -MockWith {
-                    return $null
+                    return @{
+                        LibraryUrl = @{
+                            decodedurl = 'sites/m365dsc/Other'
+                        }
+                        CdnType    = 'Public'
+                    }
                 }
             }
             It 'Should return Values from the Get method' {
@@ -123,6 +139,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             It 'Should Remove the site assets org library from the Set method' {
                 (New-M365DSCResourceInstance -ResourceName 'SPOOrgAssetsLibrary' -Property $testParams).Set()
                 Should -Invoke -CommandName 'Remove-PNPOrgAssetsLibrary' -Exactly 1
+                Should -Invoke -CommandName 'Remove-PnPTenantCdnOrigin' -Exactly 1 -ParameterFilter { $OriginUrl -eq 'sites/m365dsc/Branding' -and $CdnType -eq 'Public' }
             }
         }
         Context -Name 'The site assets org library Exists and Values are already in the desired state' -Fixture {
@@ -148,10 +165,11 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
         Context -Name 'The site assets org library exists and values are NOT in the desired state' -Fixture {
             BeforeAll {
                 $testParams = @{
-                    LibraryUrl = 'https://contoso.sharepoint.com/sites/m365dsc/Branding'
-                    CdnType    = 'Private' # Drift
-                    Credential = $Credential
-                    Ensure     = 'Present'
+                    LibraryUrl   = 'https://contoso.sharepoint.com/sites/m365dsc/Branding'
+                    CdnType      = 'Public'
+                    ThumbnailUrl = 'https://contoso.sharepoint.com/sites/m365dsc/Branding/Logo.png' # Drift
+                    Credential   = $Credential
+                    Ensure       = 'Present'
                 }
             }
 

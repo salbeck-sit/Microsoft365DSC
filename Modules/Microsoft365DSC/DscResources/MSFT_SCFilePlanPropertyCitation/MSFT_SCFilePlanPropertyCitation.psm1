@@ -76,7 +76,7 @@ class SCFilePlanPropertyCitation : M365DSCResourceBase
                 $nullReturn = $this.GetBoundParameters()
                 $nullReturn.Ensure = 'Absent'
 
-                $property = Get-FilePlanPropertyCitation -ErrorAction Stop | Where-Object -FilterScript { $_.Name -eq $this.Name }
+                $property = Get-FilePlanPropertyCitation -ErrorAction Stop | Where-Object -FilterScript { $_.Name -eq $this.Name -and "$($_.Mode)" -ne 'PendingDeletion' }
 
                 if ($null -eq $property)
                 {

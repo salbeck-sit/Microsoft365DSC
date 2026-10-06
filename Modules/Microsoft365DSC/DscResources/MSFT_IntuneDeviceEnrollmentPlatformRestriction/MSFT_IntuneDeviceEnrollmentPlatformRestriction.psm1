@@ -144,7 +144,7 @@ class IntuneDeviceEnrollmentPlatformRestriction : M365DSCResourceBase
                 $keys = (([Hashtable]$this.GetBoundParameters()).Clone()).Keys
                 foreach ($key in $keys)
                 {
-                    if ($null -ne $this.GetBoundParameters().$key -and $this.GetBoundParameters().$key.GetType().Name -like '*cimInstance*' -and $key -like '*Restriction')
+                    if ($null -ne $this.GetBoundParameters().$key -and $key -like '*Restriction')
                     {
                         if ($this.DeviceEnrollmentConfigurationType -eq 'singlePlatformRestriction' )
                         {
@@ -163,16 +163,10 @@ class IntuneDeviceEnrollmentPlatformRestriction : M365DSCResourceBase
                 if ($null -eq $config)
                 {
                     Write-Verbose -Message "Could not find an Intune Device Enrollment Platform Restriction with Id {$($this.Id)}"
-                    $config = Get-MgBetaDeviceManagementDeviceEnrollmentConfiguration -All -Filter "DisplayName eq '$($this.DisplayName -replace "'", "''")' and isof('microsoft.graph.deviceEnrollmentPlatformRestrictionConfiguration')" `
+                    $config = Get-MgBetaDeviceManagementDeviceEnrollmentConfiguration -All -Filter "DisplayName eq '$($this.DisplayName -replace "'", "''")'" `
                         -ErrorAction SilentlyContinue | Where-Object -FilterScript {
-                        if ($null -ne $_.platformType)
-                        {
-                            $_.platformType -eq $PlatformType
-                        }
-                        else
-                        {
-                            $true
-                        }
+                            $_.'@odata.type' -in @('#microsoft.graph.deviceEnrollmentPlatformRestrictionConfiguration', '#microsoft.graph.deviceEnrollmentPlatformRestrictionsConfiguration') -and
+                            ($null -eq $_.platformType -or $_.platformType -eq $PlatformType)
                     }
 
                     if ($null -eq $config)
@@ -293,8 +287,7 @@ class IntuneDeviceEnrollmentPlatformRestriction : M365DSCResourceBase
             $keys = (([Hashtable]$createParameters).Clone()).Keys
             foreach ($key in $keys)
             {
-                $keyValue = $createParameters.$key
-                if ($null -ne $createParameters.$key -and $this.GetBoundParameters().$key.GetType().Name -like '*cimInstance*')
+                if ($null -ne $createParameters.$key -and $key -like '*Restriction')
                 {
                     if ($this.DeviceEnrollmentConfigurationType -eq 'singlePlatformRestriction')
                     {
@@ -356,8 +349,7 @@ class IntuneDeviceEnrollmentPlatformRestriction : M365DSCResourceBase
             $keys = (([Hashtable]$updateParameters).Clone()).Keys
             foreach ($key in $keys)
             {
-                $keyValue = $updateParameters.$key
-                if ($null -ne $updateParameters.$key -and $this.GetBoundParameters().$key.GetType().Name -like '*cimInstance*')
+                if ($null -ne $updateParameters.$key -and $key -like '*Restriction')
                 {
                     if ($this.DeviceEnrollmentConfigurationType -eq 'singlePlatformRestriction')
                     {

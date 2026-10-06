@@ -105,6 +105,11 @@ class TeamsUser : M365DSCResourceBase
                 }
 
                 $myUser = $allMembers | Where-Object -FilterScript { $_.User -eq $this.User }
+                if ($null -eq $myUser)
+                {
+                    Write-Verbose -Message "User $($this.User) is not a member of Team $($this.TeamName)"
+                    return $this.AsResult($nullReturn)
+                }
             }
             else
             {
@@ -159,20 +164,22 @@ class TeamsUser : M365DSCResourceBase
         $CurrentParameters.Remove('TeamName') | Out-Null
         $CurrentParameters.Add('GroupId', $team.GroupId)
 
-        if ($this.Ensure -eq 'Present')
+        $currentInstance = $this.Get().ToHashtable()
+
+        if ($this.Ensure -eq 'Present' -and $this.Role -eq 'Member' -and $currentInstance.Role -eq 'Owner')
+        {
+            Write-Verbose -Message "Removing owner role of team user $($this.User)"
+            Remove-TeamUser -GroupId $team.GroupId -User $this.User -Role 'Owner'
+        }
+        elseif ($this.Ensure -eq 'Present')
         {
             Write-Verbose -Message "Adding team user $($this.User) with role:$($this.Role)"
             Add-TeamUser @CurrentParameters
         }
-        else
+        elseif ($this.Ensure -eq 'Absent' -and $currentInstance.Ensure -eq 'Present')
         {
-            if ($this.Role -eq 'Member' -and $CurrentParameters.ContainsKey('Role'))
-            {
-                $CurrentParameters.Remove('Role') | Out-Null
-                Write-Verbose -Message 'Removed role parameter'
-            }
-            Remove-TeamUser @CurrentParameters
             Write-Verbose -Message "Removing team user $($this.User)"
+            Remove-TeamUser -GroupId $team.GroupId -User $this.User
         }
     }
 

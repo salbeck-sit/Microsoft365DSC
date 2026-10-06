@@ -133,19 +133,7 @@ class AADGroupEligibilitySchedule : M365DSCResourceBase
                         -Filter "GroupId eq '$($currentGroupId)'" `
                         -ErrorAction SilentlyContinue
 
-                    switch ($this.PrincipalType)
-                    {
-                        'user'
-                        {
-                            Write-Verbose -Message "Performing Get-MgUser on UserPrincipalName eq $($this.Principal)"
-                            $PrincipalInstance = Get-MgUser -Filter "UserPrincipalName eq '$($this.Principal)'" -ErrorAction SilentlyContinue
-                        }
-                        default
-                        {
-                            Write-Verbose -Message "Performing Get-MgGroup on DisplayName eq $($this.Principal)"
-                            $PrincipalInstance = Get-MgGroup -Filter "DisplayName eq '$($this.Principal)'" -ErrorAction SilentlyContinue
-                        }
-                    }
+                    $PrincipalInstance = $this.GetPrincipalInstance()
                     $getValue = $($schedules | Where-Object { $_.accessid -eq $this.AccessId -and $_.principalId -eq $PrincipalInstance.id })
                 }
 
@@ -167,7 +155,7 @@ class AADGroupEligibilitySchedule : M365DSCResourceBase
             $complexExpiration.Add('Duration', $getValue.scheduleInfo.expiration.duration)
             if ($null -ne $getValue.scheduleInfo.expiration.endDateTime)
             {
-                $complexExpiration.Add('EndDateTime', ([DateTimeOffset]$getValue.scheduleInfo.expiration.endDateTime).ToString('o'))
+                $complexExpiration.Add('EndDateTime', [M365DSCResourceBase]::FormatDateTime($getValue.scheduleInfo.expiration.endDateTime))
             }
             if ($null -ne $getValue.scheduleInfo.expiration.type)
             {
@@ -231,7 +219,7 @@ class AADGroupEligibilitySchedule : M365DSCResourceBase
             $complexScheduleInfo.Add('Recurrence', $complexRecurrence)
             if ($null -ne $getValue.ScheduleInfo.startDateTime)
             {
-                $complexScheduleInfo.Add('StartDateTime', ([DateTimeOffset]$getValue.ScheduleInfo.startDateTime).ToString('o'))
+                $complexScheduleInfo.Add('StartDateTime', [M365DSCResourceBase]::FormatDateTime($getValue.ScheduleInfo.startDateTime))
             }
             if ($complexScheduleInfo.values.Where({ $null -ne $_ }).Count -eq 0)
             {
@@ -379,17 +367,7 @@ class AADGroupEligibilitySchedule : M365DSCResourceBase
                 }
             }
 
-            switch ($this.PrincipalType)
-            {
-                'user'
-                {
-                    $PrincipalId = (Get-MgUser -Filter "UserPrincipalName eq '$($this.Principal)'" -ErrorAction SilentlyContinue).id
-                }
-                default
-                {
-                    $PrincipalId = (Get-MgGroup -Filter "DisplayName eq '$($this.Principal)'" -ErrorAction SilentlyContinue).id
-                }
-            }
+            $PrincipalId = $this.GetPrincipalInstance().Id
             $createParameters.Add('PrincipalId', $PrincipalId)
 
             #region resource generator code
@@ -479,17 +457,7 @@ class AADGroupEligibilitySchedule : M365DSCResourceBase
                 }
             }
             $updateParameters.groupId = $groupIdValue
-            switch ($this.PrincipalType)
-            {
-                'user'
-                {
-                    $PrincipalId = (Get-MgUser -Filter "UserPrincipalName eq '$($this.Principal)'" -ErrorAction SilentlyContinue).id
-                }
-                default
-                {
-                    $PrincipalId = (Get-MgGroup -Filter "DisplayName eq '$($this.Principal)'" -ErrorAction SilentlyContinue).id
-                }
-            }
+            $PrincipalId = $this.GetPrincipalInstance().Id
 
             $updateParameters.Add('PrincipalId', $PrincipalId)
 
@@ -512,17 +480,7 @@ class AADGroupEligibilitySchedule : M365DSCResourceBase
             $GroupFilter = "DisplayName eq '" + $this.GroupDisplayName + "'"
             $groupIdValue = (Get-MgGroup -Filter $GroupFilter).Id
             $updateParameters.groupId = $groupIdValue
-            switch ($this.PrincipalType)
-            {
-                'user'
-                {
-                    $PrincipalId = (Get-MgUser -Filter "UserPrincipalName eq '$($this.Principal)'" -ErrorAction SilentlyContinue).id
-                }
-                default
-                {
-                    $PrincipalId = (Get-MgGroup -Filter "DisplayName eq '$($this.Principal)'" -ErrorAction SilentlyContinue).id
-                }
-            }
+            $PrincipalId = $this.GetPrincipalInstance().Id
             $updateParameters.Add('PrincipalId', $PrincipalId)
 
             #region resource generator code
@@ -701,12 +659,12 @@ class AADGroupEligibilitySchedule : M365DSCResourceBase
                             }
                             @{
                                 Name            = 'Recurrence'
-                                CimInstanceName = 'MicrosoftGraphPatternedRecurrence1'
+                                CimInstanceName = 'MicrosoftGraphPrivilegedAccessPatternedRecurrence'
                                 IsRequired      = $False
                             }
                             @{
                                 Name            = 'Pattern'
-                                CimInstanceName = 'MicrosoftGraphRecurrencePattern1'
+                                CimInstanceName = 'MicrosoftGraphPrivilegedAccessRecurrencePattern'
                                 IsRequired      = $False
                             }
                             @{
@@ -785,6 +743,20 @@ class AADGroupEligibilitySchedule : M365DSCResourceBase
         }
     }
 
+    hidden [System.Object] GetPrincipalInstance()
+    {
+        if ($this.PrincipalType -ne 'group')
+        {
+            $user = Get-MgUser -Filter "UserPrincipalName eq '$($this.Principal)'" -ErrorAction SilentlyContinue
+            if ($null -ne $user -or $this.PrincipalType -eq 'user')
+            {
+                return $user
+            }
+        }
+
+        return Get-MgGroup -Filter "DisplayName eq '$($this.Principal -replace "'", "''")'" -ErrorAction SilentlyContinue
+    }
+
     hidden [AADGroupEligibilitySchedule] AsResult([System.Object] $Values)
     {
         if ($Values -is [AADGroupEligibilitySchedule])
@@ -811,7 +783,7 @@ class MSFT_MicrosoftGraphrequestSchedule
 
     [DscProperty()]
     [System.ComponentModel.Description('The frequency of the  eligible or active assignment. This property is currently unsupported in PIM.')]
-    [MSFT_MicrosoftGraphPatternedRecurrence1] $Recurrence
+    [MSFT_MicrosoftGraphPrivilegedAccessPatternedRecurrence] $Recurrence
 
     [DscProperty()]
     [System.ComponentModel.Description('When the  eligible or active assignment becomes active.')]
@@ -834,18 +806,18 @@ class MSFT_MicrosoftGraphExpirationPattern
     [System.String] $Type
 }
 
-class MSFT_MicrosoftGraphPatternedRecurrence1
+class MSFT_MicrosoftGraphPrivilegedAccessPatternedRecurrence
 {
     [DscProperty()]
     [System.ComponentModel.Description('The frequency of an event.  For access reviews: Do not specify this property for a one-time access review.  Only interval, dayOfMonth, and type (weekly, absoluteMonthly) properties of recurrencePattern are supported.')]
-    [MSFT_MicrosoftGraphRecurrencePattern1] $Pattern
+    [MSFT_MicrosoftGraphPrivilegedAccessRecurrencePattern] $Pattern
 
     [DscProperty()]
     [System.ComponentModel.Description('The duration of an event.')]
     [MSFT_MicrosoftGraphRecurrenceRange] $Range
 }
 
-class MSFT_MicrosoftGraphRecurrencePattern1
+class MSFT_MicrosoftGraphPrivilegedAccessRecurrencePattern
 {
     [DscProperty()]
     [System.ComponentModel.Description('The day of the month on which the event occurs. Required if type is absoluteMonthly or absoluteYearly.')]

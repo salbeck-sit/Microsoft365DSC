@@ -28,7 +28,7 @@ Configuration Example
         {
             AttributeSet          = "Engineering";
             Ensure                = "Absent";
-            Name                  = "ShoeSize";
+            Name                  = "Project";
             ApplicationId         = $ApplicationId;
             TenantId              = $TenantId;
             CertificateThumbprint = $CertificateThumbprint;

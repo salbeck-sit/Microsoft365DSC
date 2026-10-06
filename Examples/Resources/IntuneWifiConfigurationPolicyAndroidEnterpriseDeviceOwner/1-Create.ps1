@@ -35,7 +35,7 @@ Configuration Example
                 }
                 MSFT_DeviceManagementConfigurationPolicyAssignments{
                     dataType         = '#microsoft.graph.exclusionGroupAssignmentTarget'
-                    groupDisplayName = 'Android Loaner Devices'
+                    groupDisplayName = 'Intune Excluded Users'
                 }
             )
             AuthenticationMethod               = 'usernameAndPassword'

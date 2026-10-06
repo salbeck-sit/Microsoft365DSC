@@ -41,12 +41,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                 }
             }
 
-            Mock -CommandName Get-PnPContext -MockWith {
-                $context = @{} | Add-Member -MemberType ScriptMethod -Name ExecuteQuery -Value {
-                } -PassThru | Add-Member -MemberType ScriptMethod -Name Load -Value {
-                } -PassThru
-
-                return $context
+            Mock -CommandName Get-PnPProperty -MockWith {
             }
 
             # Mock Write-M365DSCHost to hide output during the tests
@@ -103,6 +98,8 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
 
             It 'Adds the SPOSiteGroup in the Set method' {
                 (New-M365DSCResourceInstance -ResourceName 'SPOSiteGroup' -Property $testParams).Set()
+                Should -Invoke -CommandName New-PnPGroup -Exactly 1
+                Should -Invoke -CommandName Set-PnPGroupPermissions -Exactly 1 -ParameterFilter { ($AddRole -join ',') -eq 'Edit,Read' -and $null -eq $RemoveRole }
             }
         }
 
@@ -132,7 +129,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                         URL   = 'https://contoso.sharepoint.com/sites/TestSite'
                         Title = 'TestSiteGroup'
                         Owner = @{
-                            LoginName = 'admin@Microsoft365DSC.onmicrosoft.com'
+                            LoginName = 'i:0#.f|membership|admin@Microsoft365DSC.onmicrosoft.com'
                         }
                     }
                 }
@@ -160,8 +157,9 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
 
             It 'Updates the site group in the Set method' {
                 (New-M365DSCResourceInstance -ResourceName 'SPOSiteGroup' -Property $testParams).Set()
-                Should -Invoke -CommandName Set-PnPGroup -Exactly 1
+                Should -Invoke -CommandName Set-PnPGroup -Exactly 0
                 Should -Invoke -CommandName New-PnPGroup -Exactly 0
+                Should -Invoke -CommandName Set-PnPGroupPermissions -Exactly 1 -ParameterFilter { ($AddRole -join ',') -eq 'Edit,Read' -and ($RemoveRole -join ',') -eq 'Contribute' }
             }
 
         }
@@ -282,7 +280,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                 (New-M365DSCResourceInstance -ResourceName 'SPOSiteGroup' -Property $testParams).Set()
                 Should -Invoke -CommandName Set-PnPGroup -Exactly 0
                 Should -Invoke -CommandName New-PnPGroup -Exactly 0
-                Should -Invoke -CommandName Remove-PnPGroup -Exactly 1
+                Should -Invoke -CommandName Remove-PnPGroup -Exactly 1 -ParameterFilter { $Force }
             }
         }
 

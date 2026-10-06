@@ -145,10 +145,6 @@ class EXOActiveSyncMailboxPolicy : M365DSCResourceBase
     [System.Nullable[System.Boolean]] $IsDefault
 
     [DscProperty()]
-    [System.ComponentModel.Description('Specifies whether this policy is the default Mobile Device mailbox policy.')]
-    [System.Nullable[System.Boolean]] $IsDefaultPolicy
-
-    [DscProperty()]
     [System.ComponentModel.Description('Specifies the maximum size of attachments that can be downloaded to the mobile phone.')]
     [System.String] $MaxAttachmentSize
 
@@ -351,7 +347,6 @@ class EXOActiveSyncMailboxPolicy : M365DSCResourceBase
                 DevicePolicyRefreshInterval              = [System.String]$instance.DevicePolicyRefreshInterval
                 IrmEnabled                               = [System.Boolean]$instance.IrmEnabled
                 IsDefault                                = [System.Boolean]$instance.IsDefault
-                IsDefaultPolicy                          = [System.Boolean]$instance.IsDefaultPolicy
                 MaxAttachmentSize                        = [System.String]$instance.MaxAttachmentSize
                 MaxCalendarAgeFilter                     = [System.String]$instance.MaxCalendarAgeFilter
                 MaxPasswordFailedAttempts                = [System.String]$instance.MaxPasswordFailedAttempts
@@ -410,8 +405,6 @@ class EXOActiveSyncMailboxPolicy : M365DSCResourceBase
 
         $setParameters = Remove-M365DSCAuthenticationParameter -BoundParameters $this.GetBoundParameters()
 
-        $setParameters.Remove('IsDefaultPolicy') | Out-Null
-
         foreach ($property in @('MinPasswordLength', 'MinPasswordComplexCharacters'))
         {
             if ($setParameters.ContainsKey($property) -and $setParameters.$property -eq 0)
@@ -438,7 +431,7 @@ class EXOActiveSyncMailboxPolicy : M365DSCResourceBase
         # REMOVE
         elseif ($this.Ensure -eq 'Absent' -and $currentInstance.Ensure -eq 'Present')
         {
-            Remove-MobileDeviceMailboxPolicy -Identity $this.Identity
+            Remove-MobileDeviceMailboxPolicy -Identity $this.Identity -Confirm:$false
         }
     }
 

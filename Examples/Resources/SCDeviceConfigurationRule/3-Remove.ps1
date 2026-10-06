@@ -27,7 +27,7 @@ Configuration Example
         SCDeviceConfigurationRule "SCDeviceConfigurationRule-Example"
         {
             Ensure                = "Absent";
-            Name                  = "Human Resources{2b18}";
+            Name                  = "Human Resources Device Settings{2b18}";
             ApplicationId         = $ApplicationId;
             TenantId              = $TenantId;
             CertificateThumbprint = $CertificateThumbprint;

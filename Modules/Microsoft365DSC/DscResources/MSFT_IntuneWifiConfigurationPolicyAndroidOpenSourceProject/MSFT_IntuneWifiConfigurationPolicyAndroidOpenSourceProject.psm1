@@ -405,6 +405,13 @@ class IntuneWifiConfigurationPolicyAndroidOpenSourceProject : M365DSCResourceBas
         return ''
     }
 
+    [System.Collections.Hashtable] GetCompareParameters()
+    {
+        return @{
+            ExcludedProperties = @('PreSharedKey')
+        }
+    }
+
     hidden [IntuneWifiConfigurationPolicyAndroidOpenSourceProject] AsResult([System.Object] $Values)
     {
         if ($Values -is [IntuneWifiConfigurationPolicyAndroidOpenSourceProject])

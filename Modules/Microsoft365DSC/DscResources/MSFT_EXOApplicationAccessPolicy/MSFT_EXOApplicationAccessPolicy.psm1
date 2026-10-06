@@ -89,7 +89,11 @@ class EXOApplicationAccessPolicy : M365DSCResourceBase
                 [Array]$ApplicationAccessPolicy = Get-ApplicationAccessPolicy -Identity $this.Identity -ErrorAction SilentlyContinue
 
                 $ScopeIdentityValue = $null
-                if ($null -eq $ApplicationAccessPolicy)
+                if ($null -ne $ApplicationAccessPolicy)
+                {
+                    $ScopeIdentityValue = $ApplicationAccessPolicy.ScopeIdentity
+                }
+                elseif (-not [System.String]::IsNullOrEmpty($this.PolicyScopeGroupId))
                 {
                     $scopeIdentityGroup = $null
                     $scopeIdentityGroup = Get-Group -Identity $this.PolicyScopeGroupId -ErrorAction SilentlyContinue
@@ -97,7 +101,7 @@ class EXOApplicationAccessPolicy : M365DSCResourceBase
                     if ($null -ne $scopeIdentityGroup)
                     {
                         $ScopeIdentityValue = $scopeIdentityGroup.WindowsEmailAddress
-                        $ApplicationAccessPolicy = Get-ApplicationAccessPolicy | Where-Object -FilterScript { $this.AppID -eq $_.AppId -and $_.ScopeIdentity -eq $scopeIdentityGroup }
+                        $ApplicationAccessPolicy = Get-ApplicationAccessPolicy -ErrorAction SilentlyContinue | Where-Object -FilterScript { $this.AppID -eq $_.AppId -and $_.ScopeIdentity -eq $scopeIdentityGroup }
                     }
                     else
                     {
@@ -108,10 +112,6 @@ class EXOApplicationAccessPolicy : M365DSCResourceBase
                     {
                         Write-Verbose -Message "Found Application Access Policy by Scope {$($this.PolicyScopeGroupId)}"
                     }
-                }
-                else
-                {
-                    $ScopeIdentityValue = $ApplicationAccessPolicy.ScopeIdentity
                 }
 
                 if ($null -eq $ApplicationAccessPolicy)
@@ -163,6 +163,8 @@ class EXOApplicationAccessPolicy : M365DSCResourceBase
             $null = $this.InvokeInPowerShellCore('Set')
             return
         }
+
+        $this.WarnResourceDeprecated("RBAC for Applications with 'EXOServicePrincipal', 'EXOManagementScope' and 'EXOManagementRoleAssignment'", 'https://learn.microsoft.com/exchange/permissions-exo/application-rbac')
 
         Write-Verbose -Message "Setting Application Access Policy configuration for $($this.Identity)"
 
@@ -223,6 +225,8 @@ class EXOApplicationAccessPolicy : M365DSCResourceBase
 
     [bool] Test()
     {
+        $this.WarnResourceDeprecated("RBAC for Applications with 'EXOServicePrincipal', 'EXOManagementScope' and 'EXOManagementRoleAssignment'", 'https://learn.microsoft.com/exchange/permissions-exo/application-rbac')
+
         return ([M365DSCResourceBase] $this).Test()
     }
 
@@ -232,6 +236,8 @@ class EXOApplicationAccessPolicy : M365DSCResourceBase
         {
             return [string] $this.InvokeInPowerShellCore('Export')
         }
+
+        $this.WarnResourceDeprecated("RBAC for Applications with 'EXOServicePrincipal', 'EXOManagementScope' and 'EXOManagementRoleAssignment'", 'https://learn.microsoft.com/exchange/permissions-exo/application-rbac')
 
         $ConnectionMode = $this.Connect('ExchangeOnline')
 

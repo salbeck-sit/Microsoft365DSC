@@ -228,11 +228,9 @@ class TeamsAppSetupPolicy : M365DSCResourceBase
         $pinnedCallingBarAppsValue = @()
         if ($null -ne $this.PinnedCallingBarApps -and ([Array]$this.PinnedCallingBarApps).Count -gt 0)
         {
-            $i = 1
             foreach ($appInstance in $this.PinnedCallingBarApps)
             {
-                $pinnedCallingBarAppsValue += New-Object -TypeName 'Microsoft.Teams.Policy.Administration.Cmdlets.Core.PinnedCallingBarApp' -ArgumentList $appInstance, $i
-                $i++
+                $pinnedCallingBarAppsValue += New-Object -TypeName 'Microsoft.Teams.Policy.Administration.Cmdlets.Core.PinnedCallingBarApp' -ArgumentList $appInstance
             }
         }
 

@@ -199,7 +199,7 @@ class AADSocialIdentityProvider : M365DSCResourceBase
             [array]$getValue = Get-MgBetaIdentityProvider `
                 -All `
                 -Filter $mergedFilter `
-                -Top 0 `
+                -NoPageSize `
                 -ErrorAction Stop
 
             $i = 1

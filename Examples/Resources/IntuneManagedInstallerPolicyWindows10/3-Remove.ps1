@@ -25,7 +25,7 @@ Configuration Example
     {
         IntuneManagedInstallerPolicyWindows10 "IntuneManagedInstallerPolicyWindows10-Example"
         {
-            DisplayName           = "SideCar ManagedInstaller Script";
+            DisplayName           = "Intune Management Extension Managed Installer";
             Ensure                = "Absent";
             ApplicationId         = $ApplicationId;
             TenantId              = $TenantId;

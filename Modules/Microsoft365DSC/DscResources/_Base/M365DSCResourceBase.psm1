@@ -209,8 +209,8 @@ class M365DSCResourceBase
         Assignment therefore does not validate. _SetProperty and FromHashtable do.
     #>
     # Underscore-prefixed on purpose. A derived class cannot redeclare a member the base already
-    # defines, and resource schemas do use ordinary words as property names - the schema scan found
-    # MSFT_SCHeaderPattern.Values - so the internal members stay out of that namespace.
+    # defines, and resource schemas use ordinary words as property names, so the internal members
+    # stay out of that namespace.
 
     # Replaces $Script:exportedInstance, which cannot stay script-scoped once all
     # resources share one module scope.
@@ -1037,6 +1037,134 @@ class M365DSCResourceBase
         }
     }
 
+    # Reads a DateTime, DateTimeOffset or string as an instant. Strings use the invariant culture and a value
+    # without offset counts as UTC. Returns $null when the value is empty or cannot be parsed.
+    hidden static [System.Nullable[System.DateTimeOffset]] ConvertToDateTimeOffset([System.Object] $Value)
+    {
+        if ($Value -is [System.DateTimeOffset])
+        {
+            return [System.DateTimeOffset]$Value
+        }
+
+        if ($Value -is [System.DateTime])
+        {
+            $dateTime = [System.DateTime]$Value
+            if ($dateTime.Kind -eq [System.DateTimeKind]::Unspecified)
+            {
+                $dateTime = [System.DateTime]::SpecifyKind($dateTime, [System.DateTimeKind]::Utc)
+            }
+
+            return [System.DateTimeOffset]::new($dateTime)
+        }
+
+        $text = [System.String]$Value
+        $parsedValue = [System.DateTimeOffset]::MinValue
+        if (-not [System.String]::IsNullOrEmpty($text) -and
+            [System.DateTimeOffset]::TryParse($text, [System.Globalization.CultureInfo]::InvariantCulture, [System.Globalization.DateTimeStyles]::AssumeUniversal, [ref] $parsedValue))
+        {
+            return $parsedValue
+        }
+
+        return $null
+    }
+
+    # Formats a date and time as a round-trip UTC timestamp, e.g. 2030-01-01T00:00:00.0000000Z.
+    # Returns $null for an empty value and the original text when it cannot be parsed.
+    hidden static [System.String] FormatDateTime([System.Object] $Value)
+    {
+        if ($null -eq $Value -or [System.String]::IsNullOrEmpty([System.String] $Value))
+        {
+            return $null
+        }
+
+        $parsedValue = [M365DSCResourceBase]::ConvertToDateTimeOffset($Value)
+        if ($null -eq $parsedValue)
+        {
+            return [System.String] $Value
+        }
+
+        return $parsedValue.UtcDateTime.ToString('o', [System.Globalization.CultureInfo]::InvariantCulture)
+    }
+
+    # Returns $true when both values are the same instant, or the same text when either cannot be parsed.
+    hidden static [System.Boolean] IsSameDateTime([System.Object] $First, [System.Object] $Second)
+    {
+        $firstValue = [M365DSCResourceBase]::ConvertToDateTimeOffset($First)
+        $secondValue = [M365DSCResourceBase]::ConvertToDateTimeOffset($Second)
+        if ($null -ne $firstValue -and $null -ne $secondValue)
+        {
+            return $firstValue -eq $secondValue
+        }
+
+        return [System.String]$First -eq [System.String]$Second
+    }
+
+    # Reads a TimeSpan or an ISO-8601 duration such as P90D. Returns $null when the value is empty or cannot be parsed.
+    hidden static [System.Nullable[System.TimeSpan]] ConvertToTimeSpan([System.Object] $Value)
+    {
+        if ($Value -is [System.TimeSpan])
+        {
+            return [System.TimeSpan]$Value
+        }
+
+        $text = [System.String]$Value
+        if ([System.String]::IsNullOrEmpty($text))
+        {
+            return $null
+        }
+
+        try
+        {
+            return [System.Xml.XmlConvert]::ToTimeSpan($text)
+        }
+        catch
+        {
+            return $null
+        }
+    }
+
+    # Formats a duration in its shortest ISO-8601 form, e.g. P90D for P90DT0H0M0S.
+    # Returns $null for an empty value and the original text when it cannot be parsed.
+    hidden static [System.String] FormatDuration([System.Object] $Value)
+    {
+        if ($null -eq $Value)
+        {
+            return $null
+        }
+
+        $span = [M365DSCResourceBase]::ConvertToTimeSpan($Value)
+        if ($null -eq $span)
+        {
+            return [System.String]$Value
+        }
+
+        return [System.Xml.XmlConvert]::ToString([System.TimeSpan]$span)
+    }
+
+    # True when the time between the two dates matches the ISO 8601 duration to the minute.
+    hidden static [System.Boolean] IsSameDuration([System.Object] $Duration, [System.Object] $StartDateTime, [System.Object] $EndDateTime)
+    {
+        $expectedSpan = [M365DSCResourceBase]::ConvertToTimeSpan($Duration)
+        $start = [M365DSCResourceBase]::ConvertToDateTimeOffset($StartDateTime)
+        $end = [M365DSCResourceBase]::ConvertToDateTimeOffset($EndDateTime)
+        if ($null -eq $expectedSpan -or $null -eq $start -or $null -eq $end)
+        {
+            return $false
+        }
+
+        return [System.Math]::Abs((($end - $start) - $expectedSpan).TotalMinutes) -lt 1
+    }
+
+    # Warns that the resource is deprecated, names its replacement and, when given, a link with more information.
+    hidden [void] WarnResourceDeprecated([System.String] $Replacement, [System.String] $InformationUrl)
+    {
+        Write-Warning -Message "The resource '$($this.GetResourceName())' is deprecated. It will be removed in a future release. Please use $Replacement instead."
+        if (-not [System.String]::IsNullOrEmpty($InformationUrl))
+        {
+            Write-Warning -Message "For more information, please visit $InformationUrl"
+        }
+    }
+
     # Overridden by resources that need custom comparison parameters
     # (ExcludedProperties / IncludedProperties / PostProcessing / PostProcessingArgs).
     [Hashtable] GetCompareParameters()
@@ -1140,7 +1268,21 @@ class M365DSCResourceBase
 
     [bool] RequiresPowerShellCore()
     {
+        $this.ApplyEnsureDefault()
         return ($global:PSVersionTable.PSEdition -ne 'Core')
+    }
+
+    hidden [void] ApplyEnsureDefault()
+    {
+        $meta = $null
+        if (-not $this._info.Meta.TryGetValue('Ensure', [ref] $meta) -or -not $meta.IsSchema -or
+            -not [System.String]::IsNullOrEmpty($meta.Property.GetValue($this)))
+        {
+            return
+        }
+
+        $null = $this.GetBoundParameters()
+        $meta.Property.SetValue($this, 'Present')
     }
 
     [System.Object] InvokeInPowerShellCore([System.String] $MethodName)

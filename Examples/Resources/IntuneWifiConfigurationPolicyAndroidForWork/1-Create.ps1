@@ -26,7 +26,7 @@ Configuration Example
     {
         IntuneWifiConfigurationPolicyAndroidForWork 'IntuneWifiConfigurationPolicyAndroidForWork-Example'
         {
-            DisplayName                    = 'AndroindForWork'
+            DisplayName                    = 'Contoso Work Profile Wi-Fi'
             Description                    = 'Corporate Wi-Fi for Android work profile devices'
             Assignments                    = @(
                 MSFT_DeviceManagementConfigurationPolicyAssignments{
@@ -35,7 +35,7 @@ Configuration Example
                 }
                 MSFT_DeviceManagementConfigurationPolicyAssignments{
                     dataType         = '#microsoft.graph.exclusionGroupAssignmentTarget'
-                    groupDisplayName = 'Android Personally Owned Devices'
+                    groupDisplayName = 'Intune Excluded Users'
                 }
             )
             ConnectAutomatically           = $true

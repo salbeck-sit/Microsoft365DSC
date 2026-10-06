@@ -82,6 +82,13 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                 Mock -CommandName Get-MgBetaDomain -MockWith {
                     return $null
                 }
+
+                Mock -CommandName New-MgBetaDomain -MockWith {
+                    return @{
+                        Id         = 'contoso.com'
+                        IsVerified = $false
+                    }
+                }
             }
             It 'Should return Values from the Get method' {
                 ((New-M365DSCResourceInstance -ResourceName 'AADDomain' -Property $testParams).Get().ToHashtable()).Ensure | Should -Be 'Absent'
@@ -92,7 +99,14 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
 
             It 'Should create a new instance from the Set method' {
                 (New-M365DSCResourceInstance -ResourceName 'AADDomain' -Property $testParams).Set()
-                Should -Invoke -CommandName New-MgBetaDomain -Exactly 1
+                Should -Invoke -CommandName New-MgBetaDomain -Exactly 1 -ParameterFilter {
+                    $BodyParameter.Id -eq 'contoso.com' -and
+                    -not $BodyParameter.ContainsKey('IsVerified') -and
+                    -not $BodyParameter.ContainsKey('IsDefault') -and
+                    -not $BodyParameter.ContainsKey('IsRoot') -and
+                    -not $BodyParameter.ContainsKey('IsAdminManaged')
+                }
+                Should -Invoke -CommandName Update-MgBetaDomain -Exactly 0
             }
         }
 

@@ -46,7 +46,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     DisplayName           = 'PolicyDisplayName'
                     ID                    = '78a80fa1-8ced-4019-94d8-2e0130644496'
                     Definition            = @('{"TokenIssuancePolicy":{"Version": 1,"SigningAlgorithm": "http://www.w3.org/2000/09/xmldsig#rsa-sha1","TokenResponseSigningPolicy": "TokenOnly","SamlTokenVersion": "2.0"}}')
-                    Description           = 'My token'
                     isOrganizationDefault = $false
                 }
             }
@@ -67,7 +66,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             BeforeAll {
                 $testParams = @{
                     DisplayName           = 'PolicyDisplayName'
-                    Description           = 'My token'
                     Definition            = @('{"TokenIssuancePolicy":{"Version": 1,"SigningAlgorithm": "http://www.w3.org/2000/09/xmldsig#rsa-sha1","TokenResponseSigningPolicy": "TokenOnly","SamlTokenVersion": "2.0"}}')
                     IsOrganizationDefault = $false
                     Ensure                = 'Present'
@@ -97,7 +95,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     DisplayName           = 'PolicyDisplayName'
                     Definition            = @('{"TokenIssuancePolicy":{"Version": 1,"SigningAlgorithm": "http://www.w3.org/2000/09/xmldsig#rsa-sha1","TokenResponseSigningPolicy": "TokenOnly","SamlTokenVersion": "2.0"}}')
                     IsOrganizationDefault = $false
-                    Description           = 'My token'
                     Ensure                = 'Absent'
                     Credential            = $Credscredential
                 }
@@ -124,7 +121,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     DisplayName           = 'PolicyDisplayName'
                     Definition            = @('{"TokenIssuancePolicy":{"Version": 1,"SigningAlgorithm": "http://www.w3.org/2000/09/xmldsig#rsa-sha1","TokenResponseSigningPolicy": "TokenOnly","SamlTokenVersion": "2.0"}}')
                     IsOrganizationDefault = $false
-                    Description           = 'My token'
                     Ensure                = 'Present'
                     Credential            = $Credscredential
                 }
@@ -146,7 +142,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     DisplayName           = 'PolicyDisplayName1'
                     Definition            = @('{"TokenIssuancePolicy":{"Version": 1,"SigningAlgorithm": "http://www.w3.org/2000/09/xmldsig#rsa-sha1","TokenResponseSigningPolicy": "TokenOnly","SamlTokenVersion": "2.0"}}')
                     IsOrganizationDefault = $true # Drift
-                    Description           = 'My token'
                     Ensure                = 'Present'
                     Credential            = $Credscredential
                 }

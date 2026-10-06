@@ -26,20 +26,8 @@ Configuration Example
     {
         IntuneMobileAppsManagedGooglePlayApp "IntuneMobileAppsManagedGooglePlayApp-Example"
         {
-            DisplayName           = "Office";
-            PackageId             = "com.microsoft.office";
-            Publisher             = "Microsoft";
-            Description           = "Managed Google Play release of Microsoft Office for corporate-owned Android devices";
-            Developer             = "Microsoft Corporation";
-            InformationUrl        = "https://intranet.contoso.com/apps/office-android";
-            IsFeatured            = $true;
-            LargeIcon             = MSFT_DeviceManagementMimeContent{
-                Type  = "image/png"
-                Value = "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg=="
-            };
-            Notes                 = "Reviewed annually by the mobility team";
-            Owner                 = "Endpoint Management Team";
-            PrivacyInformationUrl = "https://www.contoso.com/privacy";
+            DisplayName           = "Microsoft Copilot";
+            PackageId             = "com.microsoft.office.officehubrow";
             RoleScopeTagIds       = @("1"); # Updated Property
             Ensure                = "Present";
             Assignments           = @(
@@ -51,7 +39,8 @@ Configuration Example
                 }
                 MSFT_DeviceManagementManagedGooglePlayMobileAppAssignment{
                     dataType         = '#microsoft.graph.exclusionGroupAssignmentTarget'
-                    groupDisplayName = 'Policy Exclusions'
+                    groupDisplayName = 'Intune Excluded Devices'
+                    intent           = 'required'
                 }
             );
             ApplicationId         = $ApplicationId;

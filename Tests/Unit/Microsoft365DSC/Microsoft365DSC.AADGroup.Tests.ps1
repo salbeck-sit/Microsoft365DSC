@@ -135,6 +135,9 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                         IsEnabled           = $true
                         OnPremisesGroupType = 'universalDistributionGroup'
                     })
+                    GroupLifecyclePolicySelectedEnabled = $false
+                    Owners                 = @('john.smith@contoso.com')
+                    Members                = @('john.smith@contoso.com', 'jane.doe@contoso.com')
                     Ensure                 = 'Present'
                     Credential             = $Credential
                 }
@@ -145,6 +148,19 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
 
                 Mock -CommandName Get-MgBetaGroup -MockWith {
                     return $null
+                }
+
+                Mock -CommandName Get-MgUser -MockWith {
+                    return @{
+                        Id = "id-$UserId"
+                    }
+                }
+
+                Mock -CommandName Get-MgBetaGroupLifecyclePolicy -MockWith {
+                    return @{
+                        Id                = '12345-12345-12345-12345-12345'
+                        ManagedGroupTypes = 'Selected'
+                    }
                 }
             }
 
@@ -157,7 +173,13 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             }
             It 'Should Create the group from the Set method' {
                 (New-M365DSCResourceInstance -ResourceName 'AADGroup' -Property $testParams).Set()
-                Should -Invoke -CommandName 'New-MgBetaGroup' -Exactly 1
+                Should -Invoke -CommandName 'New-MgBetaGroup' -Exactly 1 -ParameterFilter {
+                    -not $BodyParameter.ContainsKey('GroupLifecyclePolicySelectedEnabled') -and
+                    $BodyParameter.'owners@odata.bind'.Count -eq 1 -and $BodyParameter.'owners@odata.bind'[0] -like '*/directoryObjects/id-john.smith@contoso.com' -and
+                    $BodyParameter.'members@odata.bind'.Count -eq 2 -and $BodyParameter.'members@odata.bind'[1] -like '*/directoryObjects/id-jane.doe@contoso.com'
+                }
+                Should -Invoke -CommandName 'New-MgGroupOwnerByRef' -Exactly 0
+                Should -Invoke -CommandName 'New-MgBetaGroupMemberByRef' -Exactly 0
             }
         }
 

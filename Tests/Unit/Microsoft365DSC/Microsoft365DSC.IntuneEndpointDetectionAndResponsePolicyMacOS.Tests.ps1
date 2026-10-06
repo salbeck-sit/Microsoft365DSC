@@ -187,7 +187,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     DisplayName = 'My Test'
                     tags_item_key = 'GROUP'
                     tags_item_value = 'tag'
-                    RoleScopeTagIds = @("FakeStringValue")
                     Ensure = "Present"
                     Credential = $Credential;
                 }
@@ -204,7 +203,9 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             }
             It 'Should Create the group from the Set method' {
                 (New-M365DSCResourceInstance -ResourceName 'IntuneEndpointDetectionAndResponsePolicyMacOS' -Property $testParams).Set()
-                Should -Invoke -CommandName New-MgBetaDeviceManagementConfigurationPolicy -Exactly 1
+                Should -Invoke -CommandName New-MgBetaDeviceManagementConfigurationPolicy -Exactly 1 -ParameterFilter {
+                    $null -ne $BodyParameter.roleScopeTagIds -and $BodyParameter.roleScopeTagIds.Count -eq 0
+                }
             }
         }
 
@@ -280,9 +281,12 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     DisplayName = 'My Test'
                     tags_item_key = 'GROUP'
                     tags_item_value = 'Updated Tag' # Drift
-                    RoleScopeTagIds = @("FakeStringValue")
                     Ensure = 'Present'
                     Credential = $Credential;
+                }
+
+                Mock -CommandName Resolve-M365DSCIntuneRoleScopeTagIds -MockWith {
+                    return $RoleScopeTagIds
                 }
             }
 
@@ -296,7 +300,9 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
 
             It 'Should call the Set method' {
                 (New-M365DSCResourceInstance -ResourceName 'IntuneEndpointDetectionAndResponsePolicyMacOS' -Property $testParams).Set()
-                Should -Invoke -CommandName Update-IntuneDeviceConfigurationPolicy -Exactly 1
+                Should -Invoke -CommandName Update-IntuneDeviceConfigurationPolicy -Exactly 1 -ParameterFilter {
+                    $RoleScopeTagIds -contains 'FakeStringValue'
+                }
             }
         }
 

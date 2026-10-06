@@ -65,7 +65,7 @@ Configuration Example
                 }
                 MSFT_DeviceManagementConfigurationPolicyAssignments{
                     dataType         = "#microsoft.graph.exclusionGroupAssignmentTarget"
-                    groupDisplayName = "Wireless Onboarding Exclusions"
+                    groupDisplayName = "Intune Excluded Devices"
                 }
             );
             Ensure                                     = "Present";

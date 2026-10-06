@@ -76,7 +76,7 @@ $env:TEMP = Get-TemporaryPath
     Retries briefly to account for eventual consistency and returns null when the team cannot be resolved.
 
 .PARAMETER TeamName
-    Specifies the display name of the team to resolve.
+    Specifies the URL-encoded display name of the team to resolve.
 
 .FUNCTIONALITY
     Internal
@@ -97,10 +97,11 @@ function Get-TeamByName
 
     try
     {
+        $displayName = [System.Net.WebUtility]::UrlDecode($TeamName)
         $loopCounter = 0
         do
         {
-            $team = Get-Team -DisplayName $TeamName | Where-Object -Property DisplayName -EQ ([System.Net.WebUtility]::UrlDecode($TeamName))
+            $team = Get-Team -DisplayName $displayName | Where-Object -Property DisplayName -EQ $displayName
             if ($null -eq $team)
             {
                 Start-Sleep 5

@@ -118,7 +118,7 @@ class AADCustomSecurityAttributeDefinition : M365DSCResourceBase
                 }
                 if ($null -eq $instance)
                 {
-                    $instance = Get-MgBetaDirectoryCustomSecurityAttributeDefinition -Filter "Name eq '$($this.Name -replace "'", "''")'" `
+                    $instance = Get-MgBetaDirectoryCustomSecurityAttributeDefinition -Filter "attributeSet eq '$($this.AttributeSet -replace "'", "''")' and name eq '$($this.Name -replace "'", "''")'" `
                         -ExpandProperty 'allowedValues' `
                         -ErrorAction SilentlyContinue
                 }
@@ -195,16 +195,20 @@ class AADCustomSecurityAttributeDefinition : M365DSCResourceBase
         if ($this.Ensure -eq 'Present' -and $currentInstance.Ensure -eq 'Absent')
         {
             $setParameters.Remove('Id') | Out-Null
-            Write-Verbose -Message "Creating new Atribute Definition {$($this.Name)}"
-            $attributeDefinition = New-MgBetaDirectoryCustomSecurityAttributeDefinition -BodyParameter $setParameters
-
-            foreach ($allowedValue in $this.AllowedValues)
+            if ($this.AllowedValues.Count -gt 0)
             {
-                New-MgBetaDirectoryCustomSecurityAttributeDefinitionAllowedValue `
-                    -CustomSecurityAttributeDefinitionId $attributeDefinition.Id `
-                    -Id $allowedValue.ValueId `
-                    -IsActive:$allowedValue.IsActive
+                $allowedValueEntries = @()
+                foreach ($allowedValue in $this.AllowedValues)
+                {
+                    $allowedValueEntries += @{
+                        id       = $allowedValue.ValueId
+                        isActive = [System.Boolean]$allowedValue.IsActive
+                    }
+                }
+                $setParameters.AllowedValues = $allowedValueEntries
             }
+            Write-Verbose -Message "Creating new Atribute Definition {$($this.Name)}"
+            $null = New-MgBetaDirectoryCustomSecurityAttributeDefinition -BodyParameter $setParameters
         }
         # UPDATE
         elseif ($this.Ensure -eq 'Present' -and $currentInstance.Ensure -eq 'Present')
@@ -225,7 +229,7 @@ class AADCustomSecurityAttributeDefinition : M365DSCResourceBase
             # Allowed values cannot be removed, therefore we only need to add new ones or update existing ones
             foreach ($allowedValue in $this.AllowedValues)
             {
-                $existingAllowedValue = $currentInstance.AllowedValues | Where-Object { $_.Id -eq $allowedValue.ValueId }
+                $existingAllowedValue = $currentInstance.AllowedValues | Where-Object -Property ValueId -EQ $allowedValue.ValueId
                 if ($null -eq $existingAllowedValue)
                 {
                     # Add new allowed value
@@ -359,6 +363,11 @@ class AADCustomSecurityAttributeDefinition : M365DSCResourceBase
             IncludedProperties = @('ValueId', 'IsActive')
             PostProcessing     = {
                 param($DesiredValues, $CurrentValues, $ValuesToCheck, $ignore)
+                if ($DesiredValues.Ensure -eq 'Absent' -and $CurrentValues.Status -eq 'Deprecated')
+                {
+                    $CurrentValues.Ensure = 'Absent'
+                }
+
                 # Values cannot be removed from AllowedValues
                 # Therefore, we add the missing values from CurrentValues to DesiredValues for comparison
                 if ($DesiredValues.ContainsKey('AllowedValues'))

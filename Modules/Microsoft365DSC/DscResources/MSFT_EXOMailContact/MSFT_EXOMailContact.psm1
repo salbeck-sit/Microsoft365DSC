@@ -234,14 +234,24 @@ class EXOMailContact : M365DSCResourceBase
 
             Write-Verbose -Message "Found Mail Contact $($this.Name)"
 
+            $contactDetails = $null
+            if ($null -ne $this.ResourceCache['ContactDetails'])
+            {
+                $contactDetails = $this.ResourceCache['ContactDetails'][[System.String]$contact.Identity]
+            }
+            if ($null -eq $contactDetails)
+            {
+                $contactDetails = Get-Contact -Identity ([System.String]$contact.Identity) -ErrorAction SilentlyContinue
+            }
+
             $result = @{
                 Name                        = $this.Name
                 ExternalEmailAddress        = $contact.ExternalEmailAddress
                 Alias                       = $contact.Alias
                 DisplayName                 = $contact.DisplayName
-                FirstName                   = $contact.FirstName
-                Initials                    = $contact.Initials
-                LastName                    = $contact.LastName
+                FirstName                   = $contactDetails.FirstName
+                Initials                    = $contactDetails.Initials
+                LastName                    = $contactDetails.LastName
                 MacAttachmentFormat         = $contact.MacAttachmentFormat
                 MessageBodyFormat           = $contact.MessageBodyFormat
                 MessageFormat               = $contact.MessageFormat
@@ -333,6 +343,10 @@ class EXOMailContact : M365DSCResourceBase
             $updateParameters.Add('Identity', $this.Name)
 
             New-MailContact @createParameters -ErrorAction Stop
+            $null = Wait-M365DSCCondition -Description "Mail Contact {$($createParameters.Name)}" -ConsecutiveCount 2 -ScriptBlock {
+                $null -ne (Get-MailContact -Identity $createParameters.Name -ErrorAction 'SilentlyContinue')
+            }
+
             Set-MailContact @updateParameters -ErrorAction Stop
         }
         elseif ($this.Ensure -eq 'Present' -and $currentContact.Ensure -eq 'Present')
@@ -348,6 +362,19 @@ class EXOMailContact : M365DSCResourceBase
             }
             $updateParameters.Add('Identity', $this.Name)
             Set-MailContact @updateParameters
+
+            $contactParameters = @{}
+            foreach ($param in @('FirstName', 'Initials', 'LastName'))
+            {
+                if ($boundParameters.ContainsKey($param) -and $this.$param -ne $currentContact.$param)
+                {
+                    $contactParameters.Add($param, $this.$param)
+                }
+            }
+            if ($contactParameters.Count -gt 0)
+            {
+                Set-Contact -Identity $this.Name @contactParameters
+            }
         }
         elseif ($this.Ensure -eq 'Absent' -and $currentContact.Ensure -eq 'Present')
         {
@@ -377,6 +404,11 @@ class EXOMailContact : M365DSCResourceBase
         {
             $dscContent = [System.Text.StringBuilder]::new()
             [array]$contactList = Get-MailContact -ResultSize 'Unlimited' -ErrorAction Stop
+            $this.ResourceCache['ContactDetails'] = @{}
+            foreach ($contactDetails in (Get-Contact -RecipientTypeDetails 'MailContact' -ResultSize 'Unlimited' -ErrorAction Stop))
+            {
+                $this.ResourceCache['ContactDetails'][[System.String]$contactDetails.Identity] = $contactDetails
+            }
             if ($contactList.Length -eq 0)
             {
                 Write-M365DSCHost -Message $Global:M365DSCEmojiGreenCheckMark -CommitWrite

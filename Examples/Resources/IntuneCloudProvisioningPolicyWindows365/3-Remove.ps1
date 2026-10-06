@@ -26,7 +26,7 @@ Configuration Example
     {
         IntuneCloudProvisioningPolicyWindows365 "IntuneCloudProvisioningPolicyWindows365-Example"
         {
-            DisplayName           = "IntuneCloudProvisioningPolicyWindows365_1";
+            DisplayName           = "Pilot Users Cloud PC";
             Ensure                = "Absent";
             ApplicationId         = $ApplicationId;
             TenantId              = $TenantId;

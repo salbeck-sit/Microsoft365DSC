@@ -1,19 +1,13 @@
-﻿# Change log for Microsoft365DSC
+# Change log for Microsoft365DSC
 
 # UNRELEASED
 
 * AADAccessReviewDefinition
   * [BREAKING CHANGE] Renamed property `SettingsValue` to `Settings` to match the
     name Microsoft Graph uses.
-* AADActivityBasedTimeoutPolicy
-  * Added support for the `Description` property.
 * AADAdministrativeUnit
   * Fixed an issue where resolving a scoped role member could throw an error.
     FIXES [#7457](https://github.com/Microsoft365DSC/Microsoft365DSC/issues/7457)
-* AADAgreement
-  * [BREAKING CHANGE] Removed property `AcceptanceStatement`. It was not part of the
-    Graph Schema definition for the resource.
-  * Added support for the `TermsExpiration` property.
 * AADApplication
   * [BREAKING CHANGE] Renamed property `Permissions` to `RequiredResourceAccess`
     to match the name Microsoft Graph uses.
@@ -21,6 +15,11 @@
     `NativeAuthenticationApisEnabled`, `Notes`, `SamlMetadataUrl`, `Tags` and
     `TokenEncryptionKeyId` properties.
   * Updated `Owners` to use `DisplayName` for Service Principal objects.
+* AADAppManagementPolicy
+  * Fixed an issue where an existing policy was not found by its display name and a
+    duplicate was created on every run.
+  * Fixed an issue where `MaxLifetime` and `RestrictForAppsCreatedAfterDateTime` were
+    always reported as drifted.
 * AADAuthenticationMethodPolicyVoice
   * Added support for the `CallerIdNumber` property.
 * AADAuthenticationMethodPolicyX509
@@ -32,6 +31,10 @@
   * Added support for the `EnabledPreviewFeatures` property.
   * Fixed an issue where a comparison threw when the tenant returned no value for a
     collection property.
+* AADClaimsMappingPolicy
+  * [BREAKING CHANGE] Removed the `Description` property.
+  * Fixed an issue where creating or updating a policy failed with
+    `A 'StartArray' node was expected`.
 * AADConditionalAccessPolicy
   * [BREAKING CHANGE] Changed `TermsOfUse` to a collection, so a policy that requires
     more than one agreement carries all of them.
@@ -39,6 +42,10 @@
   * Added value `hidden` to property `ServicePrincipalRiskLevels`.
   * An agreement that cannot be found in the tenant is now reported with a warning and
     left out of the policy.
+  * Fixed an issue where creating or updating a policy with `IncludePlatforms` or
+    `ExcludePlatforms` failed.
+  * Fixed an issue where `DisableResilienceDefaultsIsEnabled = $false` always reported
+    drift.
 * AADCrossTenantAccessPolicyConfigurationDefault
   * Added support for the `AutomaticUserConsentSettings`, `AppServiceConnectInbound`,
     `BlockServiceProviderOutboundAccess`, `M365CollaborationOutbound` and
@@ -51,27 +58,51 @@
     `BlockServiceProviderOutboundAccess`, `M365CollaborationInbound`, `TenantRestrictions`
     and `M365CollaborationOutbound` properties.
     FIXES [#7436](https://github.com/Microsoft365DSC/Microsoft365DSC/issues/7436)
+  * Fixed an issue where creating a partner configuration with `IdentitySynchronization`
+    failed with `Directory_ObjectNotFound: Unable to read the company information from
+    the directory.`
+  * Fixed an issue where updating `IdentitySynchronization` failed when the partner had
+    no identity synchronization policy yet.
 * AADCrossTenantIdentitySyncPolicyPartner
   * Added support for the `ExternalCloudAuthorizedApplicationId` and
     `IsRoleEnabledGroupSyncAllowed` properties.
 * AADCustomAuthenticationExtension
   * [BREAKING CHANGE] Renamed the property `ClientConfigurationTimeoutMilliseconds` to
     `ClientConfigurationTimeoutInMilliseconds` to match the name Microsoft Graph uses.
+  * Fixed an issue where updating an extension with claims failed.
+* AADCustomSecurityAttributeDefinition
+  * Fixed an issue where allowed values were not created with a new definition.
+  * Fixed an issue where existing allowed values were added again.
+  * Fixed an issue where a deactivated definition was reported as present.
+  * Fixed an issue where a definition from another attribute set was returned.
 * AADDeviceRegistrationPolicy
   * [BREAKING CHANGE] Changed `MultiFactorAuthConfiguration` from a boolean to the
     values `notRequired` and `required`, matching the type Microsoft Graph defines.
   * Added support for the `AzureADRegistration` property.
   * Fixed an issue where properties left out of the configuration were reset to their
     types initial value, e.g. `UserDeviceQuota` to 0. They now preserve their value.
+* AADDomain
+  * Fixed an issue where creating a domain failed with `ResourceWriteException`.
+* AADFederationConfiguration
+  * Fixed an issue where updating a configuration failed with
+    `Directory_ConcurrencyViolation` and changes to `Domains` were not applied.
 * AADFilteringProfile
   * Changed `Priority`, on the profile and on its associated policies, to a 64 bit
     integer to match the type Microsoft Graph defines.
+  * Fixed an issue where linked policies that do not exist were silently ignored.
 * AADGroup
   * Added support for the `Theme` and `WritebackConfiguration` properties.
   * Fixed a failed license assignment only being written to verbose output instead of
     failing the operation.
   * Fixed an issue where specifying a filter during export would throw a Graph exception.
     FIXES [#7489](https://github.com/Microsoft365DSC/Microsoft365DSC/issues/7489)
+  * Fixed an issue where creating or updating a group failed with
+    `Request_ResourceNotFound`.
+  * Fixed an issue where adding owners or members to a new group failed.
+  * Fixed an issue where creating a group failed with `Request_ResourceNotFound` when a
+    deleted group with the same name was restored.
+  * Fixed an issue where the application used to authenticate was added as an owner of a
+    new group.
 * AADGroupEligibilitySchedule
   * [BREAKING CHANGE] Renamed the embedded class `MSFT_MicrosoftGraphRecurrenceRange1` to
     `MSFT_MicrosoftGraphRecurrenceRange`.
@@ -81,13 +112,15 @@
     to `MSFT_MicrosoftGraphPrivilegedAccessPatternedRecurrence`.
   * The export now only queries groups that are enabled in PIM for Groups instead of every
     group in the tenant. Requires the `PrivilegedAccess.Read.AzureADGroup` permission.
-* AADGroupEligibilitySchedule
-  * [BREAKING CHANGE] Renamed the embedded class `MSFT_MicrosoftGraphRecurrenceRange1` to
-    `MSFT_MicrosoftGraphRecurrenceRange`.
+  * Fixed an issue where `Ensure = 'Absent'` did not remove the schedule when `PrincipalType` was
+    not specified.
+  * Fixed an issue where `ScheduleInfo` dates were reported as drifted.
 * AADGroupEligibilityScheduleSettings
   * Replaced the deprecated `/beta/privilegedAccess/aadGroups/resources` API, which stops
     returning data on October 28, 2026, with the PIM for Groups resources API. Requires the
     `PrivilegedAccess.Read.AzureADGroup` and `GroupMember.Read.All` permissions.
+* AADHomeRealmDiscoveryPolicy
+  * [BREAKING CHANGE] Removed the `Description` property.
 * AADIdentityAPIConnector
   * [BREAKING CHANGE] Replaced the flattened `Username`, `Password` and `Certificates`
     properties with the `AuthenticationConfiguration` complex property. Its `dataType`
@@ -98,11 +131,15 @@
   * Fixed an issue where a resource role scope naming its resource by object id reported
     drift on every run and re-applied the access package.
     FIXES [#7412](https://github.com/Microsoft365DSC/Microsoft365DSC/issues/7412)
+  * Fixed an issue where updating an access package without
+    `AccessPackageResourceRoleScopes` failed and removed its role scopes.
 * AADEntitlementManagementAccessPackageAssignmentPolicy
   * [BREAKING CHANGE] Renamed sub-property `Sequence` to `SequencePosition` to
     avoid a conflict with a reserved PowerShell keyword.
   * Added support for the `AccessPackageNotificationSettings` and
     `VerifiableCredentialSettings` properties.
+  * Fixed an issue where `AccessReviewSettings.StartDateTime` was parsed with the
+    culture of the machine.
 * AADEntitlementManagementAccessPackageCatalogResource
   * [BREAKING CHANGE] Renamed sub-property `Sequence` to `SequencePosition` to
     avoid a conflict with a reserved PowerShell keyword.
@@ -111,6 +148,11 @@
   * Fixed an issue where naming an `AadGroup` or `AadApplication` resource by object id
     reported drift on every run and never converged.
     FIXES [#7386](https://github.com/Microsoft365DSC/Microsoft365DSC/issues/7386)
+  * Fixed an issue where a catalog resource could not be found or removed when
+    `CatalogId` was not specified.
+* AADEntitlementManagementRoleAssignment
+  * Fixed an issue where checking for a missing role assignment failed with "Cannot bind
+    argument to parameter 'GroupId' because it is an empty string".
 * AADIdentityGovernanceLifecycleWorkflow
   * Added support for the `AdministrationScopeTargets` property.
 * AADIdentityGovernanceProgram
@@ -120,9 +162,14 @@
   * Added support for the `QuarantineConfiguration` property.
 * AADOnPremisesPublishingProfilesSettings
   * Added support for the `IsDefaultAccessEnabled` property.
+* AADOrganizationCertificateBasedAuthConfiguration
+  * Fixed an issue where removing a configuration that did not exist failed.
+  * `OrganizationId` accepts a verified domain name of the organization.
 * AADPermissionGrantPolicy
   * Added support for the `IncludeAllPreApprovedApplications` and `ResourceScopeType`
     properties.
+  * Fixed an issue where condition sets were lost or reported as drifted when a policy
+    was created or updated.
 * AADPIMGroupSetting
   * [BREAKING CHANGE] The export no longer includes the default policies of groups that are
     not enabled in PIM for Groups. Only groups enabled in PIM are exported. Requires the
@@ -131,10 +178,26 @@
 * AADRoleAssignmentScheduleRequest
   * [BREAKING CHANGE] Removed deprecated properties `Action`, `IsValidationOnly`
     and `TicketInfo`.
+  * Fixed an issue where an expiration of type `afterDuration` was always reported as
+    drifted.
+  * Fixed an issue where an instance was not found when `PrincipalType` was not
+    specified.
+  * Fixed an issue where a schedule found through the Graph lookup returned empty
+    values.
+  * Fixed an issue where removing a request made other requests with the same role,
+    principal or scope appear absent.
 * AADRoleDefinition
   * Fixed an issue where roles with empty permissions were not exported.
 * AADRoleEligibilityScheduleRequest
   * [BREAKING CHANGE] Removed deprecated properties `Action` and `IsValidationOnly`.
+  * Fixed an issue where an expiration of type `afterDuration` was always reported as
+    drifted.
+  * Fixed an issue where an instance was not found when `PrincipalType` was not
+    specified.
+  * Fixed an issue where a schedule found through the Graph lookup returned empty
+    values.
+  * Fixed an issue where removing a request made other requests with the same role,
+    principal or scope appear absent.
 * AADRoleSetting
   * Fixed an issue where a configuration that identified the role by its display name
     instead of its id was always reported as compliant and never applied its settings.
@@ -151,6 +214,10 @@
 * AADTenantDetails
   * Added support for the `BusinessPhones`, `City`, `PostalCode`, `PreferredLanguage`,
     `PrivacyProfile`, `State` and `Street` properties.
+* AADTokenIssuancePolicy
+  * [BREAKING CHANGE] Removed the `Description` property.
+* AADTokenLifetimePolicy
+  * [BREAKING CHANGE] Removed the `Description` property.
 * AADUser
   * [BREAKING CHANGE] Renamed properties `Fax` to `FaxNumber`, `FirstName` to
     `GivenName`, `LastName` to `Surname`, `Office` to `OfficeLocation` and `Title`
@@ -164,6 +231,13 @@
     `LicenseAssignment` was emptied to strip every license.
   * Added support for the `AgeGroup`, `EmployeeHireDate`, `EmployeeLeaveDateTime`
     and `EmployeeType` properties.
+  * Fixed an issue where creating a user without `Password` failed.
+* AADUserFlowAttribute
+  * Fixed an issue where updating or removing an attribute failed when `Id` did not
+    match the generated identifier.
+* AADVerifiedIdAuthorityContract
+  * Fixed an issue where creating a contract with a single display failed.
+  * Fixed an issue where updating a contract failed.
 * AzureRoleAssignmentScheduleRequest
   * Fixed the export switching the Azure subscription of the session to the last
     subscription it read.
@@ -174,32 +248,132 @@
     subscription it read.
   * Fixed the export failing or reusing the previous principal when a principal could not
     be resolved. The instance is now skipped.
+* EXOActiveSyncDeviceAccessRule
+  * Fixed an issue where removing a rule configured only by its `Identity` failed.
+* EXOActiveSyncMailboxPolicy
+  * [BREAKING CHANGE] Removed the `IsDefaultPolicy` property.
+  * Fixed an issue where removing a policy failed with a server side error.
 * EXOActiveSyncOrganizationSettings
   * Initial release.
     FIXES [#4425](https://github.com/Microsoft365DSC/Microsoft365DSC/issues/4425)
 * EXOAntiPhishPolicy
   * Fixed an issue where the property description contained an invalid character.
+* EXOAntiPhishRule
+  * Fixed an issue where changing `Enabled` on an existing rule had no effect.
+  * Fixed an issue where creating a rule failed because the anti-phishing policy created
+    in the same configuration was not yet visible.
+* EXOApplicationAccessPolicy
+  * Deprecated resource. Replaced with `EXOManagementScope`, `EXOServicePrincipal` and
+    `EXOManagementRoleAssignment` (RBAC for Applications).
+  * Fixed an issue where `Get()` and `Test()` threw an error instead of returning `Absent` when
+    the tenant has no application access policy.
 * EXOAtpPolicyForO365
   * [BREAKING CHANGE] Removed `Identity` property.
+* EXOAtpProtectionPolicyRule
+  * Fixed an issue where updating a rule without `SafeAttachmentPolicy` or `SafeLinksPolicy`
+    failed.
+  * Fixed an issue where an unset `Enabled` disabled the rule.
+* EXOAuthenticationPolicyAssignment
+  * Fixed an issue where a user without an assigned authentication policy was reported
+    as present.
 * EXOAvailabilityAddressSpace
-  * [BREAKING CHANGE] Changed type for `Credentials` from String
-    to PSCredential and removed it from the export output.
+  * Removed `Credentials` from the export output and the drift comparison.
+  * Fixed an issue where updating or removing an availability address space failed when
+    `Identity` differed from `ForestName`.
 * EXOArcConfig
   * Fixed an issue where the `ArcTrustedSealers` property was exported as
     a single string instead of an array.
 * EXODistributionGroup
   * [BREAKING CHANGE] Removed deprecated property `Notes`.
+  * Fixed an issue where `AcceptMessagesOnlyFromSendersOrMembers` and `RoomList` always
+    reported drift.
+  * Fixed an issue where creating a distribution group failed with "couldn't be found"
+    because the new group was not yet visible.
+* EXODynamicDistributionGroup
+  * [BREAKING CHANGE] Replaced the invalid `IncludedRecipients` value `MailboxContacts` with
+    `MailContacts`.
+  * Fixed an issue where `IncludedRecipients`, `MailTip` and `MailTipTranslations` always
+    reported drift.
+  * Fixed an issue where removing a group failed.
+* EXOEmailAddressPolicy
+  * Fixed an issue where changes to `ManagedByFilter` were not applied.
+* EXOHostedContentFilterRule
+  * Fixed an issue where changing `Enabled` on an existing rule had no effect.
+* EXOHostedOutboundSpamFilterRule
+  * Fixed an issue where changing `Enabled` on an existing rule had no effect.
+  * Fixed an issue where creating a rule failed because the outbound spam filter policy
+    created in the same configuration was not yet visible.
 * EXOIRMConfiguration
   * [BREAKING CHANGE] Removed deprecated property `EnablePortalTrackingLogs`.
+* EXOJournalRule
+  * Fixed an issue where enabling, disabling or removing a journal rule failed or hung waiting
+    for confirmation.
+* EXOMailContact
+  * Fixed an issue where `FirstName`, `Initials` and `LastName` were always reported as empty.
+  * Fixed an issue where `FirstName`, `Initials` and `LastName` were not updated.
+  * Fixed an issue where creating a mail contact failed with "couldn't be found" because
+    the new contact was not yet visible.
+* EXOMalwareFilterRule
+  * Fixed an issue where changing `Enabled` on an existing rule had no effect.
+* EXOManagementRole
+  * Fixed an issue where updating a management role failed with "there's already another
+    role with the same name".
+* EXOManagementRoleAssignment
+  * Fixed an issue where `RecipientRelativeWriteScope` was always reported as empty.
+  * Fixed an issue where `RecipientOrganizationalUnitScope` and
+    `ExclusiveRecipientWriteScope` always reported drift.
+  * Fixed an issue where the export returned an organizational unit or administrative unit
+    as `CustomRecipientWriteScope`.
+  * Corrected the descriptions of `ExclusiveRecipientWriteScope` and `App`.
 * EXOManagementRoleEntry
   * Reinstated deprecated property `Type`.
+* EXOMigration
+  * [BREAKING CHANGE] Removed the `BadItemLimit` and `LargeItemLimit` properties.
 * EXOPlace
   * [BREAKING CHANGE] Removed deprecated property `Desks`.
+* EXOQuarantinePolicy
+  * [BREAKING CHANGE] `QuarantinePolicyType` only accepts `PolicyQuarantineTag` and
+    `GlobalQuarantineTag`.
+  * Fixed an issue where updating a policy created by the resource failed.
+  * Fixed an issue where `QuarantinePolicyType` always reported drift for custom policies.
+  * Fixed an issue where global quarantine settings could not be applied before they were first
+    saved.
+* EXORecipientPermission
+  * Fixed an issue where removing a permission without `AccessRights` failed.
+* EXORemoteDomain
+  * Fixed an issue where removing a remote domain failed when `Name` was not specified.
+* EXORoleAssignmentPolicy
+  * Fixed an issue where removing a policy failed while it still had management role
+    assignments.
 * EXORoleGroup
   * Removed a redundant `Get-RoleGroupMember` call per role group during export. `Get()` already
     resolves the members and overwrote the value the export pass fetched.
+  * Fixed an issue where `Description` was never updated.
+  * Fixed an issue where only one of `Members` or `Roles` was updated per run.
+* EXOSafeAttachmentRule
+  * Fixed an issue where changing `Enabled` on an existing rule had no effect.
+* EXOSafeLinksRule
+  * Fixed an issue where changing `Enabled` on an existing rule had no effect.
+* EXOSmtpDaneInbound
+  * Fixed an issue where failures to enable or disable SMTP DANE were not reported.
+* EXOSweepRule
+  * [BREAKING CHANGE] Changed `Mailbox` to a key property.
+  * Fixed an issue where another rule of the same mailbox was returned instead of the
+    named one.
+  * Fixed an issue where removing a rule prompted for confirmation.
+  * Fixed an issue where reading a rule without a sender failed.
 * EXOTenantAllowBlockListItems
   * [BREAKING CHANGE] Removed property `AppliationSecret`.
+  * Added property `NoExpiration`.
+* EXOTenantAllowBlockListSpoofItems
+  * Fixed an issue where removing a spoofed sender entry prompted for input and failed.
+* EXOTransportRule
+  * Added validation of `IncidentReportContent` values.
+  * Fixed an issue where `ActivationDate`, `ExpiryDate`, `AttachmentSizeOver`,
+    `ExceptIfAttachmentSizeOver`, `MessageSizeOver` and `ExceptIfMessageSizeOver` always
+    reported drift.
+  * Fixed an issue where enabling or disabling an existing rule prompted for
+    confirmation.
 * FabricAdminTenantSettings
   * Added support for the `ManagedIdentity` property and authentication method.
     FIXES [#7499](https://github.com/Microsoft365DSC/Microsoft365DSC/issues/7499)
@@ -253,6 +427,8 @@
     `PurviewContentEvaluationRequired` properties.
   * Fixed an issue where a policy that allowed more than one device model failed to
     apply and exported every model as a single combined value.
+  * Fixed an issue where reading `GracePeriodToBlockAppsDuringOffClockHours` failed with
+    a `ToString` conversion error.
 * IntuneAppProtectionPolicyWindows10
   * Added value `selectedApps` to property `AllowedInboundDataTransferSources`.
   * Added value `selectedApps` to property `AllowedOutboundDataTransferDestinations`.
@@ -286,6 +462,12 @@
   * Added support for the `FirmwareProtectionEnabled`, `KernelDmaProtectionEnabled`,
     `MemoryIntegrityEnabled`, `VirtualizationBasedSecurityEnabled` and
     `WslDistributions` properties.
+  * Fixed an issue where the built-in WSL compliance script was returned as
+    `DeviceCompliancePolicyScript` when `WslDistributions` was set.
+* IntuneDeviceComplianceScriptWindows10
+  * Fixed an issue where a compliance script without an `Id` was reported as present.
+  * Fixed an issue where scripts of other platforms with the same display name were
+    matched.
 * IntuneDeviceConfigurationCustomPolicyMacOS
   * Initial release.
 * IntuneDeviceConfigurationCustomPolicyWindows10
@@ -335,10 +517,6 @@
     `MSFT_MicrosoftGraphIpRange`.
   * [BREAKING CHANGE] Renamed the embedded class `MSFT_MicrosoftGraphProxiedDomain1` to
     `MSFT_MicrosoftGraphProxiedDomain`.
-  * [BREAKING CHANGE] Renamed the embedded class `MSFT_MicrosoftGraphIpRange1` to
-    `MSFT_MicrosoftGraphIpRange`.
-  * [BREAKING CHANGE] Renamed the embedded class `MSFT_MicrosoftGraphProxiedDomain1` to
-    `MSFT_MicrosoftGraphProxiedDomain`.
   * Added support for the `DeviceManagementApplicabilityRuleOsEdition`,
     `DeviceManagementApplicabilityRuleOsVersion` and
     `DeviceManagementApplicabilityRuleDeviceMode` properties.
@@ -355,12 +533,12 @@
   * Added support for the `AllowedGoogleAccountDomains`,
     `BlockUnifiedPasswordForWorkProfile` and `WorkProfileAccountUse`
     properties.
+* IntuneDeviceConfigurationPolicyiOS
+  * Fixed an issue where policies with `NetworkUsageRules` managed apps failed to apply
+    and always reported drift.
 * IntuneDeviceConfigurationPolicyMacOS
   * Added support for the `ActivationLockWhenSupervisedAllowed` property.
 * IntuneDeviceConfigurationPolicyWindows10
-  * [BREAKING CHANGE] Renamed the embedded class
-    `MSFT_MicrosoftGraphdefenderDetectedMalwareActions1` to
-    `MSFT_MicrosoftGraphdefenderDetectedMalwareActions`.
   * [BREAKING CHANGE] Renamed the embedded class
     `MSFT_MicrosoftGraphdefenderDetectedMalwareActions1` to
     `MSFT_MicrosoftGraphdefenderDetectedMalwareActions`.
@@ -406,52 +584,111 @@
     `DeviceManagementApplicabilityRuleDeviceMode` properties.
   * Fixed an issue where a policy that listed its root certificates for server
     validation by identifier alone failed to apply.
+* IntuneDeviceControlPolicySetting
+  * Fixed an issue where removing a setting failed with `You cannot call a method on a
+    null-valued expression.`
 * IntuneDeviceEnrollmentPlatformRestriction
   * [BREAKING CHANGE] Renamed the key property `Identity` to `Id` to match the name
     Microsoft Graph uses.
+  * Fixed an issue where a restriction was not found by display name.
+  * Fixed an issue where single platform restrictions were created without their
+    platform type.
 * IntuneDeviceFeaturesConfigurationPolicyIOS
   * Removed null-valued `displayName` properties from nested home screen page instances.
 * IntuneDeviceFeaturesConfigurationPolicyMacOS
-  * [BREAKING CHANGE] Renamed the embedded class `MSFT_MicrosoftGraphIpRange2` to
-    `MSFT_MicrosoftGraphContentCachingIpRange`.
   * Initial release.
 * IntuneDeviceManagementAndroidDeviceOwnerEnrollmentProfile
   * Added support for the `DeviceNameTemplate` property.
+  * Fixed an issue where a `TokenExpirationDateTime` not in ISO 8601 format was
+    rejected.
 * IntuneDeviceManagementEnrollmentAndroidGooglePlay
   * Added support for the `TargetGroups` and `ManagedGooglePlayInitialScopeTagIds`
     properties.
 * IntuneDiskEncryptionMacOS
   * [BREAKING CHANGE] Removed resource. Please use the resource
     `IntuneDiskEncryptionFileVaultPolicyMacOS` instead.
+* IntuneEndpointDetectionAndResponsePolicyLinux
+  * Fixed an issue where creating a policy without `RoleScopeTagIds` failed.
+  * Fixed an issue where a policy with the same name from another template was matched.
+* IntuneEndpointDetectionAndResponsePolicyMacOS
+  * Fixed an issue where creating or updating a policy without `RoleScopeTagIds` failed.
+* IntuneManagedInstallerPolicyWindows10
+  * Fixed an issue where new policies were created without their display name,
+    description and scope tags.
+  * Fixed an issue where assigning a policy with more than one assignment failed.
 * IntuneMobileAppsAutoUpdateCatalogAppWindows10
   * Initial release.
+* IntuneMobileAppsBuiltInStoreApp
+  * Fixed an issue where an app created shortly before was not found and was created
+    again.
 * IntuneMobileAppsBundleMacOS
   * [BREAKING CHANGE] Made `PackageFileType` mandatory, matching the other app resources
     that carry a type discriminator. Intune rejected a configuration that omitted it.
+  * Fixed an issue where an app created shortly before was not found and was created
+    again.
+* IntuneMobileAppsDefenderForEndpointMacOS
+  * Fixed an issue where an app created shortly before was not found and was created
+    again.
+* IntuneMobileAppsLobAppAndroid
+  * Fixed an issue where an app created shortly before was not found and was created
+    again.
+  * Fixed an issue where a new app was created with the file name `Sample.apk` instead of
+    `FileName`.
 * IntuneMobileAppsLobAppiOS
   * Added support for the `AppleDeviceAppDeliveryProtocolType` property.
+  * Fixed an issue where an app created shortly before was not found and was created
+    again.
+* IntuneMobileAppsLobAppMsiWindows10
+  * Fixed an issue where an app created shortly before was not found and was created
+    again.
 * IntuneMobileAppsLobAppWindows10
   * [BREAKING CHANGE] Updated `Assignments` to use `MSFT_DeviceManagementAppxMobileAppAssignment`.
   * Added support for the `MinimumSupportedOperatingSystem` property.
+  * Fixed an issue where an app created shortly before was not found and was created
+    again.
+* IntuneMobileAppsMacOSLobApp
+  * Fixed an issue where an app created shortly before was not found and was created
+    again.
 * IntuneMobileAppsManagedGooglePlayApp
-  * Added support for the `Description`, `Developer`, `InformationUrl`, `IsFeatured`,
-    `LargeIcon`, `Notes`, `Owner`, `PrivacyInformationUrl` and `Publisher` properties.
+  * Fixed an issue where creating an app failed until the approved app was synchronized.
+* IntuneMobileAppsMicrosoft365SuiteMacOS
+  * Fixed an issue where an app created shortly before was not found and was created
+    again.
+* IntuneMobileAppsMicrosoftEdge
+  * Fixed an issue where an app created shortly before was not found and was created
+    again.
+* IntuneMobileAppsMicrosoftStoreAppWindows10
+  * Fixed an issue where an app created shortly before was not found and was created
+    again.
 * IntuneMobileAppsStoreApp
-  * Added support for the `AppleDeviceAppDeliveryProtocolType` property.
   * Fixed an issue where a configuration that wrote the target platform in a different
     casing was rejected on create and update.
+  * Fixed an issue where an app created shortly before was not found and was created
+    again.
 * IntuneMobileAppsSystemAppAndroid
   * [BREAKING CHANGE] Updated `Assignments` to use `MSFT_DeviceManagementSystemMobileAppAssignment`.
   * Added support for the `Description`, `Developer`, `InformationUrl`, `IsFeatured`,
     `LargeIcon`, `Notes`, `Owner` and `PrivacyInformationUrl` properties.
+  * Fixed an issue where an app created shortly before was not found and was created
+    again.
+* IntuneMobileAppsWebLink
+  * Fixed an issue where an app created shortly before was not found and was created
+    again.
+  * Fixed an issue where creating or updating an app with `LargeIcon` failed with
+    `ModelValidationFailure`.
 * IntuneMobileAppsWin32AppWindows10
   * Added values `arm` and `neutral` to property `AllowedArchitectures`.
   * Added support for the `Relationships` property, which carries the dependency and
     supersedence relationships of the app.
+  * Fixed an issue where an app created shortly before was not found and was created
+    again.
+  * Fixed an issue where a Win32 catalog app with the same DisplayName was matched.
 * IntuneMobileAppsWin32CatalogAppWindows10
   * Initial release.
 * IntuneMobileAppsWindowsOfficeSuiteApp
   * Removed unused class reference `MSFT_DeviceManagementMimeContent`.
+  * Fixed an issue where an app created shortly before was not found and was created
+    again.
 * IntuneMobileThreatDefenseConnector
   * Added support for the `MacDeviceBlockedOnMissingPartnerData`, `MacEnabled`,
     `AllowPartnerToCollectIosCertificateMetadata`,
@@ -460,8 +697,15 @@
     and `LaunchMobileThreatDefensePartnerOnSetupEnabled` properties.
 * IntuneRoleAssignment
   * Added support for the `RoleScopeTagIds` property.
+  * Fixed an issue where removing an assignment without `RoleDefinition` failed.
 * IntuneRoleDefinitionWindows365
   * Added support for the `TemplateId` property.
+* IntuneSecurityBaselineHoloLens2Advanced
+  * Fixed an issue where a setting that depends on two other settings was written twice
+    and the policy was rejected.
+* IntuneSecurityBaselineHoloLens2Standard
+  * Fixed an issue where a setting that depends on two other settings was written twice
+    and the policy was rejected.
 * IntuneSecurityBaselineMicrosoft365AppsForEnterprise
   * Updated the resource to the v2512 baseline version.
   * [BREAKING CHANGE] Removed property
@@ -486,13 +730,17 @@
     properties.
 * IntuneSettingCatalogCustomPolicyWindows10
   * Fixed an issue where some nested properties didn't have the correct type.
+  * Fixed an issue where updating a policy failed.
+  * Fixed an issue where `TemplateReference` always reported drift.
 * IntuneUserSettingsPolicyWindows365
   * Added support for the `ProvisioningSourceType` property.
 * IntuneVPNConfigurationPolicyAndroidDeviceOwner
   * Added support for the `LockdownExclusionList` property.
+  * Fixed an issue where `proxyServer` was not applied.
 * IntuneVPNConfigurationPolicyAndroidWork
   * Added value `paloAltoGlobalProtect` to property `connectionType`.
   * Added support for the `fingerprint` and `lockdownExclusionList` properties.
+  * Fixed an issue where `proxyServer` was not applied.
 * IntuneVPNConfigurationPolicyIOS
   * [BREAKING CHANGE] Updated `targetedMobileApps` to use `MSFT_targetedMobileApps`.
 * IntuneVPNConfigurationPolicyMacOS
@@ -502,23 +750,32 @@
     `TrustedServerCertificateNames`, `InnerAuthenticationProtocolForEapTtls`,
     `InnerAuthenticationProtocolForPeap`, `MacAddressRandomizationMode` and
     `OuterIdentityPrivacyTemporaryValue` properties.
+  * Fixed an issue where `PreSharedKey` was always reported as drifted.
 * IntuneWifiConfigurationPolicyAndroidEnterpriseWorkProfile
   * Added `wep` and `wpaPersonal` to property `WiFiSecurityType`.
   * Added support for the `PreSharedKey`, `PreSharedKeyIsSet`,
     `ProxyAutomaticConfigurationUrl` and `ProxySettings` properties.
+  * Fixed an issue where `PreSharedKey` was always reported as drifted.
 * IntuneWifiConfigurationPolicyAndroidForWork
   * Added values `wep` and `wpaPersonal` to property `WiFiSecurityType`.
+  * Fixed an issue where a created policy was reported as absent and could not be
+    updated.
 * IntuneWifiConfigurationPolicyAndroidOpenSourceProject
   * Added support for the `ProxySetting`, `ProxyAutomaticConfigurationUrl`,
     `ProxyExclusionList`, `ProxyManualAddress` and `ProxyManualPort` properties.
+  * Fixed an issue where `PreSharedKey` was always reported as drifted.
+* IntuneWifiConfigurationPolicyIOS
+  * Fixed an issue where `ForcePreSharedKeyUpdate` was always reported as drifted.
 * IntuneWifiConfigurationPolicyMacOS
   * Added `wpa3Personal` to property `WiFiSecurityType`.
   * Added support for the `WifiRequirePhysicalMacAddressEnabled` property.
+  * Fixed an issue where `ForcePreSharedKeyUpdate` was always reported as drifted.
 * IntuneWifiConfigurationPolicyWindows10
   * Added value `wpa3Personal` to property `WifiSecurityType`.
   * Added support for the `DeviceManagementApplicabilityRuleDeviceMode` property.
   * Fixed an issue where the `Name` member of the applicability rules was not returned,
     which reported drift on every profile that named a rule.
+  * Fixed an issue where `ForcePreSharedKeyUpdate` was always reported as drifted.
 * IntuneWindowsAutopilotDeploymentProfileAzureADHybridJoined
   * [BREAKING CHANGE] Replaced the deprecated `OutOfBoxExperienceSettings` property
     with the `OutOfBoxExperienceSetting` property.
@@ -529,9 +786,6 @@
   * [BREAKING CHANGE] Replaced the deprecated `Language` property with the `Locale`
     property.
 * IntuneWindowsAutopilotDeploymentProfileAzureADJoined
-  * [BREAKING CHANGE] Renamed the embedded class
-    `MSFT_MicrosoftGraphwindowsEnrollmentStatusScreenSettings1` to
-    `MSFT_MicrosoftGraphwindowsEnrollmentStatusScreenSettings`.
   * [BREAKING CHANGE] Renamed the embedded class
     `MSFT_MicrosoftGraphwindowsEnrollmentStatusScreenSettings1` to
     `MSFT_MicrosoftGraphwindowsEnrollmentStatusScreenSettings`.
@@ -546,6 +800,16 @@
     `HardwareHashExtractionEnabled` property.
   * [BREAKING CHANGE] Replaced the deprecated `Language` property with the `Locale`
     property.
+* IntuneWindowsAutopilotDevicePreparationAutomaticPolicy
+  * Fixed an issue where a policy created from another template with the same name was
+    reported as the configured one.
+  * Fixed an issue where a rejected `AssignmentTarget` group was not reported as an
+    error.
+* IntuneWindowsAutopilotDevicePreparationUserDrivenPolicy
+  * Fixed an issue where a policy created from another template with the same name was
+    reported as the configured one.
+  * Fixed an issue where a rejected `AssignmentTarget` group was not reported as an
+    error.
 * IntuneWindowsUpdateForBusinessHotpatchProfileWindows10
   * Added support for the `ApprovalSettings` property.
 * IntuneWindowsUpdateForBusinessRingUpdateProfileWindows10
@@ -555,9 +819,16 @@
     `QualityUpdatesWillBeRolledBack` properties.
 * O365ExternalConnection
   * Added support for the `ActivitySettings` and `ContentCategory` properties.
+  * Fixed an issue where looking up a connection by name failed with ServiceUnavailable.
+  * Fixed an issue where creating or updating a connection with `AuthorizedAppIds`
+    failed.
+  * Fixed an issue where the application used to authenticate was reported as drift in
+    `AuthorizedAppIds` after an update.
 * O365Group
   * Fixed an issue where a configuration that listed members without owners failed to
     apply whenever the membership changed.
+  * Fixed an issue where creating a group with owners or members failed with
+    Request_ResourceNotFound.
   * Added support for the `Theme` property.
 * O365OrgCustomizationSetting
   * [BREAKING CHANGE] Renamed the property `Ensure` to `State`.
@@ -590,14 +861,96 @@
 * SCAppRetentionComplianceRule
   * Initial release.
     FIXES [#6598](https://github.com/Microsoft365DSC/Microsoft365DSC/issues/6598)
+* SCAutoSensitivityLabelPolicy
+  * Fixed an issue where `ExchangeSenderException`, `ExchangeSenderMemberOf` and
+    `ExchangeSenderMemberOfException` always reported drift.
+  * Fixed an issue where a policy pending deletion was reported as present.
+* SCAutoSensitivityLabelRule
+  * [BREAKING CHANGE] Changed type of `ExceptIfHeaderMatchesPatterns` from `String[]` to
+    `MSFT_SCHeaderPattern`.
+  * [BREAKING CHANGE] Replaced `Values` of `MSFT_SCHeaderPattern` with a single `Value`.
+  * Fixed an issue where `HeaderMatchesPatterns` and `AnyOfRecipientAddressMatchesPatterns` were
+    not read back.
+  * Fixed an issue where a rule pending deletion was reported as present.
+* SCCaseHoldPolicy
+  * Fixed an issue where a failed policy distribution failed the configuration.
+  * Fixed an issue where a removed policy blocked the removal of its compliance case.
+  * Fixed an issue where a policy pending deletion was reported as present.
+  * Fixed an issue where `Get` threw when the compliance case did not exist.
+* SCCaseHoldRule
+  * Fixed an issue where a rule pending deletion was reported as present.
+* SCComplianceSearch
+  * Fixed an issue where `Language` and `IncludeUserAppContent` always drifted.
+* SCComplianceSearchAction
+  * Fixed an issue where waiting for a compliance search always took at least ten minutes.
 * SCComplianceTag
   * Fixed an issue where `EventType` was never exported.
+* SCDeviceConditionalAccessPolicy
+  * Fixed an issue where removing a policy prompted for confirmation.
+* SCDeviceConditionalAccessRule
+  * [BREAKING CHANGE] Changed type of `FirewallStatus` from `Boolean` to `String`.
+  * [BREAKING CHANGE] Changed type of `MaxPasswordGracePeriod` from `UInt32` to `String`.
+  * Fixed an issue where a rule configured without `Policy` was not found and could not be
+    removed.
+* SCDeviceConfigurationPolicy
+  * Fixed an issue where removing a policy prompted for confirmation.
+* SCDeviceConfigurationRule
+  * [BREAKING CHANGE] Changed type of `FirewallStatus` from `Boolean` to `String`.
+  * [BREAKING CHANGE] Changed type of `MaxPasswordGracePeriod` from `UInt32` to `String`.
+  * Fixed an issue where a rule configured without `Policy` was not found and could not be
+    removed.
+* SCDLPCompliancePolicy
+  * Fixed an issue where removing a policy failed with a server side error.
+  * Fixed an issue where a policy pending deletion was reported as present.
 * SCDLPComplianceRule
   * Fixed an issue where the module failed to build because a variable was assigned
     inside a conditional block and read outside it.
+  * Fixed an issue where `SentToMemberOf` returned the value of `FromAddressMatchesPatterns`.
+  * Fixed an issue where `FromAddressContainsWords`, `ExceptIfFromAddressContainsWords`,
+    `ExceptIfFromAddressMatchesPatterns`, `AnyOfRecipientAddressMatchesPatterns` and
+    `ExceptIfAnyOfRecipientAddressContainsWords` always drifted.
+  * Fixed an issue where a rule pending deletion was reported as present.
+* SCDLPSensitiveInformationType
+  * Fixed an issue where updating a sensitive information type failed.
 * SCFilePlanPropertyAuthority
   * Fixed the property never being removed, because the check for a pending deletion
     always evaluated to false.
+  * Fixed an issue where a property pending deletion was reported as present.
+* SCFilePlanPropertyCategory
+  * Removing a category now also removes its sub-categories.
+  * Fixed an issue where a property pending deletion was reported as present.
+  * Fixed an issue where creating a property whose previous instance was pending
+    deletion failed with `ComplianceRuleAlreadyExistsInScenarioException`.
+* SCFilePlanPropertyCitation
+  * Fixed an issue where a property pending deletion was reported as present.
+* SCFilePlanPropertyDepartment
+  * Fixed an issue where a property pending deletion was reported as present.
+* SCFilePlanPropertyReferenceId
+  * Fixed an issue where a property pending deletion was reported as present.
+* SCFilePlanPropertySubCategory
+  * Fixed an issue where removing a sub-category did nothing.
+  * Fixed an issue where a property pending deletion was reported as present.
+  * Fixed an issue where creating a property whose previous instance was pending
+    deletion failed with `ComplianceRuleAlreadyExistsInScenarioException`.
+* SCInsiderRiskPolicy
+  * [BREAKING CHANGE] Added a `ValidateSet` to the `InsiderRiskScenario` property.
+  * [BREAKING CHANGE] The `TenantSetting` scenario no longer creates or removes the tenant
+    settings policy and throws for `Ensure = 'Absent'`.
+  * Fixed an issue where the `TenantSetting` scenario could not find the tenant settings
+    policy unless its generated name was configured.
+  * Fixed an issue where policies other than the tenant settings never reported their
+    indicators and time spans and sent the tenant settings with every create and update.
+  * Fixed an issue where new policies ignored the configured indicators and time spans.
+  * Fixed an issue where a removed policy pending deletion was reported and exported as
+    present.
+* SCLabelPolicy
+  * Fixed an issue where creating a policy with locations failed.
+  * Fixed an issue where `AdvancedSettings` were not applied.
+  * Fixed an issue where drift in `AdvancedSettings` was not detected.
+  * Fixed an issue where errors from the label policy cmdlets were hidden.
+  * Fixed an issue where a policy pending deletion was reported as present.
+* SCProtectionAlert
+  * Fixed an issue where removing an alert prompted for confirmation.
 * SCRetentionCompliancePolicy
   * [BREAKING CHANGE] Replaced the property `DynamicScopeLocation`, which was never applied,
     with `AdaptiveScopeLocation` to target Purview adaptive scopes.
@@ -610,6 +963,8 @@
   * Fixed an update error other than a pending deployment being reported as success.
   * Fixed a failed policy deployment being reported as a failed change, although the service
     had stored the change.
+  * Fixed an issue where creating a policy whose previous instance was pending deletion
+    failed with `CompliancePolicyAlreadyExistsInScenarioException`.
 * SCRetentionComplianceRule
   * Fixed the rule never being removed when `Ensure` is set to `Absent`.
   * Fixed `ManagedIdentity` never being returned.
@@ -619,17 +974,48 @@
   * Fixed an update error other than a pending deployment being reported as success.
   * Fixed a failed policy deployment being reported as a failed change, although the service
     had stored the change.
+* SCRoleGroup
+  * Fixed an issue where updating an existing role group did not apply `Description` and
+    `DisplayName`.
 * SCSensitivityLabel
   * Fixed an issue where setting the `Priority` of a label placed it one position off
     or failed for sub-labels.
   * Updated `Set()` to throw a descriptive error for a `Priority` the label cannot take,
     because sub-labels always directly follow their parent label.
     FIXES [#5081](https://github.com/Microsoft365DSC/Microsoft365DSC/issues/5081)
+  * Fixed an issue where `AdvancedSettings` were not applied.
+  * Fixed an issue where drift in `AdvancedSettings`, `LocaleSettings` and `AutoLabelingSettings`
+    was not detected.
+* SCSupervisoryReviewPolicy
+  * [BREAKING CHANGE] Removed resource.
+* SCSupervisoryReviewRule
+  * [BREAKING CHANGE] Removed resource.
+* SCUnifiedAuditLogRetentionPolicy
+  * Fixed an issue where updating or removing a policy failed with
+    `Cannot bind argument to parameter 'Identity' because it is null`.
+  * Fixed an issue where a removed policy that was still pending deletion blocked creating
+    a policy with the same name.
 * SPOAccessControlSettings
   * Added property `RestrictResourceAccountAccess`.
+* SPOHubSite
+  * Fixed an issue where removing a principal from `AllowedToJoin` granted it join rights.
+* SPOOrgAssetsLibrary
+  * Fixed an issue where removing a library failed when `CdnType` was not specified.
+  * Fixed an issue where removing a library left its CDN origin behind.
+  * Fixed an issue where another organization assets library was reported as the configured one.
+* SPOPropertyBag
+  * Fixed an issue where `Ensure = 'Absent'` did not remove the property.
+  * Fixed an issue where a missing property was reported as present.
 * SPOSearchResultSource
+  * [BREAKING CHANGE] Removed the `ShowPartialSearch` property.
+  * [BREAKING CHANGE] Removed the `Remote` and `OpenSearch` values from `Protocol`.
   * Fixed the resource failing with "Current site is not a tenant administration site" by
     connecting to the tenant administration site.
+  * Fixed an issue where removing a result source failed.
+  * Fixed an issue where `QueryTransform` was not applied.
+  * Fixed an issue where updates to an existing result source were not applied.
+  * Fixed an issue where an Exchange result source with `UseAutoDiscover` set to `$true` was
+    created without the AutoDiscover URL.
 * SPOSharingSettings
   * Added properties `AllowGuestUserShareToUsersNotInSiteCollection`,
     `CoreDefaultShareLinkRole`, `CoreDefaultShareLinkScope`,
@@ -657,6 +1043,18 @@
     `RequestFilesLinkEnabled`, `RequestFilesLinkExpirationInDays`,
     `ReadOnlyForUnmanagedDevices`, `RestrictContentOrgWideSearch`,
     `RestrictedAccessControl`, `RestrictedAccessControlGroups`.
+  * Fixed an issue where setting `RestrictedAccessControl` failed.
+  * Fixed an issue where `RequestFilesLinkEnabled` and `DenyAddAndCustomizePages` were reported
+    incorrectly.
+* SPOSiteDesignRights
+  * Fixed an issue where the resource failed when the site design did not exist.
+  * Fixed an issue where `Ensure = 'Absent'` granted rights or failed.
+* SPOSiteGroup
+  * Fixed an issue where permission levels were not applied to a new group.
+  * Fixed an issue where `Owner` was always reported as drifted.
+  * Fixed an issue where removing a group failed in a non-interactive session.
+* SPOStorageEntity
+  * Fixed an issue where removing a storage entity failed with access denied.
 * SPOTenantSettings
   * Added properties `AllowAnonymousMeetingParticipantsToAccessWhiteboards`,
     `AllowAppsBypassOfUnmanagedDevicePolicy`, `AllowCommentsTextOnEmailEnabled`,
@@ -692,6 +1090,8 @@
     `EnableSensitivityLabelForVideoFiles`.
 * SPOUserProfileProperty
   * Updated fetching of user profile properties.
+* TeamsAppSetupPolicy
+  * Fixed an issue where creating or updating a policy with `PinnedCallingBarApps` failed.
 * TeamsAudioConferencingPolicy
   * [BREAKING CHANGE] Changed type of `MeetingInvitePhoneNumbers` from ``String`` to ``String[]``.
 * TeamsAutoAttendant
@@ -711,8 +1111,14 @@
     always returned empty.
   * Fixed an issue where `CallbackEmailNotificationTarget` returned the type name of the
     target object instead of its id.
+  * Fixed an issue where `ChannelUserObjectId` and
+    `ShouldOverwriteCallableChannelProperty` always reported drift.
 * TeamsChannel
   * Added the missing Graph permissions to manage Teams channels.
+  * Fixed an issue where teams with spaces or special characters in their name could not be
+    found.
+  * Removing a channel now renames it to a unique name first, so a channel with the same
+    name can be created again.
 * TeamsChannelsPolicy
   * Added properties `AllowCreateChannel`, `AllowCreateClassicChannel`,
     `AllowCreatePrivateChannel`, `AllowCreateSharedChannel`, `AllowGuestsFromOutsideTeam`,
@@ -726,6 +1132,13 @@
   * [BREAKING CHANGE] Replaced the flattened `ContentUrl`, `EntityId`, `RemoveUrl` and
     `WebSiteUrl` properties with the `Configuration` complex property, which carries the
     same four members under the names Microsoft Graph uses.
+  * Fixed an issue where retrieving a tab failed with "Query option 'Top' is not allowed".
+* TeamsComplianceRecordingPolicy
+  * Fixed an issue where creating or updating a policy with
+    `ComplianceRecordingApplications` failed.
+* TeamsEmergencyCallingPolicy
+  * Fixed an issue where setting `ExtendedNotifications` failed with a parameter binding
+    error.
 * TeamsEventsPolicy
   * Added properties `AllowEngagementReport` and `InfoShownInReportMode`.
 * TeamsFederationConfiguration
@@ -754,6 +1167,8 @@
     `AnonymousUsersAndUntrustedOrganizations`.
 * TeamsMessagingConfiguration
   * Added property `Communities`.
+* TeamsMessagingPolicy
+  * [BREAKING CHANGE] Removed the `AllowExtendedWorkInfoInSearch` property.
 * TeamsOnlineSchedule
   * Initial release.
     FIXES [#5379](https://github.com/Microsoft365DSC/Microsoft365DSC/issues/5379)
@@ -769,6 +1184,15 @@
   * Fixed an issue where assigning a telephone number failed.
 * TeamsOrgWideAppSettings
   * Added support for write operations with service principal authentication.
+* TeamsTeam
+  * Fixed an issue where creating a team with a service principal failed with `Syntax
+    error: character ':' is not valid`.
+  * Fixed an issue where a team created with a service principal did not get its
+    description, visibility, settings or additional owners.
+  * Fixed an issue where a group left behind by an interrupted team creation blocked
+    creating the team.
+  * Fixed an issue where creating a team with credentials tried to add an empty owner.
+  * Added the Graph permissions needed to create a team with a service principal.
 * TeamsTenantNetworkSite
   * [BREAKING CHANGE] Removed deprecated property `SiteAddress`.
 * TeamsUpdateManagementPolicy
@@ -777,6 +1201,14 @@
 * TeamsUpgradePolicy
   * Fixed an issue where the cached instance was discarded during export and re-read from the
     service, because the identity carries a `Tag:` prefix the cached instance was compared against.
+* TeamsUser
+  * Fixed an issue where a user who is not a member of the team was reported as present.
+  * Fixed an issue where removing a team owner left the user in the team as an owner.
+  * Fixed an issue where teams with spaces or special characters in their name could not be
+    found.
+  * Fixed an issue where removing a team owner failed with `One or more removed object
+    references do not exist for the following modified properties: 'owners'`.
+  * Fixed an issue where changing a user's role from Owner to Member had no effect.
 * TeamsUserCallingSettings
   * Added properties `BusyOnBusyOption` and `MaximumConcurrentCalls`.
   * Fixed an issue where `Set()` combined parameters of different parameter sets of
@@ -798,6 +1230,9 @@
   * [BREAKING CHANGE] Removed `Update-M365DSCSpecialCharacters`. Instance names are built with
     the new `Remove-M365DSCSpecialCharacters`, and property values are escaped while the
     configuration is rendered.
+* M365DSCErrorHandler
+  * Fixed an issue where `Get` threw instead of returning `Absent` when Security & Compliance
+    reported that an object `doesn't exist` or `wasn't found`.
 * M365DSCExportUtil
   * Added switch to `Get-M365DSCExportContentForResource` to allow skipping
     removal of special characters from resource instance names.
@@ -805,6 +1240,15 @@
   * Added handling for PowerShell 7.6 with Mgx to improve Graph calls.
   * Improved handling of query parameters and paging for collection retrieval.
   * Improved handling of omitting parameters from the request body.
+  * Fixed an issue where switch parameters such as `IsActive` were sent as objects
+    instead of booleans.
+  * Fixed an issue where a request whose Top limit is 0 failed with
+    `Cannot validate argument on parameter 'PageSize'`.
+  * Added the `NoPageSize` switch to the Get cmdlets to request a collection without a
+    page size. `-Top 0` no longer suppresses the page size.
+* M365DSCIntuneUtil
+  * Fixed an issue where a rejected Intune policy or app assignment was only reported as
+    drift by the next Test instead of failing Set.
 * M365DSCModuleMgmt
   * Added a workaround for PnP.PowerShell 3.4 crashing with a stack overflow when another
     module loaded a different `Microsoft.Identity.Client` version first.
@@ -1000,6 +1444,10 @@
   * Updated Docker files to work with latest code changes in preparation for
     this breaking change.
 
+  * Fixed an issue where a configuration that omitted `Ensure` reported drift but `Set`
+  * Fixed an issue where creating an Intune app with assignments failed with "app's
+    PublishingState is not 'Published'".
+    made no change.
 # 1.26.909.1
 
 * MISC

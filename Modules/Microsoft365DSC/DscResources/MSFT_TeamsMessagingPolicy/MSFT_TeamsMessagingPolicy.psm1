@@ -16,10 +16,6 @@ class TeamsMessagingPolicy : M365DSCResourceBase
     [System.Nullable[System.Boolean]] $AllowCustomGroupChatAvatars
 
     [DscProperty()]
-    [System.ComponentModel.Description('This setting enables/disables showing company name and department name in search results for MTO users. Possible values: True, False')]
-    [System.Nullable[System.Boolean]] $AllowExtendedWorkInfoInSearch
-
-    [DscProperty()]
     [System.ComponentModel.Description('This setting determines if users with the ''Full permissions'' role can delete any group or meeting chat message within their tenant. Possible values: True, False')]
     [System.Nullable[System.Boolean]] $AllowFullChatPermissionUserToDeleteAnyMessage
 
@@ -274,7 +270,6 @@ class TeamsMessagingPolicy : M365DSCResourceBase
                     Identity                                      = $currentPolicy
                     AllowChatWithGroup                            = $policy.AllowChatWithGroup
                     AllowCustomGroupChatAvatars                   = $policy.AllowCustomGroupChatAvatars
-                    AllowExtendedWorkInfoInSearch                 = $policy.AllowExtendedWorkInfoInSearch
                     AllowFullChatPermissionUserToDeleteAnyMessage = $policy.AllowFullChatPermissionUserToDeleteAnyMessage
                     AllowGiphyDisplay                             = $policy.AllowGiphyDisplay
                     AllowGroupChatJoinLinks                       = $policy.AllowGroupChatJoinLinks

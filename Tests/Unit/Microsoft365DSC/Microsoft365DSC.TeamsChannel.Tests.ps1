@@ -191,6 +191,12 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
 
             It 'Remove channel in the Set method' {
                 (New-M365DSCResourceInstance -ResourceName 'TeamsChannel' -Property $testParams).Set()
+                Should -Invoke -CommandName Set-TeamChannel -Exactly 1 -ParameterFilter {
+                    $CurrentDisplayName -eq 'Test Channel' -and $NewDisplayName -like 'Deleted-*'
+                }
+                Should -Invoke -CommandName Remove-TeamChannel -Exactly 1 -ParameterFilter {
+                    $DisplayName -like 'Deleted-*'
+                }
             }
         }
 

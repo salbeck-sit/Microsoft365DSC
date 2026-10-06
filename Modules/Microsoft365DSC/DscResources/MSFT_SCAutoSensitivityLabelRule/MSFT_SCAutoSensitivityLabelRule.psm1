@@ -100,8 +100,8 @@ class SCAutoSensitivityLabelRule : M365DSCResourceBase
     [System.String[]] $ExceptIfFromMemberOf
 
     [DscProperty()]
-    [System.ComponentModel.Description('The HeaderMatchesPatterns parameter specifies an exception for the auto-labeling policy rule that looks for text patterns in a header field by using regular expressions.')]
-    [System.String[]] $ExceptIfHeaderMatchesPatterns
+    [System.ComponentModel.Description('The ExceptIfHeaderMatchesPatterns parameter specifies an exception for the auto-labeling policy rule that looks for text patterns in a header field by using regular expressions.')]
+    [MSFT_SCHeaderPattern] $ExceptIfHeaderMatchesPatterns
 
     [DscProperty()]
     [System.ComponentModel.Description('The ExceptIfProcessingLimitExceeded parameter specifies an exception for the auto-labeling policy rule that looks for files where scanning couldn''t complete.')]
@@ -229,7 +229,6 @@ class SCAutoSensitivityLabelRule : M365DSCResourceBase
 
     [SCAutoSensitivityLabelRule] Get()
     {
-        $HeaderMatchesPatternsValue = $null
         $anyOfRecipientAddressContainsWordsValue = $null
         $anyOfRecipientAddressMatchesPatternsValue = $null
         $contentExtensionMatchesWordsValue = $null
@@ -255,7 +254,7 @@ class SCAutoSensitivityLabelRule : M365DSCResourceBase
                 $nullReturn.Ensure = 'Absent'
                 $PolicyRule = Invoke-M365DSCCommand -ScriptBlock { Get-AutoSensitivityLabelRule -Identity $this.Name -ErrorAction Stop } -SuppressNotFoundError
 
-                if ($null -eq $PolicyRule)
+                if ($null -eq $PolicyRule -or $PolicyRule.Mode -eq 'PendingDeletion')
                 {
                     Write-Verbose -Message "AutoSensitivityLabelRule $($this.Name) does not exist."
                     return $this.AsResult($nullReturn)
@@ -273,9 +272,9 @@ class SCAutoSensitivityLabelRule : M365DSCResourceBase
                 $anyOfRecipientAddressContainsWordsValue = $PolicyRule.AnyOfRecipientAddressContainsWords.Replace(' ', '').Split(',')
             }
 
-            if ($null -ne $PolicyRule.AnyOfRecipientAddressMatchesPatterns -and $PolicyRule.AnyOfRecipientAddressMatchesPatterns -gt 0)
+            if ($null -ne $PolicyRule.AnyOfRecipientAddressMatchesPatterns -and $PolicyRule.AnyOfRecipientAddressMatchesPatterns.Count -gt 0)
             {
-                $anyOfRecipientAddressMatchesPatternsValue = $PolicyRule.AnyOfRecipientAddressMatchesPatterns.Replace(' ', '').Split(',')
+                $anyOfRecipientAddressMatchesPatternsValue = $PolicyRule.AnyOfRecipientAddressMatchesPatterns
             }
 
             if ($null -ne $PolicyRule.ContentExtensionMatchesWords -and $PolicyRule.ContentExtensionMatchesWords.Count -gt 0)
@@ -287,29 +286,6 @@ class SCAutoSensitivityLabelRule : M365DSCResourceBase
             {
                 $exceptIfContentExtensionMatchesWordsValue = $PolicyRule.ExceptIfContentExtensionMatchesWords.Replace(' ', '').Split(',')
             }
-            if ($null -ne $this.HeaderMatchesPatterns -and $null -ne $this.HeaderMatchesPatterns.Name)
-            {
-                $HeaderMatchesPatternsValue = [ordered]@{}
-                foreach ($value in $this.HeaderMatchesPatterns[($this.HeaderMatchesPatterns.Name)])
-                {
-                    if ($HeaderMatchesPatternsValue.ContainsKey($this.HeaderMatchesPatterns.Name))
-                    {
-                        $HeaderMatchesPatternsValue[$this.HeaderMatchesPatterns.Name] += $value
-                    }
-                    else
-                    {
-                        $HeaderMatchesPatternsValue.Add($this.HeaderMatchesPatterns.Name, @($value))
-                    }
-                }
-            }
-            foreach ($pattern in $PolicyRule.HeaderMatchesPatterns.Keys)
-            {
-                $HeaderMatchesPatternsValue += [ordered]@{
-                    Name  = $pattern
-                    Value = $PolicyRule.HeaderMatchesPatterns.$pattern
-                }
-            }
-
             $result = @{
                 Name                                         = $PolicyRule.Name
                 Policy                                       = $PolicyRule.ParentPolicyName
@@ -334,7 +310,7 @@ class SCAutoSensitivityLabelRule : M365DSCResourceBase
                 ExceptIfFromAddressContainsWords             = $PolicyRule.ExceptIfFromAddressContainsWords
                 ExceptIfFromAddressMatchesPatterns           = $PolicyRule.ExceptIfFromAddressMatchesPatterns
                 ExceptIfFromMemberOf                         = $PolicyRule.ExceptIfFromMemberOf
-                ExceptIfHeaderMatchesPatterns                = $PolicyRule.ExceptIfHeaderMatchesPatterns
+                ExceptIfHeaderMatchesPatterns                = [SCAutoSensitivityLabelRule]::GetHeaderPattern($PolicyRule.ExceptIfHeaderMatchesPatterns)
                 ExceptIfProcessingLimitExceeded              = $PolicyRule.ExceptIfProcessingLimitExceeded
                 ExceptIfRecipientDomainIs                    = $PolicyRule.ExceptIfRecipientDomainIs
                 ExceptIfSenderDomainIs                       = $PolicyRule.ExceptIfSenderDomainIs
@@ -344,7 +320,7 @@ class SCAutoSensitivityLabelRule : M365DSCResourceBase
                 ExceptIfSubjectMatchesPatterns               = $PolicyRule.ExceptIfSubjectMatchesPatterns
                 FromAddressContainsWords                     = $PolicyRule.FromAddressContainsWords
                 FromAddressMatchesPatterns                   = $PolicyRule.FromAddressMatchesPatterns
-                HeaderMatchesPatterns                        = $HeaderMatchesPatternsValue
+                HeaderMatchesPatterns                        = [SCAutoSensitivityLabelRule]::GetHeaderPattern($PolicyRule.HeaderMatchesPatterns)
                 ProcessingLimitExceeded                      = $PolicyRule.ProcessingLimitExceeded
                 RecipientDomainIs                            = $PolicyRule.RecipientDomainIs
                 ReportSeverityLevel                          = $PolicyRule.ReportSeverityLevel
@@ -391,7 +367,6 @@ class SCAutoSensitivityLabelRule : M365DSCResourceBase
 
     [void] Set()
     {
-        $HeaderMatchesPatternsValue = $null
         if ($this.RequiresPowerShellCore())
         {
             $null = $this.InvokeInPowerShellCore('Set')
@@ -406,11 +381,6 @@ class SCAutoSensitivityLabelRule : M365DSCResourceBase
 
         $CurrentRule = $this.Get().ToHashtable()
 
-        if ($null -ne $this.HeaderMatchesPatterns -and $null -ne $this.HeaderMatchesPatterns.Name)
-        {
-            $HeaderMatchesPatternsValue = @{}
-            $HeaderMatchesPatternsValue.Add($this.HeaderMatchesPatterns.Name, $this.HeaderMatchesPatterns.Values)
-        }
         if ($this.Ensure -eq 'Present' -and $CurrentRule.Ensure -eq 'Absent')
         {
             Write-Verbose "Rule {$($CurrentRule.Name)} doesn't exists but need to. Creating Rule."
@@ -458,11 +428,15 @@ class SCAutoSensitivityLabelRule : M365DSCResourceBase
             $currentMode = $parentPolicy.Mode
             Set-AutoSensitivityLabelPolicy -Identity $this.Policy -Mode 'TestWithoutNotifications'
 
-            Write-Verbose -Message "Calling New-AutoSensitivityLabelRule with Values: $(Convert-M365DscHashtableToString -Hashtable $CreationParams)"
-            if ($null -ne $HeaderMatchesPatternsValue)
+            foreach ($key in @('HeaderMatchesPatterns', 'ExceptIfHeaderMatchesPatterns'))
             {
-                $CreationParams.HeaderMatchesPatterns = $HeaderMatchesPatternsValue
+                if ($CreationParams.ContainsKey($key))
+                {
+                    $CreationParams.$key = [SCAutoSensitivityLabelRule]::NewHeaderPatternParameter($CreationParams.$key)
+                }
             }
+
+            Write-Verbose -Message "Calling New-AutoSensitivityLabelRule with Values: $(Convert-M365DscHashtableToString -Hashtable $CreationParams)"
             New-AutoSensitivityLabelRule @CreationParams
 
             Write-Verbose -Message "Flipping the parent policy back to Mode $currentMode while we create the rule"
@@ -520,9 +494,12 @@ class SCAutoSensitivityLabelRule : M365DSCResourceBase
             $currentMode = $parentPolicy.Mode
             Set-AutoSensitivityLabelPolicy -Identity $this.Policy -Mode 'TestWithoutNotifications'
 
-            if ($null -ne $HeaderMatchesPatternsValue)
+            foreach ($key in @('HeaderMatchesPatterns', 'ExceptIfHeaderMatchesPatterns'))
             {
-                $UpdateParams.HeaderMatchesPatterns = $HeaderMatchesPatternsValue
+                if ($UpdateParams.ContainsKey($key))
+                {
+                    $UpdateParams.$key = [SCAutoSensitivityLabelRule]::NewHeaderPatternParameter($UpdateParams.$key)
+                }
             }
             Set-AutoSensitivityLabelRule @UpdateParams
 
@@ -700,18 +677,21 @@ class SCAutoSensitivityLabelRule : M365DSCResourceBase
                     }
                 }
 
-                if ($null -ne $Results.HeaderMatchesPatterns -and $null -ne $Results.HeaderMatchesPatterns.Name)
+                foreach ($key in @('HeaderMatchesPatterns', 'ExceptIfHeaderMatchesPatterns'))
                 {
-                    $complexTypeStringResult = Get-M365DSCDRGComplexTypeToString `
-                        -ComplexObject $Results.HeaderMatchesPatterns `
-                        -ComplexTypeName 'SCHeaderPattern'
-                    if (-not [String]::IsNullOrEmpty($complexTypeStringResult))
+                    if ($null -ne $Results.$key -and $null -ne $Results.$key.Name)
                     {
-                        $Results.HeaderMatchesPatterns = $complexTypeStringResult
-                    }
-                    else
-                    {
-                        $Results.Remove('HeaderMatchesPatterns') | Out-Null
+                        $complexTypeStringResult = Get-M365DSCDRGComplexTypeToString `
+                            -ComplexObject $Results.$key `
+                            -CIMInstanceName 'SCHeaderPattern'
+                        if (-not [String]::IsNullOrEmpty($complexTypeStringResult))
+                        {
+                            $Results.$key = $complexTypeStringResult
+                        }
+                        else
+                        {
+                            $Results.Remove($key) | Out-Null
+                        }
                     }
                 }
 
@@ -720,7 +700,7 @@ class SCAutoSensitivityLabelRule : M365DSCResourceBase
                     -ModulePath $this.GetModulePath() `
                     -Results $Results `
                     -Credential $this.Credential `
-                    -NoEscape @('ContentContainsSensitiveInformation', 'ExceptIfContentContainsSensitiveInformation', 'HeaderMatchesPatterns') `
+                    -NoEscape @('ContentContainsSensitiveInformation', 'ExceptIfContentContainsSensitiveInformation', 'HeaderMatchesPatterns', 'ExceptIfHeaderMatchesPatterns') `
                     -RawResults $rawResults
 
                 [void]$dscContent.Append($currentDSCBlock)
@@ -821,6 +801,36 @@ class SCAutoSensitivityLabelRule : M365DSCResourceBase
 
         return @{
             SensitiveInformation = [array]$shapedInformation
+        }
+    }
+
+    hidden static [System.Collections.Hashtable] GetHeaderPattern([System.Object] $Patterns)
+    {
+        if ($null -eq $Patterns -or $null -eq $Patterns.Keys)
+        {
+            return $null
+        }
+
+        foreach ($headerName in $Patterns.Keys)
+        {
+            return @{
+                Name  = [System.String]$headerName
+                Value = [System.String]$Patterns[$headerName]
+            }
+        }
+
+        return $null
+    }
+
+    hidden static [System.Collections.Hashtable] NewHeaderPatternParameter([System.Object] $Pattern)
+    {
+        if ($null -eq $Pattern -or [System.String]::IsNullOrEmpty($Pattern.Name))
+        {
+            return $null
+        }
+
+        return @{
+            $Pattern.Name = $Pattern.Value
         }
     }
 
@@ -1199,8 +1209,8 @@ class MSFT_SCHeaderPattern
     [System.String] $Name
 
     [DscProperty(Mandatory)]
-    [System.ComponentModel.Description('Regular expressions for the pattern')]
-    [System.String[]] $Values
+    [System.ComponentModel.Description('Regular expression the header value must match')]
+    [System.String] $Value
 }
 
 class MSFT_SCDLPSensitiveInformation

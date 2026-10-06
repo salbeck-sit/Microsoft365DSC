@@ -31,8 +31,7 @@ Configuration Example
             Assignments                        = @(
                 MSFT_DeviceManagementConfigurationPolicyAssignments{
                     dataType         = "#microsoft.graph.cloudPcManagementGroupAssignmentTarget"
-                    groupId          = "42a638ec-2bf2-47a8-8f5f-176ce2124b7b"
-                    groupDisplayName = "COGPASS-PROD-CA_AADP2"
+                    groupDisplayName = "Intune Pilot Users"
                 }
             );
             CrossRegionDisasterRecoverySetting = MSFT_MicrosoftGraphcloudPcCrossRegionDisasterRecoverySetting{

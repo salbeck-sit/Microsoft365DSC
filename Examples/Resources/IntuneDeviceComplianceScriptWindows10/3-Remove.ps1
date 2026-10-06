@@ -26,7 +26,7 @@ Configuration Example
     {
         IntuneDeviceComplianceScriptWindows10 'IntuneDeviceComplianceScriptWindows10-Example'
         {
-            DisplayName           = "custom";
+            DisplayName           = "Defender Real-Time Protection Check";
             Ensure                = "Absent";
             ApplicationId         = $ApplicationId;
             TenantId              = $TenantId;

@@ -49,7 +49,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                         '{"HomeRealmDiscoveryPolicy":{"PreferredDomain":"federated.example.edu","AlternateIdLogin":{"Enabled":true},"AccelerateToFederatedDomain":false}}'
                     )
                     displayName = "FakeStringValue"
-                    description = "FakeStringValue"
                     isOrganizationDefault = $true
                 }
             }
@@ -76,7 +75,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                                     Enabled = $True
                                 }
                         } )
-                    Description = "FakeStringValue"
                     DisplayName = "FakeStringValue"
                     IsOrganizationDefault = $True
                     Ensure = "Present"
@@ -110,7 +108,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                                     Enabled = $True
                                 }
                         } )
-                    Description = "FakeStringValue"
                     DisplayName = "FakeStringValue"
                     IsOrganizationDefault = $True
                     Ensure = 'Absent'
@@ -142,7 +139,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                                     Enabled = $True
                                 }
                         } )
-                    Description = "FakeStringValue"
                     DisplayName = "FakeStringValue"
                     IsOrganizationDefault = $True
                     Ensure = 'Present'
@@ -166,7 +162,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                                     Enabled = $false # Drift
                                 }
                         } )
-                    Description = "FakeStringValue"
                     DisplayName = "FakeStringValue"
                     IsOrganizationDefault = $True
                     Ensure = 'Present'

@@ -168,7 +168,7 @@ class SCDLPCompliancePolicy : M365DSCResourceBase
                 Write-Verbose -Message "Retrieving DLPCompliancePolicy {$($this.Name)}"
                 $PolicyObject = Invoke-M365DSCCommand -ScriptBlock { Get-DlpCompliancePolicy -Identity $this.Name -ErrorAction Stop } -SuppressNotFoundError
 
-                if ($null -eq $PolicyObject)
+                if ($null -eq $PolicyObject -or $PolicyObject.Mode -eq 'PendingDeletion')
                 {
                     Write-Verbose -Message "DLPCompliancePolicy $($this.Name) does not exist."
                     return $this.AsResult($nullReturn)
@@ -689,7 +689,7 @@ class SCDLPCompliancePolicy : M365DSCResourceBase
                 }
                 elseif ("$($policy.Mode)" -ne 'PendingDeletion')
                 {
-                    Remove-DLPCompliancePolicy -Identity $this.Name
+                    Remove-DLPCompliancePolicy -Identity $this.Name -Confirm:$false
                 }
                 else
                 {

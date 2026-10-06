@@ -309,7 +309,6 @@ class IntuneVPNConfigurationPolicyAndroidDeviceOwner : M365DSCResourceBase
 
     [void] Set()
     {
-        $proxyBlock = $null
         if ($this.RequiresPowerShellCore())
         {
             $null = $this.InvokeInPowerShellCore('Set')
@@ -330,28 +329,13 @@ class IntuneVPNConfigurationPolicyAndroidDeviceOwner : M365DSCResourceBase
             $boundParameters.RoleScopeTagIds = Resolve-M365DSCIntuneRoleScopeTagIds -RoleScopeTagIds $this.RoleScopeTagIds
         }
 
-        #proxy and server values need converting before new- / update- cmdlets will accept parameters
-        #creating hashtables now for use later in both present/present and present/absent blocks
-        $allTargetValues = Convert-M365DscHashtableToString -Hashtable $boundParameters
-
-        if ($allTargetValues -match '\bproxyServer=\(\{([^\)]+)\}\)')
-        {
-            $proxyBlock = $matches[1]
-        }
-
-        $proxyHashtable = @{}
-        $proxyBlock -split ';' | ForEach-Object {
-            if ($_ -match '^(.*?)=(.*)$')
-            {
-                $key = $matches[1].Trim()
-                $value = $matches[2].Trim()
-                $proxyHashtable[$key] = $value
-            }
-        }
         if ($boundParameters.ContainsKey('proxyServer'))
         {
             $boundParameters.Remove('proxyServer') | Out-Null
-            $boundParameters.Add('proxyServer', $proxyHashtable)
+            if ($this.proxyServer.Count -gt 0)
+            {
+                $boundParameters.Add('proxyServer', $this.proxyServer[0])
+            }
         }
 
         $boundParameters = Rename-M365DSCCimInstanceParameter -Properties $boundParameters

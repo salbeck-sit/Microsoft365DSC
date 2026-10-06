@@ -48,7 +48,8 @@ Configuration Example
                 }
                 MSFT_DeviceManagementWingetMobileAppAssignment{
                     dataType         = '#microsoft.graph.exclusionGroupAssignmentTarget'
-                    groupDisplayName = 'Policy Exclusions'
+                    groupDisplayName = 'Intune Excluded Devices'
+                    intent           = 'required'
                 }
             );
             Categories            = @(

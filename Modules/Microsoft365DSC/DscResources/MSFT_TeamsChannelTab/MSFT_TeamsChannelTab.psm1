@@ -149,7 +149,9 @@ class TeamsChannelTab : M365DSCResourceBase
                 [array]$tabInstance = Get-MgBetaTeamChannelTab -TeamId $teamInstance.Id `
                     -ChannelId $channelInstance.Id `
                     -Filter "DisplayName eq '$($this.DisplayName -replace "'", "''")'" `
-                    -ExpandProperty 'TeamsApp'
+                    -ExpandProperty 'TeamsApp' `
+                    -All `
+                    -NoPageSize
 
                 if ($tabInstance.Length -gt 1)
                 {
@@ -225,7 +227,9 @@ class TeamsChannelTab : M365DSCResourceBase
 
         Write-Verbose -Message "Retrieving Team Channel {$($this.ChannelName)} from Team {$($tab.TeamId)}"
         $ChannelInstance = Get-MgBetaTeamChannel -TeamId $tab.TeamId `
-            -Filter "DisplayName eq '$($this.ChannelName -replace "'", "''")'"
+            -Filter "DisplayName eq '$($this.ChannelName -replace "'", "''")'" `
+            -All `
+            -NoPageSize
 
         $CurrentParameters = Rename-M365DSCCimInstanceParameter -Properties $CurrentParameters
         $CurrentParameters.Remove('TeamsApp') | Out-Null
@@ -246,7 +250,9 @@ class TeamsChannelTab : M365DSCResourceBase
             Write-Verbose -Message "Retrieving Tab {$($this.DisplayName)} from Channel {$($ChannelInstance.Id))} from Team {$($tab.TeamId)}"
             $tabInstance = Get-MgBetaTeamChannelTab -TeamId $tab.TeamId `
                 -ChannelId $ChannelInstance.Id `
-                -Filter "DisplayName eq '$($this.DisplayName -replace "'", "''")'"
+                -Filter "DisplayName eq '$($this.DisplayName -replace "'", "''")'" `
+                -All `
+                -NoPageSize
 
             $CurrentParameters.Remove('TeamId') | Out-Null
             $CurrentParameters.Remove('TeamName') | Out-Null
@@ -270,7 +276,9 @@ class TeamsChannelTab : M365DSCResourceBase
             Write-Verbose -Message "Retrieving Tab {$($this.DisplayName)} from Channel {$($ChannelInstance.Id))} from Team {$($tab.TeamId)}"
             $tabInstance = Get-MgBetaTeamChannelTab -TeamId $tab.TeamId `
                 -ChannelId $ChannelInstance.Id `
-                -Filter "DisplayName eq '$($this.DisplayName -replace "'", "''")'"
+                -Filter "DisplayName eq '$($this.DisplayName -replace "'", "''")'" `
+                -All `
+                -NoPageSize
             Write-Verbose -Message "Removing existing tab {$($this.DisplayName)}"
             Remove-MgBetaTeamChannelTab -TeamId $tab.TeamId -ChannelId $ChannelInstance.Id -TeamsTabId $tabInstance.Id | Out-Null
         }

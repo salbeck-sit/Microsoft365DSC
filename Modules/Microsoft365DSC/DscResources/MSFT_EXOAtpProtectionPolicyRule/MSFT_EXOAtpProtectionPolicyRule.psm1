@@ -194,26 +194,25 @@ class EXOAtpProtectionPolicyRule : M365DSCResourceBase
         # UPDATE
         elseif ($this.Ensure -eq 'Present' -and $currentInstance.Ensure -eq 'Present')
         {
-            if ($currentInstance.SafeAttachmentPolicy -ne $SetParameters.SafeAttachmentPolicy)
+            if ($SetParameters.ContainsKey('SafeAttachmentPolicy') -and $currentInstance.SafeAttachmentPolicy -ne $SetParameters.SafeAttachmentPolicy)
             {
                 throw 'SafeAttachmentPolicy cannot be changed after creation'
             }
-            if ($currentInstance.SafeLinksPolicy -ne $SetParameters.SafeLinksPolicy)
+            if ($SetParameters.ContainsKey('SafeLinksPolicy') -and $currentInstance.SafeLinksPolicy -ne $SetParameters.SafeLinksPolicy)
             {
                 throw 'SafeLinksPolicy cannot be changed after creation'
             }
 
-            # Enabled state can only be changed by the Enabled/Disable-ATPProtectionPolicyRule cmdlets
-            if ($currentInstance.Enabled -ne $setParameters.Enabled)
+            if ($null -ne $this.Enabled -and $currentInstance.Enabled -ne $this.Enabled)
             {
                 Write-Verbose -Message "Changing Enabled state of the ATPProtectionPolicyRule $($currentInstance.Identity) from $($currentInstance.Enabled) to $($setParameters.Enabled)"
                 if ($setParameters.Enabled)
                 {
-                    Enable-ATPProtectionPolicyRule -Identity $currentInstance.Identity
+                    Enable-ATPProtectionPolicyRule -Identity $currentInstance.Identity -Confirm:$false
                 }
                 else
                 {
-                    Disable-ATPProtectionPolicyRule -Identity $currentInstance.Identity
+                    Disable-ATPProtectionPolicyRule -Identity $currentInstance.Identity -Confirm:$false
                 }
             }
 
@@ -226,8 +225,7 @@ class EXOAtpProtectionPolicyRule : M365DSCResourceBase
         # REMOVE
         elseif ($this.Ensure -eq 'Absent' -and $currentInstance.Ensure -eq 'Present')
         {
-            ##TODO - Replace by the Remove cmdlet for the resource
-            Remove-ATPProtectionPolicyRule -Identity $currentInstance.Identity
+            Remove-ATPProtectionPolicyRule -Identity $currentInstance.Identity -Confirm:$false
         }
     }
 

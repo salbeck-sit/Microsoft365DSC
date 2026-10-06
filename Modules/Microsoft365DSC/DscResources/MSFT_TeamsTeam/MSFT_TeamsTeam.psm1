@@ -304,23 +304,59 @@ class TeamsTeam : M365DSCResourceBase
             if ($ConnectionMode.StartsWith('ServicePrincipal'))
             {
                 $ConnectionMode = $this.Connect('MicrosoftGraph')
-                $group = New-MgGroup -DisplayName $this.DisplayName -GroupTypes 'Unified' -MailEnabled -SecurityEnabled -MailNickname $this.MailNickName -ErrorAction Stop
-                $currentOwner = (($CurrentParameters.Owner)[0])
-
-                Write-Verbose -Message "Retrieving Group Owner {$currentOwner}"
-                $ownerUser = Get-MgUser -Search "userPrincipalName:$currentOwner" -ConsistencyLevel eventual
-                $ownerOdataID = "$((Get-MSCloudLoginConnectionProfile -Workload MicrosoftGraph).ResourceUrl)v1.0/directoryObjects/$($ownerUser.Id)"
-
-                Write-Verbose -Message "Adding Owner {$($ownerUser.Id)} to Group {$($group.Id)}"
-                try
+                $graphUrl = (Get-MSCloudLoginConnectionProfile -Workload MicrosoftGraph).ResourceUrl
+                $ownerUrls = @()
+                foreach ($currentOwner in $this.Owner)
                 {
-                    New-MgGroupOwnerByRef -GroupId $group.Id -OdataId $ownerOdataID -ErrorAction Stop
+                    Write-Verbose -Message "Retrieving Group Owner {$currentOwner}"
+                    $ownerUser = Get-MgUser -UserId $currentOwner -ErrorAction Stop
+                    $ownerUrls += "$($graphUrl)v1.0/directoryObjects/$($ownerUser.Id)"
                 }
-                catch
+
+                $group = $null
+                if (-not [System.String]::IsNullOrEmpty($this.MailNickName))
                 {
-                    Write-Verbose -Message 'Adding Owner - Sleeping for 15 seconds'
-                    Start-Sleep -Seconds 15
-                    New-MgGroupOwnerByRef -GroupId $group.Id -OdataId $ownerOdataID -ErrorAction Stop
+                    $group = Get-MgGroup -Filter "mailNickname eq '$($this.MailNickName.Replace("'", "''"))'" -ErrorAction SilentlyContinue |
+                        Where-Object -Property GroupTypes -Contains 'Unified' |
+                        Select-Object -First 1
+                }
+
+                if ($null -eq $group)
+                {
+                    $groupBody = @{
+                        displayName     = $this.DisplayName
+                        groupTypes      = @('Unified')
+                        mailEnabled     = $true
+                        securityEnabled = $true
+                        mailNickname    = $this.MailNickName
+                    }
+                    if (-not [System.String]::IsNullOrEmpty($this.Description))
+                    {
+                        $groupBody.description = $this.Description
+                    }
+                    if (-not [System.String]::IsNullOrEmpty($this.Visibility))
+                    {
+                        $groupBody.visibility = $this.Visibility
+                    }
+                    if ($ownerUrls.Count -gt 0)
+                    {
+                        $groupBody.'owners@odata.bind' = $ownerUrls
+                    }
+                    Write-Verbose -Message "Creating group {$($this.MailNickName)} for team $($this.DisplayName)"
+                    $group = New-MgGroup -BodyParameter $groupBody -ErrorAction Stop
+                }
+                else
+                {
+                    Write-Verbose -Message "Using existing group {$($group.Id)} for team $($this.DisplayName)"
+                    $existingOwnerIds = @((Get-MgGroupOwner -GroupId $group.Id -All -ErrorAction Stop).Id)
+                    foreach ($ownerUrl in $ownerUrls)
+                    {
+                        if ($existingOwnerIds -notcontains $ownerUrl.Split('/')[-1])
+                        {
+                            Write-Verbose -Message "Adding Owner {$ownerUrl} to Group {$($group.Id)}"
+                            New-MgGroupOwnerByRef -GroupId $group.Id -BodyParameter @{ '@odata.id' = $ownerUrl } -ErrorAction Stop
+                        }
+                    }
                 }
 
                 try
@@ -332,6 +368,25 @@ class TeamsTeam : M365DSCResourceBase
                     Write-Verbose -Message 'Creating Team - Sleeping for 15 seconds'
                     Start-Sleep -Seconds 15
                     New-Team -GroupId $group.Id -ErrorAction Stop
+                }
+
+                $settingParameters = ([System.Collections.Hashtable]$CurrentParameters).Clone()
+                $settingParameters.Remove('Owner') | Out-Null
+                if ($this.Visibility -eq 'HiddenMembership')
+                {
+                    $settingParameters.Remove('Visibility') | Out-Null
+                }
+                $settingParameters.GroupId = $group.Id
+                Write-Verbose -Message "Applying the settings of team $($this.DisplayName)"
+                try
+                {
+                    Set-Team @settingParameters -ErrorAction Stop
+                }
+                catch
+                {
+                    Write-Verbose -Message 'Updating Team - Sleeping for 15 seconds'
+                    Start-Sleep -Seconds 15
+                    Set-Team @settingParameters -ErrorAction Stop
                 }
             }
             else
@@ -350,7 +405,7 @@ class TeamsTeam : M365DSCResourceBase
                 $newTeam = New-Team @CurrentParameters
                 Write-Verbose -Message "Team {$($this.DisplayName)} was just created."
 
-                for ($i = 1; $i -le $this.Owner.Length; $i++)
+                for ($i = 1; $i -lt $this.Owner.Length; $i++)
                 {
                     Add-TeamUser -GroupId $newTeam.GroupId -User $this.Owner[$i] -Role 'Owner'
                 }

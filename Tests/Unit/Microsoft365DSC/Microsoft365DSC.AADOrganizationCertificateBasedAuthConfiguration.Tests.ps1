@@ -57,6 +57,11 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                 return @{
                     Id = "00000000-0000-0000-0000-000000000000"
                     DisplayName = "Fakegroup"
+                    VerifiedDomains = @(
+                        @{
+                            Name = "contoso.onmicrosoft.com"
+                        }
+                    )
                 }
             }
 
@@ -89,7 +94,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                             Certificate = "VGVzdA==" # "Test"
                         })
                     )
-                    OrganizationId = "FakeStringValue"
+                    OrganizationId = "contoso.onmicrosoft.com"
                     Ensure = "Present"
                     Credential = $Credential;
                 }
@@ -106,7 +111,10 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             }
             It 'Should Create the group from the Set method' {
                 (New-M365DSCResourceInstance -ResourceName 'AADOrganizationCertificateBasedAuthConfiguration' -Property $testParams).Set()
-                Should -Invoke -CommandName New-MgBetaOrganizationCertificateBasedAuthConfiguration -Exactly 1
+                Should -Invoke -CommandName Remove-MgBetaOrganizationCertificateBasedAuthConfiguration -Exactly 0
+                Should -Invoke -CommandName New-MgBetaOrganizationCertificateBasedAuthConfiguration -Exactly 1 -ParameterFilter {
+                    $OrganizationId -eq "00000000-0000-0000-0000-000000000000"
+                }
             }
         }
 
@@ -121,7 +129,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                             Certificate = "VGVzdA==" # "Test"
                         })
                     )
-                    OrganizationId = "FakeStringValue"
+                    OrganizationId = "contoso.onmicrosoft.com"
                     Ensure = "Absent"
                     Credential = $Credential;
                 }
@@ -151,7 +159,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                             Certificate = "VGVzdA==" # "Test"
                         })
                     )
-                    OrganizationId = "FakeStringValue"
+                    OrganizationId = "contoso.onmicrosoft.com"
                     Ensure = 'Present'
                     Credential = $Credential;
                 }
@@ -173,7 +181,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                             Certificate = "VGVzdA==" # "Test"
                         })
                     )
-                    OrganizationId = "FakeStringValue"
+                    OrganizationId = "contoso.onmicrosoft.com"
                     Ensure = 'Present'
                     Credential = $Credential;
                 }

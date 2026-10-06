@@ -1158,11 +1158,11 @@ class IntuneDeviceConfigurationPolicyiOS : M365DSCResourceBase
                         foreach ($currentChildValue in $currentValueChildArray)
                         {
                             $currentHash = @{}
-                            $currentHash.Add('AppId', $currentValue.appId)
-                            $currentHash.Add('Publisher', $currentValue.publisher)
-                            $currentHash.Add('AppStoreUrl', $currentValue.appStoreUrl)
-                            $currentHash.Add('Name', $currentValue.name)
-                            $currentHash.Add('oDataType', $currentValue.'@odata.type')
+                            $currentHash.Add('AppId', $currentChildValue.appId)
+                            $currentHash.Add('Publisher', $currentChildValue.publisher)
+                            $currentHash.Add('AppStoreUrl', $currentChildValue.appStoreUrl)
+                            $currentHash.Add('Name', $currentChildValue.name)
+                            $currentHash.Add('oDataType', '#microsoft.graph.appleAppListItem')
                             $complexManagedApps += $currentHash
                         }
                     }
@@ -1219,6 +1219,14 @@ class IntuneDeviceConfigurationPolicyiOS : M365DSCResourceBase
         if ($boundParameters.ContainsKey('RoleScopeTagIds'))
         {
             $boundParameters.RoleScopeTagIds = Resolve-M365DSCIntuneRoleScopeTagIds -RoleScopeTagIds $this.RoleScopeTagIds
+        }
+
+        foreach ($rule in $boundParameters.networkUsageRules)
+        {
+            foreach ($app in $rule.managedApps)
+            {
+                $app.Remove('@odata.type')
+            }
         }
 
         if ($this.Ensure -eq 'Present' -and $currentInstance.Ensure -eq 'Absent')

@@ -46,6 +46,9 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             Mock -CommandName Set-RemoteDomain -MockWith {
             }
 
+            Mock -CommandName Start-Sleep -MockWith {
+            }
+
             Mock -CommandName Get-RemoteDomain -MockWith {
                 return @{
                     Identity       = 'Contoso'
@@ -129,6 +132,25 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             It 'Should call the Set method' {
                 (New-M365DSCResourceInstance -ResourceName 'EXORemoteDomain' -Property $testParams).Set()
                 Should -Invoke -CommandName Set-RemoteDomain -Exactly 1
+            }
+        }
+
+        Context -Name 'Remote Domain should not exist. Remote Domain exists. Test should fail.' -Fixture {
+            BeforeAll {
+                $testParams = @{
+                    Identity   = 'Contoso'
+                    Ensure     = 'Absent'
+                    Credential = $Credential
+                }
+            }
+
+            It 'Should return false from the Test method' {
+                (New-M365DSCResourceInstance -ResourceName 'EXORemoteDomain' -Property $testParams).Test() | Should -Be $false
+            }
+
+            It 'Should remove the Remote Domain from the Set method' {
+                (New-M365DSCResourceInstance -ResourceName 'EXORemoteDomain' -Property $testParams).Set()
+                Should -Invoke -CommandName Remove-RemoteDomain -Exactly 1 -ParameterFilter { $Identity -eq 'Contoso' }
             }
         }
 

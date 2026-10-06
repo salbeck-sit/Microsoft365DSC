@@ -27,6 +27,7 @@ Configuration Example
         EXOSweepRule 'EXOSweepRule-Example'
         {
             Ensure                = "Absent";
+            Mailbox               = "AdeleV@$TenantId";
             Name                  = "From Michelle";
             ApplicationId         = $ApplicationId;
             TenantId              = $TenantId;

@@ -119,25 +119,16 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
         Context -Name 'The AADEntitlementManagementAccessPackageCatalogResource exists but it SHOULD NOT' -Fixture {
             BeforeAll {
                 $testParams = @{
-                    AddedBy             = 'myAdmin'
-                    AddedOn             = '25/10/2022 18:47:28'
-                    CatalogId           = 'MyCatalog'
-                    Description         = 'https://001q1.sharepoint.com/'
-                    DisplayName         = 'Communication site'
-                    Id                  = '6a636d76-5025-44d4-9a80-78618f00c16d'
-                    IsPendingOnboarding = $False
-                    ManagedIdentity     = $False
-                    OriginId            = 'https://001q1.sharepoint.com/'
-                    OriginSystem        = 'SharePointOnline'
-                    ResourceType        = 'SharePoint Online Site'
-                    Url                 = 'https://001q1.sharepoint.com/'
-                    Ensure              = 'Absent'
-                    Credential          = $Credential
+                    DisplayName = 'Communication site'
+                    Ensure      = 'Absent'
+                    Credential  = $Credential
                 }
             }
 
             It 'Should return Values from the Get method' {
-                ((New-M365DSCResourceInstance -ResourceName 'AADEntitlementManagementAccessPackageCatalogResource' -Property $testParams).Get().ToHashtable()).Ensure | Should -Be 'Present'
+                $result = (New-M365DSCResourceInstance -ResourceName 'AADEntitlementManagementAccessPackageCatalogResource' -Property $testParams).Get().ToHashtable()
+                $result.Ensure | Should -Be 'Present'
+                $result.CatalogId | Should -Be 'MyCatalog'
             }
 
             It 'Should return false from the Test method' {
@@ -146,7 +137,11 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
 
             It 'Should Remove the group from the Set method' {
                 (New-M365DSCResourceInstance -ResourceName 'AADEntitlementManagementAccessPackageCatalogResource' -Property $testParams).Set()
-                Should -Invoke -CommandName New-MgBetaEntitlementManagementAccessPackageResourceRequest -Exactly 1
+                Should -Invoke -CommandName New-MgBetaEntitlementManagementAccessPackageResourceRequest -Exactly 1 -ParameterFilter {
+                    $BodyParameter.requestType -eq 'AdminRemove' -and
+                    $BodyParameter.catalogId -eq 'f34c2d92-9e9d-4703-ba9b-955b6ac8dcb3' -and
+                    $BodyParameter.accessPackageResource.id -eq '6a636d76-5025-44d4-9a80-78618f00c16d'
+                }
             }
         }
 

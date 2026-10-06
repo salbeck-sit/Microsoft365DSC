@@ -27,9 +27,8 @@ Configuration Example
         SCCaseHoldPolicy 'SCCaseHoldPolicy-Example'
         {
             Case                  = 'Contoso Litigation 2026'
-            ExchangeLocation      = "legal@$TenantId"
+            ExchangeLocation      = @("AdeleV@$TenantId", "MeganB@$TenantId")
             Name                  = 'Litigation Hold 2026'
-            PublicFolderLocation  = 'All'
             Comment               = 'Preserves content for the pending litigation'
             Enabled               = $True
             Ensure                = 'Present'

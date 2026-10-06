@@ -121,6 +121,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     PeriodBeforePinReset                           = 'P90D'
                     PeriodOfflineBeforeAccessCheck                 = 'PT12H'
                     PeriodOfflineBeforeWipeIsEnforced              = 'P90D'
+                    GracePeriodToBlockAppsDuringOffClockHours      = 'PT1H'
                     PeriodOnlineBeforeAccessCheck                  = 'PT30M'
                     PinCharacterSet                                = 'alphanumericAndSymbol'
                     PinRequired                                    = $True
@@ -487,6 +488,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     PeriodBeforePinReset                           = 'P90D'
                     PeriodOfflineBeforeAccessCheck                 = 'PT12H'
                     PeriodOfflineBeforeWipeIsEnforced              = 'P90D'
+                    GracePeriodToBlockAppsDuringOffClockHours      = 'PT1H'
                     PeriodOnlineBeforeAccessCheck                  = 'PT30M'
                     PinCharacterSet                                = 'alphanumericAndSymbol'
                     PinRequired                                    = $True

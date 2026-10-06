@@ -111,24 +111,31 @@ class IntuneDeviceComplianceScriptWindows10 : M365DSCResourceBase
 
             $getValue = $null
             #region resource generator code
-            $getValue = Invoke-M365DSCGraphRequest -Method GET -Uri "/beta/deviceManagement/deviceComplianceScripts/$($this.Id)" -SkipHttpErrorCheck
+            if (-not [string]::IsNullOrEmpty($this.Id))
+            {
+                $getValue = Invoke-M365DSCGraphRequest -Method GET -Uri "/beta/deviceManagement/deviceComplianceScripts/$($this.Id)" -SkipHttpErrorCheck
+                if ($null -ne $getValue.error)
+                {
+                    $getValue = $null
+                }
+            }
 
-            if ($null -eq $getValue -or $null -ne $getValue.error)
+            if ($null -eq $getValue)
             {
                 Write-Verbose -Message "Could not find an Intune Device Compliance Script for Windows10 with Id {$($this.Id)}"
 
                 if (-not [string]::IsNullOrEmpty($this.DisplayName))
                 {
-                    $getValue = (Invoke-M365DSCGraphRequest -Method GET `
-                        -Uri "/beta/deviceManagement/deviceComplianceScripts?`$filter=DisplayName eq '$($this.DisplayName -replace "'", "''")'").value
-                    if ($getValue.Count -gt 0)
+                    [array]$matchingScripts = (Invoke-M365DSCGraphRequest -Method GET `
+                        -Uri "/beta/deviceManagement/deviceComplianceScripts?`$filter=DisplayName eq '$($this.DisplayName -replace "'", "''")' and platform eq 'windows10'").value
+                    if ($matchingScripts.Count -gt 0)
                     {
-                        $getValue = Invoke-M365DSCGraphRequest -Method GET -Uri "/beta/deviceManagement/deviceComplianceScripts/$($getValue.id)"
+                        $getValue = Invoke-M365DSCGraphRequest -Method GET -Uri "/beta/deviceManagement/deviceComplianceScripts/$($matchingScripts[0].id)"
                     }
                 }
             }
             #endregion
-            if ($getValue.Count -eq 0)
+            if ($null -eq $getValue)
             {
                 Write-Verbose -Message "Could not find an Intune Device Compliance Script for Windows10 with DisplayName {$($this.DisplayName)}"
                 return $this.AsResult($nullResult)

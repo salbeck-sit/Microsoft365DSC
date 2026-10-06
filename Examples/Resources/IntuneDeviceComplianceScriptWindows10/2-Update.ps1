@@ -26,14 +26,15 @@ Configuration Example
     {
         IntuneDeviceComplianceScriptWindows10 'IntuneDeviceComplianceScriptWindows10-Example'
         {
-            DisplayName            = "custom";
+            Description            = "Reports whether Microsoft Defender real-time protection is enabled";
+            DisplayName            = "Defender Real-Time Protection Check";
             Ensure                 = "Present";
             EnforceSignatureCheck  = $False;
-            Id                     = "00000000-0000-0000-0000-000000000000";
             RunAs32Bit             = $False; # Updated Property
             RunAsAccount           = "system";
-            DetectionScriptContent = "Write-Output `$true";
-            Publisher              = "";
+            DetectionScriptContent = "`$status = Get-MpComputerStatus; @{ RealTimeProtectionEnabled = `$status.RealTimeProtectionEnabled } | ConvertTo-Json -Compress";
+            Publisher              = "Contoso Endpoint Security";
+            RoleScopeTagIds        = @("0");
             ApplicationId          = $ApplicationId;
             TenantId               = $TenantId;
             CertificateThumbprint  = $CertificateThumbprint;

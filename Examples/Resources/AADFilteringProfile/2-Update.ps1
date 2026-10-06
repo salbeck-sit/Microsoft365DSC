@@ -26,20 +26,14 @@ Configuration Example
     {
         AADFilteringProfile "AADFilteringProfile-Example"
         {
-            Description           = "Description of profile";
+            Description           = "Applies the corporate web content filtering policies";
             Ensure                = "Present";
-            Name                  = "My PRofile";
+            Name                  = "Corporate Web Filtering";
             Policies              = @(
                 MSFT_AADFilteringProfilePolicyLink{
                     Priority     = 100
                     LoggingState = 'enabled'
-                    PolicyName   = 'MyPolicyChoseBine'
-                    State        = 'enabled'
-                }
-                MSFT_AADFilteringProfilePolicyLink{
-                    Priority     = 200
-                    LoggingState = 'enabled'
-                    PolicyName   = 'MyTopPolicy'
+                    PolicyName   = 'MyPolicy'
                     State        = 'enabled'
                 }
             );

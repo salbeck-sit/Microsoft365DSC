@@ -166,7 +166,9 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
 
             It 'Should create the IntuneVPNConfigurationPolicyAndroidWork from the Set method' {
                 (New-M365DSCResourceInstance -ResourceName 'IntuneVPNConfigurationPolicyAndroidWork' -Property $testParams).Set()
-                Should -Invoke -CommandName 'New-MgBetaDeviceManagementDeviceConfiguration' -Exactly 1
+                Should -Invoke -CommandName 'New-MgBetaDeviceManagementDeviceConfiguration' -Exactly 1 -ParameterFilter {
+                    $BodyParameter.proxyServer.address -eq 'proxy.test.com' -and $BodyParameter.proxyServer.port -eq 80
+                }
             }
         }
 

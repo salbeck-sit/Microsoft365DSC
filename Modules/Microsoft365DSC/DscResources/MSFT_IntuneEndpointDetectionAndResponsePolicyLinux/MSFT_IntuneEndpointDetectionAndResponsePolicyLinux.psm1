@@ -117,7 +117,7 @@ class IntuneEndpointDetectionAndResponsePolicyLinux : M365DSCResourceBase
                     {
                         $getValue = Get-MgBetaDeviceManagementConfigurationPolicy `
                             -All `
-                            -Filter "Name eq '$($this.DisplayName -replace "'", "''")'" `
+                            -Filter "Name eq '$($this.DisplayName -replace "'", "''")' and templateReference/TemplateId eq '3514388a-d4d1-4aa8-bd64-c317776008f5_1'" `
                             -ErrorAction SilentlyContinue
 
                         if ($getValue.Length -gt 1)
@@ -210,11 +210,12 @@ class IntuneEndpointDetectionAndResponsePolicyLinux : M365DSCResourceBase
         $currentInstance = $this.Get().ToHashtable()
         $boundParameters = Remove-M365DSCAuthenticationParameter -BoundParameters $this.GetBoundParameters()
 
-        $resolvedRoleScopeTagIds = $this.RoleScopeTagIds
-        if ($boundParameters.ContainsKey('RoleScopeTagIds'))
+        $desiredRoleScopeTagIds = $this.RoleScopeTagIds
+        if (-not $boundParameters.ContainsKey('RoleScopeTagIds'))
         {
-            $resolvedRoleScopeTagIds = Resolve-M365DSCIntuneRoleScopeTagIds -RoleScopeTagIds $this.RoleScopeTagIds
+            $desiredRoleScopeTagIds = $currentInstance.RoleScopeTagIds
         }
+        $resolvedRoleScopeTagIds = Resolve-M365DSCIntuneRoleScopeTagIds -RoleScopeTagIds $desiredRoleScopeTagIds
 
         $templateReferenceId = '3514388a-d4d1-4aa8-bd64-c317776008f5_1'
         $platforms = 'linux'

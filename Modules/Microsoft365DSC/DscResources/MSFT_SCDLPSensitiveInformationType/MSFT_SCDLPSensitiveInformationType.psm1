@@ -179,7 +179,9 @@ class SCDLPSensitiveInformationType : M365DSCResourceBase
         elseif ($this.Ensure -eq 'Present' -and $currentInstance.Ensure -eq 'Present')
         {
             Write-Verbose -Message "Updating the DLPSensitiveInformationType with Name {$($this.Name)}"
-            Set-DLPSensitiveInformationType @SetParameters
+            $setParameters.Identity = $currentInstance.Identity
+            $setParameters.Remove('Name') | Out-Null
+            Set-DLPSensitiveInformationType @setParameters
         }
         # REMOVE
         elseif ($this.Ensure -eq 'Absent' -and $currentInstance.Ensure -eq 'Present')

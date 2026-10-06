@@ -124,7 +124,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                 $testParams = @{
                     DirectoryScopeId     = "/";
                     Ensure               = "Absent";
-                    PrincipalType        = "User"
                     Principal            = "John.Smith@contoso.com";
                     RoleDefinition       = "Teams Communications Administrator";
                     ScheduleInfo         = [MSFT_AADRoleEligibilityScheduleRequestSchedule] @{
@@ -146,7 +145,9 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
 
             It 'Should Remove the instance from the Set method' {
                 (New-M365DSCResourceInstance -ResourceName 'AADRoleEligibilityScheduleRequest' -Property $testParams).Set()
-                Should -Invoke -CommandName New-MgBetaRoleManagementDirectoryRoleEligibilityScheduleRequest -Exactly 1
+                Should -Invoke -CommandName New-MgBetaRoleManagementDirectoryRoleEligibilityScheduleRequest -Exactly 1 -ParameterFilter {
+                    $BodyParameter.action -eq 'AdminRemove'
+                }
             }
         }
 
@@ -160,10 +161,28 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     RoleDefinition       = "Teams Communications Administrator";
                     ScheduleInfo         = [MSFT_AADRoleEligibilityScheduleRequestSchedule] @{
                         expiration = [MSFT_AADRoleEligibilityScheduleRequestScheduleExpiration] @{
-                            type        = 'afterDateTime'
+                            duration    = 'P180D'
+                            type        = 'afterDuration'
                         }
                     }
                     Credential  = $Credential
+                }
+
+                Mock -CommandName Get-MgBetaRoleManagementDirectoryRoleEligibilitySchedule -MockWith {
+                    $start = [System.DateTime]::new(2026, 1, 1, 8, 0, 0, [System.DateTimeKind]::Utc)
+                    return @{
+                        Id               = '12345-12345-12345-12345-12345'
+                        DirectoryScopeId = '/'
+                        PrincipalId      = '123456'
+                        RoleDefinitionId = '12345'
+                        ScheduleInfo     = @{
+                            startDateTime = $start
+                            expiration    = @{
+                                endDateTime = $start.AddDays(180)
+                                type        = 'afterDateTime'
+                            }
+                        }
+                    }
                 }
             }
 

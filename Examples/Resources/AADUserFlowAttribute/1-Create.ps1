@@ -26,7 +26,6 @@ Configuration Example
     {
         AADUserFlowAttribute 'AADUserFlowAttribute-Example'
         {
-            Id                    = "costCentre"
             DisplayName           = "Cost Centre"
             Description           = "Cost centre supplied by the user"
             DataType              = "string"

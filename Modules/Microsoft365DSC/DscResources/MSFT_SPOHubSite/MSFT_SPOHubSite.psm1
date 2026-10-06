@@ -364,8 +364,7 @@ class SPOHubSite : M365DSCResourceBase
                         }
                         else
                         {
-                            # Remove item from principals
-                            Grant-PnPHubSiteRights -Identity $site.Url `
+                            Revoke-PnPHubSiteRights -Identity $site.Url `
                                 -Principals $item.InputObject | Out-Null
                         }
                     }

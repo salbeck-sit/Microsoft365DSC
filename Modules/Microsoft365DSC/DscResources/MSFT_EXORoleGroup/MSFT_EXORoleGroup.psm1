@@ -195,37 +195,38 @@ class EXORoleGroup : M365DSCResourceBase
             Write-Verbose -Message "Role Group '$($this.Name)' exists but it shouldn't. Remove it."
             Remove-RoleGroup -Identity $this.Name -Confirm:$false -Force
         }
-        # CASE: Role Group exists and it should, but has different member values than the desired ones
-        elseif ($this.Ensure -eq 'Present' -and $currentRoleGroupConfig.Ensure -eq 'Present' -and $null -ne (Compare-Object -ReferenceObject @($($currentRoleGroupConfig.Members) | Select-Object) -DifferenceObject @($this.Members | Select-Object)))
+        # CASE: Role Group exists and it should, but has different values than the desired ones
+        elseif ($this.Ensure -eq 'Present' -and $currentRoleGroupConfig.Ensure -eq 'Present')
         {
-            Write-Verbose -Message "Role Group '$($this.Name)' already exists, but members need updating."
-            Write-Verbose -Message "Updating Role Group $($this.Name) members with values: $(Convert-M365DscHashtableToString -Hashtable $NewRoleGroupParams)"
-            Update-RoleGroupMember -Identity $this.Name -Members $this.Members -Confirm:$false
-        }
-        # CASE: Role Assignment Policy exists and it should, but Role has no members as its never been set
-        elseif ($this.Ensure -eq 'Present' -and $currentRoleGroupConfig.Ensure -eq 'Present' -and $currentRoleGroupConfig.Members -eq '')
-        {
-            Write-Verbose -Message "Role Group '$($this.Name)' already exists, but members need updating."
-            Write-Verbose -Message "Updating Role Group $($this.Name) members with values: $(Convert-M365DscHashtableToString -Hashtable $NewRoleGroupParams)"
-            Update-RoleGroupMember -Identity $this.Name -Members $this.Members -Confirm:$false
-        }
-        # CASE: Role Assignment Policy exists and it should, but Roles attribute has different values than the desired ones
-        # Set-RoleGroup cannot change Roles attribute. Therefore we have to remove and recreate the assignment policies for the group if Roles attribute should be changed.
-        elseif ($this.Ensure -eq 'Present' -and $currentRoleGroupConfig.Ensure -eq 'Present' -and $null -ne (Compare-Object -ReferenceObject $($currentRoleGroupConfig.Roles) -DifferenceObject $this.Roles))
-        {
-            Write-Verbose -Message "Role Group '$($this.Name)' already exists, but roles attribute needs updating."
-            $differences = Compare-Object -ReferenceObject $($currentRoleGroupConfig.Roles) -DifferenceObject $this.Roles
-            foreach ($difference in $differences)
+            $boundParameters = $this.GetBoundParameters()
+
+            if ($boundParameters.ContainsKey('Description') -and $this.Description -ne $currentRoleGroupConfig.Description)
             {
-                if ($difference.SideIndicator -eq '=>')
+                Write-Verbose -Message "Updating Role Group $($this.Name) description to '$($this.Description)'"
+                Set-RoleGroup -Identity $this.Name -Description $this.Description -Confirm:$false
+            }
+
+            if ($boundParameters.ContainsKey('Members') -and $null -ne (Compare-Object -ReferenceObject @($currentRoleGroupConfig.Members | Select-Object) -DifferenceObject @($this.Members | Select-Object)))
+            {
+                Write-Verbose -Message "Updating Role Group $($this.Name) members with values: $($this.Members -join ', ')"
+                Update-RoleGroupMember -Identity $this.Name -Members $this.Members -Confirm:$false
+            }
+
+            if ($boundParameters.ContainsKey('Roles'))
+            {
+                $differences = Compare-Object -ReferenceObject @($currentRoleGroupConfig.Roles | Select-Object) -DifferenceObject @($this.Roles | Select-Object)
+                foreach ($difference in $differences)
                 {
-                    Write-Verbose -Message "Adding Role {$($difference.InputObject)} to Role Group {$($this.Name)}"
-                    New-ManagementRoleAssignment -Role $($difference.InputObject) -SecurityGroup $this.Name
-                }
-                elseif ($difference.SideIndicator -eq '<=')
-                {
-                    Write-Verbose -Message "Removing Role {$($difference.InputObject)} from Role Group {$($this.Name)}"
-                    Remove-ManagementRoleAssignment -Identity "$($difference.InputObject)-$($this.Name)"
+                    if ($difference.SideIndicator -eq '=>')
+                    {
+                        Write-Verbose -Message "Adding Role {$($difference.InputObject)} to Role Group {$($this.Name)}"
+                        New-ManagementRoleAssignment -Role $($difference.InputObject) -SecurityGroup $this.Name
+                    }
+                    elseif ($difference.SideIndicator -eq '<=')
+                    {
+                        Write-Verbose -Message "Removing Role {$($difference.InputObject)} from Role Group {$($this.Name)}"
+                        Remove-ManagementRoleAssignment -Identity "$($difference.InputObject)-$($this.Name)" -Confirm:$false
+                    }
                 }
             }
         }

@@ -32,16 +32,16 @@ Configuration Example
                 MSFT_DeviceManagementConfigurationPolicyAssignments{
                     dataType                                   = "#microsoft.graph.groupAssignmentTarget"
                     deviceAndAppManagementAssignmentFilterType = "none"
-                    groupDisplayName                           = "Android Work Profile Users"
+                    groupDisplayName                           = "Intune Pilot Users"
                 }
                 MSFT_DeviceManagementConfigurationPolicyAssignments{
                     dataType         = "#microsoft.graph.exclusionGroupAssignmentTarget"
-                    groupDisplayName = "Field Service Contractors"
+                    groupDisplayName = "Intune Excluded Users"
                 }
             );
             authenticationMethod  = "usernameAndPassword";
             connectionName        = "Contoso Work Profile VPN";
-            connectionType        = "pulseSecure";
+            connectionType        = "microsoftProtect";
             customData            = @(
                 MSFT_customData{
                     key   = "ProfileName"
@@ -50,14 +50,13 @@ Configuration Example
             );
             customKeyValueData    = @(
                 MSFT_customKeyValueData{
-                    name  = "SplitTunnel"
-                    value = "false"
+                    name  = "ProfileName"
+                    value = "Contoso-Mobile"
                 }
             );
             Description           = "Per-app VPN access to the corporate network from Android Enterprise work profiles";
-            DisplayName           = "IntuneVPNConfigurationPolicyAndroidWork DisplayName";
+            DisplayName           = "Android Work Profile Corporate VPN";
             Ensure                = "Present";
-            lockdownExclusionList = @("com.android.vending", "com.microsoft.windowsintune.companyportal");
             proxyExclusionList    = @("intranet.contoso.com", "*.contoso.local");
             proxyServer           = @(
                 MSFT_MicrosoftvpnProxyServer{
@@ -65,8 +64,6 @@ Configuration Example
                     port    = 8080
                 }
             );
-            realm                 = "corp.contoso.com";
-            role                  = "Mobile Users";
             RoleScopeTagIds       = @("0");
             servers               = @(
                 MSFT_MicrosoftGraphvpnServer{
@@ -83,7 +80,7 @@ Configuration Example
                     appId       = "com.microsoft.office.outlook"
                 }
             );
-            targetedPackageIds    = @("com.microsoft.office.outlook", "com.microsoft.sharepoint");
+            targetedPackageIds    = @("com.microsoft.office.outlook");
             ApplicationId         = $ApplicationId;
             TenantId              = $TenantId;
             CertificateThumbprint = $CertificateThumbprint;

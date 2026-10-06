@@ -122,13 +122,12 @@ Configuration Example
                     )
                 }
             };
-            BlockServiceProviderOutboundAccess = $True;
             IdentitySynchronization            = MSFT_AADCrossTenantIdentitySyncPolicyPartnerInbound{
                 GroupSyncInbound = MSFT_AADCrossTenantGroupSyncInbound{
                     IsSyncAllowed = $False
                 }
                 UserSyncInbound  = MSFT_AADCrossTenantUserSyncInbound{
-                    IsSyncAllowed = $False
+                    IsSyncAllowed = $True
                 }
             };
             InboundTrust                       = MSFT_AADCrossTenantAccessPolicyInboundTrust{

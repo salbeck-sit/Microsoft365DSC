@@ -82,8 +82,8 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                 Should -Invoke -CommandName 'Set-User' -Exactly 1
             }
 
-            It 'Should return Present from the Get method' {
-                ((New-M365DSCResourceInstance -ResourceName 'EXOAuthenticationPolicyAssignment' -Property $testParams).Get().ToHashtable()).Ensure | Should -Be 'Present'
+            It 'Should return Absent from the Get method' {
+                ((New-M365DSCResourceInstance -ResourceName 'EXOAuthenticationPolicyAssignment' -Property $testParams).Get().ToHashtable()).Ensure | Should -Be 'Absent'
             }
         }
 
@@ -158,6 +158,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             It 'Should Reverse Engineer resource from the Export method' {
                 $result = Invoke-M365DSCResourceMethod -ResourceName 'EXOAuthenticationPolicyAssignment' -MethodName 'Export' -Parameters $testParams
                 $result | Should -Not -BeNullOrEmpty
+                $result | Should -Match 'Test Policy'
             }
         }
     }

@@ -98,9 +98,11 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             BeforeAll {
                 $testParams = @{
                     Name                         = 'Contoso Transport Rule'
+                    ActivationDate               = '2030-01-01T00:00:00.0000000Z'
                     BetweenMemberOf1             = 'Sales Department'
                     BetweenMemberOf2             = 'Brokerage Department'
                     ExceptIfSubjectContainsWords = 'Press Release'
+                    MessageSizeOver              = '10 mb'
                     RejectMessageReasonText      = 'Messages sent between the Sales and Brokerage departments are strictly prohibited.'
                     Credential                   = $Credential
                 }
@@ -108,9 +110,11 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                 Mock -CommandName Get-TransportRule -MockWith {
                     return @{
                         Name                         = 'Contoso Transport Rule'
+                        ActivationDate               = [System.DateTime]::new(2030, 1, 1, 0, 0, 0, [System.DateTimeKind]::Utc)
                         BetweenMemberOf1             = 'Sales Department'
                         BetweenMemberOf2             = 'Brokerage Department'
                         ExceptIfSubjectContainsWords = 'Press Release'
+                        MessageSizeOver              = '10 MB (10,485,760 bytes)'
                         RejectMessageReasonText      = 'Messages sent between the Sales and Brokerage departments are strictly prohibited.'
                     }
                 }

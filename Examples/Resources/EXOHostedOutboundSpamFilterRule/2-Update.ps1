@@ -27,10 +27,10 @@ Configuration Example
         EXOHostedOutboundSpamFilterRule 'EXOHostedOutboundSpamFilterRule-Example'
         {
             Identity                       = "Contoso Executives"
-            Comments                       = "Does not apply to Executives"
+            Comments                       = "Applies outbound spam limits to the executives group"
             Enabled                        = $False # Updated Property
             ExceptIfFrom                   = "AdeleV@$TenantId"
-            ExceptIfFromMemberOf           = "Contractors@$TenantId"
+            ExceptIfFromMemberOf           = "U.S.Sales@$TenantId"
             ExceptIfSenderDomainIs         = "fabrikam.com"
             From                           = "AlexW@$TenantId"
             Priority                       = 0

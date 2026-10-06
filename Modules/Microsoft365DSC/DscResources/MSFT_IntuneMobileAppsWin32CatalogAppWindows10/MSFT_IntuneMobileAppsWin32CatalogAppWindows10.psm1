@@ -210,8 +210,8 @@ class IntuneMobileAppsWin32CatalogAppWindows10 : M365DSCResourceBase
                 {
                     $getValue = Get-MgBetaDeviceAppManagementMobileApp `
                         -All `
-                        -Filter "DisplayName eq '$($this.DisplayName -replace "'", "''")' and isof('microsoft.graph.win32CatalogApp')" `
-                        -ErrorAction SilentlyContinue | Select-Object -First 1
+                        -Filter "DisplayName eq '$($this.DisplayName -replace "'", "''")'" `
+                        -ErrorAction SilentlyContinue | Where-Object -Property '@odata.type' -EQ '#microsoft.graph.win32CatalogApp' | Select-Object -First 1
                 }
 
                 if ($null -eq $getValue)
@@ -365,7 +365,7 @@ class IntuneMobileAppsWin32CatalogAppWindows10 : M365DSCResourceBase
             $assignmentResult = @()
             if ($null -ne $assignmentsValues -and $assignmentsValues.Count -gt 0)
             {
-                [array] $assignmentsValues = $assignmentsValues | Where-Object -FilterScript { $_.source -eq 'direct' }
+                [array] $assignmentsValues = $assignmentsValues | Where-Object -Property source -EQ 'direct'
                 $assignmentResult += ConvertFrom-IntuneMobileAppAssignment `
                     -IncludeDeviceFilter $true `
                     -Assignments $assignmentsValues
@@ -437,6 +437,7 @@ class IntuneMobileAppsWin32CatalogAppWindows10 : M365DSCResourceBase
                 $assignmentsHash = ConvertTo-IntuneMobileAppAssignment -IncludeDeviceFilter:$true -Assignments $this.Assignments
                 if ($createdInstance.Id)
                 {
+                    Wait-M365DSCIntuneMobileAppPublished -AppId $createdInstance.Id
                     Update-DeviceAppManagementPolicyAssignment `
                         -AppManagementPolicyId $createdInstance.Id `
                         -Assignments $assignmentsHash

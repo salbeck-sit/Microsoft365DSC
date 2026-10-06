@@ -314,8 +314,11 @@ class IntuneDeviceCompliancePolicyWindows10 : M365DSCResourceBase
             {
                 Write-Verbose -Message "Resolving Device Compliance Policy Script with Id {$($devicePolicy.deviceCompliancePolicyScript.deviceComplianceScriptId)}"
                 $policyScript = Invoke-M365DSCGraphRequest -Uri "/beta/deviceManagement/deviceComplianceScripts/$($devicePolicy.deviceCompliancePolicyScript.deviceComplianceScriptId)" -Method GET
-                $complexDeviceCompliancePolicyScript.Add('DisplayName', $policyScript.displayName)
-                $complexDeviceCompliancePolicyScript.Add('RulesContent', $this.DecodeTextPayload($devicePolicy.deviceCompliancePolicyScript.rulesContent))
+                if (-not ([System.String]$policyScript.displayName).StartsWith('Built-in WSL Compliance-', [System.StringComparison]::Ordinal))
+                {
+                    $complexDeviceCompliancePolicyScript.Add('DisplayName', $policyScript.displayName)
+                    $complexDeviceCompliancePolicyScript.Add('RulesContent', $this.DecodeTextPayload($devicePolicy.deviceCompliancePolicyScript.rulesContent))
+                }
             }
             if ($complexDeviceCompliancePolicyScript.Keys.Count -eq 0)
             {

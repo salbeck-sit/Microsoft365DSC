@@ -195,10 +195,6 @@ function Invoke-M365DSCGraphShimRequestV76
     {
         $invokeParams['Top'] = $Top
     }
-    elseif ($PSBoundParameters.ContainsKey('Top') -and $Top -eq 0)
-    {
-        $invokeParams['NoPageSize'] = $true
-    }
 
     if ($PSBoundParameters.ContainsKey('PageSize') -and $PageSize -gt 0)
     {
@@ -236,9 +232,17 @@ function Invoke-M365DSCGraphShimRequestV76
         $response = Invoke-MgxRequest @invokeParams -ErrorVariable mgxErrors
         if ($All -and $mgxErrors.Count -gt 0 -and "$($mgxErrors[0])" -match $pageSizeLimitPattern)
         {
-            Write-Warning -Message "The limit for Top query has been exceeded. Retrying with PageSize set to $Matches[1]."
+            Write-Warning -Message "The limit for Top query has been exceeded. Retrying with PageSize set to $($Matches[1])."
             $invokeParams.Remove('NoPageSize') | Out-Null
-            $invokeParams['PageSize'] = [int]$Matches[1]
+            $invokeParams.Remove('PageSize') | Out-Null
+            if ([int]$Matches[1] -gt 0)
+            {
+                $invokeParams['PageSize'] = [int]$Matches[1]
+            }
+            else
+            {
+                $invokeParams['NoPageSize'] = $true
+            }
             $response = Invoke-MgxRequest @invokeParams
         }
         return $response
@@ -247,9 +251,17 @@ function Invoke-M365DSCGraphShimRequestV76
     {
         if ($All -and $_.Exception.Message -match $pageSizeLimitPattern)
         {
-            Write-Warning -Message "The limit for Top query has been exceeded. Retrying with PageSize set to $Matches[1]."
+            Write-Warning -Message "The limit for Top query has been exceeded. Retrying with PageSize set to $($Matches[1])."
             $invokeParams.Remove('NoPageSize') | Out-Null
-            $invokeParams['PageSize'] = [int]$Matches[1]
+            $invokeParams.Remove('PageSize') | Out-Null
+            if ([int]$Matches[1] -gt 0)
+            {
+                $invokeParams['PageSize'] = [int]$Matches[1]
+            }
+            else
+            {
+                $invokeParams['NoPageSize'] = $true
+            }
             return Invoke-MgxRequest @invokeParams
         }
 
@@ -602,7 +614,12 @@ function ConvertTo-M365DSCGraphShimBody
         {
             if ($entry.Key -notin $ExcludeParams -and $null -ne $entry.Value)
             {
-                $body[(ConvertTo-M365DSCGraphShimPropertyName -Name $entry.Key)] = $entry.Value
+                $value = $entry.Value
+                if ($value -is [System.Management.Automation.SwitchParameter])
+                {
+                    $value = $value.IsPresent
+                }
+                $body[(ConvertTo-M365DSCGraphShimPropertyName -Name $entry.Key)] = $value
             }
         }
     }
@@ -627,7 +644,7 @@ $script:GraphShimExcludeFromBody = @(
     'Break', 'ResponseHeadersVariable', 'InputObject',
     'Filter', 'Property', 'ExpandProperty', 'Top', 'Skip',
     'Search', 'Sort', 'CountVariable', 'ConsistencyLevel',
-    'All', 'PageSize', 'BodyParameter', 'AdditionalProperties',
+    'All', 'PageSize', 'NoPageSize', 'BodyParameter', 'AdditionalProperties',
     'Confirm', 'WhatIf', 'ErrorAction'
 )
 
@@ -688,14 +705,10 @@ function Invoke-M365DSCGraphShimGetResource
     if ($BoundParameters['Top'] -gt 0)      { $paramSplat['Top'] = $BoundParameters['Top'] }
     if ($BoundParameters['Skip'] -gt 0)     { $paramSplat['Skip'] = $BoundParameters['Skip'] }
     if ($BoundParameters['PageSize'] -gt 0) { $paramSplat['PageSize'] = $BoundParameters['PageSize'] }
-
-    if ($BoundParameters.ContainsKey('Top') -and $BoundParameters['Top'] -eq 0)
-    {
-        $paramSplat['NoPageSize'] = $true
-    }
+    if ($BoundParameters['NoPageSize'])     { $paramSplat['NoPageSize'] = $true }
 
     $retrieveAllPages = ($BoundParameters.ContainsKey('All') -and $BoundParameters['All']) -or
-        (-not [System.String]::IsNullOrEmpty($BoundParameters['Filter']) -and -not $BoundParameters.ContainsKey('Top'))
+        (-not [System.String]::IsNullOrEmpty($BoundParameters['Filter']) -and -not $paramSplat.ContainsKey('Top'))
     if ($retrieveAllPages)
     {
         # All reads the whole collection. In this case, the Top parameter caps a single page
@@ -705,6 +718,10 @@ function Invoke-M365DSCGraphShimGetResource
             $paramSplat['PageSize'] = $paramSplat['Top']
         }
         $paramSplat.Remove('Top')
+        if ($paramSplat.ContainsKey('NoPageSize'))
+        {
+            $paramSplat.Remove('PageSize')
+        }
     }
     elseif (-not $Script:IsPowerShell76OrGreater)
     {
@@ -1188,6 +1205,10 @@ function Get-MgApplication
 
         [Parameter()]
         [System.Management.Automation.SwitchParameter]
+        $NoPageSize,
+
+        [Parameter()]
+        [System.Management.Automation.SwitchParameter]
         $All,
 
         [Parameter()]
@@ -1279,6 +1300,10 @@ function Get-MgApplicationFederatedIdentityCredential
         [Parameter()]
         [System.Int32]
         $PageSize,
+
+        [Parameter()]
+        [System.Management.Automation.SwitchParameter]
+        $NoPageSize,
 
         [Parameter()]
         [System.Management.Automation.SwitchParameter]
@@ -1420,6 +1445,10 @@ function Get-MgBetaAgreement
 
         [Parameter()]
         [System.Management.Automation.SwitchParameter]
+        $NoPageSize,
+
+        [Parameter()]
+        [System.Management.Automation.SwitchParameter]
         $All,
 
         [Parameter()]
@@ -1514,6 +1543,10 @@ function Get-MgBetaApplication
 
         [Parameter()]
         [System.Management.Automation.SwitchParameter]
+        $NoPageSize,
+
+        [Parameter()]
+        [System.Management.Automation.SwitchParameter]
         $All,
 
         [Parameter()]
@@ -1601,6 +1634,10 @@ function Get-MgBetaDeviceAppManagementAndroidManagedAppProtection
         [Parameter()]
         [System.Int32]
         $PageSize,
+
+        [Parameter()]
+        [System.Management.Automation.SwitchParameter]
+        $NoPageSize,
 
         [Parameter()]
         [System.Management.Automation.SwitchParameter]
@@ -1698,6 +1735,10 @@ function Get-MgBetaDeviceAppManagementAndroidManagedAppProtectionApp
 
         [Parameter()]
         [System.Management.Automation.SwitchParameter]
+        $NoPageSize,
+
+        [Parameter()]
+        [System.Management.Automation.SwitchParameter]
         $All,
 
         [Parameter()]
@@ -1792,6 +1833,10 @@ function Get-MgBetaDeviceAppManagementAndroidManagedAppProtectionAssignment
 
         [Parameter()]
         [System.Management.Automation.SwitchParameter]
+        $NoPageSize,
+
+        [Parameter()]
+        [System.Management.Automation.SwitchParameter]
         $All,
 
         [Parameter()]
@@ -1879,6 +1924,10 @@ function Get-MgBetaDeviceAppManagementiOSManagedAppProtection
         [Parameter()]
         [System.Int32]
         $PageSize,
+
+        [Parameter()]
+        [System.Management.Automation.SwitchParameter]
+        $NoPageSize,
 
         [Parameter()]
         [System.Management.Automation.SwitchParameter]
@@ -1976,6 +2025,10 @@ function Get-MgBetaDeviceAppManagementiOSManagedAppProtectionApp
 
         [Parameter()]
         [System.Management.Automation.SwitchParameter]
+        $NoPageSize,
+
+        [Parameter()]
+        [System.Management.Automation.SwitchParameter]
         $All,
 
         [Parameter()]
@@ -2070,6 +2123,10 @@ function Get-MgBetaDeviceAppManagementiOSManagedAppProtectionAssignment
 
         [Parameter()]
         [System.Management.Automation.SwitchParameter]
+        $NoPageSize,
+
+        [Parameter()]
+        [System.Management.Automation.SwitchParameter]
         $All,
 
         [Parameter()]
@@ -2157,6 +2214,10 @@ function Get-MgBetaDeviceAppManagementManagedAppPolicy
         [Parameter()]
         [System.Int32]
         $PageSize,
+
+        [Parameter()]
+        [System.Management.Automation.SwitchParameter]
+        $NoPageSize,
 
         [Parameter()]
         [System.Management.Automation.SwitchParameter]
@@ -2250,6 +2311,10 @@ function Get-MgBetaDeviceAppManagementManagedAppStatus
 
         [Parameter()]
         [System.Management.Automation.SwitchParameter]
+        $NoPageSize,
+
+        [Parameter()]
+        [System.Management.Automation.SwitchParameter]
         $All,
 
         [Parameter()]
@@ -2340,6 +2405,10 @@ function Get-MgBetaDeviceAppManagementMdmWindowsInformationProtectionPolicy
 
         [Parameter()]
         [System.Management.Automation.SwitchParameter]
+        $NoPageSize,
+
+        [Parameter()]
+        [System.Management.Automation.SwitchParameter]
         $All,
 
         [Parameter()]
@@ -2427,6 +2496,10 @@ function Get-MgBetaDeviceAppManagementMobileApp
         [Parameter()]
         [System.Int32]
         $PageSize,
+
+        [Parameter()]
+        [System.Management.Automation.SwitchParameter]
+        $NoPageSize,
 
         [Parameter()]
         [System.Management.Automation.SwitchParameter]
@@ -2524,6 +2597,10 @@ function Get-MgBetaDeviceAppManagementMobileAppAssignment
 
         [Parameter()]
         [System.Management.Automation.SwitchParameter]
+        $NoPageSize,
+
+        [Parameter()]
+        [System.Management.Automation.SwitchParameter]
         $All,
 
         [Parameter()]
@@ -2618,6 +2695,10 @@ function Get-MgBetaDeviceAppManagementMobileAppCategory
 
         [Parameter()]
         [System.Management.Automation.SwitchParameter]
+        $NoPageSize,
+
+        [Parameter()]
+        [System.Management.Automation.SwitchParameter]
         $All,
 
         [Parameter()]
@@ -2705,6 +2786,10 @@ function Get-MgBetaDeviceAppManagementMobileAppConfiguration
         [Parameter()]
         [System.Int32]
         $PageSize,
+
+        [Parameter()]
+        [System.Management.Automation.SwitchParameter]
+        $NoPageSize,
 
         [Parameter()]
         [System.Management.Automation.SwitchParameter]
@@ -2799,6 +2884,10 @@ function Get-MgBetaDeviceAppManagementMobileAppConfigurationAssignment
         [Parameter()]
         [System.Int32]
         $PageSize,
+
+        [Parameter()]
+        [System.Management.Automation.SwitchParameter]
+        $NoPageSize,
 
         [Parameter()]
         [System.Management.Automation.SwitchParameter]
@@ -2904,6 +2993,10 @@ function Get-MgBetaDeviceAppManagementPolicySet
 
         [Parameter()]
         [System.Management.Automation.SwitchParameter]
+        $NoPageSize,
+
+        [Parameter()]
+        [System.Management.Automation.SwitchParameter]
         $All,
 
         [Parameter()]
@@ -2991,6 +3084,10 @@ function Get-MgBetaDeviceAppManagementTargetedManagedAppConfiguration
         [Parameter()]
         [System.Int32]
         $PageSize,
+
+        [Parameter()]
+        [System.Management.Automation.SwitchParameter]
+        $NoPageSize,
 
         [Parameter()]
         [System.Management.Automation.SwitchParameter]
@@ -3088,6 +3185,10 @@ function Get-MgBetaDeviceAppManagementTargetedManagedAppConfigurationApp
 
         [Parameter()]
         [System.Management.Automation.SwitchParameter]
+        $NoPageSize,
+
+        [Parameter()]
+        [System.Management.Automation.SwitchParameter]
         $All,
 
         [Parameter()]
@@ -3182,6 +3283,10 @@ function Get-MgBetaDeviceAppManagementTargetedManagedAppConfigurationAssignment
 
         [Parameter()]
         [System.Management.Automation.SwitchParameter]
+        $NoPageSize,
+
+        [Parameter()]
+        [System.Management.Automation.SwitchParameter]
         $All,
 
         [Parameter()]
@@ -3269,6 +3374,10 @@ function Get-MgBetaDeviceAppManagementWindowsManagedAppProtection
         [Parameter()]
         [System.Int32]
         $PageSize,
+
+        [Parameter()]
+        [System.Management.Automation.SwitchParameter]
+        $NoPageSize,
 
         [Parameter()]
         [System.Management.Automation.SwitchParameter]
@@ -3366,6 +3475,10 @@ function Get-MgBetaDeviceAppManagementWindowsManagedAppProtectionApp
 
         [Parameter()]
         [System.Management.Automation.SwitchParameter]
+        $NoPageSize,
+
+        [Parameter()]
+        [System.Management.Automation.SwitchParameter]
         $All,
 
         [Parameter()]
@@ -3460,6 +3573,10 @@ function Get-MgBetaDeviceAppManagementWindowsManagedAppProtectionAssignment
 
         [Parameter()]
         [System.Management.Automation.SwitchParameter]
+        $NoPageSize,
+
+        [Parameter()]
+        [System.Management.Automation.SwitchParameter]
         $All,
 
         [Parameter()]
@@ -3547,6 +3664,10 @@ function Get-MgBetaDeviceManagementAndroidDeviceOwnerEnrollmentProfile
         [Parameter()]
         [System.Int32]
         $PageSize,
+
+        [Parameter()]
+        [System.Management.Automation.SwitchParameter]
+        $NoPageSize,
 
         [Parameter()]
         [System.Management.Automation.SwitchParameter]
@@ -3736,6 +3857,10 @@ function Get-MgBetaDeviceManagementAssignmentFilter
 
         [Parameter()]
         [System.Management.Automation.SwitchParameter]
+        $NoPageSize,
+
+        [Parameter()]
+        [System.Management.Automation.SwitchParameter]
         $All,
 
         [Parameter()]
@@ -3823,6 +3948,10 @@ function Get-MgBetaDeviceManagementConfigurationPolicy
         [Parameter()]
         [System.Int32]
         $PageSize,
+
+        [Parameter()]
+        [System.Management.Automation.SwitchParameter]
+        $NoPageSize,
 
         [Parameter()]
         [System.Management.Automation.SwitchParameter]
@@ -3917,6 +4046,10 @@ function Get-MgBetaDeviceManagementConfigurationPolicyAssignment
         [Parameter()]
         [System.Int32]
         $PageSize,
+
+        [Parameter()]
+        [System.Management.Automation.SwitchParameter]
+        $NoPageSize,
 
         [Parameter()]
         [System.Management.Automation.SwitchParameter]
@@ -4062,6 +4195,10 @@ function Get-MgBetaDeviceManagementConfigurationPolicySetting
 
         [Parameter()]
         [System.Management.Automation.SwitchParameter]
+        $NoPageSize,
+
+        [Parameter()]
+        [System.Management.Automation.SwitchParameter]
         $All,
 
         [Parameter()]
@@ -4156,6 +4293,10 @@ function Get-MgBetaDeviceManagementConfigurationPolicyTemplateSettingTemplate
 
         [Parameter()]
         [System.Management.Automation.SwitchParameter]
+        $NoPageSize,
+
+        [Parameter()]
+        [System.Management.Automation.SwitchParameter]
         $All,
 
         [Parameter()]
@@ -4243,6 +4384,10 @@ function Get-MgBetaDeviceManagementDataSharingConsent
         [Parameter()]
         [System.Int32]
         $PageSize,
+
+        [Parameter()]
+        [System.Management.Automation.SwitchParameter]
+        $NoPageSize,
 
         [Parameter()]
         [System.Management.Automation.SwitchParameter]
@@ -4336,6 +4481,10 @@ function Get-MgBetaDeviceManagementDerivedCredential
 
         [Parameter()]
         [System.Management.Automation.SwitchParameter]
+        $NoPageSize,
+
+        [Parameter()]
+        [System.Management.Automation.SwitchParameter]
         $All,
 
         [Parameter()]
@@ -4426,6 +4575,10 @@ function Get-MgBetaDeviceManagementDeviceCategory
 
         [Parameter()]
         [System.Management.Automation.SwitchParameter]
+        $NoPageSize,
+
+        [Parameter()]
+        [System.Management.Automation.SwitchParameter]
         $All,
 
         [Parameter()]
@@ -4513,6 +4666,10 @@ function Get-MgBetaDeviceManagementDeviceCompliancePolicy
         [Parameter()]
         [System.Int32]
         $PageSize,
+
+        [Parameter()]
+        [System.Management.Automation.SwitchParameter]
+        $NoPageSize,
 
         [Parameter()]
         [System.Management.Automation.SwitchParameter]
@@ -4610,6 +4767,10 @@ function Get-MgBetaDeviceManagementDeviceCompliancePolicyAssignment
 
         [Parameter()]
         [System.Management.Automation.SwitchParameter]
+        $NoPageSize,
+
+        [Parameter()]
+        [System.Management.Automation.SwitchParameter]
         $All,
 
         [Parameter()]
@@ -4697,6 +4858,10 @@ function Get-MgBetaDeviceManagementDeviceConfiguration
         [Parameter()]
         [System.Int32]
         $PageSize,
+
+        [Parameter()]
+        [System.Management.Automation.SwitchParameter]
+        $NoPageSize,
 
         [Parameter()]
         [System.Management.Automation.SwitchParameter]
@@ -4794,6 +4959,10 @@ function Get-MgBetaDeviceManagementDeviceConfigurationAssignment
 
         [Parameter()]
         [System.Management.Automation.SwitchParameter]
+        $NoPageSize,
+
+        [Parameter()]
+        [System.Management.Automation.SwitchParameter]
         $All,
 
         [Parameter()]
@@ -4881,6 +5050,10 @@ function Get-MgBetaDeviceManagementDeviceEnrollmentConfiguration
         [Parameter()]
         [System.Int32]
         $PageSize,
+
+        [Parameter()]
+        [System.Management.Automation.SwitchParameter]
+        $NoPageSize,
 
         [Parameter()]
         [System.Management.Automation.SwitchParameter]
@@ -4978,6 +5151,10 @@ function Get-MgBetaDeviceManagementDeviceEnrollmentConfigurationAssignment
 
         [Parameter()]
         [System.Management.Automation.SwitchParameter]
+        $NoPageSize,
+
+        [Parameter()]
+        [System.Management.Automation.SwitchParameter]
         $All,
 
         [Parameter()]
@@ -5065,6 +5242,10 @@ function Get-MgBetaDeviceManagementDeviceHealthScript
         [Parameter()]
         [System.Int32]
         $PageSize,
+
+        [Parameter()]
+        [System.Management.Automation.SwitchParameter]
+        $NoPageSize,
 
         [Parameter()]
         [System.Management.Automation.SwitchParameter]
@@ -5162,6 +5343,10 @@ function Get-MgBetaDeviceManagementDeviceHealthScriptAssignment
 
         [Parameter()]
         [System.Management.Automation.SwitchParameter]
+        $NoPageSize,
+
+        [Parameter()]
+        [System.Management.Automation.SwitchParameter]
         $All,
 
         [Parameter()]
@@ -5252,6 +5437,10 @@ function Get-MgBetaDeviceManagementDeviceShellScript
 
         [Parameter()]
         [System.Management.Automation.SwitchParameter]
+        $NoPageSize,
+
+        [Parameter()]
+        [System.Management.Automation.SwitchParameter]
         $All,
 
         [Parameter()]
@@ -5339,6 +5528,10 @@ function Get-MgBetaDeviceManagementGroupPolicyConfiguration
         [Parameter()]
         [System.Int32]
         $PageSize,
+
+        [Parameter()]
+        [System.Management.Automation.SwitchParameter]
+        $NoPageSize,
 
         [Parameter()]
         [System.Management.Automation.SwitchParameter]
@@ -5436,6 +5629,10 @@ function Get-MgBetaDeviceManagementGroupPolicyConfigurationAssignment
 
         [Parameter()]
         [System.Management.Automation.SwitchParameter]
+        $NoPageSize,
+
+        [Parameter()]
+        [System.Management.Automation.SwitchParameter]
         $All,
 
         [Parameter()]
@@ -5527,6 +5724,10 @@ function Get-MgBetaDeviceManagementGroupPolicyConfigurationDefinitionValue
         [Parameter()]
         [System.Int32]
         $PageSize,
+
+        [Parameter()]
+        [System.Management.Automation.SwitchParameter]
+        $NoPageSize,
 
         [Parameter()]
         [System.Management.Automation.SwitchParameter]
@@ -5688,6 +5889,10 @@ function Get-MgBetaDeviceManagementGroupPolicyConfigurationDefinitionValuePresen
 
         [Parameter()]
         [System.Management.Automation.SwitchParameter]
+        $NoPageSize,
+
+        [Parameter()]
+        [System.Management.Automation.SwitchParameter]
         $All,
 
         [Parameter()]
@@ -5778,6 +5983,10 @@ function Get-MgBetaDeviceManagementImportedDeviceIdentity
 
         [Parameter()]
         [System.Management.Automation.SwitchParameter]
+        $NoPageSize,
+
+        [Parameter()]
+        [System.Management.Automation.SwitchParameter]
         $All,
 
         [Parameter()]
@@ -5865,6 +6074,10 @@ function Get-MgBetaDeviceManagementIntuneBrandingProfile
         [Parameter()]
         [System.Int32]
         $PageSize,
+
+        [Parameter()]
+        [System.Management.Automation.SwitchParameter]
+        $NoPageSize,
 
         [Parameter()]
         [System.Management.Automation.SwitchParameter]
@@ -5962,6 +6175,10 @@ function Get-MgBetaDeviceManagementIntuneBrandingProfileAssignment
 
         [Parameter()]
         [System.Management.Automation.SwitchParameter]
+        $NoPageSize,
+
+        [Parameter()]
+        [System.Management.Automation.SwitchParameter]
         $All,
 
         [Parameter()]
@@ -6049,6 +6266,10 @@ function Get-MgBetaDeviceManagementManagedDeviceCleanupRule
         [Parameter()]
         [System.Int32]
         $PageSize,
+
+        [Parameter()]
+        [System.Management.Automation.SwitchParameter]
+        $NoPageSize,
 
         [Parameter()]
         [System.Management.Automation.SwitchParameter]
@@ -6142,6 +6363,10 @@ function Get-MgBetaDeviceManagementMobileThreatDefenseConnector
 
         [Parameter()]
         [System.Management.Automation.SwitchParameter]
+        $NoPageSize,
+
+        [Parameter()]
+        [System.Management.Automation.SwitchParameter]
         $All,
 
         [Parameter()]
@@ -6229,6 +6454,10 @@ function Get-MgBetaDeviceManagementMonitoringAlertRule
         [Parameter()]
         [System.Int32]
         $PageSize,
+
+        [Parameter()]
+        [System.Management.Automation.SwitchParameter]
+        $NoPageSize,
 
         [Parameter()]
         [System.Management.Automation.SwitchParameter]
@@ -6322,6 +6551,10 @@ function Get-MgBetaDeviceManagementNotificationMessageTemplate
 
         [Parameter()]
         [System.Management.Automation.SwitchParameter]
+        $NoPageSize,
+
+        [Parameter()]
+        [System.Management.Automation.SwitchParameter]
         $All,
 
         [Parameter()]
@@ -6409,6 +6642,10 @@ function Get-MgBetaDeviceManagementRoleAssignment
         [Parameter()]
         [System.Int32]
         $PageSize,
+
+        [Parameter()]
+        [System.Management.Automation.SwitchParameter]
+        $NoPageSize,
 
         [Parameter()]
         [System.Management.Automation.SwitchParameter]
@@ -6502,6 +6739,10 @@ function Get-MgBetaDeviceManagementRoleDefinition
 
         [Parameter()]
         [System.Management.Automation.SwitchParameter]
+        $NoPageSize,
+
+        [Parameter()]
+        [System.Management.Automation.SwitchParameter]
         $All,
 
         [Parameter()]
@@ -6589,6 +6830,10 @@ function Get-MgBetaDeviceManagementRoleScopeTag
         [Parameter()]
         [System.Int32]
         $PageSize,
+
+        [Parameter()]
+        [System.Management.Automation.SwitchParameter]
+        $NoPageSize,
 
         [Parameter()]
         [System.Management.Automation.SwitchParameter]
@@ -6686,6 +6931,10 @@ function Get-MgBetaDeviceManagementRoleScopeTagAssignment
 
         [Parameter()]
         [System.Management.Automation.SwitchParameter]
+        $NoPageSize,
+
+        [Parameter()]
+        [System.Management.Automation.SwitchParameter]
         $All,
 
         [Parameter()]
@@ -6773,6 +7022,10 @@ function Get-MgBetaDeviceManagementScript
         [Parameter()]
         [System.Int32]
         $PageSize,
+
+        [Parameter()]
+        [System.Management.Automation.SwitchParameter]
+        $NoPageSize,
 
         [Parameter()]
         [System.Management.Automation.SwitchParameter]
@@ -6870,6 +7123,10 @@ function Get-MgBetaDeviceManagementScriptAssignment
 
         [Parameter()]
         [System.Management.Automation.SwitchParameter]
+        $NoPageSize,
+
+        [Parameter()]
+        [System.Management.Automation.SwitchParameter]
         $All,
 
         [Parameter()]
@@ -6961,6 +7218,10 @@ function Get-MgBetaDeviceManagementTemplateCategory
         [Parameter()]
         [System.Int32]
         $PageSize,
+
+        [Parameter()]
+        [System.Management.Automation.SwitchParameter]
+        $NoPageSize,
 
         [Parameter()]
         [System.Management.Automation.SwitchParameter]
@@ -7062,6 +7323,10 @@ function Get-MgBetaDeviceManagementTemplateCategoryRecommendedSetting
 
         [Parameter()]
         [System.Management.Automation.SwitchParameter]
+        $NoPageSize,
+
+        [Parameter()]
+        [System.Management.Automation.SwitchParameter]
         $All,
 
         [Parameter()]
@@ -7149,6 +7414,10 @@ function Get-MgBetaDeviceManagementTermAndCondition
         [Parameter()]
         [System.Int32]
         $PageSize,
+
+        [Parameter()]
+        [System.Management.Automation.SwitchParameter]
+        $NoPageSize,
 
         [Parameter()]
         [System.Management.Automation.SwitchParameter]
@@ -7246,6 +7515,10 @@ function Get-MgBetaDeviceManagementTermAndConditionAssignment
 
         [Parameter()]
         [System.Management.Automation.SwitchParameter]
+        $NoPageSize,
+
+        [Parameter()]
+        [System.Management.Automation.SwitchParameter]
         $All,
 
         [Parameter()]
@@ -7333,6 +7606,10 @@ function Get-MgBetaDeviceManagementVirtualEndpointOnPremiseConnection
         [Parameter()]
         [System.Int32]
         $PageSize,
+
+        [Parameter()]
+        [System.Management.Automation.SwitchParameter]
+        $NoPageSize,
 
         [Parameter()]
         [System.Management.Automation.SwitchParameter]
@@ -7426,6 +7703,10 @@ function Get-MgBetaDeviceManagementVirtualEndpointProvisioningPolicy
 
         [Parameter()]
         [System.Management.Automation.SwitchParameter]
+        $NoPageSize,
+
+        [Parameter()]
+        [System.Management.Automation.SwitchParameter]
         $All,
 
         [Parameter()]
@@ -7516,6 +7797,10 @@ function Get-MgBetaDeviceManagementVirtualEndpointUserSetting
 
         [Parameter()]
         [System.Management.Automation.SwitchParameter]
+        $NoPageSize,
+
+        [Parameter()]
+        [System.Management.Automation.SwitchParameter]
         $All,
 
         [Parameter()]
@@ -7603,6 +7888,10 @@ function Get-MgBetaDeviceManagementWindowsAutopilotDeploymentProfile
         [Parameter()]
         [System.Int32]
         $PageSize,
+
+        [Parameter()]
+        [System.Management.Automation.SwitchParameter]
+        $NoPageSize,
 
         [Parameter()]
         [System.Management.Automation.SwitchParameter]
@@ -7700,6 +7989,10 @@ function Get-MgBetaDeviceManagementWindowsAutopilotDeploymentProfileAssignment
 
         [Parameter()]
         [System.Management.Automation.SwitchParameter]
+        $NoPageSize,
+
+        [Parameter()]
+        [System.Management.Automation.SwitchParameter]
         $All,
 
         [Parameter()]
@@ -7787,6 +8080,10 @@ function Get-MgBetaDeviceManagementWindowsFeatureUpdateProfile
         [Parameter()]
         [System.Int32]
         $PageSize,
+
+        [Parameter()]
+        [System.Management.Automation.SwitchParameter]
+        $NoPageSize,
 
         [Parameter()]
         [System.Management.Automation.SwitchParameter]
@@ -7884,6 +8181,10 @@ function Get-MgBetaDeviceManagementWindowsFeatureUpdateProfileAssignment
 
         [Parameter()]
         [System.Management.Automation.SwitchParameter]
+        $NoPageSize,
+
+        [Parameter()]
+        [System.Management.Automation.SwitchParameter]
         $All,
 
         [Parameter()]
@@ -7971,6 +8272,10 @@ function Get-MgBetaDeviceManagementWindowsQualityUpdateProfile
         [Parameter()]
         [System.Int32]
         $PageSize,
+
+        [Parameter()]
+        [System.Management.Automation.SwitchParameter]
+        $NoPageSize,
 
         [Parameter()]
         [System.Management.Automation.SwitchParameter]
@@ -8068,6 +8373,10 @@ function Get-MgBetaDeviceManagementWindowsQualityUpdateProfileAssignment
 
         [Parameter()]
         [System.Management.Automation.SwitchParameter]
+        $NoPageSize,
+
+        [Parameter()]
+        [System.Management.Automation.SwitchParameter]
         $All,
 
         [Parameter()]
@@ -8158,6 +8467,10 @@ function Get-MgBetaDirectoryAttributeSet
 
         [Parameter()]
         [System.Management.Automation.SwitchParameter]
+        $NoPageSize,
+
+        [Parameter()]
+        [System.Management.Automation.SwitchParameter]
         $All,
 
         [Parameter()]
@@ -8245,6 +8558,10 @@ function Get-MgBetaDirectoryCertificateAuthorityCertificateBasedApplicationConfi
         [Parameter()]
         [System.Int32]
         $PageSize,
+
+        [Parameter()]
+        [System.Management.Automation.SwitchParameter]
+        $NoPageSize,
 
         [Parameter()]
         [System.Management.Automation.SwitchParameter]
@@ -8342,6 +8659,10 @@ function Get-MgBetaDirectoryCertificateAuthorityCertificateBasedApplicationConfi
 
         [Parameter()]
         [System.Management.Automation.SwitchParameter]
+        $NoPageSize,
+
+        [Parameter()]
+        [System.Management.Automation.SwitchParameter]
         $All,
 
         [Parameter()]
@@ -8429,6 +8750,10 @@ function Get-MgBetaDirectoryCustomSecurityAttributeDefinition
         [Parameter()]
         [System.Int32]
         $PageSize,
+
+        [Parameter()]
+        [System.Management.Automation.SwitchParameter]
+        $NoPageSize,
 
         [Parameter()]
         [System.Management.Automation.SwitchParameter]
@@ -8522,6 +8847,10 @@ function Get-MgBetaDirectoryDeletedItemAsApplication
 
         [Parameter()]
         [System.Management.Automation.SwitchParameter]
+        $NoPageSize,
+
+        [Parameter()]
+        [System.Management.Automation.SwitchParameter]
         $All,
 
         [Parameter()]
@@ -8609,6 +8938,10 @@ function Get-MgBetaDirectoryDeletedItemAsGroup
         [Parameter()]
         [System.Int32]
         $PageSize,
+
+        [Parameter()]
+        [System.Management.Automation.SwitchParameter]
+        $NoPageSize,
 
         [Parameter()]
         [System.Management.Automation.SwitchParameter]
@@ -8701,6 +9034,10 @@ function Get-MgBetaDirectoryObject
         [Parameter()]
         [System.Int32]
         $PageSize,
+
+        [Parameter()]
+        [System.Management.Automation.SwitchParameter]
+        $NoPageSize,
 
         [Parameter()]
         [System.Management.Automation.SwitchParameter]
@@ -8850,6 +9187,10 @@ function Get-MgBetaDirectorySetting
 
         [Parameter()]
         [System.Management.Automation.SwitchParameter]
+        $NoPageSize,
+
+        [Parameter()]
+        [System.Management.Automation.SwitchParameter]
         $All,
 
         [Parameter()]
@@ -8940,6 +9281,10 @@ function Get-MgBetaDirectorySettingTemplate
 
         [Parameter()]
         [System.Management.Automation.SwitchParameter]
+        $NoPageSize,
+
+        [Parameter()]
+        [System.Management.Automation.SwitchParameter]
         $All,
 
         [Parameter()]
@@ -9027,6 +9372,10 @@ function Get-MgBetaDomain
         [Parameter()]
         [System.Int32]
         $PageSize,
+
+        [Parameter()]
+        [System.Management.Automation.SwitchParameter]
+        $NoPageSize,
 
         [Parameter()]
         [System.Management.Automation.SwitchParameter]
@@ -9121,6 +9470,10 @@ function Get-MgBetaDomainFederationConfiguration
         [Parameter()]
         [System.Int32]
         $PageSize,
+
+        [Parameter()]
+        [System.Management.Automation.SwitchParameter]
+        $NoPageSize,
 
         [Parameter()]
         [System.Management.Automation.SwitchParameter]
@@ -9226,6 +9579,10 @@ function Get-MgBetaEntitlementManagementAccessPackage
 
         [Parameter()]
         [System.Management.Automation.SwitchParameter]
+        $NoPageSize,
+
+        [Parameter()]
+        [System.Management.Automation.SwitchParameter]
         $All,
 
         [Parameter()]
@@ -9321,6 +9678,10 @@ function Get-MgBetaEntitlementManagementAccessPackageAssignmentPolicy
         [Parameter()]
         [System.Int32]
         $PageSize,
+
+        [Parameter()]
+        [System.Management.Automation.SwitchParameter]
+        $NoPageSize,
 
         [Parameter()]
         [System.Management.Automation.SwitchParameter]
@@ -9422,6 +9783,10 @@ function Get-MgBetaEntitlementManagementAccessPackageCatalog
 
         [Parameter()]
         [System.Management.Automation.SwitchParameter]
+        $NoPageSize,
+
+        [Parameter()]
+        [System.Management.Automation.SwitchParameter]
         $All,
 
         [Parameter()]
@@ -9505,6 +9870,10 @@ function Get-MgBetaEntitlementManagementAccessPackageCatalogAccessPackageResourc
         [Parameter()]
         [System.Int32]
         $PageSize,
+
+        [Parameter()]
+        [System.Management.Automation.SwitchParameter]
+        $NoPageSize,
 
         [Parameter()]
         [System.Management.Automation.SwitchParameter]
@@ -9592,6 +9961,10 @@ function Get-MgBetaEntitlementManagementAccessPackageCatalogAccessPackageResourc
 
         [Parameter()]
         [System.Management.Automation.SwitchParameter]
+        $NoPageSize,
+
+        [Parameter()]
+        [System.Management.Automation.SwitchParameter]
         $All,
 
         [Parameter()]
@@ -9676,6 +10049,10 @@ function Get-MgBetaEntitlementManagementAccessPackageIncompatibleAccessPackage
 
         [Parameter()]
         [System.Management.Automation.SwitchParameter]
+        $NoPageSize,
+
+        [Parameter()]
+        [System.Management.Automation.SwitchParameter]
         $All,
 
         [Parameter()]
@@ -9757,6 +10134,10 @@ function Get-MgBetaEntitlementManagementAccessPackageIncompatibleGroup
         [Parameter()]
         [System.Int32]
         $PageSize,
+
+        [Parameter()]
+        [System.Management.Automation.SwitchParameter]
+        $NoPageSize,
 
         [Parameter()]
         [System.Management.Automation.SwitchParameter]
@@ -9849,6 +10230,10 @@ function Get-MgBetaEntitlementManagementAccessPackageIncompatibleWith
         [Parameter()]
         [System.Int32]
         $PageSize,
+
+        [Parameter()]
+        [System.Management.Automation.SwitchParameter]
+        $NoPageSize,
 
         [Parameter()]
         [System.Management.Automation.SwitchParameter]
@@ -9950,6 +10335,10 @@ function Get-MgBetaEntitlementManagementConnectedOrganization
 
         [Parameter()]
         [System.Management.Automation.SwitchParameter]
+        $NoPageSize,
+
+        [Parameter()]
+        [System.Management.Automation.SwitchParameter]
         $All,
 
         [Parameter()]
@@ -10036,6 +10425,10 @@ function Get-MgBetaEntitlementManagementConnectedOrganizationExternalSponsor
 
         [Parameter()]
         [System.Management.Automation.SwitchParameter]
+        $NoPageSize,
+
+        [Parameter()]
+        [System.Management.Automation.SwitchParameter]
         $All,
 
         [Parameter()]
@@ -10117,6 +10510,10 @@ function Get-MgBetaEntitlementManagementConnectedOrganizationInternalSponsor
         [Parameter()]
         [System.Int32]
         $PageSize,
+
+        [Parameter()]
+        [System.Management.Automation.SwitchParameter]
+        $NoPageSize,
 
         [Parameter()]
         [System.Management.Automation.SwitchParameter]
@@ -10256,6 +10653,10 @@ function Get-MgBetaExternalConnection
 
         [Parameter()]
         [System.Management.Automation.SwitchParameter]
+        $NoPageSize,
+
+        [Parameter()]
+        [System.Management.Automation.SwitchParameter]
         $All,
 
         [Parameter()]
@@ -10347,6 +10748,10 @@ function Get-MgBetaGroup
         [Parameter()]
         [System.Int32]
         $PageSize,
+
+        [Parameter()]
+        [System.Management.Automation.SwitchParameter]
+        $NoPageSize,
 
         [Parameter()]
         [System.Management.Automation.SwitchParameter]
@@ -10444,6 +10849,10 @@ function Get-MgBetaGroupLifecyclePolicy
 
         [Parameter()]
         [System.Management.Automation.SwitchParameter]
+        $NoPageSize,
+
+        [Parameter()]
+        [System.Management.Automation.SwitchParameter]
         $All,
 
         [Parameter()]
@@ -10531,6 +10940,10 @@ function Get-MgBetaGroupMember
         [Parameter()]
         [System.Int32]
         $PageSize,
+
+        [Parameter()]
+        [System.Management.Automation.SwitchParameter]
+        $NoPageSize,
 
         [Parameter()]
         [System.Management.Automation.SwitchParameter]
@@ -10622,6 +11035,10 @@ function Get-MgBetaIdentityApiConnector
 
         [Parameter()]
         [System.Management.Automation.SwitchParameter]
+        $NoPageSize,
+
+        [Parameter()]
+        [System.Management.Automation.SwitchParameter]
         $All,
 
         [Parameter()]
@@ -10709,6 +11126,10 @@ function Get-MgBetaIdentityB2XUserFlow
         [Parameter()]
         [System.Int32]
         $PageSize,
+
+        [Parameter()]
+        [System.Management.Automation.SwitchParameter]
+        $NoPageSize,
 
         [Parameter()]
         [System.Management.Automation.SwitchParameter]
@@ -10862,6 +11283,10 @@ function Get-MgBetaIdentityB2XUserFlowIdentityProvider
 
         [Parameter()]
         [System.Management.Automation.SwitchParameter]
+        $NoPageSize,
+
+        [Parameter()]
+        [System.Management.Automation.SwitchParameter]
         $All,
 
         [Parameter()]
@@ -10956,6 +11381,10 @@ function Get-MgBetaIdentityB2XUserFlowUserAttributeAssignment
 
         [Parameter()]
         [System.Management.Automation.SwitchParameter]
+        $NoPageSize,
+
+        [Parameter()]
+        [System.Management.Automation.SwitchParameter]
         $All,
 
         [Parameter()]
@@ -11043,6 +11472,10 @@ function Get-MgBetaIdentityConditionalAccessAuthenticationContextClassReference
         [Parameter()]
         [System.Int32]
         $PageSize,
+
+        [Parameter()]
+        [System.Management.Automation.SwitchParameter]
+        $NoPageSize,
 
         [Parameter()]
         [System.Management.Automation.SwitchParameter]
@@ -11136,6 +11569,10 @@ function Get-MgBetaIdentityConditionalAccessNamedLocation
 
         [Parameter()]
         [System.Management.Automation.SwitchParameter]
+        $NoPageSize,
+
+        [Parameter()]
+        [System.Management.Automation.SwitchParameter]
         $All,
 
         [Parameter()]
@@ -11223,6 +11660,10 @@ function Get-MgBetaIdentityConditionalAccessPolicy
         [Parameter()]
         [System.Int32]
         $PageSize,
+
+        [Parameter()]
+        [System.Management.Automation.SwitchParameter]
+        $NoPageSize,
 
         [Parameter()]
         [System.Management.Automation.SwitchParameter]
@@ -11316,6 +11757,10 @@ function Get-MgBetaIdentityCustomAuthenticationExtension
 
         [Parameter()]
         [System.Management.Automation.SwitchParameter]
+        $NoPageSize,
+
+        [Parameter()]
+        [System.Management.Automation.SwitchParameter]
         $All,
 
         [Parameter()]
@@ -11403,6 +11848,10 @@ function Get-MgBetaIdentityGovernanceAccessReviewDefinition
         [Parameter()]
         [System.Int32]
         $PageSize,
+
+        [Parameter()]
+        [System.Management.Automation.SwitchParameter]
+        $NoPageSize,
 
         [Parameter()]
         [System.Management.Automation.SwitchParameter]
@@ -11496,6 +11945,10 @@ function Get-MgBetaIdentityGovernanceLifecycleWorkflow
 
         [Parameter()]
         [System.Management.Automation.SwitchParameter]
+        $NoPageSize,
+
+        [Parameter()]
+        [System.Management.Automation.SwitchParameter]
         $All,
 
         [Parameter()]
@@ -11583,6 +12036,10 @@ function Get-MgBetaIdentityGovernanceLifecycleWorkflowCustomTaskExtension
         [Parameter()]
         [System.Int32]
         $PageSize,
+
+        [Parameter()]
+        [System.Management.Automation.SwitchParameter]
+        $NoPageSize,
 
         [Parameter()]
         [System.Management.Automation.SwitchParameter]
@@ -11728,6 +12185,10 @@ function Get-MgBetaIdentityGovernanceLifecycleWorkflowTask
 
         [Parameter()]
         [System.Management.Automation.SwitchParameter]
+        $NoPageSize,
+
+        [Parameter()]
+        [System.Management.Automation.SwitchParameter]
         $All,
 
         [Parameter()]
@@ -11815,6 +12276,10 @@ function Get-MgBetaIdentityGovernancePrivilegedAccessGroupEligibilitySchedule
         [Parameter()]
         [System.Int32]
         $PageSize,
+
+        [Parameter()]
+        [System.Management.Automation.SwitchParameter]
+        $NoPageSize,
 
         [Parameter()]
         [System.Management.Automation.SwitchParameter]
@@ -11908,6 +12373,10 @@ function Get-MgBetaIdentityProvider
 
         [Parameter()]
         [System.Management.Automation.SwitchParameter]
+        $NoPageSize,
+
+        [Parameter()]
+        [System.Management.Automation.SwitchParameter]
         $All,
 
         [Parameter()]
@@ -11995,6 +12464,10 @@ function Get-MgBetaIdentityUserFlowAttribute
         [Parameter()]
         [System.Int32]
         $PageSize,
+
+        [Parameter()]
+        [System.Management.Automation.SwitchParameter]
+        $NoPageSize,
 
         [Parameter()]
         [System.Management.Automation.SwitchParameter]
@@ -12088,6 +12561,10 @@ function Get-MgBetaNetworkAccessConnectivityRemoteNetwork
 
         [Parameter()]
         [System.Management.Automation.SwitchParameter]
+        $NoPageSize,
+
+        [Parameter()]
+        [System.Management.Automation.SwitchParameter]
         $All,
 
         [Parameter()]
@@ -12175,6 +12652,10 @@ function Get-MgBetaNetworkAccessFilteringPolicy
         [Parameter()]
         [System.Int32]
         $PageSize,
+
+        [Parameter()]
+        [System.Management.Automation.SwitchParameter]
+        $NoPageSize,
 
         [Parameter()]
         [System.Management.Automation.SwitchParameter]
@@ -12272,6 +12753,10 @@ function Get-MgBetaNetworkAccessFilteringPolicyRule
 
         [Parameter()]
         [System.Management.Automation.SwitchParameter]
+        $NoPageSize,
+
+        [Parameter()]
+        [System.Management.Automation.SwitchParameter]
         $All,
 
         [Parameter()]
@@ -12359,6 +12844,10 @@ function Get-MgBetaNetworkAccessFilteringProfile
         [Parameter()]
         [System.Int32]
         $PageSize,
+
+        [Parameter()]
+        [System.Management.Automation.SwitchParameter]
+        $NoPageSize,
 
         [Parameter()]
         [System.Management.Automation.SwitchParameter]
@@ -12456,6 +12945,10 @@ function Get-MgBetaNetworkAccessFilteringProfilePolicy
 
         [Parameter()]
         [System.Management.Automation.SwitchParameter]
+        $NoPageSize,
+
+        [Parameter()]
+        [System.Management.Automation.SwitchParameter]
         $All,
 
         [Parameter()]
@@ -12546,6 +13039,10 @@ function Get-MgBetaNetworkAccessForwardingPolicy
 
         [Parameter()]
         [System.Management.Automation.SwitchParameter]
+        $NoPageSize,
+
+        [Parameter()]
+        [System.Management.Automation.SwitchParameter]
         $All,
 
         [Parameter()]
@@ -12633,6 +13130,10 @@ function Get-MgBetaNetworkAccessForwardingProfile
         [Parameter()]
         [System.Int32]
         $PageSize,
+
+        [Parameter()]
+        [System.Management.Automation.SwitchParameter]
+        $NoPageSize,
 
         [Parameter()]
         [System.Management.Automation.SwitchParameter]
@@ -12727,6 +13228,10 @@ function Get-MgBetaNetworkAccessForwardingProfilePolicy
         [Parameter()]
         [System.Int32]
         $PageSize,
+
+        [Parameter()]
+        [System.Management.Automation.SwitchParameter]
+        $NoPageSize,
 
         [Parameter()]
         [System.Management.Automation.SwitchParameter]
@@ -12920,6 +13425,10 @@ function Get-MgBetaOnPremisePublishingProfileConnectorGroup
 
         [Parameter()]
         [System.Management.Automation.SwitchParameter]
+        $NoPageSize,
+
+        [Parameter()]
+        [System.Management.Automation.SwitchParameter]
         $All,
 
         [Parameter()]
@@ -13007,6 +13516,10 @@ function Get-MgBetaOrganization
         [Parameter()]
         [System.Int32]
         $PageSize,
+
+        [Parameter()]
+        [System.Management.Automation.SwitchParameter]
+        $NoPageSize,
 
         [Parameter()]
         [System.Management.Automation.SwitchParameter]
@@ -13101,6 +13614,10 @@ function Get-MgBetaOrganizationCertificateBasedAuthConfiguration
         [Parameter()]
         [System.Int32]
         $PageSize,
+
+        [Parameter()]
+        [System.Management.Automation.SwitchParameter]
+        $NoPageSize,
 
         [Parameter()]
         [System.Management.Automation.SwitchParameter]
@@ -13354,6 +13871,10 @@ function Get-MgBetaPolicyActivityBasedTimeoutPolicy
 
         [Parameter()]
         [System.Management.Automation.SwitchParameter]
+        $NoPageSize,
+
+        [Parameter()]
+        [System.Management.Automation.SwitchParameter]
         $All,
 
         [Parameter()]
@@ -13489,6 +14010,10 @@ function Get-MgBetaPolicyAppManagementPolicy
         [Parameter()]
         [System.Int32]
         $PageSize,
+
+        [Parameter()]
+        [System.Management.Automation.SwitchParameter]
+        $NoPageSize,
 
         [Parameter()]
         [System.Management.Automation.SwitchParameter]
@@ -13678,6 +14203,10 @@ function Get-MgBetaPolicyAuthenticationMethodPolicyAuthenticationMethodConfigura
 
         [Parameter()]
         [System.Management.Automation.SwitchParameter]
+        $NoPageSize,
+
+        [Parameter()]
+        [System.Management.Automation.SwitchParameter]
         $All,
 
         [Parameter()]
@@ -13765,6 +14294,10 @@ function Get-MgBetaPolicyAuthenticationStrengthPolicy
         [Parameter()]
         [System.Int32]
         $PageSize,
+
+        [Parameter()]
+        [System.Management.Automation.SwitchParameter]
+        $NoPageSize,
 
         [Parameter()]
         [System.Management.Automation.SwitchParameter]
@@ -13858,6 +14391,10 @@ function Get-MgBetaPolicyAuthorizationPolicy
 
         [Parameter()]
         [System.Management.Automation.SwitchParameter]
+        $NoPageSize,
+
+        [Parameter()]
+        [System.Management.Automation.SwitchParameter]
         $All,
 
         [Parameter()]
@@ -13945,6 +14482,10 @@ function Get-MgBetaPolicyB2BManagementPolicy
         [Parameter()]
         [System.Int32]
         $PageSize,
+
+        [Parameter()]
+        [System.Management.Automation.SwitchParameter]
+        $NoPageSize,
 
         [Parameter()]
         [System.Management.Automation.SwitchParameter]
@@ -14083,6 +14624,10 @@ function Get-MgBetaPolicyClaimMappingPolicy
         [Parameter()]
         [System.Int32]
         $PageSize,
+
+        [Parameter()]
+        [System.Management.Automation.SwitchParameter]
+        $NoPageSize,
 
         [Parameter()]
         [System.Management.Automation.SwitchParameter]
@@ -14269,6 +14814,10 @@ function Get-MgBetaPolicyCrossTenantAccessPolicyPartner
         [Parameter()]
         [System.Int32]
         $PageSize,
+
+        [Parameter()]
+        [System.Management.Automation.SwitchParameter]
+        $NoPageSize,
 
         [Parameter()]
         [System.Management.Automation.SwitchParameter]
@@ -14610,6 +15159,10 @@ function Get-MgBetaPolicyFeatureRolloutPolicy
 
         [Parameter()]
         [System.Management.Automation.SwitchParameter]
+        $NoPageSize,
+
+        [Parameter()]
+        [System.Management.Automation.SwitchParameter]
         $All,
 
         [Parameter()]
@@ -14697,6 +15250,10 @@ function Get-MgBetaPolicyHomeRealmDiscoveryPolicy
         [Parameter()]
         [System.Int32]
         $PageSize,
+
+        [Parameter()]
+        [System.Management.Automation.SwitchParameter]
+        $NoPageSize,
 
         [Parameter()]
         [System.Management.Automation.SwitchParameter]
@@ -14838,6 +15395,10 @@ function Get-MgBetaPolicyMobileAppManagementPolicy
 
         [Parameter()]
         [System.Management.Automation.SwitchParameter]
+        $NoPageSize,
+
+        [Parameter()]
+        [System.Management.Automation.SwitchParameter]
         $All,
 
         [Parameter()]
@@ -14925,6 +15486,10 @@ function Get-MgBetaPolicyMobileDeviceManagementPolicy
         [Parameter()]
         [System.Int32]
         $PageSize,
+
+        [Parameter()]
+        [System.Management.Automation.SwitchParameter]
+        $NoPageSize,
 
         [Parameter()]
         [System.Management.Automation.SwitchParameter]
@@ -15018,6 +15583,10 @@ function Get-MgBetaPolicyPermissionGrantPolicy
 
         [Parameter()]
         [System.Management.Automation.SwitchParameter]
+        $NoPageSize,
+
+        [Parameter()]
+        [System.Management.Automation.SwitchParameter]
         $All,
 
         [Parameter()]
@@ -15108,6 +15677,10 @@ function Get-MgBetaPolicyRoleManagementPolicy
 
         [Parameter()]
         [System.Management.Automation.SwitchParameter]
+        $NoPageSize,
+
+        [Parameter()]
+        [System.Management.Automation.SwitchParameter]
         $All,
 
         [Parameter()]
@@ -15195,6 +15768,10 @@ function Get-MgBetaPolicyRoleManagementPolicyAssignment
         [Parameter()]
         [System.Int32]
         $PageSize,
+
+        [Parameter()]
+        [System.Management.Automation.SwitchParameter]
+        $NoPageSize,
 
         [Parameter()]
         [System.Management.Automation.SwitchParameter]
@@ -15292,6 +15869,10 @@ function Get-MgBetaPolicyRoleManagementPolicyRule
 
         [Parameter()]
         [System.Management.Automation.SwitchParameter]
+        $NoPageSize,
+
+        [Parameter()]
+        [System.Management.Automation.SwitchParameter]
         $All,
 
         [Parameter()]
@@ -15379,6 +15960,10 @@ function Get-MgBetaPolicyTokenIssuancePolicy
         [Parameter()]
         [System.Int32]
         $PageSize,
+
+        [Parameter()]
+        [System.Management.Automation.SwitchParameter]
+        $NoPageSize,
 
         [Parameter()]
         [System.Management.Automation.SwitchParameter]
@@ -15472,6 +16057,10 @@ function Get-MgBetaPolicyTokenLifetimePolicy
 
         [Parameter()]
         [System.Management.Automation.SwitchParameter]
+        $NoPageSize,
+
+        [Parameter()]
+        [System.Management.Automation.SwitchParameter]
         $All,
 
         [Parameter()]
@@ -15559,6 +16148,10 @@ function Get-MgBetaRoleManagementCloudPcRoleAssignment
         [Parameter()]
         [System.Int32]
         $PageSize,
+
+        [Parameter()]
+        [System.Management.Automation.SwitchParameter]
+        $NoPageSize,
 
         [Parameter()]
         [System.Management.Automation.SwitchParameter]
@@ -15652,6 +16245,10 @@ function Get-MgBetaRoleManagementCloudPcRoleDefinition
 
         [Parameter()]
         [System.Management.Automation.SwitchParameter]
+        $NoPageSize,
+
+        [Parameter()]
+        [System.Management.Automation.SwitchParameter]
         $All,
 
         [Parameter()]
@@ -15739,6 +16336,10 @@ function Get-MgBetaRoleManagementDirectoryRoleAssignment
         [Parameter()]
         [System.Int32]
         $PageSize,
+
+        [Parameter()]
+        [System.Management.Automation.SwitchParameter]
+        $NoPageSize,
 
         [Parameter()]
         [System.Management.Automation.SwitchParameter]
@@ -15832,6 +16433,10 @@ function Get-MgBetaRoleManagementDirectoryRoleAssignmentSchedule
 
         [Parameter()]
         [System.Management.Automation.SwitchParameter]
+        $NoPageSize,
+
+        [Parameter()]
+        [System.Management.Automation.SwitchParameter]
         $All,
 
         [Parameter()]
@@ -15919,6 +16524,10 @@ function Get-MgBetaRoleManagementDirectoryRoleDefinition
         [Parameter()]
         [System.Int32]
         $PageSize,
+
+        [Parameter()]
+        [System.Management.Automation.SwitchParameter]
+        $NoPageSize,
 
         [Parameter()]
         [System.Management.Automation.SwitchParameter]
@@ -16012,6 +16621,10 @@ function Get-MgBetaRoleManagementDirectoryRoleEligibilitySchedule
 
         [Parameter()]
         [System.Management.Automation.SwitchParameter]
+        $NoPageSize,
+
+        [Parameter()]
+        [System.Management.Automation.SwitchParameter]
         $All,
 
         [Parameter()]
@@ -16102,6 +16715,10 @@ function Get-MgBetaRoleManagementEntitlementManagementRoleAssignment
 
         [Parameter()]
         [System.Management.Automation.SwitchParameter]
+        $NoPageSize,
+
+        [Parameter()]
+        [System.Management.Automation.SwitchParameter]
         $All,
 
         [Parameter()]
@@ -16189,6 +16806,10 @@ function Get-MgBetaRoleManagementEntitlementManagementRoleDefinition
         [Parameter()]
         [System.Int32]
         $PageSize,
+
+        [Parameter()]
+        [System.Management.Automation.SwitchParameter]
+        $NoPageSize,
 
         [Parameter()]
         [System.Management.Automation.SwitchParameter]
@@ -16286,6 +16907,10 @@ function Get-MgBetaServicePrincipal
 
         [Parameter()]
         [System.Management.Automation.SwitchParameter]
+        $NoPageSize,
+
+        [Parameter()]
+        [System.Management.Automation.SwitchParameter]
         $All,
 
         [Parameter()]
@@ -16377,6 +17002,10 @@ function Get-MgBetaServicePrincipalAppRoleAssignedTo
         [Parameter()]
         [System.Int32]
         $PageSize,
+
+        [Parameter()]
+        [System.Management.Automation.SwitchParameter]
+        $NoPageSize,
 
         [Parameter()]
         [System.Management.Automation.SwitchParameter]
@@ -16474,6 +17103,10 @@ function Get-MgBetaServicePrincipalDelegatedPermissionClassification
 
         [Parameter()]
         [System.Management.Automation.SwitchParameter]
+        $NoPageSize,
+
+        [Parameter()]
+        [System.Management.Automation.SwitchParameter]
         $All,
 
         [Parameter()]
@@ -16564,6 +17197,10 @@ function Get-MgBetaSubscribedSku
 
         [Parameter()]
         [System.Management.Automation.SwitchParameter]
+        $NoPageSize,
+
+        [Parameter()]
+        [System.Management.Automation.SwitchParameter]
         $All,
 
         [Parameter()]
@@ -16651,6 +17288,10 @@ function Get-MgBetaTeam
         [Parameter()]
         [System.Int32]
         $PageSize,
+
+        [Parameter()]
+        [System.Management.Automation.SwitchParameter]
+        $NoPageSize,
 
         [Parameter()]
         [System.Management.Automation.SwitchParameter]
@@ -16745,6 +17386,10 @@ function Get-MgBetaTeamChannel
         [Parameter()]
         [System.Int32]
         $PageSize,
+
+        [Parameter()]
+        [System.Management.Automation.SwitchParameter]
+        $NoPageSize,
 
         [Parameter()]
         [System.Management.Automation.SwitchParameter]
@@ -16843,6 +17488,10 @@ function Get-MgBetaTeamChannelTab
         [Parameter()]
         [System.Int32]
         $PageSize,
+
+        [Parameter()]
+        [System.Management.Automation.SwitchParameter]
+        $NoPageSize,
 
         [Parameter()]
         [System.Management.Automation.SwitchParameter]
@@ -16996,6 +17645,10 @@ function Get-MgDevice
 
         [Parameter()]
         [System.Management.Automation.SwitchParameter]
+        $NoPageSize,
+
+        [Parameter()]
+        [System.Management.Automation.SwitchParameter]
         $All,
 
         [Parameter()]
@@ -17083,6 +17736,10 @@ function Get-MgDeviceManagementRoleDefinition
         [Parameter()]
         [System.Int32]
         $PageSize,
+
+        [Parameter()]
+        [System.Management.Automation.SwitchParameter]
+        $NoPageSize,
 
         [Parameter()]
         [System.Management.Automation.SwitchParameter]
@@ -17180,6 +17837,10 @@ function Get-MgDeviceManagementRoleDefinitionRoleAssignment
 
         [Parameter()]
         [System.Management.Automation.SwitchParameter]
+        $NoPageSize,
+
+        [Parameter()]
+        [System.Management.Automation.SwitchParameter]
         $All,
 
         [Parameter()]
@@ -17270,6 +17931,10 @@ function Get-MgDirectoryAdministrativeUnit
 
         [Parameter()]
         [System.Management.Automation.SwitchParameter]
+        $NoPageSize,
+
+        [Parameter()]
+        [System.Management.Automation.SwitchParameter]
         $All,
 
         [Parameter()]
@@ -17357,6 +18022,10 @@ function Get-MgDirectoryAdministrativeUnitMember
         [Parameter()]
         [System.Int32]
         $PageSize,
+
+        [Parameter()]
+        [System.Management.Automation.SwitchParameter]
+        $NoPageSize,
 
         [Parameter()]
         [System.Management.Automation.SwitchParameter]
@@ -17452,6 +18121,10 @@ function Get-MgDirectoryAdministrativeUnitScopedRoleMember
 
         [Parameter()]
         [System.Management.Automation.SwitchParameter]
+        $NoPageSize,
+
+        [Parameter()]
+        [System.Management.Automation.SwitchParameter]
         $All,
 
         [Parameter()]
@@ -17539,6 +18212,10 @@ function Get-MgDirectoryCustomSecurityAttributeDefinition
         [Parameter()]
         [System.Int32]
         $PageSize,
+
+        [Parameter()]
+        [System.Management.Automation.SwitchParameter]
+        $NoPageSize,
 
         [Parameter()]
         [System.Management.Automation.SwitchParameter]
@@ -17632,6 +18309,10 @@ function Get-MgDirectoryRole
 
         [Parameter()]
         [System.Management.Automation.SwitchParameter]
+        $NoPageSize,
+
+        [Parameter()]
+        [System.Management.Automation.SwitchParameter]
         $All,
 
         [Parameter()]
@@ -17719,6 +18400,10 @@ function Get-MgDirectoryRoleTemplate
         [Parameter()]
         [System.Int32]
         $PageSize,
+
+        [Parameter()]
+        [System.Management.Automation.SwitchParameter]
+        $NoPageSize,
 
         [Parameter()]
         [System.Management.Automation.SwitchParameter]
@@ -17816,6 +18501,10 @@ function Get-MgGroup
 
         [Parameter()]
         [System.Management.Automation.SwitchParameter]
+        $NoPageSize,
+
+        [Parameter()]
+        [System.Management.Automation.SwitchParameter]
         $All,
 
         [Parameter()]
@@ -17910,6 +18599,10 @@ function Get-MgGroupLifecyclePolicy
 
         [Parameter()]
         [System.Management.Automation.SwitchParameter]
+        $NoPageSize,
+
+        [Parameter()]
+        [System.Management.Automation.SwitchParameter]
         $All,
 
         [Parameter()]
@@ -18000,6 +18693,10 @@ function Get-MgGroupMember
 
         [Parameter()]
         [System.Management.Automation.SwitchParameter]
+        $NoPageSize,
+
+        [Parameter()]
+        [System.Management.Automation.SwitchParameter]
         $All,
 
         [Parameter()]
@@ -18085,6 +18782,10 @@ function Get-MgGroupOwner
         [Parameter()]
         [System.Int32]
         $PageSize,
+
+        [Parameter()]
+        [System.Management.Automation.SwitchParameter]
+        $NoPageSize,
 
         [Parameter()]
         [System.Management.Automation.SwitchParameter]
@@ -18180,6 +18881,10 @@ function Get-MgGroupPlannerPlan
 
         [Parameter()]
         [System.Management.Automation.SwitchParameter]
+        $NoPageSize,
+
+        [Parameter()]
+        [System.Management.Automation.SwitchParameter]
         $All,
 
         [Parameter()]
@@ -18270,6 +18975,10 @@ function Get-MgGroupPlannerPlanTask
 
         [Parameter()]
         [System.Management.Automation.SwitchParameter]
+        $NoPageSize,
+
+        [Parameter()]
+        [System.Management.Automation.SwitchParameter]
         $All,
 
         [Parameter()]
@@ -18351,6 +19060,10 @@ function Get-MgPlannerPlanBucket
         [Parameter()]
         [System.Int32]
         $PageSize,
+
+        [Parameter()]
+        [System.Management.Automation.SwitchParameter]
+        $NoPageSize,
 
         [Parameter()]
         [System.Management.Automation.SwitchParameter]
@@ -18495,6 +19208,10 @@ function Get-MgPlannerTask
         [Parameter()]
         [System.Int32]
         $PageSize,
+
+        [Parameter()]
+        [System.Management.Automation.SwitchParameter]
+        $NoPageSize,
 
         [Parameter()]
         [System.Management.Automation.SwitchParameter]
@@ -18644,6 +19361,10 @@ function Get-MgPolicyRoleManagementPolicyAssignment
 
         [Parameter()]
         [System.Management.Automation.SwitchParameter]
+        $NoPageSize,
+
+        [Parameter()]
+        [System.Management.Automation.SwitchParameter]
         $All,
 
         [Parameter()]
@@ -18738,6 +19459,10 @@ function Get-MgServicePrincipal
 
         [Parameter()]
         [System.Management.Automation.SwitchParameter]
+        $NoPageSize,
+
+        [Parameter()]
+        [System.Management.Automation.SwitchParameter]
         $All,
 
         [Parameter()]
@@ -18825,6 +19550,10 @@ function Get-MgUser
         [Parameter()]
         [System.Int32]
         $PageSize,
+
+        [Parameter()]
+        [System.Management.Automation.SwitchParameter]
+        $NoPageSize,
 
         [Parameter()]
         [System.Management.Automation.SwitchParameter]

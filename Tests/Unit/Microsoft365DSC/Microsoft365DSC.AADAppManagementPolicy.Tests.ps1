@@ -49,12 +49,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                                 state = "enabled"
                             },
                             @{
-                                maxLifetime = @{
-                                    Days = 90
-                                    Hours = 0
-                                    Minutes = 0
-                                    Seconds = 0
-                                }
+                                maxLifetime = 'P90D'
                                 restrictForAppsCreatedAfterDateTime = [DateTime]::Parse("1/1/0001 12:00:00 AM")
                                 restrictionType = "passwordLifetime"
                                 state = "enabled"
@@ -65,12 +60,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                                 state = "enabled"
                             },
                             @{
-                                maxLifetime = @{
-                                    Days = 90
-                                    Hours = 0
-                                    Minutes = 0
-                                    Seconds = 0
-                                }
+                                maxLifetime = 'P90D'
                                 restrictForAppsCreatedAfterDateTime = [DateTime]::Parse("1/1/0001 12:00:00 AM")
                                 restrictionType = "symmetricKeyLifetime"
                                 state = "enabled"
@@ -133,11 +123,17 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                 }
 
                 Mock -CommandName Get-MgBetaPolicyAppManagementPolicy -MockWith {
-                    return $null
+                    return @{
+                        DisplayName = "OtherPolicy"
+                        Description = "MyDescription"
+                        Id          = "67890-67890-67890-67890-67890"
+                        IsEnabled   = $true
+                    }
                 }
             }
             It 'Should return Values from the Get method' {
                 ((New-M365DSCResourceInstance -ResourceName 'AADAppManagementPolicy' -Property $testParams).Get().ToHashtable()).Ensure | Should -Be 'Absent'
+                Should -Invoke -CommandName Get-MgBetaPolicyAppManagementPolicy -ParameterFilter { $null -eq $Filter -and $All } -Exactly 1
             }
             It 'Should return false from the Test method' {
                 (New-M365DSCResourceInstance -ResourceName 'AADAppManagementPolicy' -Property $testParams).Test() | Should -Be $false
@@ -326,12 +322,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                         Restrictions = @{
                             keyCredentials = @(
                                 @{
-                                    maxLifetime = @{
-                                        Days    = 30
-                                        Hours   = 0
-                                        Minutes = 0
-                                        Seconds = 0
-                                    }
+                                    maxLifetime = 'P30D'
                                     restrictForAppsCreatedAfterDateTime = [DateTime]::Parse("1/1/0001 12:00:00 AM")
                                     restrictionType = "asymmetricKeyLifetime"
                                     state = "enabled"

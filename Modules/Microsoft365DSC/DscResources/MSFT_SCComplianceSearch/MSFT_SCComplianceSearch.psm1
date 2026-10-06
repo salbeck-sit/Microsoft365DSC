@@ -148,7 +148,7 @@ class SCComplianceSearch : M365DSCResourceBase
                 ExchangeLocationExclusion             = $Search.ExchangeLocationExclusion
                 HoldNames                             = $Search.HoldNames
                 IncludeUserAppContent                 = $Search.IncludeUserAppContent
-                Language                              = $Search.Language.TwoLetterISOLanguageName
+                Language                              = $Search.Language.Name
                 PublicFolderLocation                  = $Search.PublicFolderLocation
                 SharePointLocation                    = $Search.SharePointLocation
                 SharePointLocationExclusion           = $Search.SharePointLocationExclusion
@@ -331,6 +331,13 @@ class SCComplianceSearch : M365DSCResourceBase
             $this.LogError($_, 'Error during Export:')
 
             throw
+        }
+    }
+
+    [System.Collections.Hashtable] GetCompareParameters()
+    {
+        return @{
+            ExcludedProperties = @('IncludeUserAppContent')
         }
     }
 

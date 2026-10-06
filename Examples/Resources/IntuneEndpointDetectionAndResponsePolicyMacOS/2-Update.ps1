@@ -29,8 +29,15 @@ Configuration Example
             DisplayName           = 'Edr Policy'
             tags_item_key         = 'GROUP'
             tags_item_value       = 'tag'
-            Assignments           = @()
-            Description           = 'My updated description' # Updated Property
+            Assignments           = @(
+                MSFT_DeviceManagementConfigurationPolicyAssignments{
+                    deviceAndAppManagementAssignmentFilterType = 'none'
+                    dataType                                   = '#microsoft.graph.groupAssignmentTarget'
+                    groupDisplayName                           = 'Intune Pilot Devices'
+                }
+            )
+            Description           = 'Tags macOS pilot devices reporting to Microsoft Defender for Endpoint' # Updated Property
+            RoleScopeTagIds       = @('0')
             Ensure                = 'Present'
             ApplicationId         = $ApplicationId;
             TenantId              = $TenantId;

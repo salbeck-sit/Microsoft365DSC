@@ -66,7 +66,9 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     Notes                              = "FakeStringValue"
                     DisplayName                        = "FakeStringValue"
                     Identity                           = "FakeStringValue"
-                    MailTip                            = "FakeStringValue"
+                    MailTip                            = "<html>`r`n<body>`r`nFakeStringValue`r`n</body>`r`n</html>`r`n"
+                    MailTipTranslations                = @("default:<html>`r`n<body>`r`nFakeStringValue`r`n</body>`r`n</html>`r`n", "FR:<html>`r`n<body>`r`nFakeStringValue`r`n</body>`r`n</html>`r`n")
+                    IncludedRecipients                 = "MailboxUsers, MailContacts"
                     ReportToOriginatorEnabled          = $True
                     HiddenFromAddressListsEnabled      = $True
                     SendOofMessageToOriginatorEnabled  = $True
@@ -190,6 +192,8 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     Notes                              = "FakeStringValue"
                     DisplayName                        = "FakeStringValue"
                     MailTip                            = "FakeStringValue"
+                    MailTipTranslations                = @("FR:FakeStringValue")
+                    IncludedRecipients                 = @("MailboxUsers", "MailContacts")
                     Identity                           = "FakeStringValue"
                     ReportToOriginatorEnabled          = $True
                     HiddenFromAddressListsEnabled      = $True

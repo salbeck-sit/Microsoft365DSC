@@ -71,6 +71,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     ListType = "Url";
                     Value = "example.com";
                     Ensure = "Present";
+                    NoExpiration = $true;
                     Credential = $Credential;
                 }
 
@@ -86,7 +87,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             }
             It 'Should Create the group from the Set method' {
                 (New-M365DSCResourceInstance -ResourceName 'EXOTenantAllowBlockListItems' -Property $testParams).Set()
-                Should -Invoke -CommandName New-TenantAllowBlockListItems -Exactly 1
+                Should -Invoke -CommandName New-TenantAllowBlockListItems -Exactly 1 -ParameterFilter { $NoExpiration -eq $true }
             }
         }
 
@@ -122,6 +123,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     Value = "example.com";
                     Ensure = 'Present'
                     Notes = "FakeStringValue";
+                    NoExpiration = $true;
                     Credential = $Credential;
                 }
             }

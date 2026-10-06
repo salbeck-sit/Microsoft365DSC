@@ -179,7 +179,7 @@ class EXOTenantAllowBlockListSpoofItems : M365DSCResourceBase
         elseif ($this.Ensure -eq 'Absent' -and $currentInstance.Ensure -eq 'Present')
         {
             Write-Verbose -Message "Removing blocked spoofed item {$($this.SpoofedUser)}"
-            Remove-TenantAllowBlockListSpoofItems -Identity $currentInstance.Identity
+            Remove-TenantAllowBlockListSpoofItems -Identity 'Default' -Ids @($currentInstance.Identity)
         }
     }
 

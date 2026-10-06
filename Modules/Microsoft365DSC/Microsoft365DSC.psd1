@@ -576,8 +576,6 @@
     'SCRoleGroupMember',
     'SCSecurityFilter',
     'SCSensitivityLabel',
-    'SCSupervisoryReviewPolicy',
-    'SCSupervisoryReviewRule',
     'SCUnifiedAuditLogRetentionPolicy',
     'SentinelAlertRule',
     'SentinelSetting',

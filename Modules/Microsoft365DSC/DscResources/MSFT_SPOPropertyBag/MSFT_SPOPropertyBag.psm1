@@ -84,7 +84,7 @@ class SPOPropertyBag : M365DSCResourceBase
                 try
                 {
                     Write-Verbose -Message "Obtaining all properties from the Get method for url {$($this.Url)}"
-                    [array]$property = Get-PnPPropertyBag -Key $this.Key -ErrorAction 'Stop'
+                    [array]$property = (Get-PnPPropertyBag -ErrorAction 'Stop' | Where-Object -Property Key -CEQ $this.Key).Value
 
                     Write-Verbose -Message 'Properties obtained correctly'
                 }
@@ -93,14 +93,14 @@ class SPOPropertyBag : M365DSCResourceBase
                     Write-Verbose "Credential or service principal specified does not have admin access to site {$($this.Url)}"
                     if ($_.Exception -like '*Unable to cast object of type*')
                     {
-                        [array]$property = Get-PnPPropertyBag | Where-Object -FilterScript { $_.Key -ceq $this.Key }
+                        [array]$property = (Get-PnPPropertyBag | Where-Object -Property Key -CEQ $this.Key).Value
                     }
                     elseif ($_.Exception -like '*The underlying connection was closed*')
                     {
                         $null = $this.Connect('PnP', $this.Url)
 
                         Write-Verbose -Message "Obtaining all properties from the Get method for url {$($this.Url)}"
-                        [array]$property = Get-PnPPropertyBag -Key $this.Key -ErrorAction 'SilentlyContinue'
+                        [array]$property = (Get-PnPPropertyBag -ErrorAction 'SilentlyContinue' | Where-Object -Property Key -CEQ $this.Key).Value
                     }
                     else
                     {
@@ -114,10 +114,6 @@ class SPOPropertyBag : M365DSCResourceBase
                 [array]$property = @($this.ExportedInstance.Value)
             }
 
-            if ($property.Count -ne 1)
-            {
-                [array]$property = Get-PnPPropertyBag | Where-Object -FilterScript { $_.Key -ceq $this.Key }
-            }
             if ($property.Count -eq 0)
             {
                 Write-Verbose -Message "SPOPropertyBag $($this.Key) does not exist at {$($this.Url)}."
@@ -168,7 +164,7 @@ class SPOPropertyBag : M365DSCResourceBase
 
         $this.AddTelemetry('Set')
 
-        $null = $this.Get().ToHashtable()
+        $CurrentPolicy = $this.Get().ToHashtable()
         if ('Present' -eq $this.Ensure)
         {
             $CreationParams = @{
@@ -179,7 +175,7 @@ class SPOPropertyBag : M365DSCResourceBase
         }
         elseif ($this.Ensure -eq 'Absent' -and $CurrentPolicy.Ensure -eq 'Present')
         {
-            Remove-PnPPropertyBagValue -Key $this.Key
+            Remove-PnPPropertyBagValue -Key $this.Key -Force
         }
     }
 

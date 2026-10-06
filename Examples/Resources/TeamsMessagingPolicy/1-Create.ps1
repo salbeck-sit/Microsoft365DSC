@@ -45,7 +45,6 @@ Configuration Example
             AllowChatWithGroup                            = $true
             AllowCommunicationComplianceEndUserReporting  = $true
             AllowCustomGroupChatAvatars                   = $true
-            AllowExtendedWorkInfoInSearch                 = $true
             AllowFluidCollaborate                         = $true
             AllowFullChatPermissionUserToDeleteAnyMessage = $false
             AllowGiphyDisplay                             = $true

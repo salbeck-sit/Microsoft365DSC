@@ -45,7 +45,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             Mock -CommandName Get-MgBetaPolicyClaimMappingPolicy -MockWith {
                 return @{
                     Definition = @("{`"ClaimsMappingPolicy`":{`"Version`":1,`"IncludeBasicClaimSet`":`"true`",`"ClaimsSchema`":[{`"Source`":`"user`",`"ID`":`"userprincipalname`",`"SamlClaimType`":`"http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier`"}],`"ClaimsTransformation`":[{`"ID`":`"CreateTermsOfService`",`"TransformationMethod`":`"CreateStringClaim`",`"InputParameters`":[{`"ID`":`"value`",`"DataType`":`"string`", `"Value`":`"sandbox`"}],`"OutputClaims`":[{`"ClaimTypeReferenceId`":`"TOS`",`"TransformationClaimType`":`"createdClaim`"}]}]}}")
-                    Description = "FakeStringValue"
                     DisplayName = "FakeStringValue"
                     Id = "FakeStringValue"
                     IsOrganizationDefault = $True
@@ -100,7 +99,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                             }
                         }
                     );
-                    Description = "FakeStringValue"
                     DisplayName = "FakeStringValue"
                     Id = "FakeStringValue"
                     IsOrganizationDefault = $True
@@ -120,7 +118,9 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             }
             It 'Should Create the group from the Set method' {
                 (New-M365DSCResourceInstance -ResourceName 'AADClaimsMappingPolicy' -Property $testParams).Set()
-                Should -Invoke -CommandName New-MgBetaPolicyClaimMappingPolicy -Exactly 1
+                Should -Invoke -CommandName New-MgBetaPolicyClaimMappingPolicy -Exactly 1 -ParameterFilter {
+                    $BodyParameter.Definition -is [System.Array] -and $BodyParameter.Definition.Count -eq 1
+                }
             }
         }
 
@@ -161,7 +161,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                             }
                         }
                     );
-                    Description = "FakeStringValue"
                     DisplayName = "FakeStringValue"
                     Id = "FakeStringValue"
                     IsOrganizationDefault = $True
@@ -220,7 +219,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                             }
                         }
                     );
-                    Description = "FakeStringValue"
                     DisplayName = "FakeStringValue"
                     Id = "FakeStringValue"
                     IsOrganizationDefault = $True
@@ -272,7 +270,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                         }
                     );
 
-                    Description = "FakeStringValue"
                     DisplayName = "FakeStringValue"
                     Id = "FakeStringValue"
                     IsOrganizationDefault = $True

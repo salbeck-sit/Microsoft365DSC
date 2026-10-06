@@ -192,6 +192,12 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                         @{
                             cellularDataBlocked          = $True
                             cellularDataBlockWhenRoaming = $True
+                            managedApps                  = @(
+                                @{
+                                    appId = 'FakeStringValue'
+                                    name  = 'FakeStringValue'
+                                }
+                            )
                         }
                     )
                     ICloudBlockActivityContinuation                = $True
@@ -511,7 +517,13 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                             ([MSFT_MicrosoftGraphiosnetworkusagerule] @{
                             cellularDataBlocked          = $True
                             cellularDataBlockWhenRoaming = $True
-
+                            managedApps                  = @(
+                                ([MSFT_MicrosoftGraphapplistitem] @{
+                                    appId     = 'FakeStringValue'
+                                    name      = 'FakeStringValue'
+                                    odataType = '#microsoft.graph.appleAppListItem'
+                                })
+                            )
                         })
                     )
                     NfcBlocked                                     = $True
@@ -578,7 +590,9 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             }
             It 'Should Create the group from the Set method' {
                 (New-M365DSCResourceInstance -ResourceName 'IntuneDeviceConfigurationPolicyiOS' -Property $testParams).Set()
-                Should -Invoke -CommandName New-MgBetaDeviceManagementDeviceConfiguration -Exactly 1
+                Should -Invoke -CommandName New-MgBetaDeviceManagementDeviceConfiguration -Exactly 1 -ParameterFilter {
+                    $null -eq $BodyParameter.networkUsageRules[0].managedApps[0].'@odata.type'
+                }
             }
         }
 
@@ -1051,7 +1065,13 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                             ([MSFT_MicrosoftGraphiosnetworkusagerule] @{
                             cellularDataBlocked          = $True
                             cellularDataBlockWhenRoaming = $True
-
+                            managedApps                  = @(
+                                ([MSFT_MicrosoftGraphapplistitem] @{
+                                    appId     = 'FakeStringValue'
+                                    name      = 'FakeStringValue'
+                                    odataType = '#microsoft.graph.appleAppListItem'
+                                })
+                            )
                         })
                     )
                     NfcBlocked                                     = $True

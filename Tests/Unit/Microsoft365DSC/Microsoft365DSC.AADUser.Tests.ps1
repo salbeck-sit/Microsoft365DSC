@@ -97,7 +97,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     Surname                       = 'Smith'
                     UsageLocation                 = 'US'
                     LicenseAssignment             = @('ENTERPRISE_PREMIUM')
-                    Password                      = $Credential
                     CompanyName                   = 'Contoso'
                     AgeGroup                      = 'Adult'
                     EmployeeHireDate              = '2026-01-01T00:00:00.0000000Z'
@@ -135,6 +134,9 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
 
             It 'Should create the new User in the Set method' {
                 (New-M365DSCResourceInstance -ResourceName 'AADUser' -Property $testParams).Set()
+                Should -Invoke -CommandName New-MgUser -Exactly 1 -ParameterFilter {
+                    $BodyParameter.passwordProfile.password -is [System.String] -and $BodyParameter.passwordProfile.password.Length -eq 30
+                }
             }
         }
 

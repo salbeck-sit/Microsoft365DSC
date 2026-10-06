@@ -263,7 +263,7 @@ class SCProtectionAlert : M365DSCResourceBase
             # If the Alert exists and it shouldn't, simply remove it;
             $Alert = Get-ProtectionAlert -Identity $this.Name
             Write-Verbose "Removing Protection alert $($this.Name)"
-            Remove-ProtectionAlert -Identity $Alert.Identity -ForceDeletion
+            Remove-ProtectionAlert -Identity $Alert.Identity -ForceDeletion -Confirm:$false
         }
     }
 

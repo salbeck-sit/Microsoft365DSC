@@ -192,26 +192,25 @@ class EXOSafeAttachmentRule : M365DSCResourceBase
         }
         elseif ($this.Ensure -eq 'Present' -and $null -ne $SafeAttachmentRule)
         {
-            if ($SafeAttachmentRuleParams.Enabled -and ('Disabled' -eq $SafeAttachmentRule.State))
+            $SafeAttachmentRuleParams.Remove('Enabled') | Out-Null
+            if ($SafeAttachmentRuleParams.SafeAttachmentPolicy -eq $SafeAttachmentRule.SafeAttachmentPolicy)
             {
-                # New-SafeAttachmentRule has the Enabled parameter, Set-SafeAttachmentRule does not.
-                # There doesn't appear to be any way to change the Enabled state of a rule once created.
-                Write-Verbose -Message "Removing SafeAttachmentRule $($this.Identity) in order to change Enabled state."
-                Remove-SafeAttachmentRule -Identity $this.Identity -Confirm:$false
-                $SafeAttachmentRuleParams.Add('Name', $SafeAttachmentRuleParams.Identity)
-                $SafeAttachmentRuleParams.Remove('Identity') | Out-Null
-                $SafeAttachmentRuleParams.Remove('MakeDefault') | Out-Null
-                New-SafeAttachmentRule @SafeAttachmentRuleParams -Confirm:$false
+                $SafeAttachmentRuleParams.Remove('SafeAttachmentPolicy')
             }
-            else
+            Write-Verbose -Message "Setting SafeAttachmentRule $($this.Identity)"
+            Set-SafeAttachmentRule @SafeAttachmentRuleParams -Confirm:$false
+
+            $currentEnabled = $SafeAttachmentRule.State -eq 'Enabled'
+            if ($null -ne $this.Enabled -and $this.Enabled -ne $currentEnabled)
             {
-                $SafeAttachmentRuleParams.Remove('Enabled') | Out-Null
-                if ($SafeAttachmentRuleParams.SafeAttachmentPolicy -eq $SafeAttachmentRule.SafeAttachmentPolicy)
+                if ($this.Enabled)
                 {
-                    $SafeAttachmentRuleParams.Remove('SafeAttachmentPolicy')
+                    Enable-SafeAttachmentRule -Identity $this.Identity -Confirm:$false
                 }
-                Write-Verbose -Message "Setting SafeAttachmentRule $($this.Identity)"
-                Set-SafeAttachmentRule @SafeAttachmentRuleParams -Confirm:$false
+                else
+                {
+                    Disable-SafeAttachmentRule -Identity $this.Identity -Confirm:$false
+                }
             }
         }
         elseif ($this.Ensure -eq 'Absent' -and $null -ne $SafeAttachmentRule)

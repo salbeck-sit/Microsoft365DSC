@@ -94,13 +94,14 @@ class EXOAvailabilityAddressSpace : M365DSCResourceBase
                 $nullReturn = $this.GetBoundParameters()
                 $nullReturn.Ensure = 'Absent'
 
-                if (-not [System.String]::IsNullOrEmpty($this.ForestName))
+                $AvailabilityAddressSpace = Get-AvailabilityAddressSpace -Identity $this.Identity -ErrorAction SilentlyContinue
+                if ($null -eq $AvailabilityAddressSpace -and -not [System.String]::IsNullOrEmpty($this.ForestName))
                 {
                     $AvailabilityAddressSpace = Get-AvailabilityAddressSpace -Identity $this.ForestName -ErrorAction SilentlyContinue
                 }
                 if ($null -eq $AvailabilityAddressSpace)
                 {
-                    Write-Verbose -Message "AvailabilityAddressSpace $($this.ForestName) does not exist."
+                    Write-Verbose -Message "AvailabilityAddressSpace $($this.Identity) does not exist."
                     return $this.AsResult($nullReturn)
                 }
             }
@@ -189,7 +190,7 @@ class EXOAvailabilityAddressSpace : M365DSCResourceBase
             # AvailabilityAddressSpace is a special case in that it does not have a "set-AvailabilityAddressSpace" cmdlet. To change values of an existing AvailabilityAddressSpace it must be removed and then added again with add-AvailabilityAddressSpace
             try
             {
-                Remove-AvailabilityAddressSpace -identity $this.Identity -Confirm:$false -ErrorAction Stop
+                Remove-AvailabilityAddressSpace -Identity $currentInstance.ForestName -Confirm:$false -ErrorAction Stop
             }
             catch
             {
@@ -215,7 +216,7 @@ class EXOAvailabilityAddressSpace : M365DSCResourceBase
             Write-Verbose -Message "Removing AvailabilityAddressSpace $($this.Identity)"
             try
             {
-                Remove-AvailabilityAddressSpace -Identity $this.Identity -Confirm:$false -ErrorAction Stop
+                Remove-AvailabilityAddressSpace -Identity $currentInstance.ForestName -Confirm:$false -ErrorAction Stop
             }
             catch
             {

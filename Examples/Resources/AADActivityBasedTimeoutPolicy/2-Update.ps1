@@ -28,10 +28,8 @@ Configuration Example
         {
             AzurePortalTimeOut    = "02:00:00";
             DefaultTimeOut        = "04:00:00"; # Updated Property
-            Description           = "Signs out inactive administrators after two hours";
-            DisplayName           = "displayName-value";
+            DisplayName           = "Idle Session Sign-Out";
             Ensure                = "Present";
-            Id                    = "000000-0000-0000-0000-000000000000";
             ApplicationId         = $ApplicationId
             TenantId              = $TenantId
             CertificateThumbprint = $CertificateThumbprint

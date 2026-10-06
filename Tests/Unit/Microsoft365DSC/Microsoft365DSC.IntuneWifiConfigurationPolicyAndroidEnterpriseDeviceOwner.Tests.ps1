@@ -190,7 +190,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     MacAddressRandomizationMode           = 'automatic'
                     NetworkName                           = 'FakeStringValue'
                     OuterIdentityPrivacyTemporaryValue    = 'FakeStringValue'
-                    PreSharedKey                          = 'FakeStringValue'
+                    PreSharedKey                          = 'UpdatedFakeStringValue'
                     PreSharedKeyIsSet                     = $True
                     ProxyAutomaticConfigurationUrl        = 'FakeStringValue'
                     ProxyExclusionList                    = 'FakeStringValue'

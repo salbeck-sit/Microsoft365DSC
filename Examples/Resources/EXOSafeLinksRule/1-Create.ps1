@@ -36,7 +36,7 @@ Configuration Example
             RecipientDomainIs         = @("contoso.com")
             SafeLinksPolicy           = "Marketing Block URL"
             SentTo                    = @("AdeleV@$TenantId")
-            SentToMemberOf            = "LegalTeam@$TenantId"
+            SentToMemberOf            = "Retail@$TenantId"
             Ensure                    = "Present"
             ApplicationId             = $ApplicationId
             TenantId                  = $TenantId

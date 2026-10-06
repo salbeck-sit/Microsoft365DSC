@@ -126,7 +126,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                 $testParams = @{
                     DirectoryScopeId     = "/";
                     Ensure               = "Absent";
-                    PrincipalType        = "User"
                     Principal            = "John.Smith@contoso.com";
                     RoleDefinition       = "Teams Communications Administrator";
                     ScheduleInfo         = [MSFT_AADRoleAssignmentScheduleRequestSchedule] @{
@@ -162,12 +161,29 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     Principal            = "John.Smith@contoso.com";
                     RoleDefinition       = "Teams Communications Administrator";
                     ScheduleInfo         = [MSFT_AADRoleAssignmentScheduleRequestSchedule] @{
-                        startDateTime   = '2023-09-01T02:40:44Z'
                         expiration = [MSFT_AADRoleAssignmentScheduleRequestScheduleExpiration] @{
-                            type        = 'afterDateTime'
+                            duration    = 'P180D'
+                            type        = 'afterDuration'
                         }
                     }
                     Credential  = $Credential
+                }
+
+                Mock -CommandName Get-MgBetaRoleManagementDirectoryRoleAssignmentSchedule -MockWith {
+                    $start = [System.DateTime]::new(2026, 1, 1, 8, 0, 0, [System.DateTimeKind]::Utc)
+                    return @{
+                        Id               = '12345-12345-12345-12345-12345'
+                        DirectoryScopeId = '/'
+                        PrincipalId      = '123456'
+                        RoleDefinitionId = '12345'
+                        ScheduleInfo     = @{
+                            startDateTime = $start
+                            expiration    = @{
+                                endDateTime = $start.AddDays(180)
+                                type        = 'afterDateTime'
+                            }
+                        }
+                    }
                 }
             }
 

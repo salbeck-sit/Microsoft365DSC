@@ -40,7 +40,8 @@ Configuration Example
                 }
                 MSFT_DeviceManagementLobAppiOSAssignment{
                     dataType         = '#microsoft.graph.exclusionGroupAssignmentTarget'
-                    groupDisplayName = 'Policy Exclusions'
+                    groupDisplayName = 'Intune Excluded Devices'
+                    intent           = 'required'
                 }
             );
             BuildNumber                        = "1";

@@ -35,6 +35,13 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             Mock -CommandName Invoke-M365DSCGraphRequest -MockWith {
             }
 
+            Mock -CommandName Invoke-M365DSCGraphRequest -ParameterFilter { $Uri -like '*/deviceComplianceScripts/*' } -MockWith {
+                return @{
+                    id          = '2dcf0811-ebf5-4ae2-af5e-bf1169ed745b'
+                    displayName = 'Built-in WSL Compliance-f38b283d-d893-4c33-b6d2-d3bcb5f2dcc2'
+                }
+            }
+
             Mock -CommandName Update-MgBetaDeviceManagementDeviceCompliancePolicy -MockWith {
             }
 
@@ -94,7 +101,10 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     DeviceThreatProtectionRequiredSecurityLevel = 'Medium'
                     ConfigurationManagerComplianceRequired      = $False
                     TPMRequired                                 = $False
-                    DeviceCompliancePolicyScript                = $null
+                    DeviceCompliancePolicyScript                = @{
+                        deviceComplianceScriptId = '2dcf0811-ebf5-4ae2-af5e-bf1169ed745b'
+                        rulesContent             = 'e30='
+                    }
                     ValidOperatingSystemBuildRanges             = @()
                     WslDistributions                            = @(
                         @{
@@ -317,6 +327,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
 
             It 'Should return true from the Test method' {
                 (New-M365DSCResourceInstance -ResourceName 'IntuneDeviceCompliancePolicyWindows10' -Property $testParams).Test() | Should -Be $true
+                (New-M365DSCResourceInstance -ResourceName 'IntuneDeviceCompliancePolicyWindows10' -Property $testParams).Get().DeviceCompliancePolicyScript | Should -BeNullOrEmpty
             }
         }
 

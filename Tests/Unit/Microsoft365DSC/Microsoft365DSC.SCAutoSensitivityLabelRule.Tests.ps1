@@ -82,56 +82,9 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     Ensure                              = 'Present'
                     ExceptIfDocumentIsPasswordProtected = $False
                     ExceptIfDocumentIsUnsupported       = $False
+                    ExceptIfHeaderMatchesPatterns       = [MSFT_SCHeaderPattern] @{ Name = 'X-Contoso-Approval'; Value = 'Approved' }
                     ExceptIfProcessingLimitExceeded     = $False
-                    Name                                = 'TestRule'
-                    Policy                              = 'TestPolicy'
-                    ProcessingLimitExceeded             = $False
-                    ReportSeverityLevel                 = 'Low'
-                    Workload                            = 'Exchange'
-                    ContentContainsSensitiveInformation = ([MSFT_SCDLPContainsSensitiveInformation] @{
-                            SensitiveInformation = @([MSFT_SCDLPSensitiveInformation] @{
-                                    name           = 'ABA Routing Number'
-                                    id             = 'cb353f78-2b72-4c3c-8827-92ebe4f69fdf'
-                                    maxconfidence  = '100'
-                                    minconfidence  = '75'
-                                    classifiertype = 'Content'
-                                    mincount       = '1'
-                                    maxcount       = '-1'
-                                })
-                        })
-                }
-
-                Mock -CommandName Get-AutoSensitivityLabelRule -MockWith {
-                    return $null
-                }
-            }
-
-            It 'Should return false from the Test method' {
-                (New-M365DSCResourceInstance -ResourceName 'SCAutoSensitivityLabelRule' -Property $testParams).Test() | Should -Be $false
-            }
-
-            It 'Should return Absent from the Get method' {
-                ((New-M365DSCResourceInstance -ResourceName 'SCAutoSensitivityLabelRule' -Property $testParams).Get().ToHashtable()).Ensure | Should -Be 'Absent'
-            }
-
-            It 'Should call the Set method' {
-                (New-M365DSCResourceInstance -ResourceName 'SCAutoSensitivityLabelRule' -Property $testParams).Set()
-                Should -Invoke -CommandName New-AutoSensitivityLabelRule -Exactly 1
-            }
-        }
-
-        Context -Name 'Rule already exists and is in the desired state' -Fixture {
-            BeforeAll {
-                $testParams = @{
-                    Comment                             = 'Detects when 1 to 9 credit card numbers are contained in Exchange items'
-                    Credential                          = $Credential
-                    Disabled                            = $False
-                    DocumentIsPasswordProtected         = $False
-                    DocumentIsUnsupported               = $False
-                    Ensure                              = 'Present'
-                    ExceptIfDocumentIsPasswordProtected = $False
-                    ExceptIfDocumentIsUnsupported       = $False
-                    ExceptIfProcessingLimitExceeded     = $False
+                    HeaderMatchesPatterns               = [MSFT_SCHeaderPattern] @{ Name = 'X-Contoso-Classification'; Value = 'Restricted|Payment-Data' }
                     Name                                = 'TestRule'
                     Policy                              = 'TestPolicy'
                     ProcessingLimitExceeded             = $False
@@ -152,19 +105,80 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
 
                 Mock -CommandName Get-AutoSensitivityLabelRule -MockWith {
                     return @{
-                        Comment                             = 'Detects when 1 to 9 credit card numbers are contained in Exchange items'
-                        Disabled                            = $False
-                        DocumentIsPasswordProtected         = $False
-                        DocumentIsUnsupported               = $False
-                        ExceptIfDocumentIsPasswordProtected = $False
-                        ExceptIfDocumentIsUnsupported       = $False
-                        ExceptIfProcessingLimitExceeded     = $False
-                        Name                                = 'TestRule'
-                        ParentPolicyName                    = 'TestPolicy'
-                        ProcessingLimitExceeded             = $False
-                        ReportSeverityLevel                 = 'Low'
-                        Workload                            = 'Exchange'
-                        ContentContainsSensitiveInformation = @(@{maxconfidence = '100'; id = 'cb353f78-2b72-4c3c-8827-92ebe4f69fdf'; minconfidence = '75'; rulePackId = '00000000-0000-0000-0000-000000000000'; classifiertype = 'Content'; name = 'ABA Routing Number'; mincount = '1'; maxcount = '-1'; })
+                        Name = 'TestRule'
+                        Mode = 'PendingDeletion'
+                    }
+                }
+            }
+
+            It 'Should return false from the Test method' {
+                (New-M365DSCResourceInstance -ResourceName 'SCAutoSensitivityLabelRule' -Property $testParams).Test() | Should -Be $false
+            }
+
+            It 'Should return Absent from the Get method' {
+                ((New-M365DSCResourceInstance -ResourceName 'SCAutoSensitivityLabelRule' -Property $testParams).Get().ToHashtable()).Ensure | Should -Be 'Absent'
+            }
+
+            It 'Should call the Set method' {
+                (New-M365DSCResourceInstance -ResourceName 'SCAutoSensitivityLabelRule' -Property $testParams).Set()
+                Should -Invoke -CommandName New-AutoSensitivityLabelRule -Exactly 1 -ParameterFilter {
+                    $HeaderMatchesPatterns['X-Contoso-Classification'] -eq 'Restricted|Payment-Data' -and
+                    $ExceptIfHeaderMatchesPatterns['X-Contoso-Approval'] -eq 'Approved'
+                }
+            }
+        }
+
+        Context -Name 'Rule already exists and is in the desired state' -Fixture {
+            BeforeAll {
+                $testParams = @{
+                    AnyOfRecipientAddressMatchesPatterns = '^[a-z]+\.[a-z]+@contoso\.com'
+                    Comment                              = 'Detects when 1 to 9 credit card numbers are contained in Exchange items'
+                    Credential                           = $Credential
+                    Disabled                             = $False
+                    DocumentIsPasswordProtected          = $False
+                    DocumentIsUnsupported                = $False
+                    Ensure                               = 'Present'
+                    ExceptIfDocumentIsPasswordProtected  = $False
+                    ExceptIfDocumentIsUnsupported        = $False
+                    ExceptIfHeaderMatchesPatterns        = [MSFT_SCHeaderPattern] @{ Name = 'X-Contoso-Approval'; Value = 'Approved' }
+                    ExceptIfProcessingLimitExceeded      = $False
+                    HeaderMatchesPatterns                = [MSFT_SCHeaderPattern] @{ Name = 'X-Contoso-Classification'; Value = 'Restricted|Payment-Data' }
+                    Name                                 = 'TestRule'
+                    Policy                               = 'TestPolicy'
+                    ProcessingLimitExceeded              = $False
+                    ReportSeverityLevel                  = 'Low'
+                    Workload                             = 'Exchange'
+                    ContentContainsSensitiveInformation  = ([MSFT_SCDLPContainsSensitiveInformation] @{
+                            SensitiveInformation = @([MSFT_SCDLPSensitiveInformation] @{
+                                    name           = 'ABA Routing Number'
+                                    id             = 'cb353f78-2b72-4c3c-8827-92ebe4f69fdf'
+                                    maxconfidence  = '100'
+                                    minconfidence  = '75'
+                                    classifiertype = 'Content'
+                                    mincount       = '1'
+                                    maxcount       = '-1'
+                                })
+                        })
+                }
+
+                Mock -CommandName Get-AutoSensitivityLabelRule -MockWith {
+                    return @{
+                        AnyOfRecipientAddressMatchesPatterns = [System.Collections.ArrayList] @('^[a-z]+\.[a-z]+@contoso\.com')
+                        Comment                              = 'Detects when 1 to 9 credit card numbers are contained in Exchange items'
+                        Disabled                             = $False
+                        DocumentIsPasswordProtected          = $False
+                        DocumentIsUnsupported                = $False
+                        ExceptIfDocumentIsPasswordProtected  = $False
+                        ExceptIfDocumentIsUnsupported        = $False
+                        ExceptIfHeaderMatchesPatterns        = @{ 'X-Contoso-Approval' = 'Approved' }
+                        ExceptIfProcessingLimitExceeded      = $False
+                        HeaderMatchesPatterns                = @{ 'X-Contoso-Classification' = 'Restricted|Payment-Data' }
+                        Name                                 = 'TestRule'
+                        ParentPolicyName                     = 'TestPolicy'
+                        ProcessingLimitExceeded              = $False
+                        ReportSeverityLevel                  = 'Low'
+                        Workload                             = 'Exchange'
+                        ContentContainsSensitiveInformation  = @(@{maxconfidence = '100'; id = 'cb353f78-2b72-4c3c-8827-92ebe4f69fdf'; minconfidence = '75'; rulePackId = '00000000-0000-0000-0000-000000000000'; classifiertype = 'Content'; name = 'ABA Routing Number'; mincount = '1'; maxcount = '-1'; })
                     }
                 }
             }

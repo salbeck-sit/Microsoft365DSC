@@ -229,6 +229,11 @@ class IntuneDeviceManagementAndroidDeviceOwnerEnrollmentProfile : M365DSCResourc
             $setParameters.RoleScopeTagIds = Resolve-M365DSCIntuneRoleScopeTagIds -RoleScopeTagIds $this.RoleScopeTagIds
         }
 
+        if (-not [System.String]::IsNullOrEmpty($this.TokenExpirationDateTime))
+        {
+            $setParameters.TokenExpirationDateTime = [M365DSCResourceBase]::FormatDateTime($this.TokenExpirationDateTime)
+        }
+
         # CREATE
         if ($this.Ensure -eq 'Present' -and $currentInstance.Ensure -eq 'Absent')
         {

@@ -60,8 +60,7 @@ Configuration Example
             DevicePolicyRefreshInterval              = "Unlimited";
             Identity                                 = "Corporate Mobile Devices";
             IrmEnabled                               = $True;
-            IsDefault                                = $True;
-            IsDefaultPolicy                          = $True;
+            IsDefault                                = $false;
             MaxAttachmentSize                        = "Unlimited";
             MaxCalendarAgeFilter                     = "All";
             MaxPasswordFailedAttempts                = "Unlimited";

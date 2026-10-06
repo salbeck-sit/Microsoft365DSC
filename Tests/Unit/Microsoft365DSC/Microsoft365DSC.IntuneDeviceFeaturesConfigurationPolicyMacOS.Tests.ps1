@@ -103,9 +103,8 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     contentCachingBlockDeletion              = $true
                     contentCachingClientListenRanges         = @(
                         @{
-                            cidrAddress   = 'FakeStringValue'
                             lowerAddress  = 'FakeStringValue'
-                            '@odata.type' = '#microsoft.graph.iPv4CidrRange'
+                            '@odata.type' = '#microsoft.graph.iPv4Range'
                             upperAddress  = 'FakeStringValue'
                         }
                     )
@@ -121,17 +120,15 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     contentCachingParentSelectionPolicy      = 'notConfigured'
                     contentCachingPeerFilterRanges           = @(
                         @{
-                            cidrAddress   = 'FakeStringValue'
                             lowerAddress  = 'FakeStringValue'
-                            '@odata.type' = '#microsoft.graph.iPv4CidrRange'
+                            '@odata.type' = '#microsoft.graph.iPv4Range'
                             upperAddress  = 'FakeStringValue'
                         }
                     )
                     contentCachingPeerListenRanges           = @(
                         @{
-                            cidrAddress   = 'FakeStringValue'
                             lowerAddress  = 'FakeStringValue'
-                            '@odata.type' = '#microsoft.graph.iPv4CidrRange'
+                            '@odata.type' = '#microsoft.graph.iPv4Range'
                             upperAddress  = 'FakeStringValue'
                         }
                     )
@@ -139,9 +136,8 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     contentCachingPort                       = 25
                     contentCachingPublicRanges               = @(
                         @{
-                            cidrAddress   = 'FakeStringValue'
                             lowerAddress  = 'FakeStringValue'
-                            '@odata.type' = '#microsoft.graph.iPv4CidrRange'
+                            '@odata.type' = '#microsoft.graph.iPv4Range'
                             upperAddress  = 'FakeStringValue'
                         }
                     )
@@ -181,7 +177,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                         passwordPreviousPasswordBlockCount       = 25
                         passwordRequireActiveDirectoryComplexity = $true
                         passwordRequirementsDescription          = 'FakeStringValue'
-                        preferredKDCs                            = @('FakeStringArrayValue1', 'FakeStringArrayValue2')
+                        preferredKDCs                            = @('FakeStringArrayValue1', 'FakeStringArrayValue2', 'FakeStringArrayValue1', 'FakeStringArrayValue2')
                         realm                                    = 'FakeStringValue'
                         requireUserPresence                      = $true
                         signInHelpText                           = 'FakeStringValue'
@@ -295,9 +291,8 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     ConsoleAccessDisabled                    = $true
                     ContentCachingBlockDeletion              = $true
                     ContentCachingClientListenRanges         = @{
-                        CidrAddress  = 'FakeStringValue'
                         LowerAddress = 'FakeStringValue'
-                        ODataType    = '#microsoft.graph.iPv4CidrRange'
+                        ODataType    = '#microsoft.graph.iPv4Range'
                         UpperAddress = 'FakeStringValue'
                     }
                     ContentCachingClientPolicy               = 'notConfigured'
@@ -311,23 +306,20 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     ContentCachingParents                    = @('FakeStringArrayValue1', 'FakeStringArrayValue2')
                     ContentCachingParentSelectionPolicy      = 'notConfigured'
                     ContentCachingPeerFilterRanges           = @{
-                        CidrAddress  = 'FakeStringValue'
                         LowerAddress = 'FakeStringValue'
-                        ODataType    = '#microsoft.graph.iPv4CidrRange'
+                        ODataType    = '#microsoft.graph.iPv4Range'
                         UpperAddress = 'FakeStringValue'
                     }
                     ContentCachingPeerListenRanges           = @{
-                        CidrAddress  = 'FakeStringValue'
                         LowerAddress = 'FakeStringValue'
-                        ODataType    = '#microsoft.graph.iPv4CidrRange'
+                        ODataType    = '#microsoft.graph.iPv4Range'
                         UpperAddress = 'FakeStringValue'
                     }
                     ContentCachingPeerPolicy                 = 'notConfigured'
                     ContentCachingPort                       = 25
                     ContentCachingPublicRanges               = @{
-                        CidrAddress  = 'FakeStringValue'
                         LowerAddress = 'FakeStringValue'
-                        ODataType    = '#microsoft.graph.iPv4CidrRange'
+                        ODataType    = '#microsoft.graph.iPv4Range'
                         UpperAddress = 'FakeStringValue'
                     }
                     ContentCachingShowAlerts                 = $true
@@ -500,9 +492,8 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     ConsoleAccessDisabled                    = $true
                     ContentCachingBlockDeletion              = $true
                     ContentCachingClientListenRanges         = @{
-                        CidrAddress  = 'FakeStringValue'
                         LowerAddress = 'FakeStringValue'
-                        ODataType    = '#microsoft.graph.iPv4CidrRange'
+                        ODataType    = '#microsoft.graph.iPv4Range'
                         UpperAddress = 'FakeStringValue'
                     }
                     ContentCachingClientPolicy               = 'notConfigured'
@@ -516,23 +507,20 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     ContentCachingParents                    = @('FakeStringArrayValue1', 'FakeStringArrayValue2')
                     ContentCachingParentSelectionPolicy      = 'notConfigured'
                     ContentCachingPeerFilterRanges           = @{
-                        CidrAddress  = 'FakeStringValue'
                         LowerAddress = 'FakeStringValue'
-                        ODataType    = '#microsoft.graph.iPv4CidrRange'
+                        ODataType    = '#microsoft.graph.iPv4Range'
                         UpperAddress = 'FakeStringValue'
                     }
                     ContentCachingPeerListenRanges           = @{
-                        CidrAddress  = 'FakeStringValue'
                         LowerAddress = 'FakeStringValue'
-                        ODataType    = '#microsoft.graph.iPv4CidrRange'
+                        ODataType    = '#microsoft.graph.iPv4Range'
                         UpperAddress = 'FakeStringValue'
                     }
                     ContentCachingPeerPolicy                 = 'notConfigured'
                     ContentCachingPort                       = 25
                     ContentCachingPublicRanges               = @{
-                        CidrAddress  = 'FakeStringValue'
                         LowerAddress = 'FakeStringValue'
-                        ODataType    = '#microsoft.graph.iPv4CidrRange'
+                        ODataType    = '#microsoft.graph.iPv4Range'
                         UpperAddress = 'FakeStringValue'
                     }
                     ContentCachingShowAlerts                 = $true
@@ -709,9 +697,8 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     ConsoleAccessDisabled                    = $true
                     ContentCachingBlockDeletion              = $true
                     ContentCachingClientListenRanges         = @{
-                        CidrAddress  = 'FakeStringValue'
                         LowerAddress = 'FakeStringValue'
-                        ODataType    = '#microsoft.graph.iPv4CidrRange'
+                        ODataType    = '#microsoft.graph.iPv4Range'
                         UpperAddress = 'FakeStringValue'
                     }
                     ContentCachingClientPolicy               = 'notConfigured'
@@ -725,23 +712,20 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     ContentCachingParents                    = @('FakeStringArrayValue1', 'FakeStringArrayValue2')
                     ContentCachingParentSelectionPolicy      = 'notConfigured'
                     ContentCachingPeerFilterRanges           = @{
-                        CidrAddress  = 'FakeStringValue'
                         LowerAddress = 'FakeStringValue'
-                        ODataType    = '#microsoft.graph.iPv4CidrRange'
+                        ODataType    = '#microsoft.graph.iPv4Range'
                         UpperAddress = 'FakeStringValue'
                     }
                     ContentCachingPeerListenRanges           = @{
-                        CidrAddress  = 'FakeStringValue'
                         LowerAddress = 'FakeStringValue'
-                        ODataType    = '#microsoft.graph.iPv4CidrRange'
+                        ODataType    = '#microsoft.graph.iPv4Range'
                         UpperAddress = 'FakeStringValue'
                     }
                     ContentCachingPeerPolicy                 = 'notConfigured'
                     ContentCachingPort                       = 25
                     ContentCachingPublicRanges               = @{
-                        CidrAddress  = 'FakeStringValue'
                         LowerAddress = 'FakeStringValue'
-                        ODataType    = '#microsoft.graph.iPv4CidrRange'
+                        ODataType    = '#microsoft.graph.iPv4Range'
                         UpperAddress = 'FakeStringValue'
                     }
                     ContentCachingShowAlerts                 = $true

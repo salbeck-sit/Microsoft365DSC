@@ -57,6 +57,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                         recurrenceType                  = 'FakeStringValue'
                         reviewerType                    = 'FakeStringValue'
                         durationInDays                  = 25
+                        startDateTime                   = [System.DateTime]::new(2032, 12, 17, 23, 59, 59, [System.DateTimeKind]::Utc)
                     }
                     CanExtend                         = $True
                     CustomExtensionHandlers           = @(
@@ -147,6 +148,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                             recurrenceType                  = 'FakeStringValue'
                             reviewerType                    = 'FakeStringValue'
                             durationInDays                  = 25
+                            StartDateTime                   = '12/17/2032 23:59:59'
                         })
                     CanExtend                         = $True
                     CustomExtensionHandlers           = @(
@@ -203,7 +205,9 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             }
             It 'Should Create the group from the Set method' {
                 (New-M365DSCResourceInstance -ResourceName 'AADEntitlementManagementAccessPackageAssignmentPolicy' -Property $testParams).Set()
-                Should -Invoke -CommandName New-MgBetaEntitlementManagementAccessPackageAssignmentPolicy -Exactly 1
+                Should -Invoke -CommandName New-MgBetaEntitlementManagementAccessPackageAssignmentPolicy -Exactly 1 -ParameterFilter {
+                    $BodyParameter.AccessReviewSettings.StartDateTime -eq '2032-12-17T23:59:59.0000000Z'
+                }
             }
         }
 
@@ -222,6 +226,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                             recurrenceType                  = 'FakeStringValue'
                             reviewerType                    = 'FakeStringValue'
                             durationInDays                  = 25
+                            StartDateTime                   = '2032-12-17T23:59:59.0000000Z'
                         })
                     CanExtend                         = $True
                     CustomExtensionHandlers           = @(
@@ -296,6 +301,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                             recurrenceType                  = 'FakeStringValue'
                             reviewerType                    = 'FakeStringValue'
                             durationInDays                  = 25
+                            StartDateTime                   = '12/17/2032 23:59:59'
                         })
                     CanExtend                         = $True
                     CustomExtensionHandlers           = @(

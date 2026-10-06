@@ -125,7 +125,11 @@ class EXOSmtpDaneInbound : M365DSCResourceBase
             Write-Verbose -Message "Enabling SmtpDaneInbound for {$($this.DomainName)}"
             try
             {
-                Enable-SmtpDaneInbound -DomainName $this.DomainName -ErrorAction Stop | Out-Null
+                $response = Enable-SmtpDaneInbound -DomainName $this.DomainName -ErrorAction Stop
+                if ($response.Result -eq 'Error')
+                {
+                    throw $response.ErrorData
+                }
             }
             catch
             {
@@ -138,7 +142,11 @@ class EXOSmtpDaneInbound : M365DSCResourceBase
         elseif ($this.Ensure -eq 'Absent' -and $currentInstance.Ensure -eq 'Present')
         {
             Write-Verbose -Message "Disabling SmtpDaneInbound for {$($this.DomainName)}"
-            Disable-SmtpDaneInbound -DomainName $currentInstance.DomainName
+            $response = Disable-SmtpDaneInbound -DomainName $currentInstance.DomainName -ErrorAction Stop
+            if ($response.Result -eq 'Error')
+            {
+                throw "Error disabling SmtpDaneInbound for DomainName '$($this.DomainName)': $($response.ErrorData)"
+            }
         }
     }
 

@@ -596,6 +596,9 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                                 })
                         })
                     )
+                    TemplateReference = [MSFT_MicrosoftGraphdeviceManagementConfigurationPolicyTemplateReference] @{
+                        TemplateFamily = 'none'
+                    }
                     Technologies = 'mdm'
                     Ensure       = 'Present'
                     Credential   = $Credential
@@ -775,6 +778,9 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                                 })
                         })
                     )
+                    TemplateReference = [MSFT_MicrosoftGraphdeviceManagementConfigurationPolicyTemplateReference] @{
+                        TemplateFamily = 'none'
+                    }
                     Technologies = 'mdm'
                     Ensure       = 'Present'
                     Credential   = $Credential
@@ -791,7 +797,9 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
 
             It 'Should call the Set method' {
                 (New-M365DSCResourceInstance -ResourceName 'IntuneSettingCatalogCustomPolicyWindows10' -Property $testParams).Set()
-                Should -Invoke -CommandName Update-IntuneDeviceConfigurationPolicy -Exactly 1
+                Should -Invoke -CommandName Update-IntuneDeviceConfigurationPolicy -Exactly 1 -ParameterFilter {
+                    [System.String]::IsNullOrEmpty($TemplateReferenceId)
+                }
             }
         }
 

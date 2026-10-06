@@ -77,7 +77,10 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                 }
 
                 Mock -CommandName Get-AutoSensitivityLabelPolicy -MockWith {
-                    return $null
+                    return @{
+                        Name = 'TestPolicy'
+                        Mode = 'PendingDeletion'
+                    }
                 }
             }
 
@@ -137,24 +140,32 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
         Context -Name 'Policy already exists and is in the desired state' -Fixture {
             BeforeAll {
                 $testParams = @{
-                    ApplySensitivityLabel = 'TopSecret'
-                    Comment               = 'Test'
-                    Credential            = $Credential
-                    Ensure                = 'Present'
-                    ExchangeLocation      = @('All')
-                    Mode                  = 'Enable'
-                    Name                  = 'TestPolicy'
-                    Priority              = 0
+                    ApplySensitivityLabel           = 'TopSecret'
+                    Comment                         = 'Test'
+                    Credential                      = $Credential
+                    Ensure                          = 'Present'
+                    ExchangeLocation                = @('All')
+                    ExchangeSender                  = @('PradeepG@contoso.com')
+                    ExchangeSenderException         = @('MeganB@contoso.com')
+                    ExchangeSenderMemberOf          = @('sales@contoso.com')
+                    ExchangeSenderMemberOfException = @('marketing@contoso.com')
+                    Mode                            = 'Enable'
+                    Name                            = 'TestPolicy'
+                    Priority                        = 0
                 }
 
                 Mock -CommandName Get-AutoSensitivityLabelPolicy -MockWith {
                     return @{
-                        ApplySensitivityLabel = 'TopSecret'
-                        Comment               = 'Test'
-                        ExchangeLocation      = @(@{Name='All'})
-                        Mode                  = 'Enable'
-                        Name                  = 'TestPolicy'
-                        Priority              = 0
+                        ApplySensitivityLabel           = 'TopSecret'
+                        Comment                         = 'Test'
+                        ExchangeLocation                = @(@{Name='All'})
+                        ExchangeSender                  = [System.Collections.ArrayList]@('PradeepG@contoso.com')
+                        ExchangeSenderException         = [System.Collections.ArrayList]@('MeganB@contoso.com')
+                        ExchangeSenderMemberOf          = [System.Collections.ArrayList]@('{"PrimarySmtpAddress":"sales@contoso.com","DisplayName":"Sales"}')
+                        ExchangeSenderMemberOfException = [System.Collections.ArrayList]@('{"PrimarySmtpAddress":"marketing@contoso.com","DisplayName":"Marketing"}')
+                        Mode                            = 'Enable'
+                        Name                            = 'TestPolicy'
+                        Priority                        = 0
                     }
                 }
             }

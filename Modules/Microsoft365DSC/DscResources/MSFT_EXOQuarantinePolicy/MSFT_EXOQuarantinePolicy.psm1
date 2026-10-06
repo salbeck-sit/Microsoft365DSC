@@ -69,7 +69,8 @@ class EXOQuarantinePolicy : M365DSCResourceBase
     [System.String] $EndUserSpamNotificationFrequency
 
     [DscProperty()]
-    [System.ComponentModel.Description('The QuarantinePolicyType parameter filters the results by the specified quarantine policy type. Valid values are: QuarantinePolicy, GlobalQuarantinePolicy')]
+    [System.ComponentModel.Description('The QuarantinePolicyType parameter filters the results by the specified quarantine policy type.')]
+    [ValidateSet('PolicyQuarantineTag', 'GlobalQuarantineTag')]
     [System.String] $QuarantinePolicyType
 
     [DscProperty()]
@@ -246,6 +247,7 @@ class EXOQuarantinePolicy : M365DSCResourceBase
                 }
                 $result = @{
                     Identity                          = $this.Identity
+                    QuarantinePolicyType              = $QuarantinePolicy.QuarantinePolicyType
                     EndUserQuarantinePermissionsValue = $EndUserQuarantinePermissionsValueDecimal
                     ESNEnabled                        = $QuarantinePolicy.ESNEnabled
                     MultiLanguageCustomDisclaimer     = $QuarantinePolicy.MultiLanguageCustomDisclaimer
@@ -296,8 +298,7 @@ class EXOQuarantinePolicy : M365DSCResourceBase
         }
         else
         {
-            $QuarantinePolicies = Get-QuarantinePolicy
-            $QuarantinePolicy = $QuarantinePolicies | Where-Object -FilterScript { $_.Identity -eq $this.Identity }
+            $QuarantinePolicy = Get-QuarantinePolicy -Identity $this.Identity -ErrorAction SilentlyContinue
         }
         $QuarantinePolicyParams = Remove-M365DSCAuthenticationParameter -BoundParameters $this.GetBoundParameters()
         $QuarantinePolicyParams.Remove('QuarantinePolicyType') | Out-Null
@@ -305,7 +306,7 @@ class EXOQuarantinePolicy : M365DSCResourceBase
         if ($this.Ensure -eq 'Present' -and $null -eq $QuarantinePolicy)
         {
             Write-Verbose -Message "Creating QuarantinePolicy $($this.Identity)."
-            $QuarantinePolicyParams.Add('Name', $this.Identity)
+            $QuarantinePolicyParams.Add('Name', $this.Identity.Split('\')[-1])
             $QuarantinePolicyParams.Remove('Identity') | Out-Null
             New-QuarantinePolicy @QuarantinePolicyParams
         }
@@ -315,7 +316,14 @@ class EXOQuarantinePolicy : M365DSCResourceBase
             if ($this.QuarantinePolicyType -eq 'GlobalQuarantineTag')
             {
                 $QuarantinePolicyParams.Remove('Identity') | Out-Null
-                Get-QuarantinePolicy -QuarantinePolicyType GlobalQuarantinePolicy | Set-QuarantinePolicy @QuarantinePolicyParams
+                if ("$($QuarantinePolicy.Guid)" -eq [System.Guid]::Empty.ToString())
+                {
+                    New-QuarantinePolicy -Name 'DefaultGlobalTag' -QuarantinePolicyType 'GlobalQuarantinePolicy' @QuarantinePolicyParams
+                }
+                else
+                {
+                    $QuarantinePolicy | Set-QuarantinePolicy @QuarantinePolicyParams
+                }
             }
             else
             {

@@ -173,6 +173,26 @@ class SCRoleGroup : M365DSCResourceBase
             }
             New-RoleGroup @NewRoleGroupParams
         }
+        elseif ($this.Ensure -eq 'Present' -and $currentRoleGroupConfig.Ensure -eq 'Present')
+        {
+            Write-Verbose -Message "Role Group '$($this.Name)' already exists. Update its display name and description."
+            $UpdateRoleGroupParams = @{
+                Identity = $this.Name
+                Confirm  = $false
+            }
+
+            if (-not [System.String]::IsNullOrEmpty($this.DisplayName))
+            {
+                $UpdateRoleGroupParams.Add('DisplayName', $this.DisplayName)
+            }
+
+            if ($null -ne $this.Description)
+            {
+                $UpdateRoleGroupParams.Add('Description', $this.Description)
+            }
+
+            Set-RoleGroup @UpdateRoleGroupParams -ErrorAction Stop
+        }
         # CASE: Role Group exists but it shouldn't;
         elseif ($this.Ensure -eq 'Absent' -and $currentRoleGroupConfig.Ensure -eq 'Present')
         {

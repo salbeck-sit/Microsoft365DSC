@@ -399,6 +399,13 @@ class IntuneWifiConfigurationPolicyAndroidEnterpriseWorkProfile : M365DSCResourc
         return ''
     }
 
+    [System.Collections.Hashtable] GetCompareParameters()
+    {
+        return @{
+            ExcludedProperties = @('PreSharedKey')
+        }
+    }
+
     hidden [IntuneWifiConfigurationPolicyAndroidEnterpriseWorkProfile] AsResult([System.Object] $Values)
     {
         if ($Values -is [IntuneWifiConfigurationPolicyAndroidEnterpriseWorkProfile])

@@ -433,6 +433,24 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             It 'Should Create the group from the Set method' {
                 (New-M365DSCResourceInstance -ResourceName 'IntuneWindowsAutopilotDevicePreparationUserDrivenPolicy' -Property $testParams).Set()
                 Should -Invoke -CommandName New-MgBetaDeviceManagementConfigurationPolicy -Exactly 1
+                Should -Invoke -CommandName Get-MgBetaDeviceManagementConfigurationPolicy -ParameterFilter {
+                    $Filter -like "*templateReference/templateId eq '80d33118-b7b4-40d8-b15f-81be745e053f_1'*"
+                }
+
+                Mock -CommandName Set-MgBetaDeviceManagementConfigurationPolicyEnrollmentTimeDeviceMembershipTarget -MockWith {
+                    return @{
+                        validationSucceeded                                    = $false
+                        enrollmentTimeDeviceMembershipTargetValidationStatuses = @(
+                            @{
+                                targetId                  = '12345-12345-12345-12345-12345'
+                                targetValidationErrorCode = 'securityGroupNotFound'
+                                validationSucceeded       = $false
+                            }
+                        )
+                    }
+                }
+
+                { (New-M365DSCResourceInstance -ResourceName 'IntuneWindowsAutopilotDevicePreparationUserDrivenPolicy' -Property $testParams).Set() } | Should -Throw '*securityGroupNotFound*'
             }
         }
 

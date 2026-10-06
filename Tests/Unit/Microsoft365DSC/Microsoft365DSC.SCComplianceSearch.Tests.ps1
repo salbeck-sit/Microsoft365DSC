@@ -114,7 +114,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                         Name                                  = 'Demo Compliance Search'
                         Case                                  = 'Test Search Case'
                         Language                              = @{
-                            TwoLetterISOLanguageName = 'iv'
+                            Name = 'iv'
                         }
                         AllowNotFoundExchangeLocationsEnabled = $False
                         SharePointLocation                    = @('https://tailspintoys.com')
@@ -151,7 +151,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     return @{
                         Name                                  = 'Demo Compliance Search'
                         Language                              = @{
-                            TwoLetterISOLanguageName = 'iv'
+                            Name = 'iv'
                         }
                         AllowNotFoundExchangeLocationsEnabled = $False
                     }
@@ -184,7 +184,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                         Name                                  = 'Demo Compliance Search'
                         Case                                  = 'Test Search Case'
                         Language                              = @{
-                            TwoLetterISOLanguageName = 'iv'
+                            Name = 'iv'
                         }
                         AllowNotFoundExchangeLocationsEnabled = $False
                         SharePointLocation                    = @('https://tailspintoys.com')

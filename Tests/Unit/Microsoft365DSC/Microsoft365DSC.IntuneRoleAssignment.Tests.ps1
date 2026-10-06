@@ -132,12 +132,15 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     DisplayName                = 'FakeStringValue'
                     Id                         = ''
                     Ensure                     = 'Absent'
-                    RoleDefinition             = '7fbbd347-98de-431d-942b-cf5bea92998d'
                     MembersDisplayNames        = @('FakeStringValue')
                     ResourceScopesDisplayNames = @('FakeStringValue')
                     ScopeType                  = 'resourceScope'
                     RoleScopeTagIds            = @('0')
                     Credential                 = $Credential
+                }
+
+                Mock -CommandName Get-MgDeviceManagementRoleDefinition -ParameterFilter { -not [System.String]::IsNullOrEmpty($Filter) } -MockWith {
+                    return $null
                 }
             }
 

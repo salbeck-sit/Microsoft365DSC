@@ -159,8 +159,8 @@ class IntuneMobileAppsLobAppAndroid : M365DSCResourceBase
                     if (-not [System.String]::IsNullOrEmpty($this.DisplayName))
                     {
                         $getValue = Get-MgBetaDeviceAppManagementMobileApp -All `
-                            -Filter "DisplayName eq '$($this.DisplayName -replace "'", "''")' and isof('microsoft.graph.androidLobApp')" `
-                            -ErrorAction SilentlyContinue
+                            -Filter "DisplayName eq '$($this.DisplayName -replace "'", "''")'" `
+                            -ErrorAction SilentlyContinue | Where-Object -Property '@odata.type' -EQ '#microsoft.graph.androidLobApp'
                     }
                 }
                 #endregion
@@ -257,7 +257,7 @@ class IntuneMobileAppsLobAppAndroid : M365DSCResourceBase
             $assignmentResult = @()
             if ($assignmentsValues.Count -gt 0)
             {
-                [array]$assignmentsValues = $assignmentsValues | Where-Object -FilterScript { $_.source -eq 'direct' }
+                [array]$assignmentsValues = $assignmentsValues | Where-Object -Property source -EQ 'direct'
                 $assignmentResult += ConvertFrom-IntuneMobileAppAssignment -Assignments $assignmentsValues -IncludeDeviceFilter $true
             }
             $results.Add('Assignments', $assignmentResult)
@@ -310,7 +310,10 @@ class IntuneMobileAppsLobAppAndroid : M365DSCResourceBase
             $createParameters.Add('@odata.type', '#microsoft.graph.androidLobApp')
             $createParameters.Add('versionCode', '1')
             $createParameters.Add('versionName', '1.0')
-            $createParameters.fileName = "Sample.apk"
+            if ([System.String]::IsNullOrEmpty($createParameters.fileName))
+            {
+                $createParameters.fileName = 'Sample.apk'
+            }
             $policy = New-MgBetaDeviceAppManagementMobileApp -BodyParameter $createParameters
 
             Invoke-M365DSCIntuneMobileAppInitialUpload -AppId $policy.Id -OdataType '#microsoft.graph.androidLobApp' -FileExtension 'apk'
@@ -323,6 +326,7 @@ class IntuneMobileAppsLobAppAndroid : M365DSCResourceBase
             if ($policy.Id)
             {
                 $assignmentsHash = ConvertTo-IntuneMobileAppAssignment -IncludeDeviceFilter:$true -Assignments $this.Assignments
+                Wait-M365DSCIntuneMobileAppPublished -AppId $policy.Id
                 Update-DeviceAppManagementPolicyAssignment `
                     -AppManagementPolicyId $policy.Id `
                     -Assignments $assignmentsHash

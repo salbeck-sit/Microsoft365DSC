@@ -32,15 +32,10 @@ Configuration Example
             MailEnabled                         = $True
             GroupTypes                          = @("Unified")
             MailNickname                        = "MarketingTeam"
-            Members                             = @("admin@$TenantId", "AdeleV@$TenantId")
+            Members                             = @("MeganB@$TenantId", "AdeleV@$TenantId")
             Visibility                          = "Private"
             Theme                               = "Blue"
-            Owners                              = @("admin@$TenantId", "AdeleV@$TenantId")
-            AssignedLicenses                    = @(
-                MSFT_AADGroupLicense {
-                    SkuId = 'AAD_PREMIUM_P2'
-                }
-            )
+            Owners                              = @("MeganB@$TenantId", "AdeleV@$TenantId")
             WritebackConfiguration              = MSFT_MicrosoftGraphGroupWritebackConfiguration{
                 IsEnabled           = $true
                 OnPremisesGroupType = "universalDistributionGroup"

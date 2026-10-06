@@ -128,15 +128,13 @@ class EXOJournalRule : M365DSCResourceBase
 
     [void] Set()
     {
-        ${$Name} = $null
-        $enabledValue = $null
         if ($this.RequiresPowerShellCore())
         {
             $null = $this.InvokeInPowerShellCore('Set')
             return
         }
 
-        Write-Verbose -Message "Setting configuration of Journal Rule {$($this.Name)}}"
+        Write-Verbose -Message "Setting configuration of Journal Rule {$($this.Name)}"
 
         Confirm-M365DSCDependencies
 
@@ -153,7 +151,7 @@ class EXOJournalRule : M365DSCResourceBase
         # If the Rule should exist, but it doesn't - Create the Rule
         if ($this.Ensure -eq 'Present' -and $currentValues.Ensure -eq 'Absent')
         {
-            Write-Verbose -Message "Creating new Journal Rule {$($this.Name)} with Enabled set to {$enabledValue}"
+            Write-Verbose -Message "Creating new Journal Rule {$($this.Name)} with Enabled set to {$($this.Enabled)}"
             New-JournalRule @opsParams | Out-Null
         }
         # If the Rule should exist and it already does - Update the Rule
@@ -167,23 +165,23 @@ class EXOJournalRule : M365DSCResourceBase
 
             if ($currentValues.Enabled -ne $this.Enabled)
             {
-                Write-Verbose -Message "Setting the Enabled status of Rule ${$Name} to {$enabledValue}"
+                Write-Verbose -Message "Setting the Enabled status of Rule {$($this.Name)} to {$($this.Enabled)}"
 
                 if ($this.Enabled -eq $true)
                 {
-                    Enable-JournalRule -Identity $this.Name | Out-Null
+                    Enable-JournalRule -Identity $this.Name -Confirm:$false | Out-Null
                 }
                 else
                 {
-                    Disable-JournalRule -Identity $this.Name | Out-Null
+                    Disable-JournalRule -Identity $this.Name -Confirm:$false | Out-Null
                 }
             }
         }
         # If the Rule exists and it should not - Delete the Rule
         elseif ($this.Ensure -eq 'Absent' -and $currentValues.Ensure -eq 'Present')
         {
-            Write-Verbose -Message "Removing Journal Rule ${$Name}"
-            Remove-JournalRule -Identity $this.Name | Out-Null
+            Write-Verbose -Message "Removing Journal Rule {$($this.Name)}"
+            Remove-JournalRule -Identity $this.Name -Confirm:$false | Out-Null
         }
     }
 

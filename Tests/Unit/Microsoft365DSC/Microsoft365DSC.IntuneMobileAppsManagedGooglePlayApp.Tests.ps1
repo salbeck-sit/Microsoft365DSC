@@ -42,6 +42,12 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             Mock -CommandName Add-MgBetaDeviceManagementAndroidManagedStoreAccountEnterpriseSettingApp -MockWith {
             }
 
+            Mock -CommandName Invoke-M365DSCGraphRequest -MockWith {
+            }
+
+            Mock -CommandName Start-Sleep -MockWith {
+            }
+
             Mock -CommandName Update-MgBetaDeviceAppManagementMobileApp -MockWith {
             }
 
@@ -92,6 +98,9 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                 return "Credentials"
             }
 
+            Mock -CommandName Wait-M365DSCIntuneMobileAppPublished -MockWith {
+            }
+
             # Mock Write-M365DSCHost to hide output during the tests
             Mock -CommandName Write-M365DSCHost -MockWith {
             }
@@ -110,18 +119,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     DisplayName = "FakeStringValue"
                     Id = "FakeStringValue"
                     PackageId = "FakeStringValue"
-                    Publisher = "FakeStringValue"
-                    Description = "FakeStringValue"
-                    Developer = "FakeStringValue"
-                    InformationUrl = "FakeStringValue"
-                    IsFeatured = $True
-                    LargeIcon = ([MSFT_DeviceManagementMimeContent] @{
-                        Type = "FakeStringValue"
-                        Value = "VGVzdA=="
-                    })
-                    Notes = "FakeStringValue"
-                    Owner = "FakeStringValue"
-                    PrivacyInformationUrl = "FakeStringValue"
                     RoleScopeTagIds = @("FakeStringValue")
                     Ensure = "Present"
                     Credential = $Credential;
@@ -154,7 +151,11 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             It 'Should Create the group from the Set method' {
                 (New-M365DSCResourceInstance -ResourceName 'IntuneMobileAppsManagedGooglePlayApp' -Property $testParams).Set()
                 Should -Invoke -CommandName Add-MgBetaDeviceManagementAndroidManagedStoreAccountEnterpriseSettingApp -Exactly 1
-                Should -Invoke -CommandName Update-MgBetaDeviceAppManagementMobileApp -Exactly 1
+                Should -Invoke -CommandName Wait-M365DSCIntuneMobileAppPublished -Exactly 1
+                Should -Invoke -CommandName Invoke-M365DSCGraphRequest -ParameterFilter { $Uri -like '*/syncApps' }
+                Should -Invoke -CommandName Update-MgBetaDeviceAppManagementMobileApp -Exactly 1 -ParameterFilter {
+                    $BodyParameter.Keys.Count -eq 2 -and $BodyParameter.ContainsKey('roleScopeTagIds')
+                }
             }
             It 'Throws when the approved package has no app with the DisplayName' {
                 $Script:PackageApproved = $false
@@ -172,18 +173,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     DisplayName = "FakeStringValue"
                     Id = "FakeStringValue"
                     PackageId = "FakeStringValue"
-                    Publisher = "FakeStringValue"
-                    Description = "FakeStringValue"
-                    Developer = "FakeStringValue"
-                    InformationUrl = "FakeStringValue"
-                    IsFeatured = $True
-                    LargeIcon = ([MSFT_DeviceManagementMimeContent] @{
-                        Type = "FakeStringValue"
-                        Value = "VGVzdA=="
-                    })
-                    Notes = "FakeStringValue"
-                    Owner = "FakeStringValue"
-                    PrivacyInformationUrl = "FakeStringValue"
                     RoleScopeTagIds = @("FakeStringValue")
                     Ensure = "Absent"
                     Credential = $Credential;
@@ -210,18 +199,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     DisplayName = "FakeStringValue"
                     Id = "FakeStringValue"
                     PackageId = "FakeStringValue"
-                    Publisher = "FakeStringValue"
-                    Description = "FakeStringValue"
-                    Developer = "FakeStringValue"
-                    InformationUrl = "FakeStringValue"
-                    IsFeatured = $True
-                    LargeIcon = ([MSFT_DeviceManagementMimeContent] @{
-                        Type = "FakeStringValue"
-                        Value = "VGVzdA=="
-                    })
-                    Notes = "FakeStringValue"
-                    Owner = "FakeStringValue"
-                    PrivacyInformationUrl = "FakeStringValue"
                     RoleScopeTagIds = @("FakeStringValue")
                     Ensure = "Present"
                     Credential = $Credential;
@@ -239,18 +216,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     DisplayName = "FakeStringValue"
                     Id = "FakeStringValue"
                     PackageId = "FakeStringValue"
-                    Publisher = "FakeStringValue"
-                    Description = "FakeStringValue"
-                    Developer = "FakeStringValue"
-                    InformationUrl = "FakeStringValue"
-                    IsFeatured = $True
-                    LargeIcon = ([MSFT_DeviceManagementMimeContent] @{
-                        Type = "FakeStringValue"
-                        Value = "VGVzdA=="
-                    })
-                    Notes = "FakeStringValue"
-                    Owner = "FakeStringValue"
-                    PrivacyInformationUrl = "FakeStringValue"
                     RoleScopeTagIds = @("FakeStringValue_New") # Drift
                     Ensure = "Present"
                     Credential = $Credential;

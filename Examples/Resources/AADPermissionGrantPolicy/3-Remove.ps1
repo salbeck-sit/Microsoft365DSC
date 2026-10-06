@@ -25,7 +25,7 @@ Configuration Example
     {
         AADPermissionGrantPolicy 'AADPermissionGrantPolicy-Example'
         {
-            Id                    = "my-custom-consent-policy"
+            Id                    = "low-risk-delegated-consent"
             Ensure                = "Absent"
             ApplicationId         = $ApplicationId
             TenantId              = $TenantId

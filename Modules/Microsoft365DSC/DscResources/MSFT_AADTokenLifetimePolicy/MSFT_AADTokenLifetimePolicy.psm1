@@ -12,10 +12,6 @@ class AADTokenLifetimePolicy : M365DSCResourceBase
     [System.String] $Id
 
     [DscProperty()]
-    [System.ComponentModel.Description('Description for this policy. Required.')]
-    [System.String] $Description
-
-    [DscProperty()]
     [System.ComponentModel.Description('A string collection containing a JSON string that defines the rules and settings for a policy. The syntax for the definition differs for each derived policy type. Required.')]
     [System.String[]] $Definition
 
@@ -126,7 +122,6 @@ class AADTokenLifetimePolicy : M365DSCResourceBase
             Write-Verbose "Found existing AzureAD Policy {$($Policy.DisplayName)}"
             $Result = @{
                 Id                    = $Policy.Id
-                Description           = $Policy.Description
                 Definition            = $Policy.Definition
                 DisplayName           = $Policy.DisplayName
                 IsOrganizationDefault = $Policy.IsOrganizationDefault

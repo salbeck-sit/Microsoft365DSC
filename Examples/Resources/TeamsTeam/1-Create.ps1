@@ -30,12 +30,14 @@ Configuration Example
             Description                       = 'Collaboration space for the marketing campaign team'
             Visibility                        = 'Private'
             MailNickName                      = 'MarketingCampaigns'
+            Owner                             = @("AdeleV@$TenantId")
             AllowUserEditMessages             = $false
             AllowUserDeleteMessages           = $false
             AllowOwnerDeleteMessages          = $false
             AllowTeamMentions                 = $false
             AllowChannelMentions              = $false
             allowCreateUpdateChannels         = $false
+            AllowCreatePrivateChannels        = $false
             AllowDeleteChannels               = $false
             AllowAddRemoveApps                = $false
             AllowCreateUpdateRemoveTabs       = $false
@@ -46,6 +48,7 @@ Configuration Example
             AllowCustomMemes                  = $True
             AllowGuestCreateUpdateChannels    = $true
             AllowGuestDeleteChannels          = $true
+            ShowInTeamsSearchAndSuggestions   = $false
             Ensure                            = 'Present'
             ApplicationId                     = $ApplicationId
             TenantId                          = $TenantId

@@ -117,7 +117,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                 $testParams = @{
                     Credential            = $Credential
                     Ensure                = 'Present'
-                    Identity              = 'contoso.com'
+                    Identity              = 'Contoso Free/Busy'
                     AccessMethod          = 'PerUserFB' # Drift
                     Credentials           = $targetCreds
                     ForestName            = 'contoso.com'
@@ -132,7 +132,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             It 'Should Successfully call the Set method' {
                 (New-M365DSCResourceInstance -ResourceName 'EXOAvailabilityAddressSpace' -Property $testParams).Set()
                 Should -Invoke -CommandName Add-AvailabilityAddressSpace -Exactly 1
-                Should -Invoke -CommandName Remove-AvailabilityAddressSpace -Exactly 1
+                Should -Invoke -CommandName Remove-AvailabilityAddressSpace -Exactly 1 -ParameterFilter { $Identity -eq 'contoso.com' }
             }
         }
 
@@ -141,7 +141,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                 $testParams = @{
                     Ensure     = 'Absent'
                     Credential = $Credential
-                    ForestName = 'contoso.com'
                     Identity   = 'TestAvailabilityAddressSpace'
                 }
             }
@@ -152,7 +151,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
 
             It 'Should Remove the Connector in the Set method' {
                 (New-M365DSCResourceInstance -ResourceName 'EXOAvailabilityAddressSpace' -Property $testParams).Set()
-                Should -Invoke -CommandName Remove-AvailabilityAddressSpace -Exactly 1
+                Should -Invoke -CommandName Remove-AvailabilityAddressSpace -Exactly 1 -ParameterFilter { $Identity -eq 'contoso.com' }
             }
         }
 

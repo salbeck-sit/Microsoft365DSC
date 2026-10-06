@@ -203,7 +203,7 @@ $infrastructureParams = @(
 $odataParams = @(
     'Filter', 'Property', 'ExpandProperty', 'Top', 'Skip',
     'Search', 'Sort', 'CountVariable', 'ConsistencyLevel',
-    'All', 'PageSize'
+    'All', 'PageSize', 'NoPageSize'
 )
 
 # Parameters that are used for body construction in POST/PATCH/PUT
@@ -471,10 +471,6 @@ function Invoke-M365DSCGraphShimRequestV76
     {
         $invokeParams['Top'] = $Top
     }
-    elseif ($PSBoundParameters.ContainsKey('Top') -and $Top -eq 0)
-    {
-        $invokeParams['NoPageSize'] = $true
-    }
 
     if ($PSBoundParameters.ContainsKey('PageSize') -and $PageSize -gt 0)
     {
@@ -512,9 +508,17 @@ function Invoke-M365DSCGraphShimRequestV76
         $response = Invoke-MgxRequest @invokeParams -ErrorVariable mgxErrors
         if ($All -and $mgxErrors.Count -gt 0 -and "$($mgxErrors[0])" -match $pageSizeLimitPattern)
         {
-            Write-Warning -Message "The limit for Top query has been exceeded. Retrying with PageSize set to $Matches[1]."
+            Write-Warning -Message "The limit for Top query has been exceeded. Retrying with PageSize set to $($Matches[1])."
             $invokeParams.Remove('NoPageSize') | Out-Null
-            $invokeParams['PageSize'] = [int]$Matches[1]
+            $invokeParams.Remove('PageSize') | Out-Null
+            if ([int]$Matches[1] -gt 0)
+            {
+                $invokeParams['PageSize'] = [int]$Matches[1]
+            }
+            else
+            {
+                $invokeParams['NoPageSize'] = $true
+            }
             $response = Invoke-MgxRequest @invokeParams
         }
         return $response
@@ -523,9 +527,17 @@ function Invoke-M365DSCGraphShimRequestV76
     {
         if ($All -and $_.Exception.Message -match $pageSizeLimitPattern)
         {
-            Write-Warning -Message "The limit for Top query has been exceeded. Retrying with PageSize set to $Matches[1]."
+            Write-Warning -Message "The limit for Top query has been exceeded. Retrying with PageSize set to $($Matches[1])."
             $invokeParams.Remove('NoPageSize') | Out-Null
-            $invokeParams['PageSize'] = [int]$Matches[1]
+            $invokeParams.Remove('PageSize') | Out-Null
+            if ([int]$Matches[1] -gt 0)
+            {
+                $invokeParams['PageSize'] = [int]$Matches[1]
+            }
+            else
+            {
+                $invokeParams['NoPageSize'] = $true
+            }
             return Invoke-MgxRequest @invokeParams
         }
 
@@ -878,7 +890,12 @@ function ConvertTo-M365DSCGraphShimBody
         {
             if ($entry.Key -notin $ExcludeParams -and $null -ne $entry.Value)
             {
-                $body[(ConvertTo-M365DSCGraphShimPropertyName -Name $entry.Key)] = $entry.Value
+                $value = $entry.Value
+                if ($value -is [System.Management.Automation.SwitchParameter])
+                {
+                    $value = $value.IsPresent
+                }
+                $body[(ConvertTo-M365DSCGraphShimPropertyName -Name $entry.Key)] = $value
             }
         }
     }
@@ -903,7 +920,7 @@ $script:GraphShimExcludeFromBody = @(
     'Break', 'ResponseHeadersVariable', 'InputObject',
     'Filter', 'Property', 'ExpandProperty', 'Top', 'Skip',
     'Search', 'Sort', 'CountVariable', 'ConsistencyLevel',
-    'All', 'PageSize', 'BodyParameter', 'AdditionalProperties',
+    'All', 'PageSize', 'NoPageSize', 'BodyParameter', 'AdditionalProperties',
     'Confirm', 'WhatIf', 'ErrorAction'
 )
 
@@ -964,14 +981,10 @@ function Invoke-M365DSCGraphShimGetResource
     if ($BoundParameters['Top'] -gt 0)      { $paramSplat['Top'] = $BoundParameters['Top'] }
     if ($BoundParameters['Skip'] -gt 0)     { $paramSplat['Skip'] = $BoundParameters['Skip'] }
     if ($BoundParameters['PageSize'] -gt 0) { $paramSplat['PageSize'] = $BoundParameters['PageSize'] }
-
-    if ($BoundParameters.ContainsKey('Top') -and $BoundParameters['Top'] -eq 0)
-    {
-        $paramSplat['NoPageSize'] = $true
-    }
+    if ($BoundParameters['NoPageSize'])     { $paramSplat['NoPageSize'] = $true }
 
     $retrieveAllPages = ($BoundParameters.ContainsKey('All') -and $BoundParameters['All']) -or
-        (-not [System.String]::IsNullOrEmpty($BoundParameters['Filter']) -and -not $BoundParameters.ContainsKey('Top'))
+        (-not [System.String]::IsNullOrEmpty($BoundParameters['Filter']) -and -not $paramSplat.ContainsKey('Top'))
     if ($retrieveAllPages)
     {
         # All reads the whole collection. In this case, the Top parameter caps a single page
@@ -981,6 +994,10 @@ function Invoke-M365DSCGraphShimGetResource
             $paramSplat['PageSize'] = $paramSplat['Top']
         }
         $paramSplat.Remove('Top')
+        if ($paramSplat.ContainsKey('NoPageSize'))
+        {
+            $paramSplat.Remove('PageSize')
+        }
     }
     elseif (-not $Script:IsPowerShell76OrGreater)
     {
@@ -1204,6 +1221,10 @@ foreach ($cmdletName in $cmdletNames) {
         [void]$entry.AppendLine("        [$pType]")
         [void]$entry.Append("        `$$pName")
         $paramEntries += $entry.ToString()
+
+        if ($method -eq 'GET' -and $pName -eq 'PageSize') {
+            $paramEntries += "        [Parameter()]`r`n        [System.Management.Automation.SwitchParameter]`r`n        `$NoPageSize"
+        }
     }
     [void]$paramLines.Append(($paramEntries -join ",`r`n`r`n"))
     [void]$paramLines.AppendLine('')

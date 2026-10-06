@@ -26,8 +26,8 @@ Configuration Example
     {
         EXOActiveSyncDeviceAccessRule 'EXOActiveSyncDeviceAccessRule-Example'
         {
-            Identity              = "ContosoPhone(DeviceOS)"
-            Ensure                = "Present"
+            Identity              = "iOS 6.1 10B146 (DeviceOS)"
+            Ensure                = "Absent"
             ApplicationId         = $ApplicationId
             TenantId              = $TenantId
             CertificateThumbprint = $CertificateThumbprint

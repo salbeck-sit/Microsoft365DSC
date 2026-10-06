@@ -295,7 +295,7 @@ class SCComplianceSearchAction : M365DSCResourceBase
                             Write-Verbose -Message "($loop) Waiting for 60 seconds for Compliance Search $($this.SearchName) to complete."
                             Start-Sleep -Seconds 60
                             $loop++
-                        } while ($status -ne 'Completed' -or $loop -lt 10)
+                        } while ($status -ne 'Completed' -and $loop -lt 10)
                         New-ComplianceSearchAction @CreationParams -ErrorAction Stop
                     }
                     catch

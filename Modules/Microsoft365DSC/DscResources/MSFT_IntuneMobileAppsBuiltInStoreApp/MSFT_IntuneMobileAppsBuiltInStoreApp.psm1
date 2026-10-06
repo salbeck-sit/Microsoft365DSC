@@ -174,8 +174,8 @@ class IntuneMobileAppsBuiltInStoreApp : M365DSCResourceBase
                     if (-not [System.String]::IsNullOrEmpty($this.DisplayName))
                     {
                         $getValue = Get-MgBetaDeviceAppManagementMobileApp -All `
-                            -Filter "DisplayName eq '$($this.DisplayName -replace "'", "''")' and (isof('microsoft.graph.managedAndroidStoreApp') or isof('microsoft.graph.managedIOSStoreApp'))" `
-                            -ErrorAction SilentlyContinue
+                            -Filter "DisplayName eq '$($this.DisplayName -replace "'", "''")'" `
+                            -ErrorAction SilentlyContinue | Where-Object -Property '@odata.type' -In @('#microsoft.graph.managedAndroidStoreApp', '#microsoft.graph.managedIOSStoreApp')
                     }
                 }
                 #endregion
@@ -285,7 +285,7 @@ class IntuneMobileAppsBuiltInStoreApp : M365DSCResourceBase
             $assignmentResult = @()
             if ($assignmentsValues.Count -gt 0)
             {
-                [array]$assignmentsValues = $assignmentsValues | Where-Object -FilterScript { $_.source -eq 'direct' }
+                [array]$assignmentsValues = $assignmentsValues | Where-Object -Property source -EQ 'direct'
                 $assignmentResult += ConvertFrom-IntuneMobileAppAssignment -Assignments $assignmentsValues -IncludeDeviceFilter $true
             }
             foreach ($assignment in $assignmentResult)
@@ -335,9 +335,7 @@ class IntuneMobileAppsBuiltInStoreApp : M365DSCResourceBase
             {
                 if (-not [System.Guid]::TryParse($assignment.assignmentSettings.vpnConfigurationId, [ref][System.Guid]::Empty))
                 {
-                    [array]$vpnConfiguration = Get-MgBetaDeviceManagementDeviceConfiguration -All -Filter "displayName eq '$($assignment.assignmentSettings.vpnConfigurationId)'" | Where-Object {
-                        $_.'@odata.type' -like "#microsoft.graph.*VpnConfiguration"
-                    }
+                    [array]$vpnConfiguration = Get-MgBetaDeviceManagementDeviceConfiguration -All -Filter "displayName eq '$($assignment.assignmentSettings.vpnConfigurationId)'" | Where-Object -Property '@odata.type' -Like '#microsoft.graph.*VpnConfiguration'
                     if ($null -eq $vpnConfiguration -or $vpnConfiguration.Count -eq 0)
                     {
                         throw "Could not find a VPN Configuration Policy with DisplayName '$($assignment.assignmentSettings.vpnConfigurationId)'."
@@ -379,6 +377,7 @@ class IntuneMobileAppsBuiltInStoreApp : M365DSCResourceBase
             if ($policy.Id)
             {
                 $assignmentsHash = ConvertTo-IntuneMobileAppAssignment -IncludeDeviceFilter:$true -Assignments $this.Assignments
+                Wait-M365DSCIntuneMobileAppPublished -AppId $policy.Id
                 Update-DeviceAppManagementPolicyAssignment `
                     -AppManagementPolicyId $policy.Id `
                     -Assignments $assignmentsHash
@@ -625,7 +624,7 @@ class IntuneMobileAppsBuiltInStoreApp : M365DSCResourceBase
 
         if ($boundParameters.ContainsKey('MinimumSupportedOperatingSystem'))
         {
-            foreach ($property in $boundParameters.MinimumSupportedOperatingSystem.PSObject.Properties | Where-Object { $null -ne $_.Value })
+            foreach ($property in $boundParameters.MinimumSupportedOperatingSystem.PSObject.Properties | Where-Object -Property Value -NE $null)
             {
                 if ($property.Name -in $this.ResourceCache['androidExclusive'] -and $this.TargetPlatform -ne 'Android')
                 {

@@ -457,7 +457,10 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                 $desiredValues = @{ AdvancedSettings = @(@{ Key = 'attachmentaction'; Value = @('a', 'b') }) }
                 $currentValues = @{ AdvancedSettings = @(@{ Key = 'attachmentaction'; Value = @('a') }) }
                 $drifted = $postProcessing.Invoke($desiredValues, $currentValues, $desiredValues.Clone(), @(@{ IsReport = $true }))
-                $drifted.Item3.AdvancedSettings | Should -Be 'AdvancedSettings drift detected'
+                $drifted.Item3.AdvancedSettings.Drift | Should -Be 'desired'
+                Compare-M365DSCResourceState -ResourceName 'SCLabelPolicy' -DesiredValues @{ Name = 'TestLabelPolicy'; AdvancedSettings = @(@{ Key = 'attachmentaction'; Value = @('a', 'b') }) } `
+                    -CurrentValues @{ Name = 'TestLabelPolicy'; AdvancedSettings = @(@{ Key = 'attachmentaction'; Value = @('a') }) } `
+                    -PostProcessing $postProcessing -PostProcessingArgs @(@{ IsReport = $true }) | Should -BeFalse
 
                 $desiredValues = @{ AdvancedSettings = @(@{ Key = 'attachmentaction'; Value = @('a', 'b') }) }
                 $currentValues = @{ AdvancedSettings = @(@{ Key = 'attachmentaction'; Value = @('b', 'a') }) }

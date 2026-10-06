@@ -61,13 +61,22 @@ Configuration Example
                 }
                 MSFT_DeviceManagementMobileAppAssignment{
                     dataType         = '#microsoft.graph.exclusionGroupAssignmentTarget'
-                    groupDisplayName = 'Policy Exclusions'
+                    groupDisplayName = 'Intune Excluded Devices'
+                    intent           = 'required'
                 }
             );
             Categories                      = @(
                 MSFT_DeviceManagementMobileAppCategory{
                     Id          = "2185c6bf-1b3d-4daa-a0bc-79cb4fad9c87"
                     DisplayName = "App Category 1"
+                }
+            );
+            FileName                        = "CompanyPortal.pkg";
+            IgnoreVersionDetection          = $true;
+            IncludedApps                    = @(
+                MSFT_MicrosoftGraphMacOSIncludedApp{
+                    BundleId      = "com.microsoft.CompanyPortalMac"
+                    BundleVersion = "5.2408.0"
                 }
             );
             PackageFileType                 = "Pkg";

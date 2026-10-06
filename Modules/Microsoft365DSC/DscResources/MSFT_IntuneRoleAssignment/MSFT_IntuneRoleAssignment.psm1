@@ -245,7 +245,8 @@ class IntuneRoleAssignment : M365DSCResourceBase
         }
 
         $roleDefinitionValue = $this.RoleDefinition
-        if ($roleDefinitionValue -notmatch '^[0-9a-fA-F]{8}-([0-9a-fA-F]{4}-){3}[0-9a-fA-F]{12}$' -or $roleDefinitionValue -eq '00000000-0000-0000-0000-000000000000')
+        if ($this.Ensure -eq 'Present' -and
+            ($roleDefinitionValue -notmatch '^[0-9a-fA-F]{8}-([0-9a-fA-F]{4}-){3}[0-9a-fA-F]{12}$' -or $roleDefinitionValue -eq '00000000-0000-0000-0000-000000000000'))
         {
             $roleDefinitionFilter = "DisplayName eq '$($this.RoleDefinitionDisplayName -replace "'", "''")'"
             $roleDefinitionId = Get-MgDeviceManagementRoleDefinition -All -Filter $roleDefinitionFilter -ErrorAction SilentlyContinue

@@ -43,6 +43,12 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             Mock -CommandName Set-SafeLinksRule -MockWith {
             }
 
+            Mock -CommandName Enable-SafeLinksRule -MockWith {
+            }
+
+            Mock -CommandName Disable-SafeLinksRule -MockWith {
+            }
+
             Mock -CommandName Remove-SafeLinksRule -MockWith {
             }
 
@@ -119,7 +125,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     Identity          = 'TestRule'
                     Credential        = $Credential
                     SafeLinksPolicy   = 'TestSafeLinksPolicy'
-                    Enabled           = $true
+                    Enabled           = $false
                     Priority          = 0
                     RecipientDomainIs = @('fabrikam.com') # Drift
                 }
@@ -132,6 +138,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             It 'Should call the Set method' {
                 (New-M365DSCResourceInstance -ResourceName 'EXOSafeLinksRule' -Property $testParams).Set()
                 Should -Invoke -CommandName Set-SafeLinksRule -Exactly 1
+                Should -Invoke -CommandName Disable-SafeLinksRule -Exactly 1
             }
         }
 

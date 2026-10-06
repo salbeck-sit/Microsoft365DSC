@@ -26,7 +26,7 @@ Configuration Example
     {
         AADTokenLifetimePolicy 'AADTokenLifetimePolicy-Example'
         {
-            DisplayName           = "PolicyDisplayName"
+            DisplayName           = "Expense Reporting Token Lifetime"
             Ensure                = "Absent"
             ApplicationId         = $ApplicationId
             TenantId              = $TenantId

@@ -31,9 +31,15 @@
             Properties = @('AppId')
         }
         @{
+            Name       = '<application-id-uri>'
+            Meaning    = 'Application ID URI of the app registration that protects a custom authentication extension endpoint. The host must match the target URL and the app must request CustomAuthenticationExtension.Receive.Payload.'
+            Sample     = 'api://api.contoso.com/7b3e9c41-2d5a-4f86-b0e7-1c9a4d6f2e58'
+            Properties = @('AuthenticationConfigurationResourceId')
+        }
+        @{
             Name       = '<audio-file-id>'
             Meaning    = 'ID returned by Import-CsOnlineAudioFile for a file uploaded to the tenant.'
-            Sample     = '3c1e1b0a-9f47-4b8a-bb2c-6d0e5a7c9142'
+            Sample     = '3c1e1b0a9f474b8abb2c6d0e5a7c9142'
             Properties = @('AudioFileId')
         }
         @{
@@ -143,6 +149,24 @@
             Meaning    = 'Rotated client secret, so the update example differs from the create example.'
             Sample     = 'dEf4W~kTn7QbYcRz2_XvUtSrQpOnMlKjIhGfEdCb'
             Properties = @('ClientSecret')
+        }
+        @{
+            Name       = '<compliance-recording-application-id>'
+            Meaning    = 'Object ID of the application instance of a policy-based recording bot registered in the tenant.'
+            Sample     = '5b6d2c41-8e93-4f07-a1c5-3d9e7b2f8a60'
+            Properties = @('Id')
+        }
+        @{
+            Name       = '<compliance-recording-call-queue-template-id>'
+            Meaning    = 'ID returned by New-CsComplianceRecordingForCallQueueTemplate for a template that invites the recording bots to the calls of a queue.'
+            Sample     = '7d2e9b14-5c3a-4f86-a0e1-3b9c6d2f4a87'
+            Properties = @('ComplianceRecordingForCallQueueTemplateId')
+        }
+        @{
+            Name       = '<compliance-recording-paired-application-id>'
+            Meaning    = 'Object ID of the application instance of a second recording bot that pairs with the first for resiliency.'
+            Sample     = '9e1f4a72-3c58-4b26-8d0e-6a7b5c3f1d94'
+            Properties = @('ComplianceRecordingPairedApplications')
         }
         @{
             Name       = '<defender-machine-id>'
@@ -259,10 +283,16 @@
             Properties = @('Environments')
         }
         @{
+            Name       = '<resource-account-object-id>'
+            Meaning    = 'Object ID of the resource account of an auto attendant.'
+            Sample     = '6f3b1d84-2a9c-4e57-b0d6-8c4e2a7f1b93'
+            Properties = @('OverflowActionTarget', 'TimeoutActionTarget', 'NoAgentActionTarget')
+        }
+        @{
             Name       = '<resource-group-name>'
             Meaning    = 'Name of the Azure resource group holding the resource the example targets.'
             Sample     = 'rg-security-eastus'
-            Properties = @('ResourceGroupName')
+            Properties = @('ResourceGroupName', 'ResourceGroup')
         }
         @{
             Name       = '<rms-template-id>'
@@ -295,6 +325,12 @@
             Properties = @('ServiceBusRuleId')
         }
         @{
+            Name       = '<shared-call-queue-history-template-id>'
+            Meaning    = 'ID returned by New-CsSharedCallQueueHistoryTemplate.'
+            Sample     = 'b4e81c27-9d36-4a5f-8e02-1c7a3f6d9b45'
+            Properties = @('SharedCallQueueHistoryTemplateId')
+        }
+        @{
             Name       = '<snmp-auth-password>'
             Meaning    = 'SNMPv3 authentication password used by a network scanner.'
             Sample     = 'Sn0mpAuth!2026'
@@ -311,6 +347,24 @@
             Meaning    = 'Resource ID of the storage account that receives the diagnostic stream.'
             Sample     = '/subscriptions/63e62ab2-fd92-46ce-a393-2cb338039cc7/resourceGroups/monitoring/providers/Microsoft.Storage/storageAccounts/contosodiagnostics'
             Properties = @('StorageAccountId')
+        }
+        @{
+            Name       = '<team-channel-id>'
+            Meaning    = 'Thread ID of a standard channel of the team that <team-group-id> identifies.'
+            Sample     = '19:3a8f2c71d94e4b6c9e0f5b2d7a1c6e48@thread.tacv2'
+            Properties = @('ChannelId')
+        }
+        @{
+            Name       = '<team-group-id>'
+            Meaning    = 'Object ID of the Microsoft 365 group of a team.'
+            Sample     = '2c7e4a91-6b38-4d05-9f1e-a3d8c5b27e60'
+            Properties = @('DistributionLists', 'CallbackEmailNotificationTarget')
+        }
+        @{
+            Name       = '<team-owner-object-id>'
+            Meaning    = 'Object ID of an owner of the team that <team-group-id> identifies.'
+            Sample     = 'e9a5c3f1-4d72-4b8e-a6c0-5f1d3b9e2a74'
+            Properties = @('ChannelUserObjectId')
         }
         @{
             Name       = '<teams-app-id>'

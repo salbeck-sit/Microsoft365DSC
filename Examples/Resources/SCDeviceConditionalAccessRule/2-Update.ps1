@@ -52,11 +52,11 @@ Configuration Example
             EnableRemovableStorage        = $true;
             Ensure                        = "Present";
             ExchangeActiveSyncHost        = "outlook.office365.com";
-            FirewallStatus                = $true;
+            FirewallStatus                = "Required";
             ForceAppStorePassword         = $false;
             ForceEncryptedBackup          = $false;
             MaxPasswordAttemptsBeforeWipe = 10;
-            MaxPasswordGracePeriod        = 15;
+            MaxPasswordGracePeriod        = "15.00:00:00";
             MoviesRating                  = "USRatingPG13";
             Name                          = "Human Resources{394b}";
             PasswordComplexity            = 1;
@@ -73,7 +73,7 @@ Configuration Example
             RequireEmailProfile           = $true; # Updated Property
             SmartScreenEnabled            = $false;
             SystemSecurityTLS             = $false;
-            TargetGroups                  = @("Communications");
+            TargetGroups                  = @("Sales and Marketing");
             TVShowsRating                 = "USRatingTV14";
             UserAccountControlStatus      = "AlwaysNotify";
             WLANEnabled                   = $true;

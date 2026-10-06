@@ -169,8 +169,8 @@ class IntuneMobileAppsMacOSLobApp : M365DSCResourceBase
                     {
                         $instance = Get-MgBetaDeviceAppManagementMobileApp `
                             -All `
-                            -Filter "(isof('microsoft.graph.macOSLobApp') and DisplayName eq '$($this.DisplayName -replace "'", "''")')" `
-                            -ErrorAction SilentlyContinue
+                            -Filter "DisplayName eq '$($this.DisplayName -replace "'", "''")'" `
+                            -ErrorAction SilentlyContinue | Where-Object -Property '@odata.type' -EQ '#microsoft.graph.macOSLobApp'
                     }
 
                     if ($null -ne $instance)
@@ -273,7 +273,7 @@ class IntuneMobileAppsMacOSLobApp : M365DSCResourceBase
             $appAssignments = Get-MgBetaDeviceAppManagementMobileAppAssignment -MobileAppId $instance.Id
             if ($null -ne $appAssignments -and $appAssignments.Count -gt 0)
             {
-                [array]$appAssignments = $appAssignments | Where-Object -FilterScript { $_.source -eq 'direct' }
+                [array]$appAssignments = $appAssignments | Where-Object -Property source -EQ 'direct'
                 $resultAssignments += ConvertFrom-IntuneMobileAppAssignment `
                     -IncludeDeviceFilter:$true `
                     -Assignments ($appAssignments)
@@ -336,6 +336,7 @@ class IntuneMobileAppsMacOSLobApp : M365DSCResourceBase
             if ($app.Id)
             {
                 $assignmentsHash = ConvertTo-IntuneMobileAppAssignment -IncludeDeviceFilter:$true -Assignments $this.Assignments
+                Wait-M365DSCIntuneMobileAppPublished -AppId $app.Id
                 Update-DeviceAppManagementPolicyAssignment -AppManagementPolicyId $app.Id `
                     -Assignments $assignmentsHash
             }

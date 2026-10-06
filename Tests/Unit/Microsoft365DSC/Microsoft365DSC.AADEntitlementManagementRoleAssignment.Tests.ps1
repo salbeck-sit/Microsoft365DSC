@@ -104,9 +104,13 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                 Mock -CommandName Get-MgBetaRoleManagementEntitlementManagementRoleAssignment -MockWith {
                     return $null
                 }
+
+                Mock -CommandName Get-MgGroup -MockWith {
+                }
             }
             It 'Should return Values from the Get method' {
                 ((New-M365DSCResourceInstance -ResourceName 'AADEntitlementManagementRoleAssignment' -Property $testParams).Get().ToHashtable()).Ensure | Should -Be 'Absent'
+                Should -Invoke -CommandName Get-MgGroup -Exactly 0
             }
             It 'Should return false from the Test method' {
                 (New-M365DSCResourceInstance -ResourceName 'AADEntitlementManagementRoleAssignment' -Property $testParams).Test() | Should -Be $false

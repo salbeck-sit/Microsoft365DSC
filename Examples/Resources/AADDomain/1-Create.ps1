@@ -28,13 +28,11 @@ Configuration Example
         {
             AuthenticationType               = "Managed";
             Ensure                           = "Present";
-            Id                               = "M365x73318397.mail.onmicrosoft.com";
+            Id                               = "fabrikam.com";
             IsAdminManaged                   = $True;
-            IsDefault                        = $True;
-            IsRoot                           = $True;
-            IsVerified                       = $True;
-            PasswordNotificationWindowInDays = 14;
-            PasswordValidityPeriodInDays     = 2147483647;
+            IsDefault                        = $False;
+            IsRoot                           = $False;
+            IsVerified                       = $False;
             ApplicationId                    = $ApplicationId;
             TenantId                         = $TenantId;
             CertificateThumbprint            = $CertificateThumbprint;

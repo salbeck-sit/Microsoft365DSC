@@ -26,9 +26,9 @@ Configuration Example
     {
         SCDeviceConfigurationPolicy 'SCDeviceConfigurationPolicy-Example'
         {
-            Name                  = "Human Resources"
+            Name                  = "Human Resources Device Settings"
             Comment               = "Device Configuration Policy for Human Resources department"
-            Enabled               = $True
+            Enabled               = $true
             Ensure                = "Present"
             ApplicationId         = $ApplicationId
             TenantId              = $TenantId

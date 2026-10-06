@@ -147,7 +147,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
 
             It 'Should call the Set method' {
                 (New-M365DSCResourceInstance -ResourceName 'SCDLPSensitiveInformationType' -Property $testParams).Set()
-                Should -Invoke -CommandName Set-DLPSensitiveInformationType -Exactly 1
+                Should -Invoke -CommandName Set-DLPSensitiveInformationType -Exactly 1 -ParameterFilter { $Identity -eq '12345-12345-12345-12345-12345' }
             }
         }
 

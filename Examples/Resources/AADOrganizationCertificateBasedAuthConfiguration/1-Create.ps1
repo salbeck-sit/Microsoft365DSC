@@ -29,18 +29,18 @@ Configuration Example
             CertificateAuthorities = @(
                 MSFT_MicrosoftGraphcertificateAuthority{
                     IsRootAuthority                   = $True
-                    DeltaCertificateRevocationListUrl = 'pqr.com'
-                    Certificate                       = '<base64-encoded-certificate>'
+                    DeltaCertificateRevocationListUrl = "http://crl.contoso.com/root-delta.crl"
+                    Certificate                       = "<base64-encoded-certificate>"
                 }
                 MSFT_MicrosoftGraphcertificateAuthority{
-                    IsRootAuthority                   = $True
-                    CertificateRevocationListUrl      = 'xyz.com'
-                    DeltaCertificateRevocationListUrl = 'pqr.com'
-                    Certificate                       = '<base64-encoded-certificate-2>'
+                    IsRootAuthority                   = $False
+                    CertificateRevocationListUrl      = "http://crl.contoso.com/issuing.crl"
+                    DeltaCertificateRevocationListUrl = "http://crl.contoso.com/issuing-delta.crl"
+                    Certificate                       = "<base64-encoded-certificate-2>"
                 }
             );
             Ensure                 = "Present";
-            OrganizationId         = "e91d4e0e-d5a5-4e3a-be14-2192592a59af";
+            OrganizationId         = "$TenantId";
             ApplicationId          = $ApplicationId
             TenantId               = $TenantId
             CertificateThumbprint  = $CertificateThumbprint

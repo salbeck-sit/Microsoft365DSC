@@ -26,8 +26,8 @@ Configuration Example
     {
         IntuneMobileAppsManagedGooglePlayApp "IntuneMobileAppsManagedGooglePlayApp-Example"
         {
-            DisplayName           = "Office";
-            PackageId             = "com.microsoft.office";
+            DisplayName           = "Microsoft Copilot";
+            PackageId             = "com.microsoft.office.officehubrow";
             Ensure                = "Absent";
             ApplicationId         = $ApplicationId;
             TenantId              = $TenantId;

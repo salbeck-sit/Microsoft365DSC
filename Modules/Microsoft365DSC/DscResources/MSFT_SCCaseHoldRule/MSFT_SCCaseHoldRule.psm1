@@ -84,7 +84,7 @@ class SCCaseHoldRule : M365DSCResourceBase
                 $nullReturn = $this.GetBoundParameters()
                 $nullReturn.Ensure = 'Absent'
                 $Rules = Invoke-M365DSCCommand -ScriptBlock { Get-CaseHoldRule -Policy $this.Policy -ErrorAction Stop } -SuppressNotFoundError
-                $Rule = $Rules | Where-Object { $_.Name -eq $this.Name }
+                $Rule = $Rules | Where-Object -FilterScript { $_.Name -eq $this.Name -and "$($_.Mode)" -ne 'PendingDeletion' }
 
                 if ($null -eq $Rule)
                 {
@@ -147,7 +147,14 @@ class SCCaseHoldRule : M365DSCResourceBase
             $CreationParams = Remove-M365DSCAuthenticationParameter -BoundParameters $this.GetBoundParameters()
 
             Write-Verbose "Creating new Case Hold Rule $($this.Name) calling the New-CaseHoldRule cmdlet."
-            New-CaseHoldRule @CreationParams
+            try
+            {
+                New-CaseHoldRule @CreationParams -ErrorAction Stop
+            }
+            catch
+            {
+                [SCCaseHoldRule]::ThrowUnlessDeploymentFailure($_)
+            }
         }
         # Compliance Case exists and it should. Update it.
         elseif ($this.Ensure -eq 'Present' -and $CurrentRule.Ensure -eq 'Present')
@@ -159,12 +166,26 @@ class SCCaseHoldRule : M365DSCResourceBase
                 ContentMatchQuery = $this.ContentMatchQuery
             }
             Write-Verbose "Updating Case Hold Rule $($this.Name) by calling the Set-CaseHoldRule cmdlet."
-            Set-CaseHoldRule @UpdateParams
+            try
+            {
+                Set-CaseHoldRule @UpdateParams -ErrorAction Stop
+            }
+            catch
+            {
+                [SCCaseHoldRule]::ThrowUnlessDeploymentFailure($_)
+            }
         }
         # Compliance Case exists but it shouldn't. Remove it.
         elseif ($this.Ensure -eq 'Absent' -and $CurrentRule.Ensure -eq 'Present')
         {
-            Remove-CaseHoldRule -Identity $this.Name -Confirm:$false
+            try
+            {
+                Remove-CaseHoldRule -Identity $this.Name -Confirm:$false -ErrorAction Stop
+            }
+            catch
+            {
+                [SCCaseHoldRule]::ThrowUnlessDeploymentFailure($_)
+            }
         }
     }
 
@@ -240,6 +261,15 @@ class SCCaseHoldRule : M365DSCResourceBase
 
             throw
         }
+    }
+
+    hidden static [void] ThrowUnlessDeploymentFailure([System.Management.Automation.ErrorRecord] $ErrorRecord)
+    {
+        if ($ErrorRecord.Exception.Message -notlike '*failed to be deployed*')
+        {
+            throw $ErrorRecord
+        }
+        Write-Warning -Message ($ErrorRecord.Exception.Message -split "`r?`n")[0]
     }
 
     hidden [SCCaseHoldRule] AsResult([System.Object] $Values)

@@ -30,7 +30,7 @@ Configuration Example
             StorageMaximumLevel                                            = 26214400
             LocaleId                                                       = 1033
             Template                                                       = "STS#3"
-            Owner                                                          = "admin@$TenantId"
+            Owner                                                          = "AdeleV@$TenantId"
             Title                                                          = "Marketing"
             TimeZoneId                                                     = 13
             StorageWarningLevel                                            = 25574400

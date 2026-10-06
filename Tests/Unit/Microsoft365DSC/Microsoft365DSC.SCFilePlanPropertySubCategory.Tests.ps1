@@ -82,6 +82,20 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
             It 'Should call the Set method' {
                 (New-M365DSCResourceInstance -ResourceName 'SCFilePlanPropertySubCategory' -Property $testParams).Set()
             }
+
+            It 'Should throw from the Set method when a sub-category with the same name is pending deletion' {
+                Mock -CommandName Get-FilePlanPropertySubCategory -MockWith {
+                    return @{
+                        DisplayName = 'Demo Sub-Category'
+                        ParentId    = '11111-22222-33333-44444-55555'
+                        Guid        = '66666-77777-88888-99999-00000'
+                        Mode        = 'PendingDeletion'
+                    }
+                }
+
+                { (New-M365DSCResourceInstance -ResourceName 'SCFilePlanPropertySubCategory' -Property $testParams).Set() } | Should -Throw -ExpectedMessage '*pending deletion*'
+                Should -Invoke -CommandName New-FilePlanPropertySubCategory -Exactly 0
+            }
         }
 
         Context -Name 'Category already exists' -Fixture {
@@ -141,6 +155,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     return @(@{
                             DisplayName = 'Demo Sub-Category'
                             ParentId    = '11111-22222-33333-44444-55555'
+                            Guid        = '66666-77777-88888-99999-00000'
                         })
                 }
             }
@@ -151,6 +166,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
 
             It 'Should delete from the Set method' {
                 (New-M365DSCResourceInstance -ResourceName 'SCFilePlanPropertySubCategory' -Property $testParams).Set()
+                Should -Invoke -CommandName Remove-FilePlanPropertySubCategory -Exactly 1 -ParameterFilter { $Identity -eq '66666-77777-88888-99999-00000' }
             }
 
             It 'Should return Present from the Get method' {

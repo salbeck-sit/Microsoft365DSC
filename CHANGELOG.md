@@ -31,6 +31,12 @@
   * Added support for the `EnabledPreviewFeatures` property.
   * Fixed an issue where a comparison threw when the tenant returned no value for a
     collection property.
+* AADB2BManagementPolicy
+  * Fixed an issue where the settings were reported as in the desired state when they
+    could not be read.
+* AADB2CAuthenticationMethodsPolicy
+  * [BREAKING CHANGE] Removed the `Ensure` property. The settings always exist and cannot
+    be removed.
 * AADClaimsMappingPolicy
   * [BREAKING CHANGE] Removed the `Description` property.
   * Fixed an issue where creating or updating a policy failed with
@@ -160,6 +166,9 @@
     `AADAccessReview[Definition|Policy]` instead.
 * AADLifecycleWorkflowSettings
   * Added support for the `QuarantineConfiguration` property.
+* AADMultiTenantOrganizationIdentitySyncPolicyTemplate
+  * [BREAKING CHANGE] Removed the `Ensure` property. The settings always exist and cannot
+    be removed.
 * AADOnPremisesPublishingProfilesSettings
   * Added support for the `IsDefaultAccessEnabled` property.
 * AADOrganizationCertificateBasedAuthConfiguration
@@ -201,6 +210,9 @@
 * AADRoleSetting
   * Fixed an issue where a configuration that identified the role by its display name
     instead of its id was always reported as compliant and never applied its settings.
+* AADSecurityDefaults
+  * [BREAKING CHANGE] Removed the `Ensure` property. The settings always exist and cannot
+    be removed.
 * AADServicePrincipal
   * [BREAKING CHANGE] Fixed an issue where the allowed values for the
     `MSFT_AADServicePrincipalClaimsPolicyGroupFilter` properties `type` and `matchOn`
@@ -211,6 +223,9 @@
   * Added support for the `LoginUrl`, `Description`, `NotificationEmailAddresses`,
     `SamlSingleSignOnSettings`, `TokenEncryptionKeyId` and
     `PreferredTokenSigningKeyThumbprint` properties.
+* AADTenantAppManagementPolicy
+  * Fixed an issue where the settings were reported as in the desired state when they
+    could not be read.
 * AADTenantDetails
   * Added support for the `BusinessPhones`, `City`, `PostalCode`, `PreferredLanguage`,
     `PrivacyProfile`, `State` and `Street` properties.
@@ -283,6 +298,9 @@
 * EXOArcConfig
   * Fixed an issue where the `ArcTrustedSealers` property was exported as
     a single string instead of an array.
+* EXODataAtRestEncryptionPolicyAssignment
+  * Fixed an issue where a tenant without an assigned data encryption policy was reported
+    as in the desired state.
 * EXODistributionGroup
   * [BREAKING CHANGE] Removed deprecated property `Notes`.
   * Fixed an issue where `AcceptMessagesOnlyFromSendersOrMembers` and `RoomList` always
@@ -297,6 +315,9 @@
   * Fixed an issue where removing a group failed.
 * EXOEmailAddressPolicy
   * Fixed an issue where changes to `ManagedByFilter` were not applied.
+* EXOEmailTenantSettings
+  * Fixed an issue where the settings were reported as in the desired state when they
+    could not be read.
 * EXOHostedContentFilterRule
   * Fixed an issue where changing `Enabled` on an existing rule had no effect.
 * EXOHostedOutboundSpamFilterRule
@@ -304,6 +325,8 @@
   * Fixed an issue where creating a rule failed because the outbound spam filter policy
     created in the same configuration was not yet visible.
 * EXOIRMConfiguration
+  * [BREAKING CHANGE] Removed the `Ensure` property. The settings always exist and cannot
+    be removed.
   * [BREAKING CHANGE] Removed deprecated property `EnablePortalTrackingLogs`.
 * EXOJournalRule
   * Fixed an issue where enabling, disabling or removing a journal rule failed or hung waiting
@@ -329,6 +352,9 @@
   * Reinstated deprecated property `Type`.
 * EXOMigration
   * [BREAKING CHANGE] Removed the `BadItemLimit` and `LargeItemLimit` properties.
+* EXOPerimeterConfiguration
+  * [BREAKING CHANGE] Removed the `Ensure` property. The settings always exist and cannot
+    be removed.
 * EXOPlace
   * [BREAKING CHANGE] Removed deprecated property `Desks`.
 * EXOQuarantinePolicy
@@ -342,6 +368,9 @@
   * Fixed an issue where removing a permission without `AccessRights` failed.
 * EXORemoteDomain
   * Fixed an issue where removing a remote domain failed when `Name` was not specified.
+* EXOResourceConfiguration
+  * [BREAKING CHANGE] Removed the `Ensure` property. The settings always exist and cannot
+    be removed.
 * EXORoleAssignmentPolicy
   * Fixed an issue where removing a policy failed while it still had management role
     assignments.
@@ -810,6 +839,9 @@
     reported as the configured one.
   * Fixed an issue where a rejected `AssignmentTarget` group was not reported as an
     error.
+* IntuneWindowsBackupForOrganizationConfiguration
+  * Fixed an issue where the settings were reported as in the desired state when they
+    could not be read.
 * IntuneWindowsUpdateForBusinessHotpatchProfileWindows10
   * Added support for the `ApprovalSettings` property.
 * IntuneWindowsUpdateForBusinessRingUpdateProfileWindows10
@@ -832,6 +864,9 @@
   * Added support for the `Theme` property.
 * O365OrgCustomizationSetting
   * [BREAKING CHANGE] Renamed the property `Ensure` to `State`.
+* ODSettings
+  * [BREAKING CHANGE] Removed the `Ensure` property. The settings always exist and cannot
+    be removed.
 * PlannerBucket
   * [BREAKING CHANGE] Renamed the property `BucketId` to `Id`.
   * Fixed the delegated Graph permissions, which listed the application-only `Tasks.Read.All`
@@ -996,6 +1031,8 @@
   * Fixed an issue where a removed policy that was still pending deletion blocked creating
     a policy with the same name.
 * SPOAccessControlSettings
+  * [BREAKING CHANGE] Removed the `Ensure` property. The settings always exist and cannot
+    be removed.
   * Added property `RestrictResourceAccountAccess`.
 * SPOHubSite
   * Fixed an issue where removing a principal from `AllowedToJoin` granted it join rights.
@@ -1017,6 +1054,8 @@
   * Fixed an issue where an Exchange result source with `UseAutoDiscover` set to `$true` was
     created without the AutoDiscover URL.
 * SPOSharingSettings
+  * [BREAKING CHANGE] Removed the `Ensure` property. The settings always exist and cannot
+    be removed.
   * Added properties `AllowGuestUserShareToUsersNotInSiteCollection`,
     `CoreDefaultShareLinkRole`, `CoreDefaultShareLinkScope`,
     `CoreLoopSharingCapability`, `CoreLoopDefaultSharingLinkScope`,
@@ -1056,6 +1095,8 @@
 * SPOStorageEntity
   * Fixed an issue where removing a storage entity failed with access denied.
 * SPOTenantSettings
+  * [BREAKING CHANGE] Removed the `Ensure` property. The settings always exist and cannot
+    be removed.
   * Added properties `AllowAnonymousMeetingParticipantsToAccessWhiteboards`,
     `AllowAppsBypassOfUnmanagedDevicePolicy`, `AllowCommentsTextOnEmailEnabled`,
     `AllowFileArchive`, `AllOrganizationSecurityGroupId`,

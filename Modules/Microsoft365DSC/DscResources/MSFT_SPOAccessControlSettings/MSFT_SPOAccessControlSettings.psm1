@@ -53,11 +53,6 @@ class SPOAccessControlSettings : M365DSCResourceBase
     [System.Nullable[System.Boolean]] $RestrictResourceAccountAccess
 
     [DscProperty()]
-    [System.ComponentModel.Description('Only value accepted is ''Present''')]
-    [ValidateSet('Present', 'Absent')]
-    [System.String] $Ensure
-
-    [DscProperty()]
     [System.ComponentModel.Description('Credentials of the account to authenticate with.')]
     [System.Management.Automation.PSCredential] $Credential
 
@@ -148,7 +143,6 @@ class SPOAccessControlSettings : M365DSCResourceBase
                 CertificatePath               = $this.CertificatePath
                 CertificatePassword           = $this.CertificatePassword
                 ManagedIdentity               = $this.ManagedIdentity
-                Ensure                        = 'Present'
                 AccessTokens                  = $this.AccessTokens
             })
         }

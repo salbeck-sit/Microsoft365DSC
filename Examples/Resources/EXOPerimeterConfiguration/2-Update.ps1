@@ -28,7 +28,6 @@ Configuration Example
         {
             IsSingleInstance      = 'Yes'
             GatewayIPAddresses    = @("192.0.2.10", "192.0.2.11")
-            Ensure                = 'Present'
             ApplicationId         = $ApplicationId
             TenantId              = $TenantId
             CertificateThumbprint = $CertificateThumbprint

@@ -69,7 +69,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                 $testParams = @{
                     OneDriveStorageQuota = 1024
                     IsSingleInstance     = 'Yes'
-                    Ensure               = 'Present'
                     Credential           = $Credential
                 }
 
@@ -78,8 +77,8 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                 }
             }
 
-            It 'Should return false from the Test method' {
-                (New-M365DSCResourceInstance -ResourceName 'ODSettings' -Property $testParams).Test() | Should -Be $false
+            It 'Should throw from the Test method' {
+                { (New-M365DSCResourceInstance -ResourceName 'ODSettings' -Property $testParams).Test() } | Should -Throw -ExpectedMessage 'Failed to get Tenant information'
             }
 
             It 'Updates the OneDriveSettings in the Set method' {
@@ -107,8 +106,8 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                 }
             }
 
-            It 'Should return Ensure equals to Present from the Get method' {
-                ((New-M365DSCResourceInstance -ResourceName 'ODSettings' -Property $testParams).Get().ToHashtable()).Ensure | Should -Be 'Present'
+            It 'Should return Values from the Get method' {
+                ((New-M365DSCResourceInstance -ResourceName 'ODSettings' -Property $testParams).Get().ToHashtable()).OneDriveStorageQuota | Should -Be 1024
             }
 
             It 'Should configure OneDrive settings in the Set method' {

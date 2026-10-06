@@ -81,7 +81,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     DecryptAttachmentForEncryptOnly            = $False
                     EDiscoverySuperUserEnabled                 = $True
                     EnablePdfEncryption                        = $true # Drift
-                    Ensure                                     = 'Present'
                     InternalLicensingEnabled                   = $True
                     JournalReportDecryptionEnabled             = $True
                     LicensingLocation                          = 'https://contoso.com/_wmcs/licensing'
@@ -114,7 +113,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     DecryptAttachmentForEncryptOnly            = $False
                     EDiscoverySuperUserEnabled                 = $True
                     EnablePdfEncryption                        = $False
-                    Ensure                                     = 'Present'
                     InternalLicensingEnabled                   = $True
                     JournalReportDecryptionEnabled             = $True
                     LicensingLocation                          = 'https://contoso.com/_wmcs/licensing'

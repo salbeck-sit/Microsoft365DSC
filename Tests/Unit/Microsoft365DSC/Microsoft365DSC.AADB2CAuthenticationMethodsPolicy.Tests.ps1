@@ -62,7 +62,6 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     IsPhoneOneTimePasswordAuthenticationEnabled = $True;
                     IsSingleInstance                            = "Yes";
                     IsUserNameAuthenticationEnabled             = $False;
-                    Ensure                                      = 'Present'
                     Credential                                  = $Credential;
                 }
             }
@@ -79,13 +78,12 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                     IsPhoneOneTimePasswordAuthenticationEnabled = $False; # Drift
                     IsSingleInstance                            = "Yes";
                     IsUserNameAuthenticationEnabled             = $False;
-                    Ensure                                      = 'Present'
                     Credential                                  = $Credential;
                 }
             }
 
             It 'Should return Values from the Get method' {
-                ((New-M365DSCResourceInstance -ResourceName 'AADB2CAuthenticationMethodsPolicy' -Property $testParams).Get().ToHashtable()).Ensure | Should -Be 'Present'
+                ((New-M365DSCResourceInstance -ResourceName 'AADB2CAuthenticationMethodsPolicy' -Property $testParams).Get().ToHashtable()).IsPhoneOneTimePasswordAuthenticationEnabled | Should -Be $true
             }
 
             It 'Should return false from the Test method' {

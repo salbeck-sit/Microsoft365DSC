@@ -95,6 +95,11 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
 
             It 'Should return Values from the Get method' {
                 ((New-M365DSCResourceInstance -ResourceName 'IntuneWindowsBackupForOrganizationConfiguration' -Property $testParams).Get().ToHashtable()).State | Should -BeIn @('disabled', 'enabled', 'notConfigured')
+
+                Mock -CommandName Get-MgBetaDeviceManagementDeviceEnrollmentConfiguration -MockWith {
+                    return $null
+                }
+                { (New-M365DSCResourceInstance -ResourceName 'IntuneWindowsBackupForOrganizationConfiguration' -Property $testParams).Get() } | Should -Throw '*Could not find the Intune Windows Backup For Organization Configuration.*'
             }
 
             It 'Should return false from the Test method' {

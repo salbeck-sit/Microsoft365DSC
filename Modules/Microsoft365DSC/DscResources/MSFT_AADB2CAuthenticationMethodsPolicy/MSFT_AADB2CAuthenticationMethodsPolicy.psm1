@@ -21,11 +21,6 @@ class AADB2CAuthenticationMethodsPolicy : M365DSCResourceBase
     [System.Nullable[System.Boolean]] $IsPhoneOneTimePasswordAuthenticationEnabled
 
     [DscProperty()]
-    [System.ComponentModel.Description('Present ensures the instance exists, absent ensures it is removed.')]
-    [ValidateSet('Absent', 'Present')]
-    [System.String] $Ensure
-
-    [DscProperty()]
     [System.ComponentModel.Description('Credentials of the workload''s Admin')]
     [System.Management.Automation.PSCredential] $Credential
 
@@ -82,14 +77,11 @@ class AADB2CAuthenticationMethodsPolicy : M365DSCResourceBase
             $this.AddTelemetry('Get')
             #endregion
 
-            $nullResult = $this.GetBoundParameters()
-            $nullResult.Ensure = 'Absent'
-
             $instance = Get-MgBetaPolicyB2CAuthenticationMethodPolicy -ErrorAction SilentlyContinue
 
             if ($null -eq $instance)
             {
-                return $this.AsResult($nullResult)
+                throw 'There was an error retrieving values from the Get function in AADB2CAuthenticationMethodsPolicy.'
             }
 
             $results = @{
@@ -97,7 +89,6 @@ class AADB2CAuthenticationMethodsPolicy : M365DSCResourceBase
                 IsEmailPasswordAuthenticationEnabled        = $instance.IsEmailPasswordAuthenticationEnabled
                 IsUserNameAuthenticationEnabled             = $instance.IsUserNameAuthenticationEnabled
                 IsPhoneOneTimePasswordAuthenticationEnabled = $instance.IsPhoneOneTimePasswordAuthenticationEnabled
-                Ensure                                      = 'Present'
                 Credential                                  = $this.Credential
                 ApplicationId                               = $this.ApplicationId
                 TenantId                                    = $this.TenantId

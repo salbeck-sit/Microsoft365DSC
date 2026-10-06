@@ -158,6 +158,11 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
 
             It 'Should return Values from the Get method' {
                 ((New-M365DSCResourceInstance -ResourceName 'AADTenantAppManagementPolicy' -Property $testParams).Get().ToHashtable()).IsSingleInstance | Should -Be 'Yes'
+
+                Mock -CommandName Get-MgBetaPolicyDefaultAppManagementPolicy -MockWith {
+                    return $null
+                }
+                { (New-M365DSCResourceInstance -ResourceName 'AADTenantAppManagementPolicy' -Property $testParams).Get() } | Should -Throw '*Could not find the tenant app management policy.*'
             }
 
             It 'Should return false from the Test method' {

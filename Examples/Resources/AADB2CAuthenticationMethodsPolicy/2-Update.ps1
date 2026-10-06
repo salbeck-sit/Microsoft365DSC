@@ -26,7 +26,6 @@ Configuration Example
     {
         AADB2CAuthenticationMethodsPolicy "AADB2CAuthenticationMethodsPolicy-Example"
         {
-            Ensure                                      = "Present";
             IsEmailPasswordAuthenticationEnabled        = $True;
             IsPhoneOneTimePasswordAuthenticationEnabled = $True;
             IsSingleInstance                            = "Yes";

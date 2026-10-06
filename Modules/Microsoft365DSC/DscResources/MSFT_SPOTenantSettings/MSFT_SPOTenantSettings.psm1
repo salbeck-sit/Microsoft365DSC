@@ -458,11 +458,6 @@ class SPOTenantSettings : M365DSCResourceBase
     [System.String] $SpecialCharactersStateInFileFolderNames
 
     [DscProperty()]
-    [System.ComponentModel.Description('Only accepted value is ''Present''.')]
-    [ValidateSet('Present', 'Absent')]
-    [System.String] $Ensure
-
-    [DscProperty()]
     [System.ComponentModel.Description('Credentials of the account to authenticate with.')]
     [System.Management.Automation.PSCredential] $Credential
 
@@ -521,9 +516,6 @@ class SPOTenantSettings : M365DSCResourceBase
 
                 $this.AddTelemetry('Get')
             }
-
-            $nullReturn = $this.GetBoundParameters()
-            $nullReturn.Ensure = 'Absent'
 
             $SPOTenantSettings = Get-PnPTenant -ErrorAction Stop
             $SPOTenantGraphSettings = Get-MgAdminSharepointSetting -Property *
@@ -695,7 +687,6 @@ class SPOTenantSettings : M365DSCResourceBase
                 CertificatePassword                                            = $this.CertificatePassword
                 CertificatePath                                                = $this.CertificatePath
                 ManagedIdentity                                                = $this.ManagedIdentity
-                Ensure                                                         = 'Present'
                 AccessTokens                                                   = $this.AccessTokens
             }
 

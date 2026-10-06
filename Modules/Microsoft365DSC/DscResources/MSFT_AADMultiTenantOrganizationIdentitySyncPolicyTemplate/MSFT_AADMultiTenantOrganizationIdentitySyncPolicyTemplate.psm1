@@ -17,11 +17,6 @@ class AADMultiTenantOrganizationIdentitySyncPolicyTemplate : M365DSCResourceBase
     [MSFT_AADMultiTenantOrganizationIdentitySyncPolicyTemplateUserSyncInbound] $UserSyncInbound
 
     [DscProperty()]
-    [System.ComponentModel.Description('Present ensures the instance exists, absent ensures it is removed.')]
-    [ValidateSet('Absent', 'Present')]
-    [System.String] $Ensure
-
-    [DscProperty()]
     [System.ComponentModel.Description('Credentials of the workload''s Admin')]
     [System.Management.Automation.PSCredential] $Credential
 
@@ -78,13 +73,11 @@ class AADMultiTenantOrganizationIdentitySyncPolicyTemplate : M365DSCResourceBase
             $this.AddTelemetry('Get')
             #endregion
 
-            $nullResult = $this.GetBoundParameters()
-            $nullResult.Ensure = 'Absent'
             $instance = Get-MgBetaPolicyCrossTenantAccessPolicyTemplateMultiTenantOrganizationIdentitySynchronization -ErrorAction SilentlyContinue
 
             if ($null -eq $instance)
             {
-                return $this.AsResult($nullResult)
+                throw 'There was an error retrieving values from the Get function in AADMultiTenantOrganizationIdentitySyncPolicyTemplate.'
             }
 
             $UserSyncInboundValue = @{
@@ -95,7 +88,6 @@ class AADMultiTenantOrganizationIdentitySyncPolicyTemplate : M365DSCResourceBase
                 IsSingleInstance         = 'Yes'
                 TemplateApplicationLevel = $instance.TemplateApplicationLevel
                 UserSyncInbound          = $UserSyncInboundValue
-                Ensure                   = 'Present'
                 Credential               = $this.Credential
                 ApplicationId            = $this.ApplicationId
                 TenantId                 = $this.TenantId

@@ -26,7 +26,6 @@ Configuration Example
     {
         AADMultiTenantOrganizationIdentitySyncPolicyTemplate "AADMultiTenantOrganizationIdentitySyncPolicyTemplate-Example"
         {
-            Ensure                   = "Present";
             IsSingleInstance         = "Yes";
             TemplateApplicationLevel = "newPartners,existingPartners";
             UserSyncInbound          = MSFT_AADMultiTenantOrganizationIdentitySyncPolicyTemplateUserSyncInbound{

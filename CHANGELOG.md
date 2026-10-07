@@ -1316,6 +1316,8 @@
 * M365DSCModuleMgmt
   * Added a workaround for PnP.PowerShell 3.4 crashing with a stack overflow when another
     module loaded a different `Microsoft.Identity.Client` version first.
+  * Fixed an issue where connecting to Microsoft Graph failed when a newer version of
+    `Microsoft.Graph.Authentication` than the required one was installed.
 * M365DSCReport
   * Updated the `Markdown` configuration report layout and content generation.
 * M365DSCPermissions
@@ -1349,7 +1351,7 @@
     `System.IO.Pipelines` in the PowerShell 7 session of the Local Configuration Manager.
   * Removed the internal `Initialize-WindowsPowerShellSession` function.
 * DEPENDENCIES
-  * Added `M365DSC.Mgx` with version 2.1.8.
+  * Added `M365DSC.Mgx` with version 2.1.9.
   * Added `M365DSC.PSDesiredStateConfiguration` with version 3.1.9.
   * Updated `DSCParser` to version 3.1.0.5.
   * Updated `Microsoft.Graph.*` to version 2.41.1.

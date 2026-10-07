@@ -742,23 +742,25 @@ function Confirm-M365DSCLoadedModule
         Register-M365DSCPnPIdentityClientResolver
     }
 
+    $importModuleSplat = @{
+        Name                = $ModuleName
+        RequiredVersion     = $manifestModule.RequiredVersion
+        Global              = $true
+        Alias               = @()
+        Cmdlet              = @()
+        Variable            = @()
+        DisableNameChecking = $true
+    }
+
+    if ($manifestModule.Commands.Count -gt 0)
+    {
+        $importModuleSplat.Add('Function', $manifestModule.Commands)
+        $importModuleSplat.Cmdlet = $manifestModule.Commands
+    }
+
     if ($null -eq $loadedModule)
     {
         Write-Verbose -Message "Module '$ModuleName' is not loaded. Importing it now."
-        $importModuleSplat = @{
-            Name             = $ModuleName
-            RequiredVersion  = $manifestModule.RequiredVersion
-            Global           = $true
-            Alias            = @()
-            Cmdlet           = @()
-            Variable         = @()
-            DisableNameChecking = $true
-        }
-        if ($manifestModule.Commands.Count -gt 0)
-        {
-            $importModuleSplat.Add('Function', $manifestModule.Commands)
-            $importModuleSplat.Cmdlet = $manifestModule.Commands
-        }
         Import-M365DSCDependencyModule -Parameters $importModuleSplat
         Write-Verbose -Message "Module '$ModuleName' with version '$($manifestModule.RequiredVersion)' has been imported."
     }
@@ -767,15 +769,7 @@ function Confirm-M365DSCLoadedModule
         Write-Verbose -Message "Module '$ModuleName' is loaded but the version '$($loadedModule.Version)' does not match the required version '$($manifestModule.RequiredVersion)'."
         Remove-Module -Name $ModuleName -Force -ErrorAction SilentlyContinue
         Write-Verbose -Message "Unloaded module '$ModuleName' with version '$($loadedModule.Version)'."
-        Import-M365DSCDependencyModule -Parameters @{
-            Name                = $ModuleName
-            RequiredVersion     = $manifestModule.RequiredVersion
-            Global              = $true
-            Alias               = @()
-            Cmdlet              = @()
-            Variable            = @()
-            DisableNameChecking = $true
-        }
+        Import-M365DSCDependencyModule -Parameters $importModuleSplat
         Write-Verbose -Message "Re-imported module '$ModuleName' with version '$($manifestModule.RequiredVersion)'."
     }
     else

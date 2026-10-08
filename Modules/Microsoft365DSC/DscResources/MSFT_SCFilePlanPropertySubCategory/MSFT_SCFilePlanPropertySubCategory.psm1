@@ -140,9 +140,10 @@ class SCFilePlanPropertySubCategory : M365DSCResourceBase
         if ($this.Ensure -eq 'Present' -and $Current.Ensure -eq 'Absent')
         {
             $pendingProperty = Get-FilePlanPropertySubCategory -ErrorAction Stop | Where-Object -FilterScript { $_.DisplayName -eq $this.Name -and "$($_.Mode)" -eq 'PendingDeletion' }
-            if ($null -ne $pendingProperty)
+            foreach ($pending in $pendingProperty)
             {
-                throw "File plan sub-category '$($this.Name)' is pending deletion and cannot be created again until the deletion completes. To complete the deletion now, run Remove-FilePlanPropertySubCategory -Identity '$(@($pendingProperty)[0].Guid)' -ForceDeletion."
+                Write-Verbose -Message "Completing the pending deletion of the file plan sub-category {$($this.Name)}"
+                Remove-FilePlanPropertySubCategory -Identity $pending.Guid -ForceDeletion -Confirm:$false -ErrorAction Stop
             }
 
             $CreationParams = Remove-M365DSCAuthenticationParameter -BoundParameters $this.GetBoundParameters()
@@ -169,6 +170,7 @@ class SCFilePlanPropertySubCategory : M365DSCResourceBase
                 elseif ("$($property.Mode)" -ne 'PendingDeletion')
                 {
                     Remove-FilePlanPropertySubCategory -Identity $property.Guid -Confirm:$false -ErrorAction Stop
+                    Remove-FilePlanPropertySubCategory -Identity $property.Guid -ForceDeletion -Confirm:$false -ErrorAction Stop
                 }
                 else
                 {

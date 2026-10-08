@@ -479,14 +479,31 @@ class AADUser : M365DSCResourceBase
                     Write-Verbose -Message 'PasswordProfile property will not be updated'
                 }
 
-                # Remove the current custom security attributes before applying the desired state
                 if ($null -ne $this.CustomSecurityAttributes -and $user.CustomSecurityAttributes.Count -gt 0)
                 {
                     $currentSCAForDelete = $this.GetCustomSecurityAttributesAsCmdletHashtable($user.CustomSecurityAttributes, $true)
-                    $CSAParams = @{
-                        customSecurityAttributes = $currentSCAForDelete
+                    if (-not $creationParams.ContainsKey('customSecurityAttributes'))
+                    {
+                        $creationParams.Add('customSecurityAttributes', @{})
                     }
-                    Update-MgUser -UserId $this.UserPrincipalName -BodyParameter $CSAParams
+
+                    foreach ($attributeSetName in $currentSCAForDelete.Keys)
+                    {
+                        $desiredAttributeSet = $creationParams.customSecurityAttributes[$attributeSetName]
+                        if ($null -eq $desiredAttributeSet)
+                        {
+                            $creationParams.customSecurityAttributes.Add($attributeSetName, $currentSCAForDelete[$attributeSetName])
+                            continue
+                        }
+
+                        foreach ($attributeName in $currentSCAForDelete[$attributeSetName].Keys)
+                        {
+                            if (-not $desiredAttributeSet.ContainsKey($attributeName))
+                            {
+                                $desiredAttributeSet.Add($attributeName, $null)
+                            }
+                        }
+                    }
                 }
 
                 Update-MgUser -UserId $this.UserPrincipalName -BodyParameter $creationParams

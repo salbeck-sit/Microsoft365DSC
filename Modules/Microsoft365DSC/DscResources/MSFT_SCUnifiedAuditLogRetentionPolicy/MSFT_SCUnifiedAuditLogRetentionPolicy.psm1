@@ -197,6 +197,7 @@ class SCUnifiedAuditLogRetentionPolicy : M365DSCResourceBase
         elseif ($this.Ensure -eq 'Absent' -and $currentInstance.Ensure -eq 'Present')
         {
             Write-Verbose -Message "Removing the Unified Audit Log Retention Policy with Name {$($this.Name)}"
+            Remove-UnifiedAuditLogRetentionPolicy -Identity $this.Name -Confirm:$false
             Remove-UnifiedAuditLogRetentionPolicy -Identity $this.Name -ForceDeletion -Confirm:$false
         }
     }

@@ -726,24 +726,36 @@ class SCRetentionCompliancePolicy : M365DSCResourceBase
             $pendingPolicy = Invoke-M365DSCCommand -ScriptBlock { Get-RetentionCompliancePolicy -Identity $this.Name -ErrorAction Stop } -SuppressNotFoundError
             if ($null -ne $pendingPolicy -and "$($pendingPolicy.Mode)" -eq 'PendingDeletion')
             {
-                throw "Retention compliance policy '$($this.Name)' is pending deletion and cannot be created again until the deletion completes. To complete the deletion now, run Remove-RetentionCompliancePolicy -Identity '$($pendingPolicy.Guid)' -ForceDeletion."
+                Write-Verbose -Message "Completing the pending deletion of the Retention Compliance Policy {$($this.Name)}"
+                $this.CompleteDeletion($pendingPolicy.Guid)
             }
 
             $CreationParams.Add('Name', $this.Name)
             $CreationParams.Remove('Identity') | Out-Null
             Write-Verbose -Message "Creating new Retention Compliance Policy $($this.Name) with values: $(Convert-M365DscHashtableToString -Hashtable $CreationParams)"
-            try
+            for ($attempt = 1; $attempt -le 10; $attempt++)
             {
-                New-RetentionCompliancePolicy @CreationParams -ErrorAction Stop
-            }
-            catch
-            {
-                if ($_.Exception.Message -notlike '*failed to be deployed*')
+                try
                 {
-                    throw
+                    New-RetentionCompliancePolicy @CreationParams -ErrorAction Stop
+                    break
                 }
+                catch
+                {
+                    if ($_.Exception.Message -like '*failed to be deployed*')
+                    {
+                        Write-Warning -Message "The creation succeeded, but the policy failed to be deployed. The service retries the deployment later. $($_.Exception.Message)"
+                        break
+                    }
 
-                Write-Warning -Message "The creation succeeded, but the policy failed to be deployed. The service retries the deployment later. $($_.Exception.Message)"
+                    if ($_.Exception.Message -notlike '*already exists in scenario*' -or $attempt -eq 10)
+                    {
+                        throw
+                    }
+
+                    Write-Verbose -Message "The deletion of the previous policy is still in progress. Waiting 30 seconds for a maximum of 300 seconds (5 minutes). Total time waited so far {$($attempt * 30) seconds}"
+                    Start-Sleep -Seconds 30
+                }
             }
         }
         elseif ($this.Ensure -eq 'Present' -and $CurrentPolicy.Ensure -eq 'Present')
@@ -819,6 +831,8 @@ class SCRetentionCompliancePolicy : M365DSCResourceBase
                 }
                 $retries++
             }
+
+            $this.CompleteDeletion($this.Name)
         }
     }
 
@@ -883,6 +897,34 @@ class SCRetentionCompliancePolicy : M365DSCResourceBase
             $this.LogError($_, 'Error during Export:')
 
             throw
+        }
+    }
+
+    hidden [void] CompleteDeletion([System.String] $Identity)
+    {
+        for ($attempt = 1; $attempt -le 10; $attempt++)
+        {
+            try
+            {
+                Remove-RetentionCompliancePolicy -Identity $Identity -ForceDeletion -Confirm:$false -ErrorAction Stop
+                return
+            }
+            catch
+            {
+                if ($_.Exception.Message -like '*failed to be deployed*')
+                {
+                    Write-Warning -Message "The deletion succeeded, but the policy failed to be deployed. The service retries the deployment later. $($_.Exception.Message)"
+                    return
+                }
+
+                if ($_.Exception.Message -notlike '*are being deployed. Once deployed, additional actions can be performed*' -or $attempt -eq 10)
+                {
+                    throw
+                }
+
+                Write-Verbose -Message "The policy has pending changes being deployed. Waiting 30 seconds for a maximum of 300 seconds (5 minutes). Total time waited so far {$($attempt * 30) seconds}"
+                Start-Sleep -Seconds 30
+            }
         }
     }
 

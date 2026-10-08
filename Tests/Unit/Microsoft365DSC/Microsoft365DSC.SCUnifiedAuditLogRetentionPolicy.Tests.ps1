@@ -109,6 +109,7 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
 
             It 'Should Remove the group from the Set method' {
                 (New-M365DSCResourceInstance -ResourceName 'SCUnifiedAuditLogRetentionPolicy' -Property $testParams).Set()
+                Should -Invoke -CommandName Remove-UnifiedAuditLogRetentionPolicy -Exactly 1 -ParameterFilter { $Identity -eq 'Test Policy' -and -not $ForceDeletion }
                 Should -Invoke -CommandName Remove-UnifiedAuditLogRetentionPolicy -Exactly 1 -ParameterFilter { $Identity -eq 'Test Policy' -and $ForceDeletion }
             }
         }

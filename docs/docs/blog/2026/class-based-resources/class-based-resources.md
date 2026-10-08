@@ -1,3 +1,7 @@
+---
+date: 2026-09-14
+---
+
 # From Script-Based to Class-Based: Rebuilding Every Microsoft365DSC Resource (Part 1)
 
 <img src="../../../images/FabienTschanz.jpg" style="width:75px;border-radius:50%;border:3px solid black;float:left;" />

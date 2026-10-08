@@ -645,9 +645,12 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
                 (New-M365DSCResourceInstance -ResourceName 'AADUser' -Property $testParams).Test() | Should -Be $false
             }
 
-            It 'Should remove the existing attributes and update them in the Set method' {
+            It 'Should update the attributes in a single request in the Set method' {
                 (New-M365DSCResourceInstance -ResourceName 'AADUser' -Property $testParams).Set()
-                Should -Invoke -CommandName 'Update-MgUser' -Exactly 2
+                Should -Invoke -CommandName 'Update-MgUser' -Exactly 1 -ParameterFilter {
+                    $BodyParameter.customSecurityAttributes.Engineering.Datacenter -eq 'Portland' -and
+                    $BodyParameter.customSecurityAttributes.Engineering.Project.Count -eq 2
+                }
             }
         }
 

@@ -1,6 +1,6 @@
 ﻿# Change log for Microsoft365DSC
 
-# UNRELEASED
+# 2.26.1007.1
 
 * AADAccessReviewDefinition
   * [BREAKING CHANGE] Renamed property `SettingsValue` to `Settings` to match the

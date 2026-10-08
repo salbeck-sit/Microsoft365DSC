@@ -324,6 +324,8 @@ class SCRetentionComplianceRule : M365DSCResourceBase
 
                 Write-Warning -Message "The removal succeeded, but the policy failed to be deployed. The service retries the deployment later. $($_.Exception.Message)"
             }
+
+            $this.CompleteDeletion($this.Name)
         }
     }
 
@@ -403,6 +405,34 @@ class SCRetentionComplianceRule : M365DSCResourceBase
             $this.LogError($_, 'Error during Export:')
 
             throw
+        }
+    }
+
+    hidden [void] CompleteDeletion([System.String] $Identity)
+    {
+        for ($attempt = 1; $attempt -le 10; $attempt++)
+        {
+            try
+            {
+                Remove-RetentionComplianceRule -Identity $Identity -ForceDeletion -Confirm:$false -ErrorAction Stop
+                return
+            }
+            catch
+            {
+                if ($_.Exception.Message -like '*failed to be deployed*')
+                {
+                    Write-Warning -Message "The deletion succeeded, but the policy failed to be deployed. The service retries the deployment later. $($_.Exception.Message)"
+                    return
+                }
+
+                if ($_.Exception.Message -notlike '*are being deployed. Once deployed, additional actions can be performed*' -or $attempt -eq 10)
+                {
+                    throw
+                }
+
+                Write-Verbose -Message "The policy has pending changes being deployed. Waiting 30 seconds for a maximum of 300 seconds (5 minutes). Total time waited so far {$($attempt * 30) seconds}"
+                Start-Sleep -Seconds 30
+            }
         }
     }
 

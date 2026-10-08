@@ -159,7 +159,8 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
 
             It 'Should delete from the Set method' {
                 (New-M365DSCResourceInstance -ResourceName 'SCRetentionComplianceRule' -Property $testParams).Set()
-                Should -Invoke -CommandName 'Remove-RetentionComplianceRule' -Exactly 1 -ParameterFilter { $Confirm -eq $false }
+                Should -Invoke -CommandName 'Remove-RetentionComplianceRule' -Exactly 1 -ParameterFilter { $Confirm -eq $false -and -not $ForceDeletion }
+                Should -Invoke -CommandName 'Remove-RetentionComplianceRule' -Exactly 1 -ParameterFilter { $Confirm -eq $false -and $ForceDeletion }
             }
 
             It 'Should return Present from the Get method' {

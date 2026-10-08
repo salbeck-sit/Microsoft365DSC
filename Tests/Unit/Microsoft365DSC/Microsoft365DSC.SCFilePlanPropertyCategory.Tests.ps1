@@ -145,8 +145,10 @@ Describe -Name $Global:DscHelper.DescribeHeader -Fixture {
 
             It 'Should delete from the Set method' {
                 (New-M365DSCResourceInstance -ResourceName 'SCFilePlanPropertyCategory' -Property $testParams).Set()
-                Should -Invoke -CommandName Remove-FilePlanPropertySubCategory -Exactly 1 -ParameterFilter { $Identity -eq '66666-77777-88888-99999-00000' }
-                Should -Invoke -CommandName Remove-FilePlanPropertyCategory -Exactly 1
+                Should -Invoke -CommandName Remove-FilePlanPropertySubCategory -Exactly 1 -ParameterFilter { $Identity -eq '66666-77777-88888-99999-00000' -and -not $ForceDeletion }
+                Should -Invoke -CommandName Remove-FilePlanPropertySubCategory -Exactly 1 -ParameterFilter { $Identity -eq '66666-77777-88888-99999-00000' -and $ForceDeletion }
+                Should -Invoke -CommandName Remove-FilePlanPropertyCategory -Exactly 1 -ParameterFilter { -not $ForceDeletion }
+                Should -Invoke -CommandName Remove-FilePlanPropertyCategory -Exactly 1 -ParameterFilter { $ForceDeletion }
             }
 
             It 'Should return Present from the Get method' {

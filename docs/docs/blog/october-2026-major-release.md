@@ -18,28 +18,29 @@ The October 2026 release is the largest one so far. Every resource is now a clas
 ## Table of Contents
 
 1. [PowerShell 7.6 and Class-Based Resources](#powershell-76-and-class-based-resources-7445)
-2. [New Permissions](#new-permissions-7445-7496)
-3. [Failed Changes Now Fail the Configuration](#failed-changes-now-fail-the-configuration-7470)
-4. [Exported Instance Names Use Underscores](#exported-instance-names-use-underscores-7447)
-5. [Intune Role Scope Tags Use Display Names](#intune-role-scope-tags-use-display-names-7447)
-6. [Removed Resources](#removed-resources-7445)
-7. [Intune Resources Lose Their V2 Suffix](#intune-resources-lose-their-v2-suffix-7445-7513)
-8. [AADUser - Renamed Properties to Match Microsoft Graph](#aaduser-renamed-properties-to-match-microsoft-graph-7445)
-9. [AADAuthorizationPolicy - New DefaultUserRolePermissions Property](#aadauthorizationpolicy-new-defaultuserrolepermissions-property-7445)
-10. [AADIdentityAPIConnector - New AuthenticationConfiguration Property](#aadidentityapiconnector-new-authenticationconfiguration-property-7445)
-11. [AADDeviceRegistrationPolicy - MultiFactorAuthConfiguration and Unset Properties](#aaddeviceregistrationpolicy-multifactorauthconfiguration-and-unset-properties-7445-7498)
-12. [AADServicePrincipal - Swapped Group Filter Values](#aadserviceprincipal-swapped-group-filter-values-7445)
-13. [AADPIMGroupSetting - Export Limited to PIM-Enabled Groups](#aadpimgroupsetting-export-limited-to-pim-enabled-groups-7495)
-14. [Windows Autopilot Deployment Profiles - Graph Property Names](#windows-autopilot-deployment-profiles-graph-property-names-7445)
-15. [Intune App Assignments and Targeted Apps - New Class Types](#intune-app-assignments-and-targeted-apps-new-class-types-7445)
-16. [SCRetentionCompliancePolicy - Adaptive Scopes](#scretentioncompliancepolicy-adaptive-scopes-7484)
-17. [TeamsChannelTab - New Configuration Property](#teamschanneltab-new-configuration-property-7445)
-18. [SCInsiderRiskPolicy - Tenant Settings Policy](#scinsiderriskpolicy-tenant-settings-policy)
-19. [EXOPhishSimOverrideRule and EXOSecOpsOverrideRule - Single Instance Resources](#exophishsimoverriderule-and-exosecopsoverriderule-single-instance-resources)
-20. [Renamed Properties](#renamed-properties)
-21. [Removed Properties](#removed-properties)
-22. [Changed Types and Accepted Values](#changed-types-and-accepted-values)
-23. [Renamed Embedded Classes](#renamed-embedded-classes-7487)
+2. [Compile Configurations with Invoke-M365DSCConfigurationBuild](#compile-configurations-with-invoke-m365dscconfigurationbuild-7445)
+3. [New Permissions](#new-permissions-7445-7496)
+4. [Failed Changes Now Fail the Configuration](#failed-changes-now-fail-the-configuration-7470)
+5. [Exported Instance Names Use Underscores](#exported-instance-names-use-underscores-7447)
+6. [Intune Role Scope Tags Use Display Names](#intune-role-scope-tags-use-display-names-7447)
+7. [Removed Resources](#removed-resources-7445)
+8. [Intune Resources Lose Their V2 Suffix](#intune-resources-lose-their-v2-suffix-7445-7513)
+9. [AADUser - Renamed Properties to Match Microsoft Graph](#aaduser-renamed-properties-to-match-microsoft-graph-7445)
+10. [AADAuthorizationPolicy - New DefaultUserRolePermissions Property](#aadauthorizationpolicy-new-defaultuserrolepermissions-property-7445)
+11. [AADIdentityAPIConnector - New AuthenticationConfiguration Property](#aadidentityapiconnector-new-authenticationconfiguration-property-7445)
+12. [AADDeviceRegistrationPolicy - MultiFactorAuthConfiguration and Unset Properties](#aaddeviceregistrationpolicy-multifactorauthconfiguration-and-unset-properties-7445-7498)
+13. [AADServicePrincipal - Swapped Group Filter Values](#aadserviceprincipal-swapped-group-filter-values-7445)
+14. [AADPIMGroupSetting - Export Limited to PIM-Enabled Groups](#aadpimgroupsetting-export-limited-to-pim-enabled-groups-7495)
+15. [Windows Autopilot Deployment Profiles - Graph Property Names](#windows-autopilot-deployment-profiles-graph-property-names-7445)
+16. [Intune App Assignments and Targeted Apps - New Class Types](#intune-app-assignments-and-targeted-apps-new-class-types-7445)
+17. [SCRetentionCompliancePolicy - Adaptive Scopes](#scretentioncompliancepolicy-adaptive-scopes-7484)
+18. [TeamsChannelTab - New Configuration Property](#teamschanneltab-new-configuration-property-7445)
+19. [SCInsiderRiskPolicy - Tenant Settings Policy](#scinsiderriskpolicy-tenant-settings-policy)
+20. [EXOPhishSimOverrideRule and EXOSecOpsOverrideRule - Single Instance Resources](#exophishsimoverriderule-and-exosecopsoverriderule-single-instance-resources)
+21. [Renamed Properties](#renamed-properties)
+22. [Removed Properties](#removed-properties)
+23. [Changed Types and Accepted Values](#changed-types-and-accepted-values)
+24. [Renamed Embedded Classes](#renamed-embedded-classes-7487)
 
 ## PowerShell 7.6 and Class-Based Resources ([#7445](https://github.com/Microsoft365DSC/Microsoft365DSC/pull/7445))
 
@@ -51,6 +52,24 @@ The PowerShell requirement however does change. Microsoft365DSC now requires Pow
 * Install Microsoft365DSC for all users in Windows PowerShell.
 
 After the update, run `Update-M365DSCDependencies` from both consoles. The release adds two new dependencies, `M365DSC.Mgx` and `M365DSC.PSDesiredStateConfiguration`, and updates `MicrosoftTeams` to 8.0.0 and `PnP.PowerShell` to 3.4.1. The [PowerShell 7+ support](../user-guide/get-started/powershell7-support.md) page contains additional details.
+
+## Compile Configurations with Invoke-M365DSCConfigurationBuild ([#7445](https://github.com/Microsoft365DSC/Microsoft365DSC/pull/7445))
+
+Until now, a DSC configuration was compiled by running the exported script, for example `.\M365TenantConfig.ps1`. This still works, but because of the move to class-based resources, it has become a lot slower. This is because PowerShell creates a .NET type for every class in the Microsoft365DSC module before it reads the first resource, which means that even a configuration with a single resource may take 30 to 90 seconds to compile.
+
+The new `Invoke-M365DSCConfigurationBuild` function replaces the standard compilation process:
+
+```powershell
+# Before
+.\M365TenantConfig.ps1
+
+# After
+Invoke-M365DSCConfigurationBuild -Path .\M365TenantConfig.ps1
+```
+
+The cmdlet picks up the `ConfigurationData.psd1` next to the script automatically. If you require custom input or parameters, you can pass them to the function, which forwards `-Credential`, `-CertificatePassword` and any value of `-Parameters` to the configuration.
+
+Update your scripts and deployment pipelines to call `Invoke-M365DSCConfigurationBuild` instead of running the configuration script directly. Part 3 of the [class-based resources series](./2026/class-based-resources/class-based-resources-part-3.md) explains how the new compilation works.
 
 ## New Permissions ([#7445](https://github.com/Microsoft365DSC/Microsoft365DSC/pull/7445), [#7496](https://github.com/Microsoft365DSC/Microsoft365DSC/pull/7496))
 

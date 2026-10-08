@@ -4,9 +4,11 @@ For Microsoft365DSC to function, you need to arrange the following components:
 
 ## PowerShell version
 
-Microsoft365DSC requires PowerShell 7.6 or higher. Every cmdlet of the module, such as `Export-M365DSCConfiguration` and `Update-M365DSCDependencies`, has to be run from a PowerShell 7 console. You can download the latest release from [aka.ms/powershell-release](https://aka.ms/powershell-release).
+Microsoft365DSC requires PowerShell 7.6 or higher. Every cmdlet of the module such as `Export-M365DSCConfiguration`, has to be run from a PowerShell 7 console. You can download the latest release from [aka.ms/powershell-release](https://aka.ms/powershell-release).
 
-Windows PowerShell 5.1 remains supported for a single scenario: compiling a configuration into a MOF file and applying or testing it through the Local Configuration Manager (`Start-DscConfiguration` and `Test-DscConfiguration`). The LCM only runs on Windows PowerShell, so in that case it relays the execution of every resource to a PowerShell 7 session on the same machine. This means PowerShell 7 still has to be installed, even when you drive the module through the LCM.
+**Please note:** Microsoft365DSC still requires to be installed in Windows PowerShell 5.1 if you want to use the Local Configuration Manager (LCM). Run `Update-M365DSCDependencies` in both Windows PowerShell and PowerShell 7 to install all dependencies.
+
+Windows PowerShell 5.1 remains supported for a single scenario: compiling a configuration into a MOF file and applying or testing it through the LCM (`Start-DscConfiguration` and `Test-DscConfiguration`). The LCM only runs on Windows PowerShell, so in that case it relays the execution of every resource to a PowerShell 7 session on the same machine. This means PowerShell 7 still has to be installed, even when you drive the module through the LCM.
 
 For additional details, please refer to our [PowerShell 7+ Guide for Microsoft365DSC](https://microsoft365dsc.com/user-guide/get-started/powershell7-support/).
 

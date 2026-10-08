@@ -36,11 +36,3 @@ Update-M365DSCDependencies
 ```
 
 `Update-M365DSCDependencies` reads the dependency list that ships with the module and installs the pinned versions. Run it after every update of the module. If you plan to use the LCM, install the module for all users so that both PowerShell 7 and Windows PowerShell can resolve it.
-
-## PSDesiredStateConfiguration needs to be installed separately
-
-Starting with PowerShell 7.2, the core Desired State Configuration module (PSDesiredStateConfiguration) has been decoupled from the core PowerShell build and now needs to be installed separately. In an administrative PowerShell 7 console, you can install the module by running the command:
-
-```powershell
-Update-M365DSCDependencies -Scope AllUsers
-```

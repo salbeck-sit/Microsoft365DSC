@@ -92,10 +92,14 @@ function Import-M365DSCDscEngine
 
 .EXAMPLE
     Invoke-M365DSCConfigurationBuild -Path .\M365TenantConfig.ps1
+
+.FUNCTIONALITY
+    Public
 #>
 function Invoke-M365DSCConfigurationBuild
 {
     [CmdletBinding()]
+    [OutputType([System.IO.FileInfo])]
     param
     (
         [Parameter()]

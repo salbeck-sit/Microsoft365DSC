@@ -1,5 +1,11 @@
 ﻿# Change log for Microsoft365DSC
 
+# UNRELEASED
+
+* SPOAccessControlSettings
+  * Fixed an issue where `EnableRestrictedAccessControl` was read from the wrong tenant property,
+    which reported drift on every run and left the property out of the export.
+
 # 2.26.1021.1
 
 * AADAuthorizationPolicy

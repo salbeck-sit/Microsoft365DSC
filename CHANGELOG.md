@@ -1,5 +1,11 @@
 ﻿# Change log for Microsoft365DSC
 
+# UNRELEASED
+
+* M365DSCReverse
+  * Fixed an issue where the temporary export file could not be deleted.
+    FIXES [#7556](https://github.com/Microsoft365DSC/Microsoft365DSC/issues/7556)
+
 # 2.26.1021.1
 
 * AADAuthorizationPolicy

@@ -2,6 +2,9 @@
 
 # UNRELEASED
 
+* SPOAccessControlSettings
+  * Fixed an issue where `EnableRestrictedAccessControl` was read from the wrong tenant property,
+    which reported drift on every run and left the property out of the export.
 * M365DSCReverse
   * Fixed an issue where the temporary export file could not be deleted.
     FIXES [#7556](https://github.com/Microsoft365DSC/Microsoft365DSC/issues/7556)

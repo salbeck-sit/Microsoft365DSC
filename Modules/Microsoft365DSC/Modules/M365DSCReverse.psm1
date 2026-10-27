@@ -1235,7 +1235,9 @@ function Start-M365DSCConfigurationExtract
 
         # Clean empty lines with semi-colons, normally generated from CIMInstances convertions to String.
         $DSCContent = $DSCContent.Replace("`r`n;`r`n", ";`r`n")
-        $DSCContent.ToString() | Out-File $outputDSCFile
+        # Windows PowerShell reads a script without byte order mark in the ANSI code page.
+        [System.IO.File]::WriteAllText($ExecutionContext.SessionState.Path.GetUnresolvedProviderPathFromPSPath($outputDSCFile),
+            $DSCContent.ToString(), [System.Text.UTF8Encoding]::new($true))
 
         try
         {

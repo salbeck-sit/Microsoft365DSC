@@ -2,6 +2,9 @@
 
 # UNRELEASED
 
+* AADDomain
+  * Fixed `SupportedServices` missing from the current values.
+    FIXES [#7570](https://github.com/Microsoft365DSC/Microsoft365DSC/issues/7570)
 * AADEntitlementManagementAccessPackageAssignmentPolicy
   * Added the `#microsoft.graph.targetUserSponsors` and
     `#microsoft.graph.targetAgentIdentitySponsorsOrOwners` user set types.

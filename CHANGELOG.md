@@ -28,6 +28,9 @@
   * Updated the `ReformatDateTime` compare normalizer to read any invariant date and
     time when `InputFormats` is omitted.
   * Updated `Split-M365DSCConfiguration` to write files as UTF-8 with a byte order mark.
+* DEPENDENCIES
+  * Updated `M365DSC.Mgx` to version 2.1.10.
+    FIXES [#7563](https://github.com/Microsoft365DSC/Microsoft365DSC/issues/7563)
 
 # 2.26.1021.1
 

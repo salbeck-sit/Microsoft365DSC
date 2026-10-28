@@ -12,6 +12,9 @@
   * Added support for every claims transformation type of a claims policy, together with the
     `input2`, `output`, `separator`, `type`, `value`, `value2`, `index` and `length` properties.
     FIXES [#7561](https://github.com/Microsoft365DSC/Microsoft365DSC/issues/7561)
+* EXOOrganizationConfig
+  * Fixed an issue where the export did not retrieve the EWS operation access policy,
+    which exported `EwsAllowedAppIDs` as an empty list.
 * SPOAccessControlSettings
   * Fixed an issue where `EnableRestrictedAccessControl` was read from the wrong tenant property,
     which reported drift on every run and left the property out of the export.

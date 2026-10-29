@@ -12,6 +12,10 @@
   * Added support for every claims transformation type of a claims policy, together with the
     `input2`, `output`, `separator`, `type`, `value`, `value2`, `index` and `length` properties.
     FIXES [#7561](https://github.com/Microsoft365DSC/Microsoft365DSC/issues/7561)
+* IntuneDeviceConfigurationAdministrativeTemplatePolicyWindows10
+  * Fixed an issue where adding a presentation value to an existing definition value failed
+    because its `id` was sent as null.
+    FIXES [#7572](https://github.com/Microsoft365DSC/Microsoft365DSC/issues/7572)
 * SPOAccessControlSettings
   * Fixed an issue where `EnableRestrictedAccessControl` was read from the wrong tenant property,
     which reported drift on every run and left the property out of the export.

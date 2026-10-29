@@ -1,6 +1,6 @@
 ﻿# Change log for Microsoft365DSC
 
-# UNRELEASED
+# 2.26.1028.1
 
 * AADDomain
   * Fixed `SupportedServices` missing from the current values.

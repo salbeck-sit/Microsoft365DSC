@@ -12,6 +12,9 @@
   * Added support for every claims transformation type of a claims policy, together with the
     `input2`, `output`, `separator`, `type`, `value`, `value2`, `index` and `length` properties.
     FIXES [#7561](https://github.com/Microsoft365DSC/Microsoft365DSC/issues/7561)
+* EXOOrganizationConfig
+  * Fixed an issue where the export did not retrieve the EWS operation access policy,
+    which exported `EwsAllowedAppIDs` as an empty list.
 * IntuneDeviceConfigurationAdministrativeTemplatePolicyWindows10
   * Fixed an issue where adding a presentation value to an existing definition value failed
     because its `id` was sent as null.

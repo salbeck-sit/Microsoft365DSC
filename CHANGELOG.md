@@ -15,6 +15,10 @@
 * EXOOrganizationConfig
   * Fixed an issue where the export did not retrieve the EWS operation access policy,
     which exported `EwsAllowedAppIDs` as an empty list.
+* IntuneDeviceConfigurationAdministrativeTemplatePolicyWindows10
+  * Fixed an issue where adding a presentation value to an existing definition value failed
+    because its `id` was sent as null.
+    FIXES [#7572](https://github.com/Microsoft365DSC/Microsoft365DSC/issues/7572)
 * SPOAccessControlSettings
   * Fixed an issue where `EnableRestrictedAccessControl` was read from the wrong tenant property,
     which reported drift on every run and left the property out of the export.
